@@ -28,7 +28,8 @@ inh_pop = Population(n_inh, IF_cond_exp, cell_params, label="inh")
 
 # # # # # # # # # # # # 
 #     I N P U  T      # 
-# # # # # # # # # # # # 
+# # # # # # # # # # # #
+# TODO (meduz) : make a proper MT input
 n_in = n_exc
 number = int(n_in*tstop*rate/1000.0)
 numpy.random.seed(26278342)
