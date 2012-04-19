@@ -3,54 +3,88 @@ Simple network with a Poisson spike source projecting to populations of of IF_co
 """
 
 import numpy
+import numpy.random as rnd
 import time
 from pyNN.utility import get_script_args
+simulator_name = get_script_args(1)[0]
+exec("from pyNN.%s import *" % simulator_name)
 
 # # # # # # # # # # # # # # # # # # # # #
 #     Simulation parameters             #
 # # # # # # # # # # # # # # # # # # # # #
-
-n_exc = 12
-n_inh = 3
-n_neurons = n_exc + n_inh
-
-simulator_name = get_script_args(1)[0]
-exec("from pyNN.%s import *" % simulator_name)
-
-tstop = 1000.0
-rate = 100.0
+import simulation_parameters
+network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
+params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
 setup(timestep=0.1, min_delay=0.2, max_delay=1.0)
 
-cell_params = {'tau_refrac':2.0,'v_thresh':-50.0,'tau_syn_E':2.0, 'tau_syn_I':2.0}
-exc_pop = Population(n_exc, IF_cond_exp, cell_params, label="exc")
-inh_pop = Population(n_inh, IF_cond_exp, cell_params, label="inh")
+exc_pop = []
+inh_pop = []
+for i in xrange(params['n_mc']):
+    exc_pop.append(Population(params['n_exc_per_mc'], IF_cond_exp, params['cell_params'], label="mc%d" % i))
+    inh_pop.append(Population(params['n_inh_per_mc'], IF_cond_exp, params['cell_params'], label="inh%d" % i))
+    # v_init
+    exc_pop[i].randomInit(rnd.normal(params['v_init'], params['v_init_sigma'], params['n_exc_per_mc']))
+    inh_pop[i].randomInit(rnd.normal(params['v_init'], params['v_init_sigma'], params['n_inh_per_mc']))
+
 
 # # # # # # # # # # # # 
 #     I N P U  T      # 
 # # # # # # # # # # # #
 # TODO (meduz) : make a proper MT input
-n_in = n_exc
-number = int(n_in*tstop*rate/1000.0)
-numpy.random.seed(26278342)
-spike_times = numpy.add.accumulate(numpy.random.exponential(1000.0/rate, size=number))
-assert spike_times.max() > tstop
-input_population  = Population(n_exc, SpikeSourceArray, {'spike_times': spike_times}, label="input")
+input_pop = []
+for column in xrange(params['n_mc']):
+    fn = params['input_st_fn_base'] + str(column) + '.npy'
+    spike_times = numpy.load(fn)
+    input_pop.append(Population(1, SpikeSourceArray, {'spike_times': spike_times}, label="input%d" % column))
 
-input_projection = Projection(input_population, exc_pop, AllToAllConnector())
-input_projection.setWeights(1.0)
 
-input_population.record()
-exc_pop.record()
-exc_pop.record_v()
+# # # # # # # # # # # # 
+#     C O N N E C T   #
+# # # # # # # # # # # #
+# CONNECT INPUT TO exc_pop
+input_prj = []
+for column in xrange(params['n_mc']):
+    n_conns = len(exc_pop[column]) * len(input_pop[column])
+    connector = AllToAllConnector(weights=rnd.normal(params['w_exc_input'], params['w_exc_input'] * params['w_exc_input_sigma'], n_conns))
+    input_prj.append(Projection(input_pop[column], exc_pop[column], connector))
+# connect exc and inh
+
+
+# # # # # # # # # # # # # # # # 
+#     N O I S E   I N P U T 
+# # # # # # # # # # # # # # # # 
+noise_prj_exc = []
+noise_pop_exc = []
+for column in xrange(params['n_mc']):
+    noise_pop_exc.append(Population(params['n_exc_per_mc'], SpikeSourcePoisson, {'rate': params['f_exc_noise']}, "expoisson%d" % column))
+    connector = OneToOneConnector(weights=params['w_exc_noise'] * numpy.ones(params['n_exc_per_mc']))
+    noise_prj_exc.append(Projection(noise_pop_exc[-1], exc_pop[column], connector))
+
+#TODO:
+# record
+for column in xrange(params['n_mc']):
+    exc_pop[column].record()
+    exc_pop[column].record_v()
+#    input_pop[column].record()
+#    inh_pop[column].record()
+#    inh_pop[column].record_v()
 
 t1 = time.time()
-run(tstop)
+print "Running simulation ... "
+run(params['t_sim'])
 t2 = time.time()
-print "Simulation time: %d sec or %d min" % (t2-t1, (t2-t1)/60.)
+print "Simulation time: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
 
-exc_pop.printSpikes("Results/exc_output_%s.ras" % simulator_name)
-input_population.printSpikes("Results/simpleNetwork_input_%s.ras" % simulator_name)
-exc_pop.print_v("Results/exc_%s.v" % simulator_name)
+# # # # # # # # # # # # # # # # #
+#     P R I N T    R E S U L T S 
+# # # # # # # # # # # # # # # # #
+for column in xrange(params['n_mc']):
+    exc_pop[column].printSpikes("%s%d.ras" % (params['exc_spiketimes_fn_base'], column))
+    exc_pop[column].print_v("%s%d.v" % (params['exc_volt_fn_base'], column))
+#    inh_pop[column].printSpikes("%s%d" % (params['inh_spiketimes_fn_base'], column))
+#    inh_pop[column].print_v("%s%d" % (params['exc_volt_fn_base'], column))
+#    input_pop[column].printSpikes("%sinput_spikes_%s.ras" % (params['spiketimes_folder'], column))
+
 
 end()
