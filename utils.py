@@ -15,8 +15,12 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
         tp[:, 2] : u-position (speed in x-direction)
         tp[:, 3] : v-position (speed in y-direction)
 
-        All x-y values are in range [0..1]
 
+    All x-y values are in range [0..1]. Positios are defined on a torus and a dot moving to a border reappears on the other side (as in Pac-Man)
+
+    By convention, velocity is such that V=(1,0) corresponds to one horizontal spatial period in one temporal period.
+    This implies that in one frame, a translation is of  ``1. / N_frame`` in cortical space.
+    
     """
     tuning_prop = np.zeros((n_cells, 4))
     if mode=='random':
@@ -66,7 +70,7 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
 
 
 
-def get_input(tuning_prop, time_steps, motion):
+def get_input(tuning_prop, time_steps, motion='dot'):
     """
     This function computes the input to each cell based on the given tuning properties.
 
@@ -119,7 +123,7 @@ def convert_motion_energy_to_spike_trains(input_vecs, dt=1, tgt_fn_base='input_s
                 st.append(i * dt)
 
         output_fn = tgt_fn_base + str(cell) + '.dat'
-        np.savetxt(output_fn, numpy.array(st)) # to be changed to binary numpy.save
+        np.savetxt(output_fn, np.array(st)) # to be changed to binary numpy.save
 
 
 
