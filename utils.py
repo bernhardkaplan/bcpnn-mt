@@ -70,7 +70,7 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
 
 
 
-def get_input(tuning_prop, time_steps, motion='dot'):
+def get_input(tuning_prop, t, motion='dot'):
     """
     This function computes the input to each cell based on the given tuning properties.
 
@@ -81,27 +81,50 @@ def get_input(tuning_prop, time_steps, motion='dot'):
             tuning_prop[:, 1] : y-position
             tuning_prop[:, 2] : u-position (speed in x-direction)
             tuning_prop[:, 3] : v-position (speed in y-direction)
-        time_steps: number of simulation time steps
-        motion: type of motion, maybe filename to movie, ... ???
+        t: time in the period is between 0 (included) and 1. (excluded)
+        motion: type of motion (TODO: filename to movie, ... ???)
+        
     """
     n_cells = tuning_prop[:, 0].size
-    L = np.zeros((n_cells, time_steps)) # maybe use sparse matrices or adjacency lists instead
+#    L = np.zeros((n_cells, time_steps)) # maybe use sparse matrices or adjacency lists instead
 
-    # compute the motion energy input to all cells
-    """
-        ...
+    L = np.zeros(n_cells)
+    if motion=='dot':
+        # define the parameters of the motion
+        X_0, Y_0 = .25, .5 #
+        V_X, V_Y = .5, 0.0
+        blur_X, blur_V = 1.0, 1.0
+        # compute the motion energy input to all cells
+        """
 
-         ... Laurent makes some very cool stuff here ...
+            Knowing the velocity one can estimate the analytical response to 
+             - motion energy detectors
+             - to a gaussian blob
+            as a function of the distance between 
+             - the center of the receptive fields,
+             - the currentpostio of the blob.
+             
+            # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
+            
+            L range between 0 and 1
+    
+        """
+        X, Y = X_0 + V_X*t, Y_0 + V_Y*t # current position of the blob at timet assuming a perfect translation
 
-        ...
-
-    """
-
+    pedestal = .2 # TODO: there arebetter ways to describe the adaptativity of MT to global inut
+    for cell in xrange(n_cells): # todo: vectorize
+        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - X)**2/blur_X**2
+                          -.5 * (tuning_prop[cell, 1] - Y)**2/blur_X**2
+                          -.5 * (tuning_prop[cell, 2] - V_X)**2/blur_V**2
+                          -.5 * (tuning_prop[cell, 3] - V_Y)**2/blur_V**2
+                          )
+        L[cell] *= (1-pedestal)
+        L[cell] += pedestal
     return L
 
 
 
-def convert_motion_energy_to_spike_trains(input_vecs, dt=1, tgt_fn_base='input_st_'):
+def convert_motion_energy_to_spike_trains(tuning_prop, n_steps=100, tgt_fn_base='input_st_'):
     """
     Based on the time dependent motion energy stored in the input vectors, 
     this function writes input spike trains to files starting with 'tgt_fn_base'
@@ -112,24 +135,34 @@ def convert_motion_energy_to_spike_trains(input_vecs, dt=1, tgt_fn_base='input_s
         dt: time step in ms, should be very small (Poisson process)
         tgt_fn_base: output will be stored in: output_fn = tgt_fn_base + str(cell) + '.dat'
     """
-    n_cells = input_vecs[:, 0].size
-    n_steps = input_vecs[0, :].size
+    n_cells = tuning_prop.size[0]
+#    n_steps = input_vecs[0, :].size
+    dt = 1./n_steps
+
+    st = []
+    for cell in xrange(n_cells):
+        st.append( [] )
+
+    # TODO : use NeuroTools' SpikeList class
+
+    for i in xrange(n_steps):
+        input_vec = get_input(tuning_prop, np.float(i)/n_steps, motion='dot')
+        for cell in xrange(n_cells):
+            r = rnd.rand()
+            if (r <= (input_vec[cell] * dt)):
+                st[cell].append(i * dt)
 
     for cell in xrange(n_cells):
-        st = []
-        for i in xrange(n_steps):
-            r = rnd.rand()
-            if (r <= (input_vecs[cell, i] * dt)):
-                st.append(i * dt)
-
         output_fn = tgt_fn_base + str(cell) + '.dat'
         np.savetxt(output_fn, np.array(st)) # to be changed to binary numpy.save
-
 
 
 class network_parameters(object):
     """
     This class contains the simulation parameters in a dictionary called params.
+    
+    TODO: use the NeuroTools.parameter class that does exactly that?
+    
     """
 
     def __init__(self):
