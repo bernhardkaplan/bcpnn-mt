@@ -97,7 +97,7 @@ for i in xrange(int(n_bins)):
         speed_prediction[j, i] = normed_activity[sorted_indices[j], i]
 
 ax4 = fig.add_subplot(324)
-ax4.set_title('Speed predictions')
+ax4.set_title('Speed predictions:\nspeed on y-axis, color=confidence')
 cax4 = ax4.pcolor(speed_prediction)#, edgecolor='k', linewidths='1')
 #cax4 = ax4.imshow(speed_prediction, interpolation='nearest')
 ax4.set_ylim((0, speed_prediction[:, 0].size))
