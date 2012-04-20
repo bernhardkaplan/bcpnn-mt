@@ -1,6 +1,11 @@
 import numpy
 import numpy.random as rnd
 import os
+"""
+
+BK:
+    TODO: use NeuroTools ParameterSets instead
+"""
 
 class parameter_storage(object):
     """
@@ -14,7 +19,7 @@ class parameter_storage(object):
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_mc' ] = 64           # number of minicolumns 
+        self.params['n_mc' ] = 16 * 8 * 4# number of minicolumns 
         self.params['n_exc_per_mc' ] = 1    # number of excitatory cells per minicolumn
         self.params['n_inh_per_mc' ] = 1           # number of excitatory cells per minicolumn
         self.params['n_cells'] = self.params['n_mc'] * (self.params['n_exc_per_mc'] + self.params['n_inh_per_mc'])

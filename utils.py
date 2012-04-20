@@ -3,28 +3,7 @@ import numpy.random as rnd
 import os
 from scipy.spatial import distance
 
-"""
-def set_tuning_prop(n_columns):
-# BK
-Define the receptive field of a cell by a gaussian in a 4-dim space (x, y, u, v) (2dim for position, 2 for speed).
-The position of each cell represents its excitability to a given a 4-dim stimulus.
-n_columns is the number of cells or minicolumns for which the tuning properties are to be set.
-
-return value:
-    tp = numpy.array((n_columns, 4, 2))
-    tp[:, 0, 0] : mu_x
-    tp[:, 0, 1] : sigma_x
-    tp[:, 1, 0] : mu_y
-    tp[:, 1, 1] : sigma_y
-    tp[:, 2, 0] : mu_u (speed in x-direction)
-    tp[:, 2, 1] : sigma_u
-    tp[:, 3, 0] : mu_v (speed in y-direction)
-    tp[:, 3, 1] : sigma_v
-=======
-"""
-
 def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
-    # meduz comment:
     """
     Place n_cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
@@ -42,30 +21,20 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
     This implies that in one frame, a translation is of  ``1. / N_frame`` in cortical space.
     """
 
-"""
-
-    tuning_prop = numpy.zeros((n_columns, 4, 2))
-
-    # place the columns on a grid with the following dimensions
-    x_max = int(round(numpy.sqrt(n_columns)))
-    y_max = int(round(numpy.sqrt(n_columns)))
-    if (n_columns > x_max * y_max):
-        x_max += 1
-
-    for i in xrange(n_columns):
-        tuning_prop[i, 0, 0] = (i % x_max) / float(x_max)   # spatial rf centers are on a grid
-        tuning_prop[i, 1, 0] = (i / x_max) / float(y_max)
-        tuning_prop[i, 2, 0] = rnd.rand()  # velocity rf are randomly set
-        tuning_prop[i, 3, 0] = rnd.rand()
-        tuning_prop[i, :, 1] = rnd.rand(4) * 0.001 # sigma values are in the range [0, 0.1]
-"""
     tuning_prop = np.zeros((n_cells, 4))
     if mode=='random':
-        for cell in xrange(n_cells):
-            tuning_prop[cell, 0] = rnd.rand()
-            tuning_prop[cell, 1] = rnd.rand()
-            tuning_prop[cell, 2] = v_max * rnd.randn()
-            tuning_prop[cell, 3] = v_max * rnd.randn()
+        # place the columns on a grid with the following dimensions
+        x_max = int(round(np.sqrt(n_cells)))
+        y_max = int(round(np.sqrt(n_cells)))
+        if (n_cells > x_max * y_max):
+            x_max += 1
+
+        for i in xrange(n_cells):
+            tuning_prop[i, 0] = (i % x_max) / float(x_max)   # spatial rf centers are on a grid
+            tuning_prop[i, 1] = (i / x_max) / float(y_max)
+            tuning_prop[i, 2] = v_max * rnd.randn()
+            tuning_prop[i, 3] = v_max * rnd.randn()
+
     elif mode=='hexgrid':
         N_V, N_theta = 8, 16 # resolution in velocity norm and direction
         log_scale = 1. # base of the logarithmic tiling of particle_grid; linear if equal to one
@@ -91,12 +60,15 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
         RF[1, :] = Y.ravel()
     
         # wrapping up:
+        print "N_RF_X, N_RF_Y", N_RF_X, N_RF_Y, N_theta, N_V
+        print N_V * N_theta * N_RF_X*N_RF_Y, n_cells
+        print N_V * N_theta * N_RF_X*N_RF_Y / float(n_cells)
         assert N_V * N_theta * N_RF_X*N_RF_Y==n_cells
 
         index = 0
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
-                for i_RF in range(N_RF_X*N_RF_Y):
+                for i_RF in xrange(N_RF_X*N_RF_Y):
                     tuning_prop[index, 0] = RF[0, i_RF]
                     tuning_prop[index, 1] = RF[1, i_RF]
                     tuning_prop[index, 2] = np.cos(theta + parity[i_v_rho] * np.pi / N_theta) * rho
@@ -113,7 +85,7 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params):
     This strength determines the envelope the non-homogeneous Poisson process to create the spike train.
 
     Arguments:
-        tuning_prop = numpy.array((n_cells, 4, 2))
+        tuning_prop = np.array((n_cells, 4, 2))
             tuning_prop[:, 0, 0] : mu_x
             tuning_prop[:, 0, 1] : sigma_x
             tuning_prop[:, 1, 0] : mu_y
@@ -140,23 +112,23 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params):
     x0, y0, u0, v0 = motion_params
 
     dt = 0.01 # [ms] time step for the non-homogenous Poisson process 
-    time = numpy.arange(0, params['t_sim'], dt)
+    time = np.arange(0, params['t_sim'], dt)
 
     for column in xrange(n_units):
 #        for cell in xrange(params['n_exc_per_mc']):
 #        gid = column * params['n_exc_per_mc'] + cell
-        mu_x = tuning_prop[column, 0, 0]
-        mu_y = tuning_prop[column, 1, 0]
-        mu_u = tuning_prop[column, 2, 0]
-        mu_v = tuning_prop[column, 3, 0]
+        mu_x = tuning_prop[column, 0]
+        mu_y = tuning_prop[column, 1]
+        mu_u = tuning_prop[column, 2]
+        mu_v = tuning_prop[column, 3]
 
         # Shape the spike train: where is the max and how large is the stimulus pulse?
         # decide on the length of the stimulus: faster motion -> shorter stimulus package (arbitrary choice) TODO: something better?
-        width_of_stim = params['stim_dur_sigma'] * (1 - numpy.sqrt(u0**2 + v0**2))
+        width_of_stim = params['stim_dur_sigma'] * (1 - np.sqrt(u0**2 + v0**2))
 
         # TODO: receptive field, e.g.  width_of_stim, max_of_stim = rf(tuning_prop, motion_params)
-        dist_from_rf = distance.euclidean(tuning_prop[column,:, 0], motion_params)
-        time_of_max_stim = params['t_sim'] * get_time_of_max_stim(tuning_prop[column, :, :], motion_params)
+        dist_from_rf = distance.euclidean(tuning_prop[column, 0], motion_params)
+        time_of_max_stim = params['t_sim'] * get_time_of_max_stim(tuning_prop[column, :], motion_params)
         print "Creating input for column %d. t_stim = (%.1f, %.1f)" % (column, time_of_max_stim, width_of_stim)
 
         width_of_stim *= dist_from_rf
@@ -171,9 +143,9 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params):
             if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
                 st.append(i * dt)
         output_fn = tgt_fn_base + str(column)
-        numpy.save(output_fn, numpy.array(st)) # to be changed to binary numpy.save
+        np.save(output_fn, np.array(st)) # to be changed to binary np.save
         output_fn = params['input_folder'] + 'rate_' + str(column)
-        numpy.save(output_fn, rate_of_t) # to be changed to binary numpy.save
+        np.save(output_fn, rate_of_t) # to be changed to binary np.save
 
 def get_time_of_max_stim(tuning_prop, motion_params):
     """
@@ -182,43 +154,11 @@ def get_time_of_max_stim(tuning_prop, motion_params):
     to the RF.
     t_min = (mu_x * u0 + mu_y * v0 - v0 * y0 + u0 * x0) / (v0**2 + u0**2)
     """
-    sigma_x = tuning_prop[0, 1]
-    sigma_y = tuning_prop[1, 1]
-    mu_x = tuning_prop[0, 0] #+ numpy.sign(rnd.uniform(-1, 1)) * sigma_x
-    mu_y = tuning_prop[1, 0] #+ numpy.sign(rnd.uniform(-1, 1)) * sigma_y
+    mu_x = tuning_prop[0] #+ np.sign(rnd.uniform(-1, 1)) * sigma_x
+    mu_y = tuning_prop[1] #+ np.sign(rnd.uniform(-1, 1)) * sigma_y
     x0, y0, u0, v0 = motion_params
     t_min = (mu_x * u0 + mu_y * v0 - v0 * y0 + u0 * x0) / (u0**2 + v0**2)
     return t_min
-
-def get_input_for_constant_velocity(tuning_prop, motion_params):
-    """
-    This function returns a list of parameters describing the time course of the stimulation elicited
-    by a moving dot starting at (x0, y0) moving with constant velocity (u0, v0=0).
-    The shape (radius) of the dot is not considered.
-    
-    As we assume receptive fields shaped as Gauss functions and constant velocities,
-    the time course of the stimulus has Gaussian shape.
-    -> Return value: for each cell (dim 0) a tuple for mu and sigma of the Gauss function.
-
-    Arguments:
-        tuning_prop = numpy.array((n_cells, 4, 2))
-            tuning_prop[:, 0, 0] : mu_x
-            tuning_prop[:, 0, 1] : sigma_x
-            tuning_prop[:, 1, 0] : mu_y
-            tuning_prop[:, 1, 1] : sigma_y
-            tuning_prop[:, 2, 0] : mu_u (speed in x-direction)
-            tuning_prop[:, 2, 1] : sigma_u
-            tuning_prop[:, 3, 0] : mu_v (speed in y-direction)
-            tuning_prop[:, 4, 1] : sigma_v
-
-        motion: (x0, y0, u0, v0)
-            x0 x-position at start
-            y0 y-position at start
-            u0 velocity in x-direction
-            v0 velocity in y-direction
-    """
-    pass 
-
 
 
 
@@ -229,7 +169,7 @@ def get_input(tuning_prop, t, motion='dot'):
     This function computes the input to each cell based on the given tuning properties.
 
     Arguments:
-        tuning_prop: 3-dim numpy.array; 
+        tuning_prop: 2-dim np.array; 
             dim 0 is number of cells
             tuning_prop[:, 0] : x-position
             tuning_prop[:, 1] : y-position
@@ -309,8 +249,7 @@ def convert_motion_energy_to_spike_trains(tuning_prop, n_steps=100, tgt_fn_base=
 
     for cell in xrange(n_cells):
         output_fn = tgt_fn_base + str(cell) + '.dat'
-#        numpy.save(output_fn, numpy.array(st)) # to be changed to binary numpy.save
-        np.savetxt(output_fn, np.array(st)) # to be changed to binary numpy.save
+        np.savetxt(output_fn, np.array(st))
 
 def distance_to_rf_center(cell_tuning, motion_params, t_stop, t_start=0., dt=0.01):
     """
@@ -341,13 +280,13 @@ def distance_to_rf_center(cell_tuning, motion_params, t_stop, t_start=0., dt=0.0
 #    y0 = motion_params[1]
 #    u0 = motion_params[2]
 #    v0 = motion_params[3]
-#    spatial_distance = numpy.sqrt((mu_x - x0 - u0 * time)**2 + (mu_y - y0 - v0 * time)**2)
-#    velocity_component = numpy.sqrt((mu_u - u0)**2 + (mu_v - v0)**2)
+#    spatial_distance = np.sqrt((mu_x - x0 - u0 * time)**2 + (mu_y - y0 - v0 * time)**2)
+#    velocity_component = np.sqrt((mu_u - u0)**2 + (mu_v - v0)**2)
 #    return velocity_component * spatial_distance
 
 
 def gauss(x, mu, sigma):
-    return numpy.exp( - (x - mu)**2 / (2 * sigma ** 2))
+    return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
 
 
 def euclidean(x, y):
