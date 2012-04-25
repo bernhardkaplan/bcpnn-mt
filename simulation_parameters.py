@@ -78,6 +78,7 @@ class parameter_storage(object):
         self.params['connections_folder'] = "%sConnections/" % self.params['folder_name']
         self.params['weights_folder'] = "%sWeights/" % self.params['folder_name']
         self.params['bias_folder'] = "%sBias/" % self.params['folder_name']
+        self.params['bcpnntrace_folder'] = "%sBcpnnTraces/" % self.params['folder_name']
         self.params['folder_names'] = [self.params['folder_name'], \
                             self.params['spiketimes_folder'], \
                             self.params['volt_folder'], \
@@ -85,6 +86,7 @@ class parameter_storage(object):
                             self.params['connections_folder'], \
                             self.params['weights_folder'], \
                             self.params['bias_folder'], \
+                            self.params['bcpnntrace_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']
@@ -93,6 +95,9 @@ class parameter_storage(object):
         self.params['merged_inh_spiketimes_fn_base'] = '%smerged_inh_spikes.ras' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt_' % self.params['volt_folder']
         self.params['inh_volt_fn_base'] = '%sinh_volt_' % self.params['volt_folder']
+        self.params['ztrace_fn_base'] = '%sztrace_' % self.params['bcpnntrace_folder']
+        self.params['etrace_fn_base'] = '%setrace_' % self.params['bcpnntrace_folder']
+        self.params['ptrace_fn_base'] = '%sptrace_' % self.params['bcpnntrace_folder']
 
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_sigmas_fn'] = '%stuning_prop_sigmas.prm' % (self.params['parameters_folder'])

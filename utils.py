@@ -297,9 +297,9 @@ def distribute_list(l, n_proc, pid):
     offset = min(pid, R)
     file_id_min = int(pid * n_files_per_proc + offset)
     if (pid < R):
-        file_id_max = int(file_id_min + n_files_per_proc + 1)
+        file_id_max = file_id_min + n_files_per_proc + 1
     else:
-        file_id_max = int(file_id_min + n_files_per_proc)
+        file_id_max = file_id_min + n_files_per_proc
     sublist = [l[i] for i in range(file_id_min, file_id_max)]
     return sublist
 
