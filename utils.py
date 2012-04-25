@@ -284,6 +284,43 @@ def distance_to_rf_center(cell_tuning, motion_params, t_stop, t_start=0., dt=0.0
 #    velocity_component = np.sqrt((mu_u - u0)**2 + (mu_v - v0)**2)
 #    return velocity_component * spatial_distance
 
+def distribute_list(l, n_proc, pid):
+    """
+    l: list of elements to be distributed among n_proc processors
+    pid: (int) process id of the process calling this function
+    n_proc: total number of processors
+    Returns a list to be assigned to the processor with id pid
+    """
+    n_files = len(l)
+    n_files_per_proc = int(n_files / n_proc)
+    R = n_files % n_proc
+    offset = min(pid, R)
+    file_id_min = int(pid * n_files_per_proc + offset)
+    if (pid < R):
+        file_id_max = int(file_id_min + n_files_per_proc + 1)
+    else:
+        file_id_max = int(file_id_min + n_files_per_proc)
+    sublist = [l[i] for i in range(file_id_min, file_id_max)]
+    return sublist
+
+def distribute_n(n, n_proc, pid):
+    """
+    l: list of elements to be distributed among n_proc processors
+    pid: (int) process id of the process calling this function
+    n_proc: total number of processors
+    Returns a list to be assigned to the processor with id pid
+    """
+    n = len(l)
+    n_per_proc = int(n / n_proc)
+    R = n % n_proc
+    offset = min(pid, R)
+    n_min = int(pid * n_per_proc + offset)
+    if (pid < R):
+        n_max = int(n_min + n_per_proc + 1)
+    else:
+        n_max = int(n_min + n_per_proc)
+    return (n_min, n_max)
+
 
 def gauss(x, mu, sigma):
     return np.exp( - (x - mu)**2 / (2 * sigma ** 2))

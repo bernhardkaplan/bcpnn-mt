@@ -48,7 +48,10 @@ for column in xrange(params['n_mc']):
     n_conns = len(exc_pop[column]) * len(input_pop[column])
     connector = AllToAllConnector(weights=rnd.normal(params['w_exc_input'], params['w_exc_input'] * params['w_exc_input_sigma'], n_conns))
     input_prj.append(Projection(input_pop[column], exc_pop[column], connector))
-# connect exc and inh
+# EXC - EXC
+# EXC - INH
+# INH - EXC
+# INH - INH
 
 
 # # # # # # # # # # # # # # # # 

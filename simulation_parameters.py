@@ -19,10 +19,11 @@ class parameter_storage(object):
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_mc' ] = 16 * 8 * 4# number of minicolumns 
+        self.params['n_mc' ] = 64       # number of minicolumns 
         self.params['n_exc_per_mc' ] = 1    # number of excitatory cells per minicolumn
         self.params['n_inh_per_mc' ] = 1           # number of excitatory cells per minicolumn
         self.params['n_cells'] = self.params['n_mc'] * (self.params['n_exc_per_mc'] + self.params['n_inh_per_mc'])
+        self.params['conn_mat_init_sparseness'] = 0.1
 
         # ###################
         # CELL PARAMETERS   #
@@ -74,10 +75,16 @@ class parameter_storage(object):
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
         self.params['parameters_folder'] = "%sParameters/" % self.params['folder_name']
+        self.params['connections_folder'] = "%sConnections/" % self.params['folder_name']
+        self.params['weights_folder'] = "%sWeights/" % self.params['folder_name']
+        self.params['bias_folder'] = "%sBias/" % self.params['folder_name']
         self.params['folder_names'] = [self.params['folder_name'], \
                             self.params['spiketimes_folder'], \
                             self.params['volt_folder'], \
                             self.params['parameters_folder'], \
+                            self.params['connections_folder'], \
+                            self.params['weights_folder'], \
+                            self.params['bias_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']
@@ -89,6 +96,12 @@ class parameter_storage(object):
 
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_sigmas_fn'] = '%stuning_prop_sigmas.prm' % (self.params['parameters_folder'])
+
+        # CONNECTION FILES
+        self.params['conn_mat_init'] = '%sconn_mat_init.npy' % (self.params['connections_folder'])
+        self.params['weights_fn_base'] = '%sweight_' % (self.params['weights_folder'])
+        self.params['bias_fn_base'] = '%sbias_' % (self.params['bias_folder'])
+
 
         rnd.seed(self.params['seed'])
         self.create_folders()
