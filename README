@@ -1,0 +1,10 @@
+# # # # # # # # # # # # #
+#     bcppn-mt          #
+# # # # # # # # # # # # #
+
+Requirements:
+    pyNN
+    Brian, NEST or another pyNN supported simulator
+
+Run:
+    python network_sim.py brian
