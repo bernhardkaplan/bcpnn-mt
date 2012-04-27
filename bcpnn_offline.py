@@ -16,8 +16,6 @@ save_all = True # if True: z and e traces will be written to disk
 
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
-folder = params['spiketimes_folder']
-fn_base = params['exc_spiketimes_fn_base'].rsplit(folder)[1]
 
 CC = CreateConnections.create_initial_connection_matrix(params['n_mc'], output_fn=params['conn_mat_init'], sparseness=params['conn_mat_init_sparseness'])
 connection_matrix = np.load(params['conn_mat_init'])
@@ -39,8 +37,8 @@ for i in xrange(2):
     # convert
 #    print "spike_times_pre", spiketimes_pre
 #    print "spike_times_post", spiketimes_post
-    pre_trace = Bcpnn.convert_spiketrain_to_trace(spiketimes_pre, params['t_sim'])
-    post_trace = Bcpnn.convert_spiketrain_to_trace(spiketimes_post, params['t_sim'])
+    pre_trace = utils.convert_spiketrain_to_trace(spiketimes_pre, params['t_sim'])
+    post_trace = utils.convert_spiketrain_to_trace(spiketimes_post, params['t_sim'])
 
     # compute
     wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace)
@@ -72,5 +70,4 @@ for i in xrange(2):
         output_fn = params['ptrace_fn_base'] + "%d_%d.npy" % (pre_id, post_id)
         np.save(output_fn, pij)
 
-#def convert_spiketrain_to_trace(st, n):
 #def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, f_max=300., eps=1e-6):

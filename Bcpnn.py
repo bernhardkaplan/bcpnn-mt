@@ -1,4 +1,88 @@
 import numpy as np
+import utils
+from NeuroTools import signals as nts
+
+def bcpnn_offline(params, connection_matrix, sim_cnt=0, pc_id=0, n_proc=1, save_all=True):
+    """
+    Arguments:
+        params: parameter dictionary
+        connection_matrix: two-dim numpy array storing cell-to-cell connections (only non-zero elements will be processed)
+                            or
+                           file name
+        sim_cnt: int for recording to file
+
+    This function does basically the same thing as the script bcpnn_offline.py
+    """
+    if (type(connection_matrix) == type('')):
+        connection_matrix = np.load(connection_matrix)
+    non_zeros = connection_matrix.nonzero()
+    conns = zip(non_zeros[0], non_zeros[1])
+    my_conns = utils.distribute_list(conns, n_proc, pc_id)
+
+    n, m = connection_matrix.shape
+    bias_values = np.zeros(params['n_cells'])
+    #for i in xrange(len(my_conns)):
+    for i in xrange(2):
+        print "Pc %d conn:" % pc_id, i, my_conns[i]
+        pre_id = my_conns[i][0]
+        post_id = my_conns[i][1]
+
+        # extract the spike times from the file where all cells belonging to one minicolumn are stored
+        # pre
+        mc_index_pre = pre_id / params['n_exc_per_mc']
+        fn_pre = params['exc_spiketimes_fn_base'] + str(pre_id) + '.ras'
+        spklist_pre = nts.load_spikelist(fn_pre, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
+        spiketimes_pre = spklist_pre[pre_id % params['n_exc_per_mc']].spike_times
+        pre_trace = utils.convert_spiketrain_to_trace(spiketimes_pre, params['t_sim'])
+        # post
+        mc_index_post = post_id / params['n_exc_per_mc']
+        fn_post = params['exc_spiketimes_fn_base'] + str(post_id) + '.ras'
+        spklist_post = nts.load_spikelist(fn_post, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
+        spiketimes_post = spklist_post[post_id % params['n_exc_per_mc']].spike_times
+        post_trace = utils.convert_spiketrain_to_trace(spiketimes_post, params['t_sim'])
+
+        # compute
+        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = get_spiking_weight_and_bias(pre_trace, post_trace)
+
+        # update
+        dw = (wij.max() - wij.min()) * params['dw_scale']
+        print "DEBUG, updating weight[%d, %d] by %.1e to %.1e" % (pre_id, post_id, dw, connection_matrix[pre_id, post_id] + dw)
+        connection_matrix[pre_id, post_id] += dw
+        bias[post_id] = bias.max()
+
+        if (save_all):
+            # save
+            output_fn = params['weights_fn_base'] + "%d_%d.npy" % (pre_id, post_id)
+            np.save(output_fn, wij)
+
+            output_fn = params['bias_fn_base'] + "%d.npy" % (post_id)
+            np.save(output_fn, bias)
+
+            output_fn = params['ztrace_fn_base'] + "%d.npy" % pre_id
+            np.save(output_fn, zi)
+            output_fn = params['ztrace_fn_base'] + "%d.npy" % post_id
+            np.save(output_fn, zj)
+
+            output_fn = params['etrace_fn_base'] + "%d.npy" % pre_id
+            np.save(output_fn, ei)
+            output_fn = params['etrace_fn_base'] + "%d.npy" % post_id
+            np.save(output_fn, ej)
+            output_fn = params['etrace_fn_base'] + "%d_%d.npy" % (pre_id, post_id)
+            np.save(output_fn, eij)
+
+            output_fn = params['ptrace_fn_base'] + "%d.npy" % pre_id
+            np.save(output_fn, pi)
+            output_fn = params['ptrace_fn_base'] + "%d.npy" % post_id
+            np.save(output_fn, pj)
+            output_fn = params['ptrace_fn_base'] + "%d_%d.npy" % (pre_id, post_id)
+            np.save(output_fn, pij)
+
+    print "debug", params['conn_mat_ee_fn_base'] + str(sim_cnt+1) + '.npy'
+    np.savetxt(params['conn_mat_ee_fn_base'] + str(sim_cnt+1) + '.npy', connection_matrix)
+    print "debug", params['bias_values_fn_base'] + str(sim_cnt+1) + '.npy'
+    np.savetxt(params['bias_values_fn_base'] + str(sim_cnt+1) + '.npy', bias)
+
+    return connection_matrix, bias
 
 def get_abstract_weight_and_bias(pre, post, alpha=0.01, dt=1, eps=1e-6):
     """
@@ -34,7 +118,7 @@ def get_abstract_weight_and_bias(pre, post, alpha=0.01, dt=1, eps=1e-6):
             wij[i] = eps**2
         else:
             wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
-#elif (pij[i] <= pi[i] * pj[i]): # this condition avoids weights going negative
+        #elif (pij[i] <= pi[i] * pj[i]): # this condition avoids weights going negative
 
         # bias
         if (pj[i] > 0):
@@ -120,14 +204,3 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, tau_z=10, tau
             bias[i] = np.log(eps)
     return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
 
-def convert_spiketrain_to_trace(st, n):
-    """
-    st: spike train in the format [time, id]
-    n : size of the trace to be returned
-    To be used with spike train inputs.
-    Returns a np.array with st[i] = 1 if i in st[:, 0], st[i] = 0 else.
-    """
-    trace = np.zeros(n)
-    for i in st:
-        trace[int(round(i))] = 1
-    return trace

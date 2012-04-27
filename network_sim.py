@@ -9,6 +9,11 @@ import numpy.random as rnd
 from pyNN.utility import get_script_args
 simulator_name = get_script_args(1)[0]
 exec("from pyNN.%s import *" % simulator_name)
+if (len(get_script_args(1)) > 1):
+    sim_cnt = get_script_args(1)[1]
+else:
+    sim_cnt = 0
+print "DEBUG sim_cnt:", sim_cnt
 
 # # # # # # # # # # # # # # # # # # # # #
 #     Simulation parameters             #
@@ -81,8 +86,8 @@ for column in xrange(params['n_mc']):
 #     C O N N E C T    E X C - E X C  #
 # # # # # # # # # # # # # # # # # # # #
 # during the learning process load the updated connection matrix
-#pop_conn_mat = np.load(params['conn_mat_exc_exc_fn_base']) + str(run_cnt) + '.npy'
-pop_conn_mat = np.load(params['conn_mat_init'])
+#pop_conn_mat = np.load(params['conn_mat_ee_fn_base']) + str(sim_cnt) + '.npy'
+pop_conn_mat = np.load(params['conn_mat_mc_mc_init'])
 exc_exc_prj = []
 for src in xrange(pop_conn_mat[:, 0].size):
     for tgt in xrange(pop_conn_mat[:, 0].size):
@@ -112,6 +117,17 @@ for column in xrange(params['n_mc']):
     connector = AllToAllConnector(weights=w_input_exc_distr)    # weights are drawn from the given random distribution
     input_prj.append(Projection(input_pop[column], exc_pop[column], connector))
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # #
+#     C O N N E C T    B I A S   T O   C E L L S  # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # 
+bias_currents = []
+bias_values = np.loadtxt(params['bias_values_fn_base'] + str(sim_cnt) + '.npy')
+for cell in xrange(params['n_exc']):
+    i_amp = bias_values[cell]
+    bias_currents.append(DCSource({'amplitude':i_amp, 'start':0, 'stop':params['t_sim']}))
+
+
 # # # # # # # # # # # # # # # # 
 #     N O I S E   I N P U T   #
 # # # # # # # # # # # # # # # # 
@@ -124,6 +140,7 @@ for column in xrange(params['n_mc']):
         noise_pop_exc.append(Population(params['n_exc_per_mc'], SpikeSourcePoisson, {'rate': params['f_exc_noise']}, "expoisson%d" % column))
     connector = OneToOneConnector(weights=params['w_exc_noise'])
     noise_prj_exc.append(Projection(noise_pop_exc[-1], exc_pop[column], connector))
+
 
 # # # # # # # # # # # #
 #     R E C O R D     #

@@ -19,8 +19,8 @@ class parameter_storage(object):
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_mc' ] = 16   # number of minicolumns 
-        self.params['n_exc_per_mc' ] = 4                # number of excitatory cells per minicolumn
+        self.params['n_mc' ] = 1# number of minicolumns 
+        self.params['n_exc_per_mc' ] = 8                # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
@@ -32,19 +32,28 @@ class parameter_storage(object):
         # #######################
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # exc - exc 
-        self.params['p_exc_exc_global'] = 0.5           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)
-                                                        # for scaling studies: this might be better: FixedNumberPreConnector
-        self.params['w_exc_exc_global'] = 0.001           # cells within two MCs are connected with this weight
+        self.params['p_ee'] = 0.5           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)
+        self.params['w_ee_mean'] = 0.001           # cells within two MCs are connected with this weight
+        self.params['w_ee_sigma'] = 0.001           # cells within two MCs are connected with this weight
 
         # exc - inh
-        self.params['p_exc_inh_global'] = 0.2
-        self.params['w_exc_inh_global'] = 0.001          
+        self.params['p_ei'] = 0.25
+        self.params['w_ei_mean'] = 0.001          
+        self.params['w_ei_sigma'] = 0.001          
+
         # inh - exc
-        self.params['p_inh_exc_global'] = 1.0 
-        self.params['w_inh_exc_global'] = 0.001          
+        self.params['p_ie'] = 0.25
+        self.params['w_ie_mean'] = 0.001          
+        self.params['w_ie_sigma'] = 0.001          
+
         # inh - inh
-        self.params['p_inh_inh_global'] = 1.0 
-        self.params['w_inh_inh_global'] = 0.001          
+        self.params['p_ii'] = 1.0 
+        self.params['w_ii_mean'] = 0.001          
+        self.params['w_ii_sigma'] = 0.001          
+
+        self.params['w_init_max'] = 0.001               # [nS] Maximal weight when creating the initial weight matrix
+        self.params['w_thresh_bcpnn'] = 0.001           # [nS] Threshold under which a weight is set to zero in the cell-to-cell connectivity matrix
+        self.params['dw_scale'] = 0.001                 # [nS] Weight updates computed by BCPNN are scaled with this factor
 
         # ###################
         # CELL PARAMETERS   #
@@ -61,6 +70,7 @@ class parameter_storage(object):
         # ###################### 
         self.params['seed'] = 12345
         self.params['t_sim'] = 500.
+        self.params['n_sim'] = 2                    # number of simulations (iterations) for learning
 
         # ######
         # INPUT 
@@ -93,7 +103,7 @@ class parameter_storage(object):
         # ######################
         # FILENAMES and FOLDERS
         # ######################
-        self.params['folder_name'] = "TestSim_n%d/" % self.params['n_mc']             # the main folder with all simulation specific content
+        self.params['folder_name'] = "NoColumns/"   # the main folder with all simulation specific content
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['input_st_fn_base'] = "%sInputSpikeTrains/stim_spike_train_" % self.params['folder_name']# input spike trains filename base
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
@@ -126,12 +136,23 @@ class parameter_storage(object):
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_sigmas_fn'] = '%stuning_prop_sigmas.prm' % (self.params['parameters_folder'])
 
+        self.params['bias_values_fn_base'] = '%sbias_values_' % (self.params['bias_folder'])
+
         # CONNECTION FILES
-        self.params['conn_mat_init'] = '%sconn_mat_init.npy' % (self.params['connections_folder'])
+        self.params['conn_mat_mc_mc_init'] = '%sconn_mat_init.npy' % (self.params['connections_folder'])
         self.params['weights_fn_base'] = '%sweight_' % (self.params['weights_folder'])
         self.params['bias_fn_base'] = '%sbias_' % (self.params['bias_folder'])
 
-        self.params['conn_mat_exc_exc_fn_base'] = '%sconn_mat_exc_exc_' % (self.params['connections_folder'])
+        self.params['conn_mat_mc_mc_fn_base'] = '%sconn_mat_mc_mc_' % (self.params['connections_folder'])
+        self.params['conn_mat_ee_fn_base'] = '%sconn_mat_ee_' % (self.params['connections_folder'])
+        # conn_mat_0_1 contains the cell-to-cell weights from minicolumn 0 to minicolumn 1
+
+        # for models not based on minicolumns:
+        self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
+        self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
+        self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])
+        self.params['conn_list_ii_fn'] = '%sconn_list_ii.dat' % (self.params['connections_folder'])
+        self.params['conn_list_input_fn'] = '%sconn_list_input.dat' % (self.params['connections_folder'])
 
 
         rnd.seed(self.params['seed'])
