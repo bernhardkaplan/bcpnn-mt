@@ -15,7 +15,8 @@ gids = []
 
 spikes = []
 for fn in os.listdir(folder):
-    m = re.match("%s(\d+)\." % fn_base, fn) #    print fn, fn_base
+    m = re.match("%s(\d+)\." % fn_base, fn)
+    print fn, fn_base
     if m:
         print "Found ", fn
         try:

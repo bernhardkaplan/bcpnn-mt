@@ -20,7 +20,7 @@ class parameter_storage(object):
         # NETWORK PARAMETERS
         # ###################
         self.params['n_mc' ] = 1# number of minicolumns 
-        self.params['n_exc_per_mc' ] = 8                # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc' ] = 64 # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
@@ -123,6 +123,7 @@ class parameter_storage(object):
                             self.params['bcpnntrace_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
+        self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged_' % self.params['spiketimes_folder']
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']
         self.params['merged_exc_spiketimes_fn_base'] = '%smerged_exc_spikes.ras' % self.params['spiketimes_folder']
         self.params['inh_spiketimes_fn_base'] = '%sinh_spikes_' % self.params['spiketimes_folder']
@@ -139,14 +140,14 @@ class parameter_storage(object):
         self.params['bias_values_fn_base'] = '%sbias_values_' % (self.params['bias_folder'])
 
         # CONNECTION FILES
+        # connection matrices are n x n matrices with weights as elements
         self.params['conn_mat_mc_mc_init'] = '%sconn_mat_init.npy' % (self.params['connections_folder'])
-        self.params['weights_fn_base'] = '%sweight_' % (self.params['weights_folder'])
-        self.params['bias_fn_base'] = '%sbias_' % (self.params['bias_folder'])
 
         self.params['conn_mat_mc_mc_fn_base'] = '%sconn_mat_mc_mc_' % (self.params['connections_folder'])
         self.params['conn_mat_ee_fn_base'] = '%sconn_mat_ee_' % (self.params['connections_folder'])
         # conn_mat_0_1 contains the cell-to-cell weights from minicolumn 0 to minicolumn 1
 
+        # connection lists have the following format: src_gid  tgt_gid  weight  delay
         # for models not based on minicolumns:
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
         self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
@@ -154,6 +155,9 @@ class parameter_storage(object):
         self.params['conn_list_ii_fn'] = '%sconn_list_ii.dat' % (self.params['connections_folder'])
         self.params['conn_list_input_fn'] = '%sconn_list_input.dat' % (self.params['connections_folder'])
 
+        # BCPNN TRACES
+        self.params['weights_fn_base'] = '%sweight_trace_' % (self.params['weights_folder'])
+        self.params['bias_fn_base'] = '%sbias_trace_' % (self.params['bias_folder'])
 
         rnd.seed(self.params['seed'])
         self.create_folders()
