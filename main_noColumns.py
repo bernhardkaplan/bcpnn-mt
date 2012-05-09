@@ -10,23 +10,29 @@ import numpy as np
 import utils
 import CreateConnections as CC
 import Bcpnn
-#import NetworkSimModuleNoColumns as simulation
+import time
+import prepare_sim as p
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+pc_id, n_proc = comm.rank, comm.size
+import NetworkSimModuleNoColumns as simulation
 #import NetworkSimModule as simulation
 
 # load simulation parameters
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
-do_prepare = False
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
-n_proc = 8
+do_prepare = False
+#n_proc = 2
 if (do_prepare):
-    if (n_proc > 1):
-        os.system("mpirun -np %d python prepare_sim.py" % n_proc)
-    else:
-        os.system("python prepare_sim.py")
+    p.prepare_sim(comm)
+#    if (n_proc > 1):
+#        os.system("mpirun -np %d python prepare_sim.py" % n_proc)
+#    else:
+#        os.system("python prepare_sim.py")
 
 n_sim = params['n_sim']
 for sim_cnt in xrange(n_sim):
@@ -34,18 +40,32 @@ for sim_cnt in xrange(n_sim):
     #     S I M U L A T E     #
     # # # # # # # # # # # # # #
     print "Simulation run: %d / %d" % (sim_cnt+1, n_sim)
-    if (n_proc > 1):
-        os.system ("mpirun -np %d python NetworkSimModuleNoColumns.py %d" % (n_proc, sim_cnt))
-    else:
-        os.system ("python NetworkSimModuleNoColumns.py %d" % sim_cnt)
+    
+    if (pc_id == 0):
+        simulation.run_sim(params, sim_cnt)
+    print "Pc %d waiting ... " % pc_id
+    comm.barrier()
+
+#    if (n_proc > 1):
+#        os.system ("mpirun -np %d python NetworkSimModuleNoColumns.py %d" % (n_proc, sim_cnt))
+#    else:
+#        os.system ("python NetworkSimModuleNoColumns.py %d" % sim_cnt)
 
     # # # # # # # # # # #
     #     B C P N N     #
     # # # # # # # # # # #
-    if (n_proc > 1):
-        os.system ("mpirun -np %d python use_bcpnn_offline.py %d" % (n_proc, sim_cnt))
-    else:
-        os.system ("python use_bcpnn_offline.py %d" % sim_cnt)
+    t1 = time.time()
+    print "Pc %d Bcpnn ... " % pc_id
+    conn_list = np.loadtxt(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
+    Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, True, comm)
+    t2 = time.time()
+    print "Computation time for BCPNN: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
+#    if (n_proc > 1):
+#        os.system ("mpirun -np %d python use_bcpnn_offline.py %d" % (n_proc, sim_cnt))
+#    else:
+#        os.system ("python use_bcpnn_offline.py %d" % sim_cnt)
+    
+    comm.barrier()
 
 #    utils.threshold_weights(connection_matrix, params['w_thresh_bcpnn'])
 

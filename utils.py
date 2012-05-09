@@ -55,6 +55,7 @@ def convert_spiketrain_to_trace(st, n):
     """
     trace = np.zeros(n)
     for i in st:
+        assert (int(i) < n), "Index out of bounds error! Spike time: %f %d" % (i, n)
         trace[int(i)] = 1
     return trace
 

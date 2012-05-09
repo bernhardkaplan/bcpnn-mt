@@ -20,7 +20,7 @@ class parameter_storage(object):
         # NETWORK PARAMETERS
         # ###################
         self.params['n_mc' ] = 1# number of minicolumns 
-        self.params['n_exc_per_mc' ] = 64 # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
@@ -103,7 +103,7 @@ class parameter_storage(object):
         # ######################
         # FILENAMES and FOLDERS
         # ######################
-        self.params['folder_name'] = "NoColumns/"   # the main folder with all simulation specific content
+        self.params['folder_name'] = "NoColumns_%d/" % (self.params['n_exc'])  # the main folder with all simulation specific content
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['input_st_fn_base'] = "%sInputSpikeTrains/stim_spike_train_" % self.params['folder_name']# input spike trains filename base
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
