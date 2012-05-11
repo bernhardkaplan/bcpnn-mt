@@ -12,9 +12,18 @@ import CreateConnections as CC
 import Bcpnn
 import time
 import prepare_sim as Prep
-from mpi4py import MPI
-comm = MPI.COMM_WORLD
-pc_id, n_proc = comm.rank, comm.size
+try:
+    from mpi4py import MPI
+    USE_MPI = True
+except:
+    USE_MPI = False
+
+if USE_MPI:
+    comm = MPI.COMM_WORLD
+    pc_id, n_proc = comm.rank, comm.size
+else:
+    comm = None
+    
 import NetworkSimModuleNoColumns as simulation
 #import NetworkSimModule as simulation
 
@@ -44,7 +53,7 @@ for sim_cnt in xrange(n_sim):
         print "Simulation run: %d / %d" % (sim_cnt+1, n_sim)
         simulation.run_sim(params, sim_cnt)
     print "Pc %d waiting for proc 0 to finish simulation" % pc_id
-    comm.barrier()
+    if USE_MPI: comm.barrier()
 
 #    if (n_proc > 1):
 #        os.system ("mpirun -np %d python NetworkSimModuleNoColumns.py %d" % (n_proc, sim_cnt))
@@ -65,7 +74,7 @@ for sim_cnt in xrange(n_sim):
 #    else:
 #        os.system ("python use_bcpnn_offline.py %d" % sim_cnt)
     
-    comm.barrier()
+    if USE_MPI: comm.barrier()
 
 #    utils.threshold_weights(connection_matrix, params['w_thresh_bcpnn'])
 
