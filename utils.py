@@ -102,12 +102,7 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, contrast=
     # each cell will get its own spike train stored in the following file + cell gid
     tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
     n_units = tuning_prop.shape[0]
-<<<<<<< HEAD
-    x0, y0, u0, v0 = motion_params
-=======
     n_cells = params['n_exc'] # each unit / column can contain several cells
->>>>>>> new way to create inputs
-
     dt = 0.01 # [ms] time step for the non-homogenous Poisson process 
     time = np.arange(0, params['t_sim'], dt)
 
@@ -118,7 +113,8 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, contrast=
 
     L_input = np.empty((n_cells, time.shape[0]))
     for i_time, time_ in enumerate(time):
-        L_input[:, i_time] = get_input(tuning_prop, motion_params, time_, contrast=contrast)
+#        print i_time, time.shape[0]
+        L_input[:, i_time] = get_input(tuning_prop, motion_params, time_/params['t_sim'], contrast=contrast) * params['f_max_stim']
     
     for column in my_units:
 #        for cell in xrange(params['n_exc_per_mc']):
@@ -152,6 +148,62 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, contrast=
         np.save(output_fn, np.array(st)) # to be changed to binary np.save
         output_fn = params['input_folder'] + 'rate_' + str(column)
         np.save(output_fn, rate_of_t) # to be changed to binary np.save
+
+
+def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
+    """
+    This function computes the input to each cell based on the given tuning properties.
+
+    Arguments:
+        tuning_prop: 2-dim np.array; 
+            dim 0 is number of cells
+            tuning_prop[:, 0] : x-position
+            tuning_prop[:, 1] : y-position
+            tuning_prop[:, 2] : u-position (speed in x-direction)
+            tuning_prop[:, 3] : v-position (speed in y-direction)
+        t: time in the period is between 0 (included) and 1. (excluded)
+        motion: type of motion (TODO: filename to movie, ... ???)
+    """
+    n_cells = tuning_prop[:, 0].size
+#    L = np.zeros((n_cells, time_steps)) # maybe use sparse matrices or adjacency lists instead
+
+    L = np.zeros(n_cells)
+    if motion=='dot':
+        # define the parameters of the motion
+#        X_0, Y_0 = .25, .5 #
+#        V_X, V_Y = .5, 0.0
+        x0, y0, u0, v0 = motion_params
+
+        blur_X, blur_V = .4, .5
+        # compute the motion energy input to all cells
+        """
+
+            Knowing the velocity one can estimate the analytical response to 
+             - motion energy detectors
+             - to a gaussian blob
+            as a function of the distance between 
+             - the center of the receptive fields,
+             - the currentpostio of the blob.
+             
+            # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
+            
+            L range between 0 and 1
+    
+        """
+        x, y = x0 + u0*t, y0 + v0*t # current position of the blob at timet assuming a perfect translation
+        x, y = np.mod(x, 1.), np.mod(y, 1.)
+
+    for cell in xrange(n_cells): # todo: vectorize
+        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
+                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
+                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
+                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
+                          )
+    
+#    L = (1. - contrast) + contrast * L
+        
+    return L
+
 
 
 
@@ -231,6 +283,7 @@ def euclidean(x, y):
 def gauss(x, mu, sigma):
     return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
 
+<<<<<<< HEAD
 def get_input(tuning_prop, motion_params, t, contrast=.1, motion='dot'):
     """
     This function computes the input to each cell based on the given tuning properties.
@@ -287,6 +340,8 @@ def get_input(tuning_prop, motion_params, t, contrast=.1, motion='dot'):
 
 
 
+=======
+>>>>>>> b185350d4f55d101bffab4040c0e6aaecc30c07a
 def get_time_of_max_stim(tuning_prop, motion_params):
     """
     This function assumes motion with constant velocity, starting at x0 y0.
