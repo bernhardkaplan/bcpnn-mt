@@ -328,8 +328,10 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
 
     elif mode=='hexgrid':
 
-
-        v_rho = np.logspace(np.log(v_max/params['N_V'])/np.log(params['log_scale']),
+        if params['log_scale']==1:
+            v_rho = np.linspace(v_max/params['N_V'], v_max, num=params['N_V'], endpoint=True)
+        else:
+            v_rho = np.logspace(np.log(v_max/params['N_V'])/np.log(params['log_scale']),
                             np.log(v_max)/np.log(params['log_scale']), num=params['N_V'],
                             endpoint=True, base=params['log_scale'])
         v_theta = np.linspace(0, 2*np.pi, params['N_theta'], endpoint=False)
