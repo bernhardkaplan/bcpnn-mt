@@ -22,7 +22,7 @@ if USE_MPI:
     comm = MPI.COMM_WORLD
     pc_id, n_proc = comm.rank, comm.size
 else:
-    comm = None
+    pc_id, n_proc, comm = 0, 1, None
     
 import NetworkSimModuleNoColumns as simulation
 #import NetworkSimModule as simulation
@@ -34,7 +34,7 @@ params = network_params.load_params()                       # params stores cell
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
-do_prepare = False
+do_prepare = True # False
 #n_proc = 2
 if (do_prepare):
     Prep.prepare_sim(comm)
