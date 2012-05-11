@@ -102,13 +102,9 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, contrast=
     # each cell will get its own spike train stored in the following file + cell gid
     tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
     n_units = tuning_prop.shape[0]
-<<<<<<< HEAD
-    x0, y0, u0, v0 = motion_params
-=======
     n_cells = params['n_exc'] # each unit / column can contain several cells
->>>>>>> new way to create inputs
 
-    dt = 0.01 # [ms] time step for the non-homogenous Poisson process 
+    dt = 0.1 # [ms] time step for the non-homogenous Poisson process 
     time = np.arange(0, params['t_sim'], dt)
 
     if (my_units == None):
@@ -118,9 +114,11 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, contrast=
 
     L_input = np.empty((n_cells, time.shape[0]))
     for i_time, time_ in enumerate(time):
-        L_input[:, i_time] = get_input(tuning_prop, motion_params, time_, contrast=contrast)
+#        print i_time, time.shape[0]
+        L_input[:, i_time] = get_input(tuning_prop, motion_params, time_, contrast=contrast) * params['f_max_stim']
     
     for column in my_units:
+#        print column, n_cells
 #        for cell in xrange(params['n_exc_per_mc']):
 #        gid = column * params['n_exc_per_mc'] + cell
 #        mu_x = tuning_prop[column, 0]
@@ -272,6 +270,7 @@ def get_input(tuning_prop, motion_params, t, contrast=.1, motion='dot'):
     
         """
         x, y = x0 + u0*t, y0 + v0*t # current position of the blob at timet assuming a perfect translation
+        x, y = np.mod(x, 1.), np.mod(y, 1.)
 
     for cell in xrange(n_cells): # todo: vectorize
         L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2

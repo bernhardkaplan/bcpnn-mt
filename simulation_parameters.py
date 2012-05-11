@@ -39,7 +39,6 @@ class parameter_storage(object):
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
-        print self.params['n_cells']
 
         # #######################
         # CONNECTIVITY PARAMETERS
@@ -108,7 +107,7 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['motion_params'] = (0.5, 0.5, 0., 0) # x0, y0, u0, v0
+        self.params['motion_params'] = (0.5, 0.5, 1., 0) # x0, y0, u0, v0
 
         # ######
         # NOISE
