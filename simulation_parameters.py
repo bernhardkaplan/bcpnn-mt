@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import numpy.random as rnd
 import os
 """
@@ -17,12 +17,24 @@ class parameter_storage(object):
         self.params = {}
 
         self.params['simulator'] = 'nest'# number of minicolumns 
+
+        # ###################
+        # HEXGRID PARAMETERS
+        # ###################
+
+        self.params['N_RF'] = 25# np.int(n_cells/N_V/N_theta)
+        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
+        self.params['N_V'], self.params['N_theta'] = 5, 8 # resolution in velocity norm and direction
+        self.params['log_scale'] = 1. # base of the logarithmic tiling of particle_grid; linear if equal to one
+
         # ###################
         # NETWORK PARAMETERS
         # ###################
         self.params['n_mc'] = 1# number of minicolumns 
 #        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
-        self.params['n_exc_per_mc'] = 600 # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))

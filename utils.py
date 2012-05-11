@@ -315,33 +315,28 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
     tuning_prop = np.zeros((params['n_cells'], 4))
     if mode=='random':
         # place the columns on a grid with the following dimensions
-        x_max = int(round(np.sqrt(n_cells)))
-        y_max = int(round(np.sqrt(n_cells)))
-        if (n_cells > x_max * y_max):
+        x_max = int(round(np.sqrt(params['n_cells'])))
+        y_max = int(round(np.sqrt(params['n_cells'])))
+        if (params['n_cells'] > x_max * y_max):
             x_max += 1
 
-        for i in xrange(n_cells):
+        for i in xrange(params['n_cells']):
             tuning_prop[i, 0] = (i % x_max) / float(x_max)   # spatial rf centers are on a grid
             tuning_prop[i, 1] = (i / x_max) / float(y_max)
             tuning_prop[i, 2] = v_max * rnd.randn()
             tuning_prop[i, 3] = v_max * rnd.randn()
 
     elif mode=='hexgrid':
-        N_V, N_theta = 5, 8 # resolution in velocity norm and direction
-        log_scale = 1. # base of the logarithmic tiling of particle_grid; linear if equal to one
 
-        v_rho = np.logspace(np.log(v_max/N_V)/np.log(log_scale),
-                            np.log(v_max)/np.log(log_scale), num=N_V,
-                            endpoint=True, base=log_scale)
-        v_theta = np.linspace(0, 2*np.pi, N_theta, endpoint=False)
-        parity = np.arange(N_V) % 2
 
-        N_RF = np.int(n_cells/N_V/N_theta)
-        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of N_RF dots?"
-        N_RF_X = np.int(np.sqrt(N_RF*np.sqrt(3)))
-        N_RF_Y = np.int(np.sqrt(N_RF/np.sqrt(3)))+1
-        RF = np.zeros((2, N_RF_X*N_RF_Y))
-        X, Y = np.mgrid[0:1:1j*(N_RF_X+1), 0:1:1j*(N_RF_Y+1)]
+        v_rho = np.logspace(np.log(v_max/params['N_V'])/np.log(params['log_scale']),
+                            np.log(v_max)/np.log(params['log_scale']), num=params['N_V'],
+                            endpoint=True, base=params['log_scale'])
+        v_theta = np.linspace(0, 2*np.pi, params['N_theta'], endpoint=False)
+        parity = np.arange(params['N_V']) % 2
+
+        RF = np.zeros((2, params['N_RF_X']*params['N_RF_Y']))
+        X, Y = np.mgrid[0:1:1j*(params['N_RF_X']+1), 0:1:1j*(params['N_RF_Y']+1)]
     
         # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
         X, Y = X[1:, 1:], Y[1:, 1:]
@@ -351,19 +346,16 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
         RF[1, :] = Y.ravel()
     
         # wrapping up:
-        print "N_RF, N_RF_X, N_RF_Y, N_theta, N_V", N_RF, N_RF_X, N_RF_Y, N_theta, N_V
-#        print N_V * N_theta * N_RF_X*N_RF_Y, n_cells
-#        print N_V * N_theta * N_RF_X*N_RF_Y / float(n_cells)
-        assert N_V * N_theta * N_RF_X*N_RF_Y==n_cells
+
 
         index = 0
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
-                for i_RF in xrange(N_RF_X*N_RF_Y):
+                for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
                     tuning_prop[index, 0] = RF[0, i_RF]
                     tuning_prop[index, 1] = RF[1, i_RF]
-                    tuning_prop[index, 2] = np.cos(theta + parity[i_v_rho] * np.pi / N_theta) * rho
-                    tuning_prop[index, 3] = np.sin(theta + parity[i_v_rho] * np.pi / N_theta) * rho
+                    tuning_prop[index, 2] = np.cos(theta + parity[i_v_rho] * np.pi / params['N_theta']) * rho
+                    tuning_prop[index, 3] = np.sin(theta + parity[i_v_rho] * np.pi / params['N_theta']) * rho
                     index += 1
 
     return tuning_prop
