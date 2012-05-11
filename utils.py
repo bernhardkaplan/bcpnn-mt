@@ -102,7 +102,6 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, my_units=
     # each cell will get its own spike train stored in the following file + cell gid
     tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
     n_units = tuning_prop.shape[0]
-    n_cells = params['n_exc_per_mc'] # each unit / column can contain several cells
     x0, y0, u0, v0 = motion_params
 
     dt = 0.01 # [ms] time step for the non-homogenous Poisson process 
@@ -312,7 +311,7 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
     This implies that in one frame, a translation is of  ``1. / N_frame`` in cortical space.
     """
 
-    tuning_prop = np.zeros((params['n_cells'], 4))
+    tuning_prop = np.zeros((params['n_exc'], 4))
     if mode=='random':
         # place the columns on a grid with the following dimensions
         x_max = int(round(np.sqrt(params['n_cells'])))

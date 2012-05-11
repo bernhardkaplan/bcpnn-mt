@@ -65,7 +65,7 @@ def create_connections_between_cells(params, conn_mat_fn):
 
 
 
-def compute_weights_from_tuning_prop(tuning_prop, motion_params):
+def compute_weights_from_tuning_prop(tuning_prop, motion_params, params):
     """
     Arguments:
         tuning_prop: 2 dimensional array with shape (n_cells, 4)
@@ -77,32 +77,38 @@ def compute_weights_from_tuning_prop(tuning_prop, motion_params):
 
     n_cells = tuning_prop[:, 0].size
     (x0_stim, y0_stim, u_stim, v_stim) = motion_params
-
     sigma_x, sigma_v = 1., 1. # tuning parameters , TODO: how to handle these
-
-    weight_matrix = np.zeros((n_cells, n_cells))
-    latency_matrix = np.zeros((n_cells, n_cells))
     p_to_w_scaling = 1.
+    conn_list = []
+    output = ""
 
-    for cell0 in xrange(n_cells):
-        for cell1 in xrange(n_cells):
-            if cell0 != cell1:
-                x0 = tuning_prop[cell0, 0]
-                y0 = tuning_prop[cell0, 1]
-                u0 = tuning_prop[cell0, 2]
-                v0 = tuning_prop[cell0, 3]
-                x1 = tuning_prop[cell1, 0]
-                y1 = tuning_prop[cell1, 1]
-                u1 = tuning_prop[cell1, 2]
-                v1 = tuning_prop[cell1, 3]
+    for src in xrange(n_cells):
+        for tgt in xrange(n_cells):
+            if (src != tgt):
+                x0 = tuning_prop[src, 0]
+                y0 = tuning_prop[src, 1]
+                u0 = tuning_prop[src, 2]
+                v0 = tuning_prop[src, 3]
+                x1 = tuning_prop[tgt, 0]
+                y1 = tuning_prop[tgt, 1]
+                u1 = tuning_prop[tgt, 2]
+                v1 = tuning_prop[tgt, 3]
 
                 latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u_stim**2 + v_stim**2)
                 p = .5 * np.exp(-((x0 + u_stim * latency - x1)**2 + (y0 + v_stim * latency - y1)**2) / (2 * sigma_x**2)) \
-                        / np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+                        * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
 
                 # convert probability to weight
-                weight_matrix[cell0, cell1] = p * p_to_w_scaling
-                latency_matrix[cell0, cell1] = latency
+                if (p >= params['w_init_thresh']):
+                    w = p * p_to_w_scaling
+                    delay = latency * params['delay_scale']
+                    output += "%d\t%d\t%.6e\t%.1e\n" % (src, tgt, w, delay)
+#                    conn_list.append([src, tgt, w, delay])
 
-    return weight_matrix, latency_matrix
+    output_fn = params['conn_list_ee_fn_base'] + '0.dat'
+    f = open(output_fn, 'w')
+    f.write(output)
+    f.close()
+#    np.savetxt(output_fn, np.array(conn_list))
+#    return weight_matrix, latency_matrix
 
