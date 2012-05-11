@@ -37,7 +37,7 @@ fn = params['exc_spiketimes_fn_merged'] + str(sim_cnt) + '.ras'
 spklist = nts.load_spikelist(fn)#, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
 spiketrains = spklist.spiketrains
 for gid in xrange(params['n_exc']):
-    print gid
+#    print gid
     spiketimes = spiketrains[gid+1.].spike_times
     nspikes = spiketimes.size
     if (nspikes > 0):
@@ -61,6 +61,8 @@ cax1 = ax1.pcolor(activity)#, edgecolor='k', linewidths='1')
 #cax1 = ax1.imshow(activity, interpolation='nearest')
 ax1.set_ylim((0, activity[:, 0].size))
 ax1.set_xlim((0, activity[0, :].size))
+ax1.set_xlabel('Time (ms)')
+ax1.set_ylabel('GID')
 pylab.colorbar(cax1)
 
 ax2 = fig.add_subplot(322)
@@ -76,6 +78,8 @@ ax2.set_xlim((0, normed_activity[0, :].size))
 #x1 = posax[1][0] + 0.1
 #y0 = posax[0][1] - 0.1
 #y1 = posax[1][1] - 0.1
+ax2.set_xlabel('Time (ms)')
+ax2.set_ylabel('GID')
 pylab.colorbar(cax2)
 
 
@@ -85,6 +89,8 @@ cax3 = ax3.pcolor(spike_count)#, edgecolor='k', linewidths='1')
 #cax3 = ax3.imshow(spike_count, interpolation='nearest')
 ax3.set_ylim((0, spike_count[:, 0].size))
 ax3.set_xlim((0, spike_count[0, :].size))
+ax3.set_xlabel('X')
+ax3.set_ylabel('Y')
 pylab.colorbar(cax3)
 
 
@@ -107,24 +113,28 @@ yticks = [vx_tuning[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
 ylabels = ['%.1e' % i for i in yticks]
 ax4.set_yticks([int(i * ny/n_ticks) for i in xrange(n_ticks)])
 ax4.set_yticklabels(ylabels)
+ax4.set_xlabel('Time (ms)')
+ax4.set_ylabel('velocity')
 pylab.colorbar(cax4)
 
 
-speed_output = np.zeros(n_bins)
+#speed_output = np.zeros(n_bins)
 avg_speed = np.zeros((n_bins, 2))
 for i in xrange(int(n_bins)):
     # take the weighted average of the speed_prediction
     v_pred = speed_prediction[:, i] * vx_tuning
-    speed_output[i] = np.sum(v_pred)
-    avg_speed[i, 0] = v_pred.mean()
-    avg_speed[i, 1] = v_pred.std()
+#    speed_output[i] = np.sum(v_pred)
+    avg_speed[i, 0] = np.sum(v_pred) # v_pred.mean()
+    avg_speed[i, 1] = np.sum(v_pred) # v_pred.std()
 
 t_axis = np.arange(0, n_bins * time_binsize, time_binsize)
 
 ax5 = fig.add_subplot(326)
 ax5.set_title('Predicted resulting speed')
-ax5.plot(t_axis, speed_output)
-#ax5.errorbar(t_axis, avg_speed[:, 0], yerr=avg_speed[:, 1])
+#ax5.plot(t_axis, speed_output)
+ax5.errorbar(t_axis, avg_speed[:, 0], yerr=avg_speed[:, 1])
+ax5.set_xlabel('Time (ms)')
+ax5.set_ylabel('velocity')
 pylab.show()
 
 
