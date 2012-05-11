@@ -174,7 +174,7 @@ def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
 #        V_X, V_Y = .5, 0.0
         x0, y0, u0, v0 = motion_params
 
-        blur_X, blur_V = .4, .5
+        blur_X, blur_V = .2, .3
         # compute the motion energy input to all cells
         """
 
@@ -191,7 +191,7 @@ def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
     
         """
         x, y = x0 + u0*t, y0 + v0*t # current position of the blob at timet assuming a perfect translation
-        x, y = np.mod(x, 1.), np.mod(y, 1.)
+        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
 
     for cell in xrange(n_cells): # todo: vectorize
         L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
