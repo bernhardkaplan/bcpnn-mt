@@ -34,7 +34,7 @@ params = network_params.load_params()                       # params stores cell
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
-do_prepare = True # False
+do_prepare = True
 #n_proc = 2
 if (do_prepare):
     Prep.prepare_sim(comm)
