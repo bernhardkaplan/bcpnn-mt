@@ -16,6 +16,7 @@ class parameter_storage(object):
 
         self.params = {}
 
+        self.params['simulator' ] = 'nest'# number of minicolumns 
         # ###################
         # NETWORK PARAMETERS
         # ###################

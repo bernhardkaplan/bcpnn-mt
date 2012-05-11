@@ -6,11 +6,15 @@ import time
 import numpy as np
 import numpy.random as rnd
 import sys
-simulator_name = 'nest'
 
 def run_sim(params, sim_cnt):
-
-    from pyNN.nest import *
+    simulator_name = params['simulator']
+    if simulator_name == 'nest':
+        from pyNN.nest import *
+    elif simulator_name=='brian':
+        from pyNN.brian import *
+    else:
+        print 'using ', params['simulator'] , ' is no imeplemented :-( '  
     t1 = time.time()
 #    sim_cnt = int(sys.argv[1])
 
