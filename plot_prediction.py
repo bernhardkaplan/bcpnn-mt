@@ -22,7 +22,6 @@ vx_tuning = tuning_prop[:, 2].copy()
 vx_tuning.sort()
 sorted_indices = tuning_prop[:, 2].argsort()
 
-
 # arrange minicolumns in a grid
 x_max = int(round(numpy.sqrt(n_mc)))
 y_max = int(round(numpy.sqrt(n_mc)))
@@ -92,9 +91,13 @@ pylab.colorbar(cax3)
 
 
 # sort the normed activity according to the tuning prop
+
+#print n_mc, sorted_indices.shape, normed_activity.shape
+
 for i in xrange(int(n_bins)):
-    for j in xrange(n_mc):
-        speed_prediction[j, i] = normed_activity[sorted_indices[j], i]
+    speed_prediction[:, i] = normed_activity[sorted_indices, i]
+#    for j in xrange(n_mc):
+#        speed_prediction[j, i] = normed_activity[sorted_indices[j], i]
 
 ax4 = fig.add_subplot(324)
 ax4.set_title('Speed predictions:\nspeed on y-axis, color=confidence')

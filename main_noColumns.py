@@ -34,7 +34,12 @@ params = network_params.load_params()                       # params stores cell
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
+<<<<<<< HEAD
 do_prepare = True
+=======
+do_prepare = False # True # 
+DO_BCPNN = False
+>>>>>>> allows to not DO BCPNN
 #n_proc = 2
 if (do_prepare):
     Prep.prepare_sim(comm)
@@ -60,20 +65,21 @@ for sim_cnt in xrange(n_sim):
 #    else:
 #        os.system ("python NetworkSimModuleNoColumns.py %d" % sim_cnt)
 
-    # # # # # # # # # # #
-    #     B C P N N     #
-    # # # # # # # # # # #
-    t1 = time.time()
-    print "Pc %d Bcpnn ... " % pc_id
-    conn_list = np.loadtxt(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
-    Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, False, comm)
-    t2 = time.time()
-    print "Computation time for BCPNN: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
-#    if (n_proc > 1):
-#        os.system ("mpirun -np %d python use_bcpnn_offline.py %d" % (n_proc, sim_cnt))
-#    else:
-#        os.system ("python use_bcpnn_offline.py %d" % sim_cnt)
-    
+    if DO_BCPNN:
+        # # # # # # # # # # #
+        #     B C P N N     #
+        # # # # # # # # # # #
+        t1 = time.time()
+        print "Pc %d Bcpnn ... " % pc_id
+        conn_list = np.loadtxt(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
+        Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, False, comm)
+        t2 = time.time()
+        print "Computation time for BCPNN: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
+    #    if (n_proc > 1):
+    #        os.system ("mpirun -np %d python use_bcpnn_offline.py %d" % (n_proc, sim_cnt))
+    #    else:
+    #        os.system ("python use_bcpnn_offline.py %d" % sim_cnt)
+        
     if USE_MPI: comm.barrier()
 
 #    utils.threshold_weights(connection_matrix, params['w_thresh_bcpnn'])

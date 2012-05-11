@@ -1,8 +1,8 @@
 import pylab
 import numpy as np
-import sys
-import os
-import re
+#import sys
+#import os
+#import re
 import simulation_parameters
 from NeuroTools import signals as nts
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
@@ -32,11 +32,12 @@ if (n_cells > x_max * y_max):
     x_max += 1
 spike_count = np.zeros((x_max, y_max))
 
-
+print(' loading data ')
 fn = params['exc_spiketimes_fn_merged'] + str(sim_cnt) + '.ras'
 spklist = nts.load_spikelist(fn)#, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
 spiketrains = spklist.spiketrains
 for gid in xrange(params['n_exc']):
+    print gid
     spiketimes = spiketrains[gid+1.].spike_times
     nspikes = spiketimes.size
     if (nspikes > 0):
@@ -89,8 +90,9 @@ pylab.colorbar(cax3)
 
 # sort the normed activity according to the tuning prop
 for i in xrange(int(n_bins)):
-    for j in xrange(n_cells):
-        speed_prediction[j, i] = normed_activity[sorted_indices[j], i]
+    speed_prediction[:, i] = normed_activity[sorted_indices, i]
+#    for j in xrange(n_mc):
+#        speed_prediction[j, i] = normed_activity[sorted_indices[j], i]
 
 ax4 = fig.add_subplot(324)
 ax4.set_title('Speed predictions:\nspeed on y-axis, color=confidence')
