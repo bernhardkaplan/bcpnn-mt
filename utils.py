@@ -74,7 +74,7 @@ def convert_spiketrain_to_trace(st, n):
 
 
 
-def create_spike_trains_for_motion(tuning_prop, motion_params, params, my_units=None):
+def create_spike_trains_for_motion(tuning_prop, motion_params, params, contrast=.9, my_units=None):
     """
     This function writes spike trains to a dedicated path specified in the params dict
     Spike trains are generated for each unit / minicolumn based on the function's arguments the following way:
@@ -102,7 +102,11 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, my_units=
     # each cell will get its own spike train stored in the following file + cell gid
     tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
     n_units = tuning_prop.shape[0]
+<<<<<<< HEAD
     x0, y0, u0, v0 = motion_params
+=======
+    n_cells = params['n_exc'] # each unit / column can contain several cells
+>>>>>>> new way to create inputs
 
     dt = 0.01 # [ms] time step for the non-homogenous Poisson process 
     time = np.arange(0, params['t_sim'], dt)
@@ -112,27 +116,31 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, my_units=
     else:
         my_units = xrange(my_units[0], my_units[1])
 
+    L_input = np.empty((n_cells, time.shape[0]))
+    for i_time, time_ in enumerate(time):
+        L_input[:, i_time] = get_input(tuning_prop, motion_params, time_, contrast=contrast)
+    
     for column in my_units:
 #        for cell in xrange(params['n_exc_per_mc']):
 #        gid = column * params['n_exc_per_mc'] + cell
-        mu_x = tuning_prop[column, 0]
-        mu_y = tuning_prop[column, 1]
-        mu_u = tuning_prop[column, 2]
-        mu_v = tuning_prop[column, 3]
+#        mu_x = tuning_prop[column, 0]
+#        mu_y = tuning_prop[column, 1]
+#        mu_u = tuning_prop[column, 2]
+#        mu_v = tuning_prop[column, 3]
+#
+#        # Shape the spike train: where is the max and how large is the stimulus pulse?
+#        # decide on the length of the stimulus: faster motion -> shorter stimulus package (arbitrary choice) TODO: something better?
+#        width_of_stim = params['stim_dur_sigma'] * (1 - np.sqrt(u0**2 + v0**2))
+#
+#        # TODO: receptive field, e.g.  width_of_stim, max_of_stim = rf(tuning_prop, motion_params)
+#        dist_from_rf = distance.euclidean((mu_u, mu_v), (u0, v0))
+#        time_of_max_stim = params['t_sim'] * get_time_of_max_stim(tuning_prop[column, :], motion_params)
+#        print "Creating input for column %d. t_stim = (%.1f, %.1f)" % (column, time_of_max_stim, width_of_stim)
+#
+#        width_of_stim *= dist_from_rf
+#        max_of_stim = dist_from_rf * params['f_max_stim']
 
-        # Shape the spike train: where is the max and how large is the stimulus pulse?
-        # decide on the length of the stimulus: faster motion -> shorter stimulus package (arbitrary choice) TODO: something better?
-        width_of_stim = params['stim_dur_sigma'] * (1 - np.sqrt(u0**2 + v0**2))
-
-        # TODO: receptive field, e.g.  width_of_stim, max_of_stim = rf(tuning_prop, motion_params)
-        dist_from_rf = distance.euclidean((mu_u, mu_v), (u0, v0))
-        time_of_max_stim = params['t_sim'] * get_time_of_max_stim(tuning_prop[column, :], motion_params)
-        print "Creating input for column %d. t_stim = (%.1f, %.1f)" % (column, time_of_max_stim, width_of_stim)
-
-        width_of_stim *= dist_from_rf
-        max_of_stim = dist_from_rf * params['f_max_stim']
-
-        rate_of_t = max_of_stim * gauss(time, time_of_max_stim, width_of_stim)
+        rate_of_t = np.array(L_input[column, :]) #  max_of_stim * gauss(time, time_of_max_stim, width_of_stim)
 
         n_steps = rate_of_t.size
         st = []
@@ -223,10 +231,7 @@ def euclidean(x, y):
 def gauss(x, mu, sigma):
     return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
 
-
-
-
-def get_input(tuning_prop, t, motion='dot'):
+def get_input(tuning_prop, motion_params, t, contrast=.1, motion='dot'):
     """
     This function computes the input to each cell based on the given tuning properties.
 
@@ -246,8 +251,10 @@ def get_input(tuning_prop, t, motion='dot'):
     L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
-        X_0, Y_0 = .25, .5 #
-        V_X, V_Y = .5, 0.0
+#        X_0, Y_0 = .25, .5 #
+#        V_X, V_Y = .5, 0.0
+        x0, y0, u0, v0 = motion_params
+
         blur_X, blur_V = 1.0, 1.0
         # compute the motion energy input to all cells
         """
@@ -264,17 +271,18 @@ def get_input(tuning_prop, t, motion='dot'):
             L range between 0 and 1
     
         """
-        X, Y = X_0 + V_X*t, Y_0 + V_Y*t # current position of the blob at timet assuming a perfect translation
+        x, y = x0 + u0*t, y0 + v0*t # current position of the blob at timet assuming a perfect translation
 
-    pedestal = .2 # TODO: there arebetter ways to describe the adaptativity of MT to global inut
     for cell in xrange(n_cells): # todo: vectorize
-        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - X)**2/blur_X**2
-                          -.5 * (tuning_prop[cell, 1] - Y)**2/blur_X**2
-                          -.5 * (tuning_prop[cell, 2] - V_X)**2/blur_V**2
-                          -.5 * (tuning_prop[cell, 3] - V_Y)**2/blur_V**2
+        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
+                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
+                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
+                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
                           )
-        L[cell] *= (1-pedestal)
-        L[cell] += pedestal
+                          
+    L *= contrast
+    L += 1 - contrast
+        
     return L
 
 
@@ -295,12 +303,12 @@ def get_time_of_max_stim(tuning_prop, motion_params):
 
 def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
     """
-    Place n_cells in a 4-dimensional space by some mode (random, hexgrid, ...).
+    Place n_exc excitatory cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
     The radius of their receptive field is assumed to be constant (TODO: one coud think that it would depend on the density of neurons?)
 
     return value:
-        tp = set_tuning_prop(n_cells)
+        tp = set_tuning_prop(params)
         tp[:, 0] : x-position
         tp[:, 1] : y-position
         tp[:, 2] : u-position (speed in x-direction)
@@ -347,8 +355,6 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
         RF[1, :] = Y.ravel()
     
         # wrapping up:
-
-
         index = 0
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):

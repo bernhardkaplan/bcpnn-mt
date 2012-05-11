@@ -26,7 +26,7 @@ def prepare_sim(comm):
     #    my_units = (0, params['n_mc'])
 
     # create the input
-    input_spike_trains = utils.create_spike_trains_for_motion(tuning_prop, motion, params, my_units) # write to paths defined in the params dictionary
+    input_spike_trains = utils.create_spike_trains_for_motion(tuning_prop, motion, params, contrast=.9, my_units=my_units) # write to paths defined in the params dictionary
 
     # create initial connections 
     # with weights based on cell's tuning properties
