@@ -29,7 +29,15 @@ def prepare_sim(comm):
     input_spike_trains = utils.create_spike_trains_for_motion(tuning_prop, motion, params, my_units) # write to paths defined in the params dictionary
 
     # create initial connections 
-    CC.create_conn_list(params['conn_list_ee_fn_base']+'0.dat', (0, params['n_exc']), (0, params['n_exc']), params['p_ee'], params['w_ee_mean'], params['w_ee_sigma'])
+    # with weights based on cell's tuning properties
+    weight_matrix, latency_matrix = CC.compute_weights_from_tuning_prop(tuning_prop, motion)
+
+    # by random: # ugly function signature
+#    CC.create_conn_list_by_random(params['conn_list_ee_fn_base']+'0.dat', (0, params['n_exc']), (0, params['n_exc']), params['p_ee'], params['w_ee_mean'], params['w_ee_sigma'])
+
+    
+    
+
     # initial connectivity is written to a file
     #CC.create_initial_connection_matrix(params['n_mc'], output_fn=params['conn_mat_init'], sparseness=params['conn_mat_init_sparseness'])
 

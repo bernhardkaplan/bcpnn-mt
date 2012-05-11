@@ -8,45 +8,6 @@ import os
 from scipy.spatial import distance
 from NeuroTools import signals as nts
 
-def compute_weights_from_tuning_prop(tuning_prop, stimulus_velocity):
-    """
-    Arguments:
-        tuning_prop: 2 dimensional array with shape (n_cells, 4)
-            tp[:, 0] : x-position
-            tp[:, 1] : y-position
-            tp[:, 2] : u-position (speed in x-direction)
-            tp[:, 3] : v-position (speed in y-direction)
-    """
-
-    n_cells = tuning_prop[:, 0].size
-    u_stim, v_stim = stimulus_velocity
-
-    sigma_x, sigma_v = 1., 1. # tuning parameters , TODO: how to handle these
-
-    weight_matrix = np.zeros((n_cells, n_cells))
-    p_to_w_scaling = 1.
-
-    for cell0 in xrange(n_cells):
-        for cell1 in xrange(n_cells):
-            if cell0 != cell1:
-                x0 = tuning_prop[cell0, 0]
-                y0 = tuning_prop[cell0, 1]
-                u0 = tuning_prop[cell0, 2]
-                v0 = tuning_prop[cell0, 3]
-                x1 = tuning_prop[cell1, 0]
-                y1 = tuning_prop[cell1, 1]
-                u1 = tuning_prop[cell1, 2]
-                v1 = tuning_prop[cell1, 3]
-
-                latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u_stim**2 + v_stim**2)
-                p = .5 * np.exp(- ((x0 + u_stim * latency - x1)**2 + (y + v_stim * latency - y1)**2)/ (2 * sigma_x**2) \
-                        / np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
-
-                # convert probability to weight
-                weight_matrix[cell1, cell2] = p * p_to_w_scaling
-
-    return weight_matrix
-
 
 def convert_connlist_to_matrix(fn, n_cells):
     """

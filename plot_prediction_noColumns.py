@@ -33,10 +33,10 @@ if (n_cells > x_max * y_max):
 spike_count = np.zeros((x_max, y_max))
 
 
+fn = params['exc_spiketimes_fn_merged'] + str(sim_cnt) + '.ras'
+spklist = nts.load_spikelist(fn)#, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
+spiketrains = spklist.spiketrains
 for gid in xrange(params['n_exc']):
-    fn = params['exc_spiketimes_fn_merged'] + str(sim_cnt) + '.ras'
-    spklist = nts.load_spikelist(fn)#, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
-    spiketrains = spklist.spiketrains
     spiketimes = spiketrains[gid+1.].spike_times
     nspikes = spiketimes.size
     if (nspikes > 0):

@@ -25,7 +25,8 @@ def create_initial_connection_matrix(n, output_fn, w_max=1.0, sparseness=0.0):
     return d
 
 
-def create_conn_list(output_fn, sources, targets, p, w_mean, w_sigma, d_mean=0., d_sigma=0., d_min=1):
+
+def create_conn_list_by_random(output_fn, sources, targets, p, w_mean, w_sigma, d_mean=0., d_sigma=0., d_min=1):
     """
     This function writes a conn list with normal distributed weights (and delays) to output_fn.
     Arguments:
@@ -64,4 +65,44 @@ def create_connections_between_cells(params, conn_mat_fn):
 
 
 
+def compute_weights_from_tuning_prop(tuning_prop, motion_params):
+    """
+    Arguments:
+        tuning_prop: 2 dimensional array with shape (n_cells, 4)
+            tp[:, 0] : x-position
+            tp[:, 1] : y-position
+            tp[:, 2] : u-position (speed in x-direction)
+            tp[:, 3] : v-position (speed in y-direction)
+    """
+
+    n_cells = tuning_prop[:, 0].size
+    (x0_stim, y0_stim, u_stim, v_stim) = motion
+
+    sigma_x, sigma_v = 1., 1. # tuning parameters , TODO: how to handle these
+
+    weight_matrix = np.zeros((n_cells, n_cells))
+    latency_matrix = np.zeros((n_cells, n_cells))
+    p_to_w_scaling = 1.
+
+    for cell0 in xrange(n_cells):
+        for cell1 in xrange(n_cells):
+            if cell0 != cell1:
+                x0 = tuning_prop[cell0, 0]
+                y0 = tuning_prop[cell0, 1]
+                u0 = tuning_prop[cell0, 2]
+                v0 = tuning_prop[cell0, 3]
+                x1 = tuning_prop[cell1, 0]
+                y1 = tuning_prop[cell1, 1]
+                u1 = tuning_prop[cell1, 2]
+                v1 = tuning_prop[cell1, 3]
+
+                latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u_stim**2 + v_stim**2)
+                p = .5 * np.exp(- ((x0 + u_stim * latency - x1)**2 + (y + v_stim * latency - y1)**2)/ (2 * sigma_x**2) \
+                        / np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+
+                # convert probability to weight
+                weight_matrix[cell1, cell2] = p * p_to_w_scaling
+                latency_matric[cell1, cell2] = latency
+
+    return weight_matrix, latency_matrix
 
