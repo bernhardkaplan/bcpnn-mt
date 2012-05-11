@@ -92,7 +92,7 @@ pylab.colorbar(cax3)
 
 # sort the normed activity according to the tuning prop
 
-print n_mc, sorted_indices.shape, normed_activity.shape
+#print n_mc, sorted_indices.shape, normed_activity.shape
 
 for i in xrange(int(n_bins)):
     speed_prediction[:, i] = normed_activity[sorted_indices, i]
