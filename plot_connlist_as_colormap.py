@@ -60,10 +60,4 @@ if (n_dw > 0):
         ax.set_title("dw histogram")
         count, bins = np.histogram(dw, bins=20)
         ax.bar(bins[:-1], count) 
-
-
-#plot_fn = "testfig.png"
-#print "saving ....", plot_fn
-#pylab.savefig(plot_fn)
-
 pylab.show()
