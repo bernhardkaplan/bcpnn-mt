@@ -20,7 +20,8 @@ class parameter_storage(object):
         # NETWORK PARAMETERS
         # ###################
         self.params['n_mc' ] = 1# number of minicolumns 
-        self.params['n_exc_per_mc' ] = 64# number of excitatory cells per minicolumn
+#        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc'] = 64 # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
@@ -53,7 +54,7 @@ class parameter_storage(object):
 
         self.params['w_init_max'] = 0.001               # [nS] Maximal weight when creating the initial weight matrix
         self.params['w_thresh_bcpnn'] = 0.001           # [nS] Threshold under which a weight is set to zero in the cell-to-cell connectivity matrix
-        self.params['dw_scale'] = 0.001                 # [nS] Weight updates computed by BCPNN are scaled with this factor
+        self.params['dw_scale'] = 1e-4                 # [nS] Weight updates computed by BCPNN are scaled with this factor
 
         # ###################
         # CELL PARAMETERS   #

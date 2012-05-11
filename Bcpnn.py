@@ -4,7 +4,7 @@ import time
 from NeuroTools import signals as nts
 
 
-def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=True, comm=None):
+def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=None):
     """
     This function computes the weight and bias values based on spiketimes during the simulation.
 
@@ -34,9 +34,6 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=True, comm=No
     spiketrains = spklist.spiketrains
 
     new_conn_list = np.zeros((len(my_conns), 4)) # (src, tgt, weight, delay)
-    # TODO new_bias data structure! (n_neurons, 2)
-    # use dictionary?
-#    new_bias = np.zeros((len(my_conns), 2)) # (post_id, bias)
     bias_dict = {}
     for i in xrange(params['n_exc']):
         bias_dict[i] = None
@@ -55,21 +52,27 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=True, comm=No
         post_trace = utils.convert_spiketrain_to_trace(spiketimes_post, params['t_sim'] + 1) # + 1 is to handle spikes in the last time step
 
         # compute
-        print "%d Computing traces for %d -> %d; %.2f percent " % (pc_id, pre_id, post_id, i / float(len(my_conns)) * 100.)
-        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = get_spiking_weight_and_bias(pre_trace, post_trace)
+#        print "%d Computing traces for %d -> %d; %.2f percent " % (pc_id, pre_id, post_id, i / float(len(my_conns)) * 100.)
+        get_traces = save_all
+        if (get_traces):
+            wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = get_spiking_weight_and_bias(pre_trace, post_trace, get_traces)
+            dw = (wij.max() - wij.min()) * params['dw_scale']
+            # bias update
+            new_bias = bias.max()
+        else:
+            dw, new_bias = get_spiking_weight_and_bias(pre_trace, post_trace, get_traces)
+            dw *= params['dw_scale']
+
+        # bias update
+        if bias_dict[post_id] == None:
+            bias_dict[post_id] = new_bias
+
 
         # weight update
-        dw = (wij.max() - wij.min()) * params['dw_scale']
         new_conn_list[i, 0] = pre_id
         new_conn_list[i, 1] = post_id
         new_conn_list[i, 2] = dw + my_conns[i][2]
         new_conn_list[i, 3] = my_conns[i][3]
-
-        # bias update
-        if bias_dict[post_id] == None:
-            bias_dict[post_id] = bias.max()
-#        print "DEBUG, updating weight[%d, %d] by %.1e to %.1e" % (pre_id, post_id, dw, my_conns[i][2] + dw)
-#        new_bias[i, 0] = post_id
 
 #        print "DEBUG Pc %d \t%d\t%d\t%.1e\t%.1e\tbias:%.4e\tconn:" % (pc_id, new_conn_list[i, 0], new_conn_list[i, 1],  new_conn_list[i, 2],  new_conn_list[i, 3], new_bias[i, 1]), my_conns[i]
         if (save_all):
@@ -99,7 +102,6 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=True, comm=No
             output_fn = params['ptrace_fn_base'] + "%d_%d.npy" % (pre_id, post_id)
             np.save(output_fn, pij)
 
-    print "debug pc_id, n_proc", pc_id, n_proc
     if (n_proc > 1):
         output_fn_conn_list = params['conn_list_ee_fn_base'] + str(sim_cnt+1) + '.dat'
         gather_conn_list(comm, new_conn_list, n_total, output_fn_conn_list)
@@ -108,9 +110,9 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=True, comm=No
         gather_bias(comm, bias_dict, n_total, output_fn_bias)
 
     else:
-        print "debug", params['conn_list_ee_fn_base'] + str(sim_cnt+1) + '.dat'
+        print "Debug saving to", params['conn_list_ee_fn_base'] + str(sim_cnt+1) + '.dat'
         np.savetxt(params['conn_list_ee_fn_base'] + str(sim_cnt+1) + '.dat', my_conns)#conn_list)
-        print "debug", params['bias_values_fn_base'] + str(sim_cnt+1) + '.dat'
+        print "Debug saving to", params['bias_values_fn_base'] + str(sim_cnt+1) + '.dat'
         np.savetxt(params['bias_values_fn_base'] + str(sim_cnt+1) + '.dat', bias)
 
 
@@ -235,7 +237,7 @@ def get_abstract_weight_and_bias(pre, post, alpha=0.01, dt=1, eps=1e-6):
     return wij, bias, pi, pj, pij
 
 
-def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, f_max=300., eps=1e-6):
+def get_spiking_weight_and_bias(pre_trace, post_trace, get_traces=False, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, f_max=300., eps=1e-6):
     """
     Arguments:
         pre_trace, post_trace: pre-synaptic activity (0 mean no spike, 1 means spike) (not spike trains!)
@@ -308,9 +310,15 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, tau_z=10, tau
             bias[i] = np.log(pj[i])
         else:
             bias[i] = np.log(eps)
-    return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
+    if (get_traces):
+        return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
+    else:
+        dw = (wij.max() - wij.min())
+        new_bias = bias.max()
+        return dw, new_bias
 
-def bcpnn_offline(params, connection_matrix, sim_cnt=0, pc_id=0, n_proc=1, save_all=True):
+
+def bcpnn_offline(params, connection_matrix, sim_cnt=0, pc_id=0, n_proc=1, save_all=False):
     """
     Arguments:
         params: parameter dictionary
@@ -340,6 +348,7 @@ def bcpnn_offline(params, connection_matrix, sim_cnt=0, pc_id=0, n_proc=1, save_
         spklist_pre = nts.load_spikelist(fn_pre, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
         spiketimes_pre = spklist_pre[pre_id % params['n_exc_per_mc']].spike_times # TODO: check: + 1 for NeuroTools 
         pre_trace = utils.convert_spiketrain_to_trace(spiketimes_pre, params['t_sim'] + 1) # + 1 is to handle spikes in the last time step
+
         # post
         mc_index_post = post_id / params['n_exc_per_mc']
         fn_post = params['exc_spiketimes_fn_base'] + str(post_id) + '.ras'

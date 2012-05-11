@@ -6,11 +6,11 @@ import time
 import numpy as np
 import numpy.random as rnd
 import sys
+simulator_name = 'nest'
 
 def run_sim(params, sim_cnt):
-    simulator_name = 'nest'
-    from pyNN.nest import *
 
+    from pyNN.nest import *
     t1 = time.time()
 #    sim_cnt = int(sys.argv[1])
 
@@ -188,7 +188,6 @@ def run_sim(params, sim_cnt):
     print "Running simulation ... "
     run(params['t_sim'])
     t2 = time.time()
-    print "Simulation time: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
 
     # # # # # # # # # # # # # # # # #
     #     P R I N T    R E S U L T S 
@@ -198,8 +197,11 @@ def run_sim(params, sim_cnt):
     #        exc_pop[cell].print_v("%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
     #    input_pop[cell].printSpikes("%sinput_spikes_%s.ras" % (params['spiketimes_folder'], cell))
 
-    inh_pop.printSpikes(params['inh_spiketimes_fn_base'])
-    inh_pop.print_v(params['inh_volt_fn_base'], compatible_output=False)
+#    print "Printing inhibitory spikes"
+#    inh_pop.printSpikes(params['inh_spiketimes_fn_base'])
+#    print "Printing inhibitory membrane potentials"
+#    inh_pop.print_v(params['inh_volt_fn_base'], compatible_output=False)
+    print "Simulation time: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
 
     end()
 

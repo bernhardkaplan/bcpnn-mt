@@ -11,7 +11,7 @@ import utils
 import CreateConnections as CC
 import Bcpnn
 import time
-import prepare_sim as p
+import prepare_sim as Prep
 from mpi4py import MPI
 comm = MPI.COMM_WORLD
 pc_id, n_proc = comm.rank, comm.size
@@ -28,7 +28,7 @@ params = network_params.load_params()                       # params stores cell
 do_prepare = False
 #n_proc = 2
 if (do_prepare):
-    p.prepare_sim(comm)
+    Prep.prepare_sim(comm)
 #    if (n_proc > 1):
 #        os.system("mpirun -np %d python prepare_sim.py" % n_proc)
 #    else:
@@ -39,11 +39,11 @@ for sim_cnt in xrange(n_sim):
     # # # # # # # # # # # # # #
     #     S I M U L A T E     #
     # # # # # # # # # # # # # #
-    print "Simulation run: %d / %d" % (sim_cnt+1, n_sim)
     
     if (pc_id == 0):
+        print "Simulation run: %d / %d" % (sim_cnt+1, n_sim)
         simulation.run_sim(params, sim_cnt)
-    print "Pc %d waiting ... " % pc_id
+    print "Pc %d waiting for proc 0 to finish simulation" % pc_id
     comm.barrier()
 
 #    if (n_proc > 1):
@@ -57,7 +57,7 @@ for sim_cnt in xrange(n_sim):
     t1 = time.time()
     print "Pc %d Bcpnn ... " % pc_id
     conn_list = np.loadtxt(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
-    Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, True, comm)
+    Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, False, comm)
     t2 = time.time()
     print "Computation time for BCPNN: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
 #    if (n_proc > 1):

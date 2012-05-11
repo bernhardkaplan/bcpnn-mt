@@ -8,6 +8,18 @@ import os
 from scipy.spatial import distance
 from NeuroTools import signals as nts
 
+def convert_connlist_to_matrix(fn, n_cells):
+    """
+    Convert the connlist which is in format (src, tgt, weight, delay) to a weight matrix.
+
+    """
+    conn_list = np.loadtxt(fn)
+    m = np.zeros((n_cells, n_cells))
+    for i in xrange(conn_list[:,0].size):
+        src = conn_list[i, 0]
+        tgt = conn_list[i, 1]
+        m[src, tgt] = conn_list[i, 2]
+    return m
 
 def convert_motion_energy_to_spike_trains(tuning_prop, n_steps=100, tgt_fn_base='input_st_'):
     """
@@ -55,7 +67,6 @@ def convert_spiketrain_to_trace(st, n):
     """
     trace = np.zeros(n)
     for i in st:
-        assert (int(i) < n), "Index out of bounds error! Spike time: %f %d" % (i, n)
         trace[int(i)] = 1
     return trace
 
@@ -70,15 +81,11 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, my_units=
     This strength determines the envelope the non-homogeneous Poisson process to create the spike train.
 
     Arguments:
-        tuning_prop = np.array((n_cells, 4, 2))
-            tuning_prop[:, 0, 0] : mu_x
-            tuning_prop[:, 0, 1] : sigma_x
-            tuning_prop[:, 1, 0] : mu_y
-            tuning_prop[:, 1, 1] : sigma_y
-            tuning_prop[:, 2, 0] : mu_u (speed in x-direction)
-            tuning_prop[:, 2, 1] : sigma_u
-            tuning_prop[:, 3, 0] : mu_v (speed in y-direction)
-            tuning_prop[:, 4, 1] : sigma_v
+        tuning_prop = np.array((n_cells, 4))
+            tp[:, 0] : x-position
+            tp[:, 1] : y-position
+            tp[:, 2] : u-position (speed in x-direction)
+            tp[:, 3] : v-position (speed in y-direction)
 
         motion: (x0, y0, u0, v0)
             x0 x-position at start
