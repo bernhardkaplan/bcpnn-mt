@@ -20,7 +20,8 @@ class parameter_storage(object):
         # NETWORK PARAMETERS
         # ###################
         self.params['n_mc' ] = 1# number of minicolumns 
-        self.params['n_exc_per_mc' ] = 8                # number of excitatory cells per minicolumn
+#        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc'] = 64 # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
@@ -53,7 +54,7 @@ class parameter_storage(object):
 
         self.params['w_init_max'] = 0.001               # [nS] Maximal weight when creating the initial weight matrix
         self.params['w_thresh_bcpnn'] = 0.001           # [nS] Threshold under which a weight is set to zero in the cell-to-cell connectivity matrix
-        self.params['dw_scale'] = 0.001                 # [nS] Weight updates computed by BCPNN are scaled with this factor
+        self.params['dw_scale'] = 1e-4                 # [nS] Weight updates computed by BCPNN are scaled with this factor
 
         # ###################
         # CELL PARAMETERS   #
@@ -70,7 +71,7 @@ class parameter_storage(object):
         # ###################### 
         self.params['seed'] = 12345
         self.params['t_sim'] = 500.
-        self.params['n_sim'] = 3                    # number of simulations (iterations) for learning
+        self.params['n_sim'] = 2                    # number of simulations (iterations) for learning
 
         # ######
         # INPUT 
@@ -103,7 +104,8 @@ class parameter_storage(object):
         # ######################
         # FILENAMES and FOLDERS
         # ######################
-        self.params['folder_name'] = "NoColumns/"   # the main folder with all simulation specific content
+        self.params['folder_name'] = "NoColumns/"# the main folder with all simulation specific content
+#        self.params['folder_name'] = "NoColumns_%d/" % (self.params['n_exc'])  # the main folder with all simulation specific content
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['input_st_fn_base'] = "%sInputSpikeTrains/stim_spike_train_" % self.params['folder_name']# input spike trains filename base
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
@@ -140,12 +142,14 @@ class parameter_storage(object):
         self.params['bias_values_fn_base'] = '%sbias_values_' % (self.params['bias_folder'])
 
         # CONNECTION FILES
+        # connection matrices are n x n matrices with weights as elements
         self.params['conn_mat_mc_mc_init'] = '%sconn_mat_init.npy' % (self.params['connections_folder'])
 
         self.params['conn_mat_mc_mc_fn_base'] = '%sconn_mat_mc_mc_' % (self.params['connections_folder'])
         self.params['conn_mat_ee_fn_base'] = '%sconn_mat_ee_' % (self.params['connections_folder'])
         # conn_mat_0_1 contains the cell-to-cell weights from minicolumn 0 to minicolumn 1
 
+        # connection lists have the following format: src_gid  tgt_gid  weight  delay
         # for models not based on minicolumns:
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
         self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])

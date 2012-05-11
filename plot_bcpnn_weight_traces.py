@@ -4,6 +4,7 @@ import simulation_parameters
 import pylab as pl
 import re
 import numpy as np
+from NeuroTools import signals as nts
 
 
 pl.rcParams['legend.fontsize'] = 'small'
@@ -14,18 +15,30 @@ network_params = simulation_parameters.parameter_storage()  # network_params cla
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
 src = 0
-tgt = 3
+tgt = 2
+sim_cnt = 0
 
 gid_list = [src, tgt]
 gid_list.sort()
+fn = params['exc_spiketimes_fn_merged'] + str(sim_cnt) + '.ras'
+
+spklist = nts.load_spikelist(fn)#, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
+spiketrains = spklist.spiketrains
+spiketimes_pre = spiketrains[src+1.].spike_times
+spiketimes_post = spiketrains[tgt+1.].spike_times
+
 # plot spikes
 markersize = 10
 fig = pl.figure()
 ax = fig.add_subplot(611)
 for gid in gid_list:
-    fn = params['exc_spiketimes_fn_base'] + str(gid) + '.ras'
-    d = np.loadtxt(fn)
-    ax.plot(d[:, 0], np.ones(d[:,0].size)*gid, '|', markersize=markersize, color='k')
+
+#    fn = params['exc_spiketimes_fn_base'] + str(gid) + '.ras'
+#    d = np.loadtxt(fn)
+#    ax.plot(d[:, 0], np.ones(d[:,0].size)*gid, '|', markersize=markersize, color='k')
+    
+    d = spiketrains[gid+1.].spike_times
+    ax.plot(d, np.ones(d.size)*gid, '|', markersize=markersize, color='k')
 
 #xmin = 180
 #xmax = 400
