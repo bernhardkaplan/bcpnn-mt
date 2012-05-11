@@ -48,6 +48,8 @@ class parameter_storage(object):
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['w_init_thresh'] = 0.01     # if p <= this value -> no connection
         self.params['delay_scale'] = 1         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_min'] = 0.1         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_max'] = 20         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
 
         # exc - exc 
         self.params['p_ee'] = 0.5           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)

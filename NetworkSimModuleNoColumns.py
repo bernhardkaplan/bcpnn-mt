@@ -24,7 +24,7 @@ def run_sim(params, sim_cnt):
     import simulation_parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
-    setup()# timestep=0.1, min_delay=0.1, max_delay=1.0)
+    setup(timestep=0.1, min_delay=params['delay_min'], max_delay=params['delay_max'])
     rng_v = NumpyRNG(seed = sim_cnt*3147 + params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
     rng_conn = NumpyRNG(seed = params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 

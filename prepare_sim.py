@@ -30,7 +30,7 @@ def prepare_sim(comm):
 
     # create initial connections 
     # with weights based on cell's tuning properties
-    CC.compute_weights_from_tuning_prop(tuning_prop, motion, params)
+    CC.compute_weights_from_tuning_prop(tuning_prop, params)
 
     # by random: # ugly function signature
 #    CC.create_conn_list_by_random(params['conn_list_ee_fn_base']+'0.dat', (0, params['n_exc']), (0, params['n_exc']), params['p_ee'], params['w_ee_mean'], params['w_ee_sigma'])
