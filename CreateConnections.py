@@ -76,7 +76,7 @@ def compute_weights_from_tuning_prop(tuning_prop, motion_params):
     """
 
     n_cells = tuning_prop[:, 0].size
-    (x0_stim, y0_stim, u_stim, v_stim) = motion
+    (x0_stim, y0_stim, u_stim, v_stim) = motion_params
 
     sigma_x, sigma_v = 1., 1. # tuning parameters , TODO: how to handle these
 
@@ -97,12 +97,12 @@ def compute_weights_from_tuning_prop(tuning_prop, motion_params):
                 v1 = tuning_prop[cell1, 3]
 
                 latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u_stim**2 + v_stim**2)
-                p = .5 * np.exp(- ((x0 + u_stim * latency - x1)**2 + (y + v_stim * latency - y1)**2)/ (2 * sigma_x**2) \
+                p = .5 * np.exp(-((x0 + u_stim * latency - x1)**2 + (y0 + v_stim * latency - y1)**2) / (2 * sigma_x**2)) \
                         / np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
 
                 # convert probability to weight
-                weight_matrix[cell1, cell2] = p * p_to_w_scaling
-                latency_matric[cell1, cell2] = latency
+                weight_matrix[cell0, cell1] = p * p_to_w_scaling
+                latency_matrix[cell0, cell1] = latency
 
     return weight_matrix, latency_matrix
 

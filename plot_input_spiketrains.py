@@ -29,10 +29,11 @@ gids = sorted(gids)
 n_plots = len(fn_to_plot)
 
 # plot the input activity as map; arrange minicolumns in a grid
-n_mc = params['n_mc']
-x_max = int(round(numpy.sqrt(n_mc)))
-y_max = int(round(numpy.sqrt(n_mc)))
-if (n_mc > x_max * y_max):
+#n_units = params['n_mc']
+n_units = params['n_exc']
+x_max = int(round(numpy.sqrt(n_units)))
+y_max = int(round(numpy.sqrt(n_units)))
+if (n_units > x_max * y_max):
     x_max += 1
 spike_count = numpy.zeros((x_max, y_max))
 
@@ -51,6 +52,7 @@ for i in xrange(n_plots):
     data = numpy.load(folder + fn)
     spike_count[mc_index % x_max, mc_index / x_max] = data.size
     ax.plot(data, mc_index * numpy.ones(data.size), 'o', markersize=1, color='k')
+
 ax.set_ylim(-1, max(gids)+1)
 
 # spike count grid
@@ -73,7 +75,7 @@ for i in xrange(n_plots):
     fn = fn_to_plot[i]
     ax = fig.add_subplot(n_plots,1,n_plots-i)
     data = numpy.load(folder + fn)
-#    print fn, data.size
+    print fn, data.size
     count, bins = numpy.histogram(data, n_bins)
     gid = gids[i]
     ax.bar(bins[:-1], count, width=bins[1]-bins[0], facecolor='blue')#, normed=1)

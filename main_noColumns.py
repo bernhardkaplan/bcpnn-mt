@@ -34,12 +34,8 @@ params = network_params.load_params()                       # params stores cell
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
-<<<<<<< HEAD
 do_prepare = True
-=======
-do_prepare = False # True # 
 DO_BCPNN = False
->>>>>>> allows to not DO BCPNN
 #n_proc = 2
 if (do_prepare):
     Prep.prepare_sim(comm)

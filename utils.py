@@ -126,7 +126,7 @@ def create_spike_trains_for_motion(tuning_prop, motion_params, params, my_units=
         width_of_stim = params['stim_dur_sigma'] * (1 - np.sqrt(u0**2 + v0**2))
 
         # TODO: receptive field, e.g.  width_of_stim, max_of_stim = rf(tuning_prop, motion_params)
-        dist_from_rf = distance.euclidean(tuning_prop[column, 0], motion_params)
+        dist_from_rf = distance.euclidean((mu_u, mu_v), (u0, v0))
         time_of_max_stim = params['t_sim'] * get_time_of_max_stim(tuning_prop[column, :], motion_params)
         print "Creating input for column %d. t_stim = (%.1f, %.1f)" % (column, time_of_max_stim, width_of_stim)
 
