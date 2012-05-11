@@ -20,7 +20,7 @@ do_prepare = True
 #     P R E P A R E   #
 # # # # # # # # # # # #
 if (do_prepare):
-    tuning_prop = utils.set_tuning_prop(params['n_mc'], mode='random')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+    tuning_prop = utils.set_tuning_prop(params, mode='random')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
     np.savetxt(params['tuning_prop_means_fn'], tuning_prop)
     x0, y0, u0, v0 = params['motion_params']
     motion = (x0, y0, u0, v0)

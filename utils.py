@@ -294,7 +294,7 @@ def get_time_of_max_stim(tuning_prop, motion_params):
     return t_min
 
 
-def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
+def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
     """
     Place n_cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
@@ -312,7 +312,7 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
     This implies that in one frame, a translation is of  ``1. / N_frame`` in cortical space.
     """
 
-    tuning_prop = np.zeros((n_cells, 4))
+    tuning_prop = np.zeros((params['n_cells'], 4))
     if mode=='random':
         # place the columns on a grid with the following dimensions
         x_max = int(round(np.sqrt(n_cells)))

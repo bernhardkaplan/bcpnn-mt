@@ -163,7 +163,7 @@ class parameter_storage(object):
         self.params['bias_fn_base'] = '%sbias_trace_' % (self.params['bias_folder'])
 
         rnd.seed(self.params['seed'])
-        self.create_folders()
+#        self.create_folders()
 
 
     def create_folders(self):

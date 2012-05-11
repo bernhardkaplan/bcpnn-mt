@@ -34,16 +34,10 @@ params = network_params.load_params()                       # params stores cell
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
-<<<<<<< HEAD
-do_prepare = True
-DO_BCPNN = False
-=======
-
-do_prepare = False # True # 
-DO_BCPNN = False
+do_BCPNN = False
 
 do_prepare = not(os.path.isdir(params['folder_name']))
->>>>>>> merge / automagic prepare switch
+network_params.create_folders()
 #n_proc = 2
 if (do_prepare):
     Prep.prepare_sim(comm)
@@ -69,7 +63,7 @@ for sim_cnt in xrange(n_sim):
 #    else:
 #        os.system ("python NetworkSimModuleNoColumns.py %d" % sim_cnt)
 
-    if DO_BCPNN:
+    if do_BCPNN:
         # # # # # # # # # # #
         #     B C P N N     #
         # # # # # # # # # # #
