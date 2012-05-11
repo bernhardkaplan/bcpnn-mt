@@ -15,7 +15,7 @@ def prepare_sim(comm):
     # load simulation parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
-    tuning_prop = utils.set_tuning_prop(params['n_exc'], mode='hexgrid')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+    tuning_prop = utils.set_tuning_prop(params, mode='hexgrid')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
 #    tuning_prop = utils.set_tuning_prop(params['n_exc'], mode='random')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
     np.savetxt(params['tuning_prop_means_fn'], tuning_prop)
     x0, y0, u0, v0 = params['motion_params']
