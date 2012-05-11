@@ -24,6 +24,8 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=N
 
     if (comm != None):
         pc_id, n_proc = comm.rank, comm.size
+    else:
+        pc_id, n_proc = 0, 1
     # extract the local list of elements 'my_conns' from the global conn_list
     n_total = len(conn_list)
     (min_id, max_id) = utils.distribute_n(n_total, n_proc, pc_id)
