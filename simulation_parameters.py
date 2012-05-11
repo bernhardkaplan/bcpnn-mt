@@ -26,7 +26,7 @@ class parameter_storage(object):
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
-        self.params['N_V'], self.params['N_theta'] = 5, 8 # resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 3, 4 # resolution in velocity norm and direction
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
 
         # ###################
@@ -39,7 +39,7 @@ class parameter_storage(object):
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
-
+        print self.params['n_cells']
 
         # #######################
         # CONNECTIVITY PARAMETERS
@@ -108,7 +108,7 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['motion_params'] = (0.5, 0, 0.5, 0) # x0, y0, u0, v0
+        self.params['motion_params'] = (0.5, 0.5, 0., 0) # x0, y0, u0, v0
 
         # ######
         # NOISE
