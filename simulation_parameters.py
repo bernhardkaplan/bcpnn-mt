@@ -16,11 +16,11 @@ class parameter_storage(object):
 
         self.params = {}
 
-        self.params['simulator' ] = 'nest'# number of minicolumns 
+        self.params['simulator'] = 'nest'# number of minicolumns 
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_mc' ] = 1# number of minicolumns 
+        self.params['n_mc'] = 1# number of minicolumns 
 #        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
         self.params['n_exc_per_mc'] = 600 # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
