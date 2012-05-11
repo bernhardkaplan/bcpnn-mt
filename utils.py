@@ -375,10 +375,10 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
         v_theta = np.linspace(0, 2*np.pi, N_theta, endpoint=False)
         parity = np.arange(N_V) % 2
 
-        N_RF = np.int(n_cells/N_V)
-        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of N_RF**2 dots?"
+        N_RF = np.int(n_cells/N_V/N_theta)
+        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of N_RF dots?"
         N_RF_X = np.int(np.sqrt(N_RF*np.sqrt(3)))
-        N_RF_Y = np.int(np.sqrt(N_RF/np.sqrt(3)))
+        N_RF_Y = np.int(np.sqrt(N_RF/np.sqrt(3)))+1
         RF = np.zeros((2, N_RF_X*N_RF_Y))
         X, Y = np.mgrid[0:1:1j*(N_RF_X+1), 0:1:1j*(N_RF_Y+1)]
     
@@ -390,9 +390,9 @@ def set_tuning_prop(n_cells, mode='hexgrid', v_max=2.0):
         RF[1, :] = Y.ravel()
     
         # wrapping up:
-        print "N_RF_X, N_RF_Y", N_RF_X, N_RF_Y, N_theta, N_V
-        print N_V * N_theta * N_RF_X*N_RF_Y, n_cells
-        print N_V * N_theta * N_RF_X*N_RF_Y / float(n_cells)
+        print "N_RF, N_RF_X, N_RF_Y, N_theta, N_V", N_RF, N_RF_X, N_RF_Y, N_theta, N_V
+#        print N_V * N_theta * N_RF_X*N_RF_Y, n_cells
+#        print N_V * N_theta * N_RF_X*N_RF_Y / float(n_cells)
         assert N_V * N_theta * N_RF_X*N_RF_Y==n_cells
 
         index = 0

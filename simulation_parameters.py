@@ -16,12 +16,13 @@ class parameter_storage(object):
 
         self.params = {}
 
+        self.params['simulator'] = 'nest'# number of minicolumns 
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_mc' ] = 1# number of minicolumns 
+        self.params['n_mc'] = 1# number of minicolumns 
 #        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
-        self.params['n_exc_per_mc'] = 64 # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc'] = 600 # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
