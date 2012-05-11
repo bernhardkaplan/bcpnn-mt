@@ -253,7 +253,7 @@ def get_input(tuning_prop, motion_params, t, contrast=.1, motion='dot'):
 #        V_X, V_Y = .5, 0.0
         x0, y0, u0, v0 = motion_params
 
-        blur_X, blur_V = 1.0, 1.0
+        blur_X, blur_V = .1, .2
         # compute the motion energy input to all cells
         """
 

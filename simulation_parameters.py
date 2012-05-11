@@ -94,7 +94,7 @@ class parameter_storage(object):
         # ######
         # INPUT 
         # ######
-        self.params['f_max_stim'] = 50 * 100.       # [Hz]
+        self.params['f_max_stim'] = 5. * 100.       # [Hz]
         self.params['stim_dur_sigma'] = 300.        # [ms]
         self.params['w_input_exc'] = 0.005         # [nS] mean value for input stimulus ---< exc_units (columns
         self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [nS]
