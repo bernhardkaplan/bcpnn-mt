@@ -39,7 +39,6 @@ class parameter_storage(object):
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
-        print self.params['n_cells']
 
         # #######################
         # CONNECTIVITY PARAMETERS

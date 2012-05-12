@@ -38,7 +38,6 @@ do_BCPNN = False
 
 do_prepare = not(os.path.isdir(params['folder_name']))
 network_params.create_folders()
-#n_proc = 2
 if (do_prepare):
     Prep.prepare_sim(comm)
 #    if (n_proc > 1):

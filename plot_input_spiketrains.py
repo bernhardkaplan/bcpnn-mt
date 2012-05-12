@@ -56,12 +56,13 @@ for i in xrange(n_plots):
 ax.set_ylim(-1, max(gids)+1)
 
 # spike count grid
-fig = pylab.figure()
-ax1 = fig.add_subplot(111)
-ax1.set_title('Spike count over time')
-cax1 = ax1.pcolor(spike_count)#, edgecolor='k', linewidths='1')
+#fig = pylab.figure()
+#ax1 = fig.add_subplot(111)
+#ax1.set_title('Spike count over time')
+#cax1 = ax1.pcolor(spike_count)#, edgecolor='k', linewidths='1')
 #cax1 = ax1.imshow(activity, interpolation='nearest')
 #ax1.set_ylim((0, spike_count[:, 0].size))
+#ax1.set_xlim((0, spike_count[0, :].size))
 
 pylab.show()
 
