@@ -24,6 +24,7 @@ if USE_MPI:
 else:
     pc_id, n_proc, comm = 0, 1, None
     
+print "USE_MPI:", USE_MPI
 import NetworkSimModuleNoColumns as simulation
 #import NetworkSimModule as simulation
 
@@ -40,10 +41,7 @@ do_prepare = not(os.path.isdir(params['folder_name']))
 network_params.create_folders()
 if (do_prepare):
     Prep.prepare_sim(comm)
-#    if (n_proc > 1):
-#        os.system("mpirun -np %d python prepare_sim.py" % n_proc)
-#    else:
-#        os.system("python prepare_sim.py")
+if USE_MPI: comm.barrier()
 
 n_sim = params['n_sim']
 for sim_cnt in xrange(n_sim):

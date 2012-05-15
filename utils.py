@@ -97,7 +97,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
     n_units = tuning_prop.shape[0]
     n_cells = params['n_exc'] # each unit / column can contain several cells
-    dt = 0.01 # [ms] time step for the non-homogenous Poisson process 
+    dt = 0.1 # [ms] time step for the non-homogenous Poisson process 
     time = np.arange(0, params['t_sim'], dt)
 
     if (my_units == None):
@@ -109,7 +109,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     for i_time, time_ in enumerate(time):
         print "debug", time_
 #        print i_time, time.shape[0]
-        L_input[:, i_time] = get_input(tuning_prop, motion_params, time_/params['t_sim'], contrast=contrast) * params['f_max_stim']
+        L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast) * params['f_max_stim']
     
     for column in my_units:
         print "debug, cell", column
@@ -146,7 +146,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
         np.save(output_fn, rate_of_t) # to be changed to binary np.save
 
 
-def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
+def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     """
     This function computes the input to each cell based on the given tuning properties.
 
@@ -163,6 +163,9 @@ def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
     n_cells = tuning_prop[:, 0].size
 #    L = np.zeros((n_cells, time_steps)) # maybe use sparse matrices or adjacency lists instead
 
+    motion_params = params['motion_params']
+    n = params['N_RF_X']
+    m = params['N_RF_Y']
     L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
@@ -188,6 +191,17 @@ def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
         """
         x, y = x0 + u0*t, y0 + v0*t # current position of the blob at timet assuming a perfect translation
         x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
+#        ax = (x / n) % 2
+#        bx = (x % n)
+#        by = (y / m) % 2
+#        by = (y % m)
+#        x = x - 2*ax*b - ((int(x)/n+1)%2)*int(x)/n * n - ax*(int(x)/n - 1) * n
+#        y = y - 2*a*b - ((int(y)/m+1)%2)*int(y)/m * m - a*(int(y)/m - 1) * m
+# not working yet
+#for i in xrange(101):
+#    a = (i/n)%2
+#    b = i%n
+#print i, a, a*b, i - 2*a*b - ((int(i)/n+1)%2)*int(i)/n * n - a*(int(i)/n - 1) *n
 
     for cell in xrange(n_cells): # todo: vectorize
         L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
@@ -202,39 +216,6 @@ def get_input(tuning_prop, motion_params, t, contrast=.9, motion='dot'):
 
 
 
-
-def distance_to_rf_center(cell_tuning, motion_params, t_stop, t_start=0., dt=0.01):
-    """
-    This function returns an array containing the distance between 
-    a dot and the center of a cell's receptive field.
-
-    parameters:
-        mu_x = cell_tuning[0]
-        mu_y = cell_tuning[1]
-        mu_u = cell_tuning[2]
-        mu_v = cell_tuning[3]
-        motion_params:
-            x0, y0: starting point of the moving dot
-            u0, v0: velocity in x (y) direction of the moving dot
-    returns:
-        value between 0 and 1
-    This class contains the simulation parameters in a dictionary called params.
-    
-    TODO: use the NeuroTools.parameter class that does exactly that?
-    """
-    return distance.euclidean(cell_tuning, motion_params)
-
-#    mu_x = cell_tuning[0]
-#    mu_y = cell_tuning[1]
-#    mu_u = cell_tuning[2]
-#    mu_v = cell_tuning[3]
-#    x0 = motion_params[0]
-#    y0 = motion_params[1]
-#    u0 = motion_params[2]
-#    v0 = motion_params[3]
-#    spatial_distance = np.sqrt((mu_x - x0 - u0 * time)**2 + (mu_y - y0 - v0 * time)**2)
-#    velocity_component = np.sqrt((mu_u - u0)**2 + (mu_v - v0)**2)
-#    return velocity_component * spatial_distance
 
 def distribute_list(l, n_proc, pid):
     """

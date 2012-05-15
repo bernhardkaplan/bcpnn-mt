@@ -55,11 +55,11 @@ def run_sim(params, sim_cnt):
             constrain='redraw',
             boundaries=(0, 0.01))
 
-    w_input_exc_dist = RandomDistribution('normal',
-            (params['w_input_exc'], params['w_input_exc_sigma']),
-            rng=rng_conn,
-            constrain='redraw',
-            boundaries=(0, 0.01))
+#    w_input_exc_dist = RandomDistribution('normal',
+#            (params['w_input_exc'], params['w_input_exc_sigma']),
+#            rng=rng_conn,
+#            constrain='redraw',
+#            boundaries=(0, 0.01))
 
     delay_dist = RandomDistribution('normal',
             (1, 0.01),

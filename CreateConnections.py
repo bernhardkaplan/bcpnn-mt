@@ -77,7 +77,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
 
     n_cells = tuning_prop[:, 0].size
     sigma_x, sigma_v = 1., 1. # tuning parameters , TODO: how to handle these
-    p_to_w_scaling = 1.
+    p_to_w_scaling = params['p_to_w_scaling']
     conn_list = []
     output = ""
 
@@ -100,7 +100,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
                 # convert probability to weight
                 if (p >= params['w_init_thresh']):
                     w = p * p_to_w_scaling
-                    delay = max(min(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
+                    delay = min(max(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
                     output += "%d\t%d\t%.6e\t%.1e\n" % (src, tgt, w, delay)
 #                    conn_list.append([src, tgt, w, delay])
 

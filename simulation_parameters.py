@@ -46,7 +46,8 @@ class parameter_storage(object):
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['w_init_thresh'] = 0.01     # if p <= this value -> no connection
-        self.params['delay_scale'] = 1         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['p_to_w_scaling'] = 0.005    # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['delay_scale'] = 1.         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_min'] = 0.1         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_max'] = 20         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
 
@@ -96,7 +97,7 @@ class parameter_storage(object):
         # ######
         self.params['f_max_stim'] = 50 * 100.       # [Hz]
         self.params['stim_dur_sigma'] = 300.        # [ms]
-        self.params['w_input_exc'] = 0.005         # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 0.004         # [nS] mean value for input stimulus ---< exc_units (columns
         self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [nS]
 
 
