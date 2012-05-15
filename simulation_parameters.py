@@ -21,14 +21,14 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-
-        self.params['N_RF'] = 25# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 36# np.int(n_cells/N_V/N_theta)
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
         self.params['N_V'], self.params['N_theta'] = 4, 8 # resolution in velocity norm and direction
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['sigma_RF'] = .2 # some variability in the position of RFs
+
         # ###################
         # NETWORK PARAMETERS
         # ###################
@@ -45,8 +45,8 @@ class parameter_storage(object):
         # #######################
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['w_init_thresh'] = 0.01     # if p <= this value -> no connection
-        self.params['p_to_w_scaling'] = 0.005    # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['w_init_thresh'] = 0.1     # if p <= this value -> no connection
+        self.params['p_to_w_scaling'] = 0.001    # conversion factor for the pre-computed weights , 0.005 seems good
         self.params['delay_scale'] = 1.         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_min'] = 0.1         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_max'] = 20         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
@@ -97,7 +97,7 @@ class parameter_storage(object):
         # ######
         self.params['f_max_stim'] = 50 * 100.       # [Hz]
         self.params['stim_dur_sigma'] = 300.        # [ms]
-        self.params['w_input_exc'] = 0.004         # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 0.003         # [nS] mean value for input stimulus ---< exc_units (columns
         self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [nS]
 
 
@@ -109,6 +109,7 @@ class parameter_storage(object):
         u0 (v0) : velocity in x-direction (y-direction)
         """
         self.params['motion_params'] = (0.5, 0.5, 1., 0) # x0, y0, u0, v0
+        self.params['v_max'] = 2.0                  # [a.u.] maximal velocity for tuning_parameters (for each component)
 
         # ######
         # NOISE

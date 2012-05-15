@@ -7,7 +7,7 @@ import numpy.random as rnd
 import os
 from scipy.spatial import distance
 from NeuroTools import signals as nts
-
+import pylab
 
 def convert_connlist_to_matrix(fn, n_cells):
     """
@@ -189,8 +189,24 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
             L range between 0 and 1
     
         """
-        x, y = x0 + u0*t, y0 + v0*t # current position of the blob at timet assuming a perfect translation
-        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
+        x, y = x0 + u0*t, y0 + v0*t # current position of the blob at time t assuming a perfect translation
+
+        # modify position of dot to match torus constraints
+        x_lim, y_lim = 1, 1 # half the circumcircle of the torus --> parametrize ?
+        ax = (np.int(x) / x_lim) % 2
+        not_ax = (np.int(x) / x_lim + 1) % 2
+        b = x % x_lim
+        c = x_lim - ax * b
+        x = ax * c + not_ax * b
+
+        ay = (np.int(y) / y_lim) % 2
+        not_ay = (np.int(y) / y_lim + 1) % 2
+        b = y % y_lim
+        c = y_lim - ay * b
+        y = ay * c + not_ay * b
+
+
+#        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
 #        ax = (x / n) % 2
 #        bx = (x % n)
 #        by = (y / m) % 2
@@ -334,15 +350,15 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
                 for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
-                    tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF']** rnd.randn()
-                    tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF']* rnd.randn()
+                    tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF'] * rnd.randn()
+                    tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF'] * rnd.randn()
                     tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) * rho
                     tuning_prop[index, 3] = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) * rho
                     index += 1
 
     return tuning_prop
 
-def spatial_readout(particles, N_X=N_X, N_Y=N_Y, N_x=N_x, N_y=N_y, display=True, hue=hue_hist, hue_zoom=hue_zoom, fig_width=fig_width, width=width, ywidth=ywidth):
+def spatial_readout(particles, N_X, N_Y, hue, hue_zoom, fig_width, width, ywidth, display=True):
     """
     Reads-out particles into a probability density function in spatial space.
 
@@ -365,8 +381,8 @@ def spatial_readout(particles, N_X=N_X, N_Y=N_Y, N_x=N_x, N_y=N_y, display=True,
     # we weight the readout by the weight of the particles
     weights = particles[4, ...].ravel()
 
-    x_edges = np.linspace(0., 1., N_x)
-    y_edges = np.linspace(0., 1., N_y)
+    x_edges = np.linspace(0., 1., N_X)
+    y_edges = np.linspace(0., 1., N_Y)
 
     if hue:
         N_theta_=3 # the 3 RGB channels
@@ -395,7 +411,7 @@ def spatial_readout(particles, N_X=N_X, N_Y=N_Y, N_x=N_x, N_y=N_y, display=True,
     ywidth = width * np.float(N_Y) / N_X
     if display:
 #        print fig_width, fig_width * np.float(N_Y) / N_X
-        fig = pylab.figure(figsize=(fig_width, fig_width * np.float(N_Y) / N_X))
+        fig = pylab.figure()#figsize=(fig_width, fig_width * np.float(N_Y) / N_X))
         a = fig.add_axes([0., 0., 1., 1.])
         if hue:
 # TODO : overlay image and use RGB(A) information
@@ -421,3 +437,22 @@ def threshold_weights(connection_matrix, w_thresh):
             if connection_matrix[i, j] < w_thresh:
                 connection_matrix[i, j] = 0.0
     return connection_matrix
+
+
+def get_nspikes(spiketimes_fn_merged, n_cells=0):
+    """
+    Returns an array with the number of spikes fired by each cell.
+    nspikes[gid]
+    if n_cells is not given, the length of the array will be the highest gid (not advised!)
+    """
+    d = np.loadtxt(spiketimes_fn_merged)
+    if (n_cells == 0):
+        n_cells = 1 + np.max(d[:, 1])# highest gid
+    nspikes = np.zeros(n_cells)
+    spiketrains = [[] for i in xrange(n_cells)]
+    # seperate spike trains for all the cells
+    for i in xrange(d[:, 0].size):
+        spiketrains[int(d[i, 1])].append(d[i, 0])
+    for gid in xrange(n_cells):
+        nspikes[gid] = len(spiketrains[gid])
+    return nspikes

@@ -39,9 +39,12 @@ do_BCPNN = False
 
 do_prepare = not(os.path.isdir(params['folder_name']))
 network_params.create_folders()
+t1 = time.time()
 if (do_prepare):
     Prep.prepare_sim(comm)
 if USE_MPI: comm.barrier()
+t2 = time.time()
+print "Preparation time: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
 
 n_sim = params['n_sim']
 for sim_cnt in xrange(n_sim):

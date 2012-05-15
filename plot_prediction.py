@@ -19,10 +19,10 @@ plotter.plot_vx_estimates()                 # 5
 plotter.plot_vy_estimates()                 # 6
 plotter.plot_theta_estimates()              # 7
 
-
 # fig 2
 # population level, long time-scale
 plotter.plot_fullrun_estimates()
+plotter.plot_nspike_histogram()
 
 
 pylab.show()
