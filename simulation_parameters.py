@@ -28,7 +28,7 @@ class parameter_storage(object):
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
         self.params['N_V'], self.params['N_theta'] = 4, 8 # resolution in velocity norm and direction
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-
+        self.params['sigma_RF'] = .2 # some variability in the position of RFs
         # ###################
         # NETWORK PARAMETERS
         # ###################
