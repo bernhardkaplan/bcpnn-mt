@@ -342,6 +342,75 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
 
     return tuning_prop
 
+def spatial_readout(particles, N_X=N_X, N_Y=N_Y, N_x=N_x, N_y=N_y, display=True, hue=hue_hist, hue_zoom=hue_zoom, fig_width=fig_width, width=width, ywidth=ywidth):
+    """
+    Reads-out particles into a probability density function in spatial space.
+
+    Instead of a quiver plot, it makes an histogram of the density of particles by: 1) transforming a particle set in a 3 dimensional (x,y, \theta) density (let's forget about speed norm), (2) showing direction spectrum as hue and spatial density as transparency
+
+    Marginalization over all speeds.
+
+    Input
+    -----
+    N particles as a particles.shape array
+
+    Output
+    ------
+    a position PDF
+
+    """
+
+    x = particles[0, ...].ravel()
+    y = particles[1, ...].ravel()
+    # we weight the readout by the weight of the particles
+    weights = particles[4, ...].ravel()
+
+    x_edges = np.linspace(0., 1., N_x)
+    y_edges = np.linspace(0., 1., N_y)
+
+    if hue:
+        N_theta_=3 # the 3 RGB channels
+        # TODO : velocity angle histogram as hue
+        u = particles[3, ...].ravel()
+        v = particles[2, ...].ravel()   
+        # TODO:  rotate angle because we are often going on the horizontal on the right /// check in other plots, hue = np.arctan2(u+v, v-u)/np.pi/2 + .5 /// np.arctan2 is in the [np.pi, np.pi] range, cm.hsv takes an argument in [0, 1]
+        v_theta = np.arctan2(u+v, v-u)
+        if hue_zoom:
+            v_theta_edges = np.linspace(-np.pi/4-np.pi/8, -np.pi/4+np.pi/8, N_theta_ + 1 )
+        else:
+            v_theta_edges = np.linspace(-np.pi, np.pi, N_theta_ + 1 )# + pi/N_theta
+            
+        sample = np.hstack((x[:,np.newaxis], y[:,np.newaxis], v_theta[:,np.newaxis]))
+#        print v_theta.shape, sample.shape
+        bin_edges = (x_edges, y_edges, v_theta_edges)
+#        print np.histogramdd(sample, bins =bin_edges, normed=True, weights=weights)
+        v_hist, edges_ = np.histogramdd(sample, bins=bin_edges, normed=True, weights=weights)
+        v_hist /= v_hist.sum()
+                             
+    else:        
+        v_hist, x_edges_, y_edges_ = np.histogram2d(x, y, (x_edges, y_edges), normed=True, weights=weights)
+        v_hist /= v_hist.sum()
+
+#    print fig_width * np.float(N_Y) / N_X, width * np.float(N_Y) / N_X
+    ywidth = width * np.float(N_Y) / N_X
+    if display:
+#        print fig_width, fig_width * np.float(N_Y) / N_X
+        fig = pylab.figure(figsize=(fig_width, fig_width * np.float(N_Y) / N_X))
+        a = fig.add_axes([0., 0., 1., 1.])
+        if hue:
+# TODO : overlay image and use RGB(A) information
+#            print v_hist, v_hist.min(), v_hist.max(), np.flipud( np.fliplr(im_).T
+#            a.imshow(-np.log(np.rot90(v_hist)+eps_hist), interpolation='nearest')
+            a.imshow(np.fliplr(np.rot90(v_hist/v_hist.max(),3)), interpolation='nearest', origin='lower', extent=(-width/2, width/2, -ywidth/2., ywidth/2.))#, vmin=0., vmax=v_hist.max())
+#            pylab.axis('image')
+        else:
+            a.pcolor(x_edges, y_edges, v_hist, cmap=pylab.bone(), vmin=0., vmax=v_hist.max(), edgecolor='k')
+        a.axis([-width/2, width/2, -ywidth/2., ywidth/2.])
+
+        return fig, a
+    else:
+        return v_hist, x_edges, y_edges
+
 
 def threshold_weights(connection_matrix, w_thresh):
     """
