@@ -98,10 +98,10 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
                         * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
 
                 # convert probability to weight
-                if (p >= params['w_init_thresh']):
+                if (p*params['p_to_w_scaling'] >= params['w_init_thresh']):
                     w = p * p_to_w_scaling
                     delay = min(max(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
-                    output += "%d\t%d\t%.6e\t%.1e\n" % (src, tgt, w, delay)
+                    output += "%d\t%d\t%.4e\t%.1e\n" % (src, tgt, w, delay)
 #                    conn_list.append([src, tgt, w, delay])
 
     output_fn = params['conn_list_ee_fn_base'] + '0.dat'

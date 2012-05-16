@@ -21,13 +21,13 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 36# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 50 # np.int(n_cells/N_V/N_theta)
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
         self.params['N_V'], self.params['N_theta'] = 4, 8 # resolution in velocity norm and direction
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF'] = .2 # some variability in the position of RFs
+        self.params['sigma_RF'] = .00 # some variability in the position of RFs
 
         # ###################
         # NETWORK PARAMETERS
@@ -45,30 +45,32 @@ class parameter_storage(object):
         # #######################
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['w_init_thresh'] = 0.1     # if p <= this value -> no connection
-        self.params['p_to_w_scaling'] = 0.001    # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['delay_scale'] = 1.         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['delay_min'] = 0.1         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['delay_max'] = 20         # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['p_to_w_scaling'] = 0.002   # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['w_init_thresh'] = 1e-5     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
+        self.params['delay_scale'] = 10.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_min'] = 0.1          # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_max'] = 20           # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
 
+        # >>>> Not used when pre-wired connectivity is used
         # exc - exc 
         self.params['p_ee'] = 0.5           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)
         self.params['w_ee_mean'] = 0.001           # cells within two MCs are connected with this weight
         self.params['w_ee_sigma'] = 0.001           # cells within two MCs are connected with this weight
+        # <<<<< 
 
         # exc - inh
-        self.params['p_ei'] = 0.25
-        self.params['w_ei_mean'] = 0.001          
+        self.params['p_ei'] = 0.10
+        self.params['w_ei_mean'] = 0.001
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
         self.params['p_ie'] = 0.25
-        self.params['w_ie_mean'] = 0.001          
+        self.params['w_ie_mean'] = -0.002          
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
-        self.params['p_ii'] = 1.0 
-        self.params['w_ii_mean'] = 0.001          
+        self.params['p_ii'] = 0.10
+        self.params['w_ii_mean'] = -0.001          
         self.params['w_ii_sigma'] = 0.001          
 
         self.params['w_init_max'] = 0.001               # [nS] Maximal weight when creating the initial weight matrix
@@ -89,8 +91,8 @@ class parameter_storage(object):
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
-        self.params['t_sim'] = 500.
-        self.params['n_sim'] = 2                    # number of simulations (iterations) for learning
+        self.params['t_sim'] = 200.
+        self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
 
         # ######
         # INPUT 
@@ -135,6 +137,8 @@ class parameter_storage(object):
         self.params['weights_folder'] = "%sWeights/" % self.params['folder_name']
         self.params['bias_folder'] = "%sBias/" % self.params['folder_name']
         self.params['bcpnntrace_folder'] = "%sBcpnnTraces/" % self.params['folder_name']
+        self.params['figures_folder'] = "%sFigures/" % self.params['folder_name']
+        self.params['movie_folder'] = "%sMovies/" % self.params['folder_name']
         self.params['folder_names'] = [self.params['folder_name'], \
                             self.params['spiketimes_folder'], \
                             self.params['volt_folder'], \
@@ -143,6 +147,8 @@ class parameter_storage(object):
                             self.params['weights_folder'], \
                             self.params['bias_folder'], \
                             self.params['bcpnntrace_folder'], \
+                            self.params['figures_folder'], \
+                            self.params['movie_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
         self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged_' % self.params['spiketimes_folder']
@@ -181,12 +187,20 @@ class parameter_storage(object):
         self.params['weights_fn_base'] = '%sweight_trace_' % (self.params['weights_folder'])
         self.params['bias_fn_base'] = '%sbias_trace_' % (self.params['bias_folder'])
 
+
+        # FIGURES
+        self.params['spatial_readout_fn_base'] = '%sspatial_readout_' % (self.params['figures_folder'])
+        self.params['spatial_readout_movie'] = '%sspatial_readout.mp4' % (self.params['movie_folder'])
+
+
         rnd.seed(self.params['seed'])
-#        self.create_folders()
 
 
     def create_folders(self):
-        # ---------------- WRITE ALL PARAMETERS TO FILE ----------- #
+        """
+        Must be called from 'outside' this class before the simulation
+        """
+
         for f in self.params['folder_names']:
             if not os.path.exists(f):
                 print 'Creating folder:\t%s' % f

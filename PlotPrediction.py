@@ -2,7 +2,7 @@ import pylab
 import numpy as np
 import simulation_parameters
 from NeuroTools import signals as nts
-
+import utils
 
 class PlotPrediction(object):
     """
@@ -70,6 +70,7 @@ class PlotPrediction(object):
         self.n_bins = int((self.params['t_sim'] / self.time_binsize) )
         self.time_bins = [self.time_binsize * i for i in xrange(self.n_bins)]
         self.t_axis = np.arange(0, self.n_bins * self.time_binsize, self.time_binsize)
+        self.n_vx_bins, self.n_vy_bins = 20, 20
 
         # create data structures
         self.nspikes = np.zeros(self.n_cells)                                   # summed activity
@@ -77,27 +78,29 @@ class PlotPrediction(object):
         self.nspikes_binned_normalized = np.zeros((self.n_cells, self.n_bins))  # normalized so that for each bin, the sum of the population activity = 1
         self.nspikes_normalized = np.zeros(self.n_cells)                        # activity normalized, so that sum = 1
 
+
         # sort the cells by their tuning vx, vy properties
-        tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
+        self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
         # vx
-        self.vx_tuning = tuning_prop[:, 2].copy()
+        self.vx_tuning = self.tuning_prop[:, 2].copy()
         self.vx_tuning.sort()
-        self.sorted_indices_vx = tuning_prop[:, 2].argsort()
+        self.sorted_indices_vx = self.tuning_prop[:, 2].argsort()
         # vy
-        self.vy_tuning = tuning_prop[:, 3].copy()
+        self.vy_tuning = self.tuning_prop[:, 3].copy()
         self.vy_tuning.sort()
-        self.sorted_indices_vy = tuning_prop[:, 3].argsort()
+        self.sorted_indices_vy = self.tuning_prop[:, 3].argsort()
 
         self.load_spiketimes(sim_cnt)
 
 
     def load_spiketimes(self, sim_cnt):
         """
-        Fills the 4 arrays with data:
+        Fills the following arrays with data:
         self.nspikes = np.zeros(self.n_cells)                                   # summed activity
         self.nspikes_binned = np.zeros((self.n_cells, self.n_bins))             # binned activity over time
         self.nspikes_binned_normalized = np.zeros((self.n_cells, self.n_bins))  # normalized so that for each bin, the sum of the population activity = 1
         self.nspikes_normalized = np.zeros(self.n_cells)                        # activity normalized, so that sum = 1
+        self.nspikes_normalized_nonlinear
         """
 
         print(' Loading data .... ')
@@ -130,6 +133,11 @@ class PlotPrediction(object):
             if (self.nspikes_binned[:, i].sum() > 0):
                 self.nspikes_binned_normalized[:, i] = self.nspikes_binned[:, i] / self.nspikes_binned[:,i].sum()
         self.nspikes_normalized = self.nspikes / self.nspikes.sum()
+
+        # activity normalized, nonlinear
+        nspikes_shifted = self.nspikes - self.nspikes.max()
+        nspikes_exp = np.exp(nspikes_shifted)
+        self.nspikes_normalized_nonlinear = nspikes_exp / nspikes_exp.sum()
 
     def compute_v_estimates(self):
         """
@@ -209,41 +217,50 @@ class PlotPrediction(object):
         self.vy_moving_avg[0, 1] = 0
 
         # ---> time INdependent estimates: based on activity of the full run
-#        self.vx_avg_fullrun = np.zeros(n_cells)             # time independent prediction based on the whole run --> voting histogram
-#        self.vx_nonlinear_fullrun = np.zeros(n_cells)       # prediction based on non-linear transformation of output rates
-#        self.vy_avg_fullrun = np.zeros(n_cells)             # same for v_y
-#        self.vy_nonlinear_fullrun = np.zeros(n_cells)         
-#        self.theta_avg_fullrun = np.zeros(n_cells)            
-#        self.theta_nonlinear_fullrun = np.zeros(n_cells)      
 
-        self.vx_avg_fullrun = self.nspikes_normalized[self.sorted_indices_vx]# * self.vx_tuning
-        self.vy_avg_fullrun = self.nspikes_normalized[self.sorted_indices_vy]# * self.vy_tuning
+        # compute the marginalized (over all positions) vx, vy estimates and bin them in a grid
+        self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
+        self.vy_grid = np.linspace(np.min(self.vy_tuning), np.max(self.vy_tuning), self.n_vy_bins, endpoint=True)
+        self.vx_marginalized_binned = np.zeros(self.n_vx_bins)
+        self.vy_marginalized_binned = np.zeros(self.n_vy_bins)
+        self.vx_marginalized_binned_nonlinear = np.zeros(self.n_vx_bins)
+        self.vy_marginalized_binned_nonlinear = np.zeros(self.n_vy_bins)
 
-        # vx nonlinear
-        nspikes_shifted = self.nspikes - self.nspikes.max()
-        nspikes_exp = np.exp(nspikes_shifted)
-        self.vx_nonlinear_fullrun = nspikes_exp / nspikes_exp.sum()
-        # vx nonlinear
-        self.vy_avg_fullrun = self.nspikes_normalized[self.sorted_indices_vy]# * self.vy_tuning
-        nspikes_shifted = self.nspikes - self.nspikes.max()
-        nspikes_exp = np.exp(nspikes_shifted)
-        self.vy_nonlinear_fullrun = nspikes_exp / nspikes_exp.sum()
+        for gid in xrange(self.n_cells):
+            vx_cell, vy_cell = self.tuning_prop[gid, 2], self.tuning_prop[gid, 3] # cell properties
+            vx_grid_pos, vy_grid_pos = utils.get_grid_pos(vx_cell, vy_cell, self.vx_grid, self.vy_grid)
+            self.vx_marginalized_binned[vx_grid_pos] += self.nspikes_normalized[gid]
+            self.vy_marginalized_binned[vy_grid_pos] += self.nspikes_normalized[gid]
+            self.vx_marginalized_binned_nonlinear[vx_grid_pos] += self.nspikes_normalized_nonlinear[gid]
+            self.vy_marginalized_binned_nonlinear[vy_grid_pos] += self.nspikes_normalized_nonlinear[gid]
 
-
-
+#        assert (np.sum(self.vx_marginalized_binned) == 1.), "Marginalization incorrect: %.10e" % (np.sum(self.vx_marginalized_binned))
+#        assert (np.sum(self.vx_marginalized_binned_nonlinear) == 1.), "Marginalization incorrect: %f" % (np.sum(self.vx_marginalized_binned_nonlinear))
+#        assert (np.sum(self.vy_marginalized_binned) == 1.), "Marginalization incorrect: %f" % (np.sum(self.vy_marginalized_binned))
+#        assert (np.sum(self.vy_marginalized_binned_nonlinear) == 1.), "Marginalization incorrect: %f" % (np.sum(self.vy_marginalized_binned))
 
     def compute_theta_estimates(self):
 
+        # time dependent averages
         self.theta_avg = np.arctan2(self.vy_avg, self.vx_avg)
         self.theta_moving_avg = np.zeros((self.n_bins, 2))
         self.theta_moving_avg[:, 0] = np.arctan2(self.vy_moving_avg[:, 0], self.vx_moving_avg[:, 0])
         self.theta_moving_avg[:, 1] = self.theta_uncertainty(self.vx_moving_avg[:, 0], self.vx_moving_avg[:, 1], self.vy_moving_avg[:, 0], self.vy_moving_avg[:, 1])
         self.theta_non_linear = np.arctan2(self.vy_non_linear, self.vx_non_linear)
-        # theta: take the average confidence for vote
-        self.theta = np.arctan2(self.vy_tuning, self.vx_tuning)
-        self.theta_avg_fullrun = .5 * (self.vx_avg_fullrun + self.vy_avg_fullrun)
-        self.theta_nonlinear_fullrun = .5 * (self.vx_nonlinear_fullrun + self.vy_nonlinear_fullrun)
 
+        # full run estimates
+        all_thetas = np.arctan2(self.tuning_prop[:, 3], self.tuning_prop[:, 2])
+        self.theta_grid = np.linspace(np.min(all_thetas), np.max(all_thetas), self.n_vx_bins, endpoint=True)
+        self.theta_marginalized_binned = np.zeros(self.n_vx_bins)
+        self.theta_marginalized_binned_nonlinear = np.zeros(self.n_vx_bins)
+        for gid in xrange(self.n_cells):
+            theta = np.arctan2(self.tuning_prop[gid, 3], self.tuning_prop[gid, 2])
+            grid_pos = utils.get_grid_pos_1d(theta, self.theta_grid)
+            self.theta_marginalized_binned[grid_pos] += self.nspikes_normalized[gid]
+            self.theta_marginalized_binned_nonlinear[grid_pos] += self.nspikes_normalized_nonlinear[gid]
+
+#        assert (np.sum(self.theta_marginalized_binned) == 1), "Marginalization incorrect: %.31f" % (np.sum(self.theta_marginalized_binned))
+#        assert (np.sum(self.theta_marginalized_binned_nonlinear) == 1), "Marginalization incorrect: %.31f" % (np.sum(self.theta_marginalized_binned_nonlinear))
 
 
     def plot(self):
@@ -375,48 +392,31 @@ class PlotPrediction(object):
         self.plot_fullrun_estimates_theta()
 
 
-
     def plot_fullrun_estimates_vx(self):
         self.ax8 = self.fig2.add_subplot(411)
-        bin_width = np.mean(self.vx_tuning[:-1] - self.vx_tuning[1:])
-        self.ax8.bar(self.vx_tuning, self.vx_avg_fullrun, width=bin_width)
-#        self.ax8.bar(self.vx_tuning - bin_width, self.vx_nonlinear_fullrun, width=bin_width, facecolor='g')
-
-#        n_bins = 50
-#        count, vx_bins = np.histogram(self.vx_tuning, n_bins)
-#        pred_avg, x = np.histogram(self.vx_avg_fullrun, n_bins)
-#        pred_nonlinear, x = np.histogram(self.vx_nonlinear_fullrun, n_bins)
-#        bin_width = vx_bins[1]-vx_bins[0]
-#        self.ax8.bar(vx_bins[:-1], pred_avg, width=bin_width*.5)
-#        self.ax8.bar(vx_bins[:-1]-.5*bin_width, pred_nonlinear, width=bin_width*.5, facecolor='g')
-#        self.ax8.set_xlim((self.vx_tuning.min() - bin_width, self.vx_tuning.max()))
-        self.ax8.set_title('Estimates based on full run activity')
+        bin_width = .5 * (self.vx_grid[1] - self.vx_grid[0])
+        self.ax8.bar(self.vx_grid, self.vx_marginalized_binned, width=bin_width)
+        self.ax8.bar(self.vx_grid+bin_width, self.vx_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
+        self.ax8.set_title('Estimates based on full run activity\nblue: linear marginalization over all positions, green: non-linear voting')
         self.ax8.set_xlabel('$v_x$')
         self.ax8.set_ylabel('Confidence')
 
+
     def plot_fullrun_estimates_vy(self):
         self.ax9 = self.fig2.add_subplot(412)
-        bin_width = np.mean(self.vy_tuning[:-1] - self.vy_tuning[1:])
-        self.ax9.bar(self.vy_tuning, self.vy_avg_fullrun, width=bin_width)
-#        self.ax9.bar(self.vy_tuning - bin_width, self.vy_nonlinear_fullrun, width=bin_width, facecolor='g')
-
-#        n_bins = 50
-#        count, vy_bins = np.histogram(self.vy_tuning, n_bins)
-#        pred_avg, x = np.histogram(self.vy_avg_fullrun, n_bins)
-#        pred_nonlinear, x = np.histogram(self.vy_nonlinear_fullrun, n_bins)
-#        bin_width = vy_bins[1]-vy_bins[0]
-#        self.ax9.bar(vy_bins[:-1], pred_avg, width=bin_width*.5)
-#        self.ax9.bar(vy_bins[:-1]-.5*bin_width, pred_nonlinear, width=bin_width*.5, facecolor='g')
-#        self.ax9.set_xlim((self.vy_tuning.min() - bin_width, self.vy_tuning.max()))
+        bin_width = .5 * (self.vy_grid[1] - self.vy_grid[0])
+        self.ax9.bar(self.vy_grid, self.vy_marginalized_binned, width=bin_width)
+        self.ax9.bar(self.vy_grid+bin_width, self.vy_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
         self.ax9.set_xlabel('$v_y$')
         self.ax9.set_ylabel('Confidence')
 
     def plot_fullrun_estimates_theta(self):
 
         self.ax10 = self.fig2.add_subplot(413)
-        bin_width = np.mean(self.theta[:-1] - self.theta[1:])
-        self.ax10.bar(self.theta, self.theta_avg_fullrun, width=bin_width)
-        self.ax10.bar(self.theta - bin_width, self.theta_nonlinear_fullrun, width=bin_width, facecolor='g')
+        bin_width = .5 * (self.theta_grid[-1] - self.theta_grid[-2])
+        self.ax10.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width)
+        self.ax10.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
+        self.ax10.set_xlim((-np.pi, np.pi))
 
 
 #        n_bins = 50

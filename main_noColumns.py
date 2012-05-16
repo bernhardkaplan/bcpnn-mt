@@ -38,13 +38,14 @@ params = network_params.load_params()                       # params stores cell
 do_BCPNN = False
 
 do_prepare = not(os.path.isdir(params['folder_name']))
-network_params.create_folders()
+if pc_id == 0:
+    network_params.create_folders()
 t1 = time.time()
 if (do_prepare):
     Prep.prepare_sim(comm)
 if USE_MPI: comm.barrier()
 t2 = time.time()
-print "Preparation time: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
+print "Preparation time: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])
 
 n_sim = params['n_sim']
 for sim_cnt in xrange(n_sim):
@@ -72,7 +73,7 @@ for sim_cnt in xrange(n_sim):
         conn_list = np.loadtxt(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
         Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, False, comm)
         t2 = time.time()
-        print "Computation time for BCPNN: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
+        print "Computation time for BCPNN: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])
     #    if (n_proc > 1):
     #        os.system ("mpirun -np %d python use_bcpnn_offline.py %d" % (n_proc, sim_cnt))
     #    else:

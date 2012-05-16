@@ -107,31 +107,12 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
     L_input = np.empty((n_cells, time.shape[0]))
     for i_time, time_ in enumerate(time):
-        print "debug", time_
+        print "t:", time_
 #        print i_time, time.shape[0]
         L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast) * params['f_max_stim']
     
     for column in my_units:
-        print "debug, cell", column
-#        for cell in xrange(params['n_exc_per_mc']):
-#        gid = column * params['n_exc_per_mc'] + cell
-#        mu_x = tuning_prop[column, 0]
-#        mu_y = tuning_prop[column, 1]
-#        mu_u = tuning_prop[column, 2]
-#        mu_v = tuning_prop[column, 3]
-#
-#        # Shape the spike train: where is the max and how large is the stimulus pulse?
-#        # decide on the length of the stimulus: faster motion -> shorter stimulus package (arbitrary choice) TODO: something better?
-#        width_of_stim = params['stim_dur_sigma'] * (1 - np.sqrt(u0**2 + v0**2))
-#
-#        # TODO: receptive field, e.g.  width_of_stim, max_of_stim = rf(tuning_prop, motion_params)
-#        dist_from_rf = distance.euclidean((mu_u, mu_v), (u0, v0))
-#        time_of_max_stim = params['t_sim'] * get_time_of_max_stim(tuning_prop[column, :], motion_params)
-#        print "Creating input for column %d. t_stim = (%.1f, %.1f)" % (column, time_of_max_stim, width_of_stim)
-#
-#        width_of_stim *= dist_from_rf
-#        max_of_stim = dist_from_rf * params['f_max_stim']
-
+        print "cell:", column
         rate_of_t = np.array(L_input[column, :]) #  max_of_stim * gauss(time, time_of_max_stim, width_of_stim)
 
         n_steps = rate_of_t.size
@@ -193,31 +174,19 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
 
         # modify position of dot to match torus constraints
         x_lim, y_lim = 1, 1 # half the circumcircle of the torus --> parametrize ?
-        ax = (np.int(x) / x_lim) % 2
-        not_ax = (np.int(x) / x_lim + 1) % 2
+        ax = (np.int(x) / x_lim + 1) % 2
+        not_ax = (np.int(x) / x_lim) % 2
         b = x % x_lim
         c = x_lim - ax * b
         x = ax * c + not_ax * b
 
-        ay = (np.int(y) / y_lim) % 2
-        not_ay = (np.int(y) / y_lim + 1) % 2
+        ay = (np.int(y) / y_lim + 1) % 2
+        not_ay = (np.int(y) / y_lim) % 2
         b = y % y_lim
         c = y_lim - ay * b
         y = ay * c + not_ay * b
 
-
 #        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
-#        ax = (x / n) % 2
-#        bx = (x % n)
-#        by = (y / m) % 2
-#        by = (y % m)
-#        x = x - 2*ax*b - ((int(x)/n+1)%2)*int(x)/n * n - ax*(int(x)/n - 1) * n
-#        y = y - 2*a*b - ((int(y)/m+1)%2)*int(y)/m * m - a*(int(y)/m - 1) * m
-# not working yet
-#for i in xrange(101):
-#    a = (i/n)%2
-#    b = i%n
-#print i, a, a*b, i - 2*a*b - ((int(i)/n+1)%2)*int(i)/n * n - a*(int(i)/n - 1) *n
 
     for cell in xrange(n_cells): # todo: vectorize
         L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
@@ -439,7 +408,29 @@ def threshold_weights(connection_matrix, w_thresh):
     return connection_matrix
 
 
-def get_nspikes(spiketimes_fn_merged, n_cells=0):
+def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
+    """
+    Returns an array with the number of spikes fired by each cell.
+    nspikes[gid]
+    if n_cells is not given, the length of the array will be the highest gid (not advised!)
+    """
+    d = np.loadtxt(spiketimes_fn_merged)
+    if (n_cells == 0):
+        n_cells = 1 + int(np.max(d[:, 1]))# highest gid
+    nspikes = np.zeros(n_cells)
+    spiketrains = [[] for i in xrange(n_cells)]
+    # seperate spike trains for all the cells
+    for i in xrange(d[:, 0].size):
+        spiketrains[int(d[i, 1])].append(d[i, 0])
+    for gid in xrange(n_cells):
+        nspikes[gid] = len(spiketrains[gid])
+    if get_spiketrains:
+        return nspikes, spiketrains
+    else:
+        return nspikes
+
+
+def get_spiketrains(spiketimes_fn_merged, n_cells=0):
     """
     Returns an array with the number of spikes fired by each cell.
     nspikes[gid]
@@ -453,6 +444,68 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0):
     # seperate spike trains for all the cells
     for i in xrange(d[:, 0].size):
         spiketrains[int(d[i, 1])].append(d[i, 0])
-    for gid in xrange(n_cells):
-        nspikes[gid] = len(spiketrains[gid])
-    return nspikes
+    return spiketrains
+
+def get_grid_pos(x0, y0, xedges, yedges):
+
+    x_index, y_index = 0, 0
+    for (ix, x) in enumerate(xedges[1:]):
+        if x0 < x:
+            x_index = ix
+            break
+            
+    for (iy, y) in enumerate(yedges[1:]):
+        if y0 < y:
+            y_index = iy
+            break
+    return (x_index, y_index)
+
+def get_grid_pos_1d(x0, xedges):
+
+    x_index, y_index = 0, 0
+    for (ix, x) in enumerate(xedges[1:]):
+        if x0 < x:
+            x_index = ix
+            break
+            
+    return x_index
+
+def convert_hsl_to_rgb(h, s, l):
+    """
+    h : [0, 360) degree
+    s : [0, 1]
+    l : [0, 1]
+
+    returns (r,g,b) tuple with values in range [0, 1]
+    Source of the formula: http://en.wikipedia.org/wiki/HSV_color_space#Conversion_from_RGB_to_HSL_or_HSV
+    """
+    c = (1. - np.abs(2*l - 1.)) * s # c = chroma
+    h_ = h / 60.
+    x = c * (1 -  np.abs(h_ % 2 - 1))
+
+    if 0 <= h_ and h_ < 1:
+        r, g, b = c, x, 0
+    elif 1 <= h_ and h_ < 2:
+        r, g, b = x, c, 0
+    elif 2 <= h_ and h_ < 3:
+        r, g, b = 0, c, x
+    elif 3 <= h_ and h_ < 4:
+        r, g, b = 0, x, c
+    elif 4 <= h_ and h_ < 5:
+        r, g, b = x, 0, c
+    elif 5 <= h_ and h_ < 6:
+        r, g, b = c, 0, x
+    else: 
+        r, g, b = 0, 0, 0
+
+    # match lightness
+    m = l - .5 * c
+    r_, g_, b_ = r+m, g+m, b+m
+    r_ = max(r_, 0)
+    g_ = max(g_, 0)
+    b_ = max(b_, 0)
+    return (r_, g_, b_)
+
+
+
+

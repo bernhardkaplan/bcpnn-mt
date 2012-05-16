@@ -82,8 +82,13 @@ def run_sim(params, sim_cnt):
     # Input spike trains
     input_pop = []
     for cell in xrange(params['n_exc']):
-        fn = params['input_st_fn_base'] + str(cell) + '.npy'
-        spike_times = np.load(fn)
+        try:
+            fn = params['input_st_fn_base'] + str(cell) + '.npy'
+            spike_times = np.load(fn)
+        except:
+            print "Missing file: ", fn
+            spike_times = []
+            # this cell does not get any input
         ssa = create(SpikeSourceArray, {'spike_times': spike_times})
         input_pop.append(ssa)
     #        input_pop.append(Population(1, SpikeSourceArray, {'spike_times': spike_times}, label="input%d" % cell))
@@ -129,7 +134,7 @@ def run_sim(params, sim_cnt):
     for i in xrange(params['n_exc']):
     #        connE = connect(spike_sourceE, exc_pop[i], weight=0.006, synapse_type='excitatory',delay=2.0)
 
-        input_conns.append(connect(input_pop[i], exc_pop[i], params['w_input_exc']))
+        input_conns.append(connect(input_pop[i], exc_pop[i], params['w_input_exc'], synapse_type='excitatory'))
     #        connE = connect(spike_sourceE, ifcell, weight=0.006, synapse_type='excitatory',delay=2.0)
     #        connector = AllToAllConnector(weights=params['w_input_exc'])    # weights are drawn from the given random distibution
     #        inh_exc_prj = Projection(input_pop[i], exc_pop, connector)
@@ -180,11 +185,8 @@ def run_sim(params, sim_cnt):
     for cell in xrange(params['n_exc']):
         record(exc_pop[cell], params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
 
-    for cell in xrange(params['n_exc']):
-    #        record(exc_pop[cell], "%s%d.ras" % (params['exc_spiketimes_fn_base'], cell))
-        record_v(exc_pop[cell],"%s%d.v" % (params['exc_volt_fn_base'], cell))#, compatible_output=False)
-    #        exc_pop[cell].record()
-    #    input_pop[cell].record()
+#    for cell in xrange(params['n_exc']):
+#        record_v(exc_pop[cell],"%s%d.v" % (params['exc_volt_fn_base'], cell))#, compatible_output=False)
 
     inh_pop.record()
     inh_pop.record_v()
@@ -200,13 +202,13 @@ def run_sim(params, sim_cnt):
     #        exc_pop[cell].print_v("%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
     #    input_pop[cell].printSpikes("%sinput_spikes_%s.ras" % (params['spiketimes_folder'], cell))
 
-#    print "Printing inhibitory spikes"
-#    inh_pop.printSpikes(params['inh_spiketimes_fn_base'])
+    print "Printing inhibitory spikes"
+    inh_pop.printSpikes(params['inh_spiketimes_fn_base'] + '%d.ras' % sim_cnt)
 #    print "Printing inhibitory membrane potentials"
 #    inh_pop.print_v(params['inh_volt_fn_base'], compatible_output=False)
 
-    print "pyNN.end()"
-    t2 = time.time()
+    print "calling pyNN.end() ...."
     end()
+    t2 = time.time()
 
-    print "Simulation time: %d sec or %.1f min for %d cells" % (t2-t1, (t2-t1)/60., params['n_cells'])
+    print "Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])

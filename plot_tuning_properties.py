@@ -22,9 +22,7 @@ ax = fig.add_subplot(111)
 
 scale = 20.
 for i in xrange(n_cells):
-
     x, y, u, v = d[i, :]
-
 #    lw = np.sqrt(u**2 + v**2)
     ax.plot((x*scale, x*scale+u), (y*scale, y*scale+v), 'k')
 
