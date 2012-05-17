@@ -41,19 +41,19 @@ def run_sim(params, sim_cnt):
             (params['w_ei_mean'], params['w_ei_sigma']),
             rng=rng_conn,
             constrain='redraw',
-            boundaries=(0, 0.01))
+            boundaries=(0, params['w_ei_mean'] * 10.))
 
     w_ie_dist = RandomDistribution('normal',
             (params['w_ie_mean'], params['w_ie_sigma']),
             rng=rng_conn,
             constrain='redraw',
-            boundaries=(0, 0.01))
+            boundaries=(0, params['w_ie_mean'] * 10.))
 
     w_ii_dist = RandomDistribution('normal',
             (params['w_ii_mean'], params['w_ii_sigma']),
             rng=rng_conn,
             constrain='redraw',
-            boundaries=(0, 0.01))
+            boundaries=(0, params['w_ii_mean'] * 10.))
 
 #    w_input_exc_dist = RandomDistribution('normal',
 #            (params['w_input_exc'], params['w_input_exc_sigma']),
@@ -79,6 +79,7 @@ def run_sim(params, sim_cnt):
     inh_pop = Population(params['n_inh'], IF_cond_exp, params['cell_params_inh'], label="inh_pop")
     inh_pop.initialize('v', v_init_dist)
 
+    print "Loading input spiketrains..."
     # Input spike trains
     input_pop = []
     for cell in xrange(params['n_exc']):
@@ -98,6 +99,7 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # # # # # # # # # #
     # during the learning process load the updated connection matrix
     # plastic connections are retrieved from the file
+    print "Connecting exc - exc from file %s ...."  % (params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
     connector_ee = FromFileConnector(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
     prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
 
@@ -107,6 +109,7 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # # # # # # # # # #
     #    connector_ei = FastFixedProbabilityConnector(params['p_exc_inh_global'], weights=params['w_exc_inh_global'], delays=delay_dist)
     #    connector_ei = FromFileConnector(params['conn_list_ei_fn'])
+    print "Connecting exc - inh ..."
     connector_ei = FastFixedProbabilityConnector(params['p_ei'], weights=w_ei_dist, delays=delay_dist)
     exc_inh_prj = Projection(exc_pop, inh_pop, connector_ei, target='excitatory')
 
@@ -115,19 +118,22 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # # # # # # # # # #
     #    connector_ie = FastFixedProbabilityConnector(params['p_inh_exc_global'], weights=params['w_inh_exc_global'], delays=delay_dist)
     #    connector_ie = FromFileConnector(params['conn_list_ie_fn'])
+    print "Connecting inh - exc ..."
     connector_ie = FastFixedProbabilityConnector(params['p_ie'], weights=w_ie_dist, delays=delay_dist)
-    inh_exc_prj = Projection(inh_pop, exc_pop, connector_ie)
+    inh_exc_prj = Projection(inh_pop, exc_pop, connector_ie, target='inhibitory')
 
     # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    I N H - I N H  #
     # # # # # # # # # # # # # # # # # # # #
     #    connector_ii = FromFileConnector(params['conn_list_ii_fn'])
+    print "Connecting inh - inh ..."
     connector_ii = FastFixedProbabilityConnector(params['p_ii'], weights=w_ii_dist, delays=delay_dist)
-    inh_inh_prj = Projection(exc_pop, inh_pop, connector_ii)
+    inh_inh_prj = Projection(exc_pop, inh_pop, connector_ii, target='inhibitory')
 
     # # # # # # # # # # # # # # # # # # # # # # 
     #     C O N N E C T    I N P U T - E X C  #
     # # # # # # # # # # # # # # # # # # # # # # 
+    print "Connecting input - exc ..."
     input_conns = []
     #    spike_sourceE = create(SpikeSourceArray, {'spike_times': [float(i) for i in range(5,105,10)]})
     #    spike_sourceI = create(SpikeSourceArray, {'spike_times': [float(i) for i in range(155,255,10)]})
@@ -143,6 +149,7 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    B I A S   T O   C E L L S  # 
     # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    print "Setting bias currents ... "
     bias_currents = []
     bias_values = np.loadtxt(params['bias_values_fn_base'] + str(sim_cnt) + '.dat')
     for cell in xrange(params['n_exc']):
@@ -157,6 +164,7 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # # # # # # 
     #     N O I S E   I N P U T   #
     # # # # # # # # # # # # # # # # 
+    print "Connecting noise - exc ... "
     noise_pop_exc = []
     noise_pop_inh = []
     for cell in xrange(params['n_exc']):
@@ -168,6 +176,7 @@ def run_sim(params, sim_cnt):
             noise_pop_inh.append(create(SpikeSourcePoisson, {'rate' : params['f_inh_noise']}))
         connect(noise_pop_exc[-1], exc_pop[cell], weight=params['w_exc_noise'], synapse_type='excitatory', delay=1.)
 
+    print "Connecting noise - inh ... "
     for cell in xrange(params['n_inh']):
         if (simulator_name == 'nest'): # for nest one can use the optimized Poisson generator
             noise_pop_exc.append(create(native_cell_type('poisson_generator'), {'rate' : params['f_exc_noise']}))
@@ -182,6 +191,7 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # #
     #     R E C O R D     #
     # # # # # # # # # # # #
+    print "Recording spikes to file: %s" % (params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
     for cell in xrange(params['n_exc']):
         record(exc_pop[cell], params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
 

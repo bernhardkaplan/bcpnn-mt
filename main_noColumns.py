@@ -54,15 +54,14 @@ for sim_cnt in xrange(n_sim):
     # # # # # # # # # # # # # #
     
     if (pc_id == 0):
-        print "Simulation run: %d / %d" % (sim_cnt+1, n_sim)
+        print "Simulation run: %d / %d. %d cells (%d exc, %d inh)" % (sim_cnt+1, n_sim, params['n_cells'], params['n_exc'], params['n_inh'])
         simulation.run_sim(params, sim_cnt)
-    print "Pc %d waiting for proc 0 to finish simulation" % pc_id
-    if USE_MPI: comm.barrier()
+    else: 
+        print "Pc %d waiting for proc 0 to finish simulation" % pc_id
 
-#    if (n_proc > 1):
-#        os.system ("mpirun -np %d python NetworkSimModuleNoColumns.py %d" % (n_proc, sim_cnt))
-#    else:
-#        os.system ("python NetworkSimModuleNoColumns.py %d" % sim_cnt)
+    if USE_MPI: 
+        comm.barrier()
+
 
     if do_BCPNN:
         # # # # # # # # # # #
@@ -74,12 +73,8 @@ for sim_cnt in xrange(n_sim):
         Bcpnn.bcpnn_offline_noColumns(params, conn_list, sim_cnt, False, comm)
         t2 = time.time()
         print "Computation time for BCPNN: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])
-    #    if (n_proc > 1):
-    #        os.system ("mpirun -np %d python use_bcpnn_offline.py %d" % (n_proc, sim_cnt))
-    #    else:
-    #        os.system ("python use_bcpnn_offline.py %d" % sim_cnt)
         
-    if USE_MPI: comm.barrier()
+        if USE_MPI: comm.barrier()
 
 #    utils.threshold_weights(connection_matrix, params['w_thresh_bcpnn'])
 

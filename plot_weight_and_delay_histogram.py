@@ -16,6 +16,7 @@ delays = d[:, 3]
 n_w, bins_w = np.histogram(weights, bins=20)
 print "bins_w", bins_w, n_w
 n_d, bins_d = np.histogram(delays, bins=20)
+print "bins_d", bins_d, n_d
 
 fig = pylab.figure()
 ax1 = fig.add_subplot(211)
@@ -28,5 +29,5 @@ ax1.set_ylabel('Count')
 ax2.set_xlabel('Delays')
 ax2.set_ylabel('Count')
 
-
+ax1.set_title(fn)
 pylab.show()

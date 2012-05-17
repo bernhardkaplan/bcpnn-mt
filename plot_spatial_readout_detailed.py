@@ -54,6 +54,8 @@ Orientation (theta) --> hue
     s : [0, 1] 
     l : [0, 1]
 """
+x_max = scale * np.max(tuning_prop[:, 0]) * 1.1
+y_max = scale * np.max(tuning_prop[:, 1]) * 1.1
 for frame in xrange(n_frames):
     print "Plotting frame: ", frame
     fig = pylab.figure()
@@ -61,6 +63,8 @@ for frame in xrange(n_frames):
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_title('Spatial activity readout')
+    ax.set_xlim((-0.5, x_max))
+    ax.set_ylim((-0.5, y_max))
 
     spiking_cells = nspikes_binned[:, frame].nonzero()[0]
     z_max = np.max(nspikes_binned_normalized[:, frame])

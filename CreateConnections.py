@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.random as rnd
+from scipy.spatial import distance
 
 def create_initial_connection_matrix(n, output_fn, w_max=1.0, sparseness=0.0):
     """
@@ -76,11 +77,13 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
     """
 
     n_cells = tuning_prop[:, 0].size
-    sigma_x, sigma_v = 1., 1. # tuning parameters , TODO: how to handle these
+    sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
     p_to_w_scaling = params['p_to_w_scaling']
     conn_list = []
     output = ""
+#    p_output = np.zeros((n_cells**2 - n_cells, 3))
 
+    i = 0
     for src in xrange(n_cells):
         for tgt in xrange(n_cells):
             if (src != tgt):
@@ -97,6 +100,8 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
                 p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
                         * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
 
+#                p_output[i, 0], p_output[i, 1], p_output[i, 2] = src, tgt, p
+                i += 1
                 # convert probability to weight
                 if (p*params['p_to_w_scaling'] >= params['w_init_thresh']):
                     w = p * p_to_w_scaling
@@ -108,6 +113,76 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
     f = open(output_fn, 'w')
     f.write(output)
     f.close()
+
+    # for curiosity print also the probabilities
+    output_fn = params['conn_prob_fn']
+#    np.savetxt(output_fn, p_output, fmt='%d\t%d\t%.4e')
+
+
+
 #    np.savetxt(output_fn, np.array(conn_list))
 #    return weight_matrix, latency_matrix
+
+def compute_weights_from_tuning_prop_distances(tuning_prop, params):
+    """
+    Arguments:
+        tuning_prop: 2 dimensional array with shape (n_cells, 4)
+            tp[:, 0] : x-position
+            tp[:, 1] : y-position
+            tp[:, 2] : u-position (speed in x-direction)
+            tp[:, 3] : v-position (speed in y-direction)
+    """
+
+    n_cells = tuning_prop[:, 0].size
+    sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
+    p_to_w_scaling = params['p_to_w_scaling']
+    n_nearest_neighbors = int(min(1000, params['n_exc'] * .25))
+    distance_matrix = np.zeros((n_cells, n_cells))
+    closest_neighbors = np.zeros((n_cells, n_nearest_neighbors)) # stores gids of n_nearest neighbors
+    output = ""
+    n_discarded_conn = 0
+
+    print "computing distance matrix..."
+    for i in xrange(n_cells):
+        for j in xrange(i, n_cells):
+            distance_matrix[i, j] = distance.euclidean(tuning_prop[i, :], tuning_prop[j, :])
+            distance_matrix[j, i] = distance_matrix[i, j]
+        closest_neighbors[i, :] = np.argsort(distance_matrix[i, :])[1:n_nearest_neighbors+1]
+            
+    for src in xrange(n_cells):
+        for j in xrange(n_nearest_neighbors):
+#            print "debug i %d j %d n_nn %d closest_n.shape:" % (src, j, n_nearest_neighbors), closest_neighbors.shape
+            tgt = closest_neighbors[src, j]
+            assert (src != tgt)
+            x0 = tuning_prop[src, 0]
+            y0 = tuning_prop[src, 1]
+            u0 = tuning_prop[src, 2]
+            v0 = tuning_prop[src, 3]
+            x1 = tuning_prop[tgt, 0]
+            y1 = tuning_prop[tgt, 1]
+            u1 = tuning_prop[tgt, 2]
+            v1 = tuning_prop[tgt, 3]
+
+            latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u0**2 + v0**2)
+            p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
+                    * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+
+#            p_output[i, 0], p_output[i, 1], p_output[i, 2] = src, tgt, p
+            i += 1
+            # convert probability to weight
+            if (p*params['p_to_w_scaling'] >= params['w_init_thresh']):
+                w = p * p_to_w_scaling
+                delay = min(max(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
+                output += "%d\t%d\t%.4e\t%.1e\n" % (src, tgt, w, delay)
+
+                n_discarded_conn += 1
+    print "n_discarded_conn: ", n_discarded_conn
+    output_fn = params['conn_list_ee_fn_base'] + '0.dat'
+    f = open(output_fn, 'w')
+    f.write(output)
+    f.close()
+
+    # for curiosity print also the probabilities
+    output_fn = params['conn_prob_fn']
+#    np.savetxt(output_fn, p_output, fmt='%d\t%d\t%.4e')
 

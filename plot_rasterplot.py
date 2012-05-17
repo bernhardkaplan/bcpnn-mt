@@ -1,3 +1,4 @@
+import sys
 import pylab
 import numpy as np
 import re
@@ -7,17 +8,23 @@ import utils
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
-fn = params['inh_spiketimes_fn_base'] + '0.ras'
-n_cells = params['n_inh']
+cell_type = sys.argv[1]
+if cell_type == 'inh':
+    fn = params['inh_spiketimes_fn_base'] + '0.ras'
+    n_cells = params['n_inh']
+elif cell_type == 'exc':
+    fn = params['exc_spiketimes_fn_merged'] + '0.ras'
+    n_cells = params['n_exc']
 nspikes, spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
 
 fig = pylab.figure()
 ax = fig.add_subplot(111)
 for cell in xrange(int(len(spiketimes))):
-    print cell, spiketimes[cell]
-
-    ax.plot(cell * np.ones(nspikes[cell]), spiketimes[cell], '|', color='k')
+    ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=1)
     
+pylab.title('Rasterplot of %s neurons' % cell_type)
+pylab.xlabel('Time [ms]')
+pylab.ylabel('Neuron')
 pylab.show()
 
 #folder = params['spiketimes_folder']

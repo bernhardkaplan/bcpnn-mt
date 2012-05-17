@@ -21,13 +21,13 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 50 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 50# np.int(n_cells/N_V/N_theta)
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
-        self.params['N_V'], self.params['N_theta'] = 4, 8 # resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 6, 8 # resolution in velocity norm and direction
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF'] = .00 # some variability in the position of RFs
+        self.params['sigma_RF'] = .05 # some variability in the position of RFs
 
         # ###################
         # NETWORK PARAMETERS
@@ -45,44 +45,51 @@ class parameter_storage(object):
         # #######################
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['p_to_w_scaling'] = 0.002   # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['w_init_thresh'] = 1e-5     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
+        self.params['p_to_w_scaling'] = 0.004   # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 10.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_min'] = 0.1          # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_max'] = 20           # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.25          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
+                                                # small w_sigma_*: deviation from unaccelerated movements become less likely
+
 
         # >>>> Not used when pre-wired connectivity is used
         # exc - exc 
-        self.params['p_ee'] = 0.5           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)
+        self.params['p_ee'] = 0.2           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)
         self.params['w_ee_mean'] = 0.001           # cells within two MCs are connected with this weight
         self.params['w_ee_sigma'] = 0.001           # cells within two MCs are connected with this weight
         # <<<<< 
 
         # exc - inh
-        self.params['p_ei'] = 0.10
-        self.params['w_ei_mean'] = 0.001
+        self.params['p_ei'] = 0.1
+        self.params['w_ei_mean'] = 0.003
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
-        self.params['p_ie'] = 0.25
-        self.params['w_ie_mean'] = -0.002          
+#        self.params['p_ie'] = 1.
+        self.params['p_ie'] = 0.1
+        self.params['w_ie_mean'] = 0.003
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
-        self.params['p_ii'] = 0.10
-        self.params['w_ii_mean'] = -0.001          
+        self.params['p_ii'] = 0.1
+        self.params['w_ii_mean'] = 0.001          
         self.params['w_ii_sigma'] = 0.001          
 
+        # >>> currently not used
         self.params['w_init_max'] = 0.001               # [nS] Maximal weight when creating the initial weight matrix
         self.params['w_thresh_bcpnn'] = 0.001           # [nS] Threshold under which a weight is set to zero in the cell-to-cell connectivity matrix
         self.params['dw_scale'] = 1e-4                 # [nS] Weight updates computed by BCPNN are scaled with this factor
+        # <<<<<
 
         # ###################
         # CELL PARAMETERS   #
         # ###################
         # TODO: distribution of parameters (e.g. tau_m)
-        self.params['cell_params_exc'] = {'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':2.0, 'tau_syn_I':10.0}
-        self.params['cell_params_inh'] = {'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':2.0, 'tau_syn_I':10.0}
+        self.params['cell_params_exc'] = {'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':5.0, 'tau_syn_I':10.0}
+        self.params['cell_params_inh'] = {'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':5.0, 'tau_syn_I':10.0}
         # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
         self.params['v_init'] = -65                 # [mV]
         self.params['v_init_sigma'] = 5             # [mV]
@@ -91,7 +98,7 @@ class parameter_storage(object):
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
-        self.params['t_sim'] = 200.
+        self.params['t_sim'] = 500.
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
 
         # ######
@@ -177,6 +184,7 @@ class parameter_storage(object):
 
         # connection lists have the following format: src_gid  tgt_gid  weight  delay
         # for models not based on minicolumns:
+        self.params['conn_prob_fn'] = '%sconn_prob.dat' % (self.params['connections_folder'])
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
         self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
         self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])
@@ -191,7 +199,6 @@ class parameter_storage(object):
         # FIGURES
         self.params['spatial_readout_fn_base'] = '%sspatial_readout_' % (self.params['figures_folder'])
         self.params['spatial_readout_movie'] = '%sspatial_readout.mp4' % (self.params['movie_folder'])
-
 
         rnd.seed(self.params['seed'])
 
@@ -214,3 +221,20 @@ class parameter_storage(object):
         return self.params
 
 
+    def write_parameters_to_file(self, fn):
+        print 'Writing parameters to: %s' % (fn)
+        if not (os.path.isdir(self.params['folder_name'])):
+            print 'Creating folder:\n\t%s' % self.params['folder_name']
+            os.system('/bin/mkdir %s' % self.params['folder_name'])
+        output_f = file(fn, 'w')
+        self.list_of_params = self.params.keys()
+        for p in self.params.keys():
+            if (type(p) == type([])):
+                string_to_write = ""
+                for i in p:
+                    string_to_write += str(p[i]) 
+                    string_to_write += '\t'
+                output_f.write('%s' % string_to_write)
+            else:
+                output_f.write('%s = %s\n' % (p, str(self.params.get(p))))
+        output_f.close()
