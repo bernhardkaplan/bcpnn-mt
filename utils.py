@@ -9,10 +9,10 @@ from scipy.spatial import distance
 from NeuroTools import signals as nts
 import pylab
 
+
 def convert_connlist_to_matrix(fn, n_cells):
     """
     Convert the connlist which is in format (src, tgt, weight, delay) to a weight matrix.
-
     """
     conn_list = np.loadtxt(fn)
     m = np.zeros((n_cells, n_cells))
@@ -21,6 +21,7 @@ def convert_connlist_to_matrix(fn, n_cells):
         tgt = conn_list[i, 1]
         m[src, tgt] = conn_list[i, 2]
     return m
+
 
 def convert_motion_energy_to_spike_trains(tuning_prop, n_steps=100, tgt_fn_base='input_st_'):
     """
@@ -154,7 +155,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
 #        V_X, V_Y = .5, 0.0
         x0, y0, u0, v0 = motion_params
 
-        blur_X, blur_V = 0.25, 2
+        blur_X, blur_V = params['blur_X'], params['blur_X'] #0.5, 0.5
         # compute the motion energy input to all cells
         """
 

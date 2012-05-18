@@ -40,6 +40,8 @@ do_BCPNN = False
 do_prepare = not(os.path.isdir(params['folder_name']))
 if pc_id == 0:
     network_params.create_folders()
+    network_params.write_parameters_to_file(params['params_fn'])# write parameters to a file
+
 t1 = time.time()
 if (do_prepare):
     Prep.prepare_sim(comm)

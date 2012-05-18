@@ -19,7 +19,7 @@ output_fn_movie = params['input_movie']
 bg_color = 'k'
 
 # parameters
-n_frames = 24 # number of output figures
+n_frames = 24# number of output figures
 n_bins_x, n_bins_y = 20, 20
 output_arrays = [np.zeros((n_bins_x, n_bins_y)) for i in xrange(n_frames)]
 time_grid = np.linspace(0, params['t_sim'], n_frames+1, endpoint=True)
@@ -53,14 +53,26 @@ for frame in xrange(n_frames):
     print "Plotting frame: ", frame
     fig = pylab.figure()
     ax = fig.add_subplot(111, axisbg=bg_color)
+
+    n_ticks = 5
+    y_ticks = [y_edges[i * n_bins_y/n_ticks] for i in xrange(n_ticks)]
+    y_labels = ['%.1e' % i for i in y_ticks]
+    ax.set_yticks([i * n_bins_y/n_ticks for i in xrange(n_ticks)])
+    ax.set_yticklabels(y_labels)
+    x_ticks = [x_edges[i * n_bins_x/n_ticks] for i in xrange(n_ticks)]
+    x_labels = ['%.1e' % i for i in x_ticks]
+    ax.set_xticks([i * n_bins_x/n_ticks for i in xrange(n_ticks)])
+    ax.set_xticklabels(x_labels)
+
+    ax.set_ylabel('$y$')
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_title('Input spikes clustered by positions\nof target neurons in visual space')
 
 #     simple colormap
-    pylab.colorbar(cax, cmap=pylab.bone())
     norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=z_max)
     cax = ax.pcolor(output_arrays[frame], norm=norm)#, edgecolor='k', linewidths='1')
+    pylab.colorbar(cax, cmap=pylab.bone())
 
     print "Saving figure: ", output_fn_fig
     pylab.savefig(output_fn_fig)

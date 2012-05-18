@@ -15,7 +15,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
     n_cells = tuning_prop[:, 0].size
     sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
     p_to_w_scaling = params['p_to_w_scaling']
-    p_thresh = params['p_connection_thresh']
+    p_thresh = params['p_thresh_connection']
     conn_list = []
 #    output = np.zeros((n_cells ** 2 - n_cells, 4))
     output = ""
@@ -41,7 +41,8 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
                 p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
                         * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
 
-                p_output[i, 0], p_output[i, 1], p_output[i, 2], p_output[i, 3] = src, tgt, p, latency
+                delay = min(max(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
+                p_output[i, 0], p_output[i, 1], p_output[i, 2], p_output[i, 3] = src, tgt, p, delay
                 # decide which connection should be discarded
                 if p >= p_thresh:
                     p_above_threshold[i] = p

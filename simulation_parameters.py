@@ -46,16 +46,15 @@ class parameter_storage(object):
         # #######################
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['p_to_w_scaling'] = 0.004   # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['p_connection_thresh'] = 1e-2 # connections with a probability of less then this value will be discarded
+        self.params['p_to_w_scaling'] = 0.005   # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['p_thresh_connection'] = 1e-2 # connections with a probability of less then this value will be discarded
         self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 10.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_min'] = 0.1          # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['delay_max'] = 20           # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.25          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
-                                                # small w_sigma_*: deviation from unaccelerated movements become less likely
-
+        self.params['delay_max'] = 30           # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['w_sigma_x'] = 0.1          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.1          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
+                                                # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
 
         # >>>> Not used when pre-wired connectivity is used
         # exc - exc 
@@ -72,12 +71,12 @@ class parameter_storage(object):
         # inh - exc
 #        self.params['p_ie'] = 1.
         self.params['p_ie'] = 0.1
-        self.params['w_ie_mean'] = 0.003
+        self.params['w_ie_mean'] = 0.004
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
         self.params['p_ii'] = 0.1
-        self.params['w_ii_mean'] = 0.001          
+        self.params['w_ii_mean'] = 0.002          
         self.params['w_ii_sigma'] = 0.001          
 
         # >>> currently not used
@@ -106,7 +105,7 @@ class parameter_storage(object):
         # ######
         # INPUT 
         # ######
-        self.params['f_max_stim'] = 30 * 100.       # [Hz]
+        self.params['f_max_stim'] = 50 * 100.       # [Hz]
         self.params['stim_dur_sigma'] = self.params['t_sim'] *.3 # [ms]
         self.params['w_input_exc'] = 0.003         # [nS] mean value for input stimulus ---< exc_units (columns
         self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [nS]
@@ -119,8 +118,9 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['motion_params'] = (0.0, 0.5, .3, 0) # x0, y0, u0, v0
+        self.params['motion_params'] = (0.5, 0.5, 0.8, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 2.0                  # [a.u.] maximal velocity for tuning_parameters (for each component)
+        self.params['blur_X'], self.params['blur_V'] = 0.25, 0.25
 
         # ######
         # NOISE
@@ -158,6 +158,8 @@ class parameter_storage(object):
                             self.params['figures_folder'], \
                             self.params['movie_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
+
+        self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['folder_name'])
 
         # input spiketrains
         self.params['input_st_fn_base'] = "%sstim_spike_train_" % self.params['input_folder']# input spike trains filename base
@@ -230,10 +232,10 @@ class parameter_storage(object):
 
 
     def write_parameters_to_file(self, fn):
-        print 'Writing parameters to: %s' % (fn)
-        if not (os.path.isdir(self.params['folder_name'])):
-            print 'Creating folder:\n\t%s' % self.params['folder_name']
-            os.system('/bin/mkdir %s' % self.params['folder_name'])
+#        print 'Writing parameters to: %s' % (fn)
+#        if not (os.path.isdir(self.params['folder_name'])):
+#            print 'Creating folder:\n\t%s' % self.params['folder_name']
+#            os.system('/bin/mkdir %s' % self.params['folder_name'])
         output_f = file(fn, 'w')
         self.list_of_params = self.params.keys()
         for p in self.params.keys():
