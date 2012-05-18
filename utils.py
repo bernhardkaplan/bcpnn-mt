@@ -154,7 +154,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
 #        V_X, V_Y = .5, 0.0
         x0, y0, u0, v0 = motion_params
 
-        blur_X, blur_V = 1., 1.
+        blur_X, blur_V = 0.25, 2
         # compute the motion energy input to all cells
         """
 
@@ -319,10 +319,12 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
                 for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
-                    tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF'] * rnd.randn()
-                    tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF'] * rnd.randn()
-                    tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) * rho
-                    tuning_prop[index, 3] = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) * rho
+                    tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()
+                    tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()
+                    tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) \
+                            * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                    tuning_prop[index, 3] = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) \
+                            * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
                     index += 1
 
     return tuning_prop
@@ -501,6 +503,7 @@ def convert_hsl_to_rgb(h, s, l):
     # match lightness
     m = l - .5 * c
     r_, g_, b_ = r+m, g+m, b+m
+    # avoid negative values due to precision problems
     r_ = max(r_, 0)
     g_ = max(g_, 0)
     b_ = max(b_, 0)

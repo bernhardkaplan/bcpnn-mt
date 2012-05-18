@@ -2,8 +2,9 @@ import os
 import simulation_parameters
 import numpy as np
 import utils
-import pylab
 import matplotlib
+matplotlib.use('Agg')
+import pylab
 import os
 
 
@@ -54,8 +55,8 @@ Orientation (theta) --> hue
     s : [0, 1] 
     l : [0, 1]
 """
-x_max = scale * np.max(tuning_prop[:, 0]) * 1.1
-y_max = scale * np.max(tuning_prop[:, 1]) * 1.1
+x_max = scale * np.max(tuning_prop[:, 0]) * 1.05
+y_max = scale * np.max(tuning_prop[:, 1]) * 1.05
 for frame in xrange(n_frames):
     print "Plotting frame: ", frame
     fig = pylab.figure()
@@ -63,8 +64,6 @@ for frame in xrange(n_frames):
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_title('Spatial activity readout')
-    ax.set_xlim((-0.5, x_max))
-    ax.set_ylim((-0.5, y_max))
 
     spiking_cells = nspikes_binned[:, frame].nonzero()[0]
     z_max = np.max(nspikes_binned_normalized[:, frame])
@@ -79,6 +78,8 @@ for frame in xrange(n_frames):
         (r, g, b) = utils.convert_hsl_to_rgb(h, s, l)
 #        print "color rgb", r, g, b , "hsl", h, s, l
         ax.plot((x*scale, x*scale+u), (y*scale, y*scale+v), c=(r,g,b))
+    ax.set_xlim((-1.0, x_max))
+    ax.set_ylim((-1.0, y_max))
 
     output_fn_fig = output_fn_base + 'frame%d.png' % (frame)
     print "Saving figure: ", output_fn_fig

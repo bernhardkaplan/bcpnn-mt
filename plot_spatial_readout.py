@@ -77,6 +77,7 @@ print 'Creating the movie in file:', output_fn_movie
 fps = 8     # frames per second
 input_fn = output_fn_base + 'frame%d.png'
 command = "ffmpeg -f image2 -r %f -i %s -b 72000 %s" % (fps, input_fn, output_fn_movie)
+os.system("rm %s" % output_fn_movie) # remove old one
 os.system(command)
 
 show = False

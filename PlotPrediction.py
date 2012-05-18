@@ -259,8 +259,8 @@ class PlotPrediction(object):
             self.theta_marginalized_binned[grid_pos] += self.nspikes_normalized[gid]
             self.theta_marginalized_binned_nonlinear[grid_pos] += self.nspikes_normalized_nonlinear[gid]
 
-#        assert (np.sum(self.theta_marginalized_binned) == 1), "Marginalization incorrect: %.31f" % (np.sum(self.theta_marginalized_binned))
-#        assert (np.sum(self.theta_marginalized_binned_nonlinear) == 1), "Marginalization incorrect: %.31f" % (np.sum(self.theta_marginalized_binned_nonlinear))
+#        assert (np.sum(self.theta_marginalized_binned) == 1), "Marginalization incorrect: %.1f" % (np.sum(self.theta_marginalized_binned))
+#        assert (np.sum(self.theta_marginalized_binned_nonlinear) == 1), "Marginalization incorrect: %.1f" % (np.sum(self.theta_marginalized_binned_nonlinear))
 
 
     def plot(self):
@@ -386,6 +386,7 @@ class PlotPrediction(object):
 
     def plot_fullrun_estimates(self):
         self.fig2 = pylab.figure()
+        pylab.rcParams['legend.fontsize'] = 10
         pylab.subplots_adjust(hspace=0.5)
         self.plot_fullrun_estimates_vx()
         self.plot_fullrun_estimates_vy()
@@ -395,28 +396,52 @@ class PlotPrediction(object):
     def plot_fullrun_estimates_vx(self):
         self.ax8 = self.fig2.add_subplot(411)
         bin_width = .5 * (self.vx_grid[1] - self.vx_grid[0])
-        self.ax8.bar(self.vx_grid, self.vx_marginalized_binned, width=bin_width)
-        self.ax8.bar(self.vx_grid+bin_width, self.vx_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
+        vx_linear = (np.sum(self.vx_grid * self.vx_marginalized_binned), self.get_uncertainty(self.vx_marginalized_binned, self.vx_grid))
+        vx_nonlinear = (np.sum(self.vx_grid * self.vx_marginalized_binned_nonlinear), self.get_uncertainty(self.vx_marginalized_binned_nonlinear, self.vx_grid))
+        self.ax8.bar(self.vx_grid, self.vx_marginalized_binned, width=bin_width, label='Linear votes: $v_x=%.2f \pm %.2f$' % (vx_linear[0], vx_linear[1]))
+        self.ax8.bar(self.vx_grid+bin_width, self.vx_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_x=%.2f \pm %.2f$' % (vx_nonlinear[0], vx_nonlinear[1]))
         self.ax8.set_title('Estimates based on full run activity\nblue: linear marginalization over all positions, green: non-linear voting')
         self.ax8.set_xlabel('$v_x$')
         self.ax8.set_ylabel('Confidence')
+        self.ax8.legend()
 
+
+    def get_uncertainty(self, p, v):
+        """
+        p, v are vectors storing the confidence of the voters in p, and the values they vote for in v.
+        The uncertainty is estimated as:
+        sum_i p_i * (1. - p_i) * v_i
+        Idea behind it:
+        (1. - p_i) * v_i gives the uncertainty for each vote of v_i
+        multiplying it with p_i takes into account how much weight this uncertainty should have in the overall vote
+        """
+        uncertainties = (np.ones(len(p)) - p) * v
+        weighted_uncertainties = p * uncertainties
+        return np.sum(weighted_uncertainties)
 
     def plot_fullrun_estimates_vy(self):
         self.ax9 = self.fig2.add_subplot(412)
         bin_width = .5 * (self.vy_grid[1] - self.vy_grid[0])
-        self.ax9.bar(self.vy_grid, self.vy_marginalized_binned, width=bin_width)
-        self.ax9.bar(self.vy_grid+bin_width, self.vy_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
+        vy_linear = (np.sum(self.vy_grid * self.vy_marginalized_binned), self.get_uncertainty(self.vy_marginalized_binned, self.vy_grid))
+        vy_nonlinear = (np.sum(self.vy_grid * self.vy_marginalized_binned_nonlinear), self.get_uncertainty(self.vy_marginalized_binned_nonlinear, self.vy_grid))
+        self.ax9.bar(self.vy_grid, self.vy_marginalized_binned, width=bin_width, label='Linear votes: $v_y=%.2f \pm %.2f$' % (vy_linear[0], vy_linear[1]))
+        self.ax9.bar(self.vy_grid+bin_width, self.vy_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_y=%.2f \pm %.2f$' % (vy_nonlinear[0], vy_nonlinear[1]))
         self.ax9.set_xlabel('$v_y$')
         self.ax9.set_ylabel('Confidence')
+        self.ax9.legend()
 
     def plot_fullrun_estimates_theta(self):
 
         self.ax10 = self.fig2.add_subplot(413)
         bin_width = .5 * (self.theta_grid[-1] - self.theta_grid[-2])
+        theta_linear = (np.sum(self.theta_grid * self.theta_marginalized_binned), self.get_uncertainty(self.theta_marginalized_binned, self.theta_grid))
+        theta_nonlinear = (np.sum(self.theta_grid * self.theta_marginalized_binned_nonlinear), self.get_uncertainty(self.theta_marginalized_binned_nonlinear, self.theta_grid))
+        self.ax10.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width, label='Linear votes: $\Theta=%.2f \pm %.2f$' % (theta_linear[0], theta_linear[1]))
+        self.ax10.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $\Theta=%.2f \pm %.2f$' % (theta_nonlinear[0], theta_nonlinear[1]))
         self.ax10.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width)
         self.ax10.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
         self.ax10.set_xlim((-np.pi, np.pi))
+        self.ax10.legend()
 
 
 #        n_bins = 50
@@ -432,9 +457,12 @@ class PlotPrediction(object):
 
     def plot_nspike_histogram(self):
         self.ax10 = self.fig2.add_subplot(414)
-        self.ax10.bar(range(self.params['n_exc']), self.nspikes)
+        mean_nspikes = self.nspikes.mean()* 1000./self.params['t_sim'] 
+        std_nspikes = self.nspikes.std() * 1000./self.params['t_sim']
+        self.ax10.bar(range(self.params['n_exc']), self.nspikes* 1000./self.params['t_sim'], label='$f_{mean} = (%.1f \pm %.1f)$ Hz' % (mean_nspikes, std_nspikes))
         self.ax10.set_xlabel('Cell gids')
-        self.ax10.set_ylabel('Number of spikes')
+        self.ax10.set_ylabel('Output rate $f_{out}$')
+        self.ax10.legend()
 
     def theta_uncertainty(self, vx, dvx, vy, dvy):
         """
