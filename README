@@ -7,4 +7,8 @@ Requirements:
     Brian, NEST or another pyNN supported simulator
 
 Run:
-    python network_sim.py brian
+    python main_noColumns.py
+
+    or 
+
+    mpirun -np [number_of_processes] python main_noColumns.py

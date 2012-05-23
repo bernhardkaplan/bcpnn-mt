@@ -16,49 +16,14 @@ def convert_connlist_to_matrix(fn, n_cells):
     """
     conn_list = np.loadtxt(fn)
     m = np.zeros((n_cells, n_cells))
+    delays = np.zeros((n_cells, n_cells))
     for i in xrange(conn_list[:,0].size):
         src = conn_list[i, 0]
         tgt = conn_list[i, 1]
         m[src, tgt] = conn_list[i, 2]
-    return m
+        delays[src, tgt] = conn_list[i, 3]
+    return m, delays
 
-
-def convert_motion_energy_to_spike_trains(tuning_prop, n_steps=100, tgt_fn_base='input_st_'):
-    """
-    Based on the time dependent motion energy stored in the input vectors, 
-    this function writes input spike trains to files starting with 'tgt_fn_base'
-    Arguments:
-        tuning_prop: 2 dimensional array with shape (n_cells, 4)
-            tp[:, 0] : x-position
-            tp[:, 1] : y-position
-            tp[:, 2] : u-position (speed in x-direction)
-            tp[:, 3] : v-position (speed in y-direction)
-        dt: time step in ms, should be very small (Poisson process)
-        tgt_fn_base: output will be stored in: output_fn = tgt_fn_base + str(cell) + '.dat'
-    """
-    n_cells = tuning_prop.size[0]
-    dt = 1./n_steps
-
-    st = []
-    for cell in xrange(n_cells):
-        st.append( [] )
-
-
-    for i in xrange(n_steps):
-        input_vec = get_input(tuning_prop, np.float(i)/n_steps, motion='dot')
-        for cell in xrange(n_cells):
-            r = rnd.rand()
-            if (r <= (input_vec[cell] * dt)):
-                st[cell].append(i * dt)
-
-    # TODO : use NeuroTools' SpikeList class and test!
-    spklist = nts.SpikeList(st, range(n_cells), t_start=0, t_stop=n_steps)
-
-    for cell in xrange(n_cells):
-        output_fn = tgt_fn_base + str(cell) + '.dat'
-        # TODO test and check if compatible with the reading spike trains
-#        spklist[0].save(StandPickleFile(output_fn)
-        np.savetxt(output_fn, np.array(st))
 
 def convert_spiketrain_to_trace(st, n):
     """
@@ -107,11 +72,22 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
         my_units = xrange(my_units[0], my_units[1])
 
     L_input = np.empty((n_cells, time.shape[0]))
+    mv = np.zeros((time.shape[0], 5))
     for i_time, time_ in enumerate(time):
         print "t:", time_
 #        print i_time, time.shape[0]
-        L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast) * params['f_max_stim']
+#        L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast) * params['f_max_stim']
+        L_input[:, i_time], (x, y, x_, y_) = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast)
+        L_input[:, i_time] *= params['f_max_stim']
+        mv[i_time, 0] = time_
+        mv[i_time, 1] = x
+        mv[i_time, 2] = y
+        mv[i_time, 3] = x_
+        mv[i_time, 4] = y_
     
+    print "Debug, saving motion to:", params['motion_fn']
+    np.savetxt(params['motion_fn'], mv)
+
     for column in my_units:
         print "cell:", column
         rate_of_t = np.array(L_input[column, :]) #  max_of_stim * gauss(time, time_of_max_stim, width_of_stim)
@@ -121,7 +97,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
         for i in xrange(n_steps):
             r = rnd.rand()
             if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
-                st.append(i * dt)
+                st.append(i * dt) 
         output_fn = tgt_fn_base + str(column)
         np.save(output_fn, np.array(st)) # to be changed to binary np.save
         output_fn = params['input_folder'] + 'rate_' + str(column)
@@ -151,14 +127,11 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
-#        X_0, Y_0 = .25, .5 #
-#        V_X, V_Y = .5, 0.0
         x0, y0, u0, v0 = motion_params
 
-        blur_X, blur_V = params['blur_X'], params['blur_X'] #0.5, 0.5
+        blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
         # compute the motion energy input to all cells
         """
-
             Knowing the velocity one can estimate the analytical response to 
              - motion energy detectors
              - to a gaussian blob
@@ -169,25 +142,25 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
             # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
             
             L range between 0 and 1
-    
         """
         x, y = x0 + u0*t, y0 + v0*t # current position of the blob at time t assuming a perfect translation
+        x_, y_ = x, y
 
         # modify position of dot to match torus constraints
-        x_lim, y_lim = 1, 1 # half the circumcircle of the torus --> parametrize ?
-        ax = (np.int(x) / x_lim + 1) % 2
-        not_ax = (np.int(x) / x_lim) % 2
-        b = x % x_lim
-        c = x_lim - ax * b
-        x = ax * c + not_ax * b
+#        x_lim, y_lim = 1, 1 # half the circumcircle of the torus --> parametrize ?
+#        ax = (np.int(x) / x_lim + 1) % 2
+#        not_ax = (np.int(x) / x_lim) % 2
+#        b = x % x_lim
+#        c = x_lim - ax * b
+#        x = ax * c + not_ax * b
 
-        ay = (np.int(y) / y_lim + 1) % 2
-        not_ay = (np.int(y) / y_lim) % 2
-        b = y % y_lim
-        c = y_lim - ay * b
-        y = ay * c + not_ay * b
+#        ay = (np.int(y) / y_lim + 1) % 2
+#        not_ay = (np.int(y) / y_lim) % 2
+#        b = y % y_lim
+#        c = y_lim - ay * b
+#        y = ay * c + not_ay * b
 
-#        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
+        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
 
     for cell in xrange(n_cells): # todo: vectorize
         L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
@@ -198,7 +171,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     
 #    L = (1. - contrast) + contrast * L
         
-    return L
+    return L, (x, y, x_, y_)
 
 
 
@@ -260,7 +233,7 @@ def get_time_of_max_stim(tuning_prop, motion_params):
     return t_min
 
 
-def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
+def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
     """
     Place n_exc excitatory cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
@@ -278,6 +251,7 @@ def set_tuning_prop(params, mode='hexgrid', v_max=2.0):
     This implies that in one frame, a translation is of  ``1. / N_frame`` in cortical space.
     """
 
+    rnd.seed(params['tuning_prop_seed'])
     tuning_prop = np.zeros((params['n_exc'], 4))
     if mode=='random':
         # place the columns on a grid with the following dimensions
@@ -511,5 +485,56 @@ def convert_hsl_to_rgb(h, s, l):
     return (r_, g_, b_)
 
 
+def sort_gids_by_distance_to_stimulus(tp, mp, sorting_index=0):
+    """
+    This function return a list of gids sorted by the distances between cells and the stimulus.
+    It calculates the minimal distances between the moving stimulus and the spatial receptive fields of the cells 
+    and adds the distances between the motion_parameters and the tuning_properties of each cell.
 
+    Arguments:
+        tp: tuning_properties array 
+        tp[:, 0] : x-pos
+        tp[:, 1] : y-pos
+        tp[:, 2] : x-velocity
+        tp[:, 3] : y-velocity
+
+        mp: motion_parameters (x0, y0, u0, v0)
+
+        sorting_index: integer [0, 3] or string ('x', 'y', 'u', 'v')
+    """
+    if sorting_index == 'x':
+        sorting_index = 0
+    elif sorting_index == 'y':
+        sorting_index = 1
+    elif sorting_index == 'u':
+        sorting_index = 2
+    elif sorting_index == 'v':
+        sorting_index = 3
+
+    n_cells = tp[:, 0].size
+#    v_dist = np.zeros(n_cells) # distance in 'velocity space' between stimulus (u, v) and cells' tuning_properties
+    x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
+
+    n_steps = 100 # the of 
+    x_pos_stim = np.array([mp[0] + mp[2] * i * 1./n_steps for i in xrange(n_steps)])
+    y_pos_stim = np.array([mp[1] + mp[3] * i * 1./n_steps for i in xrange(n_steps)])
+    for i in xrange(n_cells):
+#        v_dist[i] = np.sqrt((tp[i, 2] - mp[2])**2 + (tp[i,3] - mp[3])**2)
+        x_dist[i] = np.sqrt(np.min((tp[i, 0] - x_pos_stim)** 2 + (tp[i, 1] - y_pos_stim)**2) + (tp[i, 2] - mp[2])**2 + (tp[i,3] - mp[3])**2)
+
+#    return x_dist
+    cells_closest_to_stim_pos = x_dist.argsort()
+#    cells_closest_to_stim_velocity = v_dist.argsort()
+    return cells_closest_to_stim_pos, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
+
+def torus_distance(x0, x1):
+    dx = x0 - x1
+    x_lim, y_lim = 1, 1 # half the circumcircle of the torus --> parametrize ?
+    ax = (np.int(dx) / x_lim + 1) % 2
+    not_ax = (np.int(dx) / x_lim) % 2
+    b = dx % x_lim
+    c = x_lim - ax * b
+    dx = ax * c + not_ax * b
+
+    return dx
 

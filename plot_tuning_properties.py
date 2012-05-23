@@ -4,13 +4,16 @@ import pylab
 import re
 import numpy as np
 import utils
-#import matplotlib
+import matplotlib
 #import matplotlib.patches as mpatches
 #from matplotlib.collections import PatchCollection
 
 # load simulation parameters
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
+pylab.rcParams['lines.markeredgewidth'] = 0
+#matplotlib.rc('markeredgewidth'=0)
+
 
 fn = params['tuning_prop_means_fn']
 d = np.loadtxt(fn)
@@ -40,9 +43,9 @@ for i in xrange(n_cells):
     assert (0 <= l and l <= 1)
     assert (0 <= s and s <= 1)
     (r, g, b) = utils.convert_hsl_to_rgb(h, s, l)
-    ax1.plot(x, y, 'o', c=(r,g,b), markersize=ms)
+    ax1.plot(x, y, 'o', c=(r,g,b), markersize=ms)#, edgecolors=None)
     # plot velocity
-    ax2.plot(u, v, 'o', color='k', markersize=ms)
+    ax2.plot(u, v, 'o', color='k', markersize=ms)#, edgecolors=None)
 
 ax1.set_xlabel('$x$')
 ax1.set_ylabel('$y$')

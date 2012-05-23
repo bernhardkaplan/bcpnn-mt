@@ -66,7 +66,7 @@ class PlotPrediction(object):
 
         # define parameters
         self.n_cells = self.params['n_exc']
-        self.time_binsize = 50 # [ms]
+        self.time_binsize = 20 # [ms]
         self.n_bins = int((self.params['t_sim'] / self.time_binsize) )
         self.time_bins = [self.time_binsize * i for i in xrange(self.n_bins)]
         self.t_axis = np.arange(0, self.n_bins * self.time_binsize, self.time_binsize)
@@ -91,6 +91,21 @@ class PlotPrediction(object):
         self.sorted_indices_vy = self.tuning_prop[:, 3].argsort()
 
         self.load_spiketimes(sim_cnt)
+        fig_width_pt = 800.0  # Get this from LaTeX using \showthe\columnwidth
+        inches_per_pt = 1.0/72.27               # Convert pt to inch
+        golden_mean = (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
+        fig_width = fig_width_pt*inches_per_pt  # width in inches
+        fig_height = fig_width*golden_mean      # height in inches
+        fig_size =  [fig_width,fig_height]
+        params = {#'backend': 'png',
+#                  'axes.labelsize': 10,
+#                  'text.fontsize': 10,
+#                  'legend.fontsize': 10,
+#                  'xtick.labelsize': 8,
+#                  'ytick.labelsize': 8,
+#                  'text.usetex': True,
+                  'figure.figsize': fig_size}
+        pylab.rcParams.update(params)
 
 
     def load_spiketimes(self, sim_cnt):
@@ -400,7 +415,7 @@ class PlotPrediction(object):
         vx_nonlinear = (np.sum(self.vx_grid * self.vx_marginalized_binned_nonlinear), self.get_uncertainty(self.vx_marginalized_binned_nonlinear, self.vx_grid))
         self.ax8.bar(self.vx_grid, self.vx_marginalized_binned, width=bin_width, label='Linear votes: $v_x=%.2f \pm %.2f$' % (vx_linear[0], vx_linear[1]))
         self.ax8.bar(self.vx_grid+bin_width, self.vx_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_x=%.2f \pm %.2f$' % (vx_nonlinear[0], vx_nonlinear[1]))
-        self.ax8.set_title('Estimates based on full run activity\nblue: linear marginalization over all positions, green: non-linear voting')
+        self.ax8.set_title('Estimates based on full run activity with %s connectivity\nblue: linear marginalization over all positions, green: non-linear voting' % self.params['initial_connectivity'])
         self.ax8.set_xlabel('$v_x$')
         self.ax8.set_ylabel('Confidence')
         self.ax8.legend()

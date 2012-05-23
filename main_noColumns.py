@@ -8,7 +8,6 @@ import os
 import simulation_parameters
 import numpy as np
 import utils
-import CreateConnections as CC
 import Bcpnn
 import time
 import prepare_sim as Prep
@@ -24,6 +23,7 @@ if USE_MPI:
 else:
     pc_id, n_proc, comm = 0, 1, None
     
+t_start = time.time()
 print "USE_MPI:", USE_MPI
 import NetworkSimModuleNoColumns as simulation
 #import NetworkSimModule as simulation
@@ -57,7 +57,7 @@ for sim_cnt in xrange(n_sim):
     
     if (pc_id == 0):
         print "Simulation run: %d / %d. %d cells (%d exc, %d inh)" % (sim_cnt+1, n_sim, params['n_cells'], params['n_exc'], params['n_inh'])
-        simulation.run_sim(params, sim_cnt)
+        simulation.run_sim(params, sim_cnt, params['initial_connectivity'])
     else: 
         print "Pc %d waiting for proc 0 to finish simulation" % pc_id
 
@@ -78,6 +78,9 @@ for sim_cnt in xrange(n_sim):
         
         if USE_MPI: comm.barrier()
 
+t_stop = time.time()
+t_run = t_stop - t_start
+print "Full run duration: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t_run, (t_run)/60., params['n_cells'], params['n_exc'], params['n_inh'])
 #    utils.threshold_weights(connection_matrix, params['w_thresh_bcpnn'])
 
 #    np.savetxt('debug_conn_mat_after_thresh_%d.txt' % (sim_cnt), connection_matrix)

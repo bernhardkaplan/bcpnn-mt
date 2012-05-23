@@ -18,5 +18,5 @@ for fn in sys.argv[1:]:
 #        pylab.plot(data[:,0], data[:,1], lw=2, label=fn)
 #        pylab.scatter(np.arange(0, data[:, 0].size), data[:, 0], label=fn)
 
-pylab.legend()
+pylab.legend()#]fontsize='small')
 pylab.show()

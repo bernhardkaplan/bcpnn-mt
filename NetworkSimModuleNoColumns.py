@@ -7,7 +7,7 @@ import numpy as np
 import numpy.random as rnd
 import sys
 
-def run_sim(params, sim_cnt):
+def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     simulator_name = params['simulator']
     if simulator_name == 'nest':
         from pyNN.nest import *
@@ -36,6 +36,20 @@ def run_sim(params, sim_cnt):
             rng=rng_v,
             constrain='redraw',
             boundaries=(-80, -60))
+
+    if initial_connectivity == 'random':
+        w_range=(1e-4, 5e-3)
+        w_tau = 3.16e-04
+        w_ee_dist = RandomDistribution('exponential',
+                (w_tau,),
+                rng=rng_conn,
+                constrain='redraw',
+                boundaries=w_range)
+        delay_dist = RandomDistribution('uniform',
+                (0.1, 30.),
+                rng=rng_conn,
+                constrain='redraw',
+                boundaries=(0.1, 30.))
 
     w_ei_dist = RandomDistribution('normal',
             (params['w_ei_mean'], params['w_ei_sigma']),
@@ -99,9 +113,16 @@ def run_sim(params, sim_cnt):
     # # # # # # # # # # # # # # # # # # # #
     # during the learning process load the updated connection matrix
     # plastic connections are retrieved from the file
-    print "Connecting exc - exc from file %s ...."  % (params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
-    connector_ee = FromFileConnector(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
-    prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
+
+    if initial_connectivity == 'precomputed':
+        print "Connecting exc - exc from file %s ...."  % (params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
+        connector_ee = FromFileConnector(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
+        prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
+
+    else: # random
+        print "Connecting exc - exc by random...."
+        connector_ee = FastFixedProbabilityConnector(params['p_ee'], weights=w_ee_dist, delays=delay_dist)
+        prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
 
 
     # # # # # # # # # # # # # # # # # # # #

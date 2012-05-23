@@ -1,5 +1,7 @@
 import numpy as np
 import numpy.random as rnd
+import pyNN
+import pyNN.random
 from scipy.spatial import distance
 
 def compute_weights_from_tuning_prop(tuning_prop, params):
@@ -64,7 +66,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
 
     # convert thresholded probabilities to weight
     valid_conns = p_above_threshold.nonzero()[0]
-    w_output = np.zeros((valid_conns .size, 4))
+    w_output = np.zeros((valid_conns.size, 4))
     w_output[:, 0] = p_output[valid_conns, 0]
     w_output[:, 1] = p_output[valid_conns, 1]
     w_output[:, 2] = p_output[valid_conns, 2] * p_to_w_scaling
@@ -73,8 +75,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
     output_fn = params['conn_list_ee_fn_base'] + '0.dat'
     print "Saving to file ... ", output_fn
     np.savetxt(output_fn, w_output, fmt='%d\t%d\t%.4e\t%.1e')
-
-
+    return 0
 
 #    np.savetxt(output_fn, np.array(conn_list))
 #    return weight_matrix, latency_matrix
@@ -119,8 +120,17 @@ def compute_weights_from_tuning_prop_distances(tuning_prop, params):
             u1 = tuning_prop[tgt, 2]
             v1 = tuning_prop[tgt, 3]
 
-            latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u0**2 + v0**2)
-            p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
+            # if we were not on a torus - the connection probabilities would be calculated like this 
+#            latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u0**2 + v0**2)
+#            p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
+#                    * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+
+            dx = utils.torus_distance(x0, x1)
+            dy = utils.torus_distance(x0, x1)
+            latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
+            x_predicted = x0 + u0 * latency  
+            y_predicted = y0 + v0 * latency  
+            p = .5 * np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * sigma_x**2))) \
                     * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
 
 #            p_output[i, 0], p_output[i, 1], p_output[i, 2] = src, tgt, p
@@ -208,4 +218,24 @@ def create_connections_between_cells(params, conn_mat_fn):
             pass
 
 
+#class MyDistr(pyNN.random.RandomDistribution):
+#    self.rng = ....
+
+
+class MyRNG(pyNN.random.WrappedRNG):
+    def __init__(self):
+        self.rng
+    def _next(self, distribution, n, parameters):
+        return self.draw(n, parameters)
+
+    def draw(self, n, p):
+        d = np.zeros(n)
+        for i in xrange(n):
+            d[i] = self.rnd_distr(p)
+
+    def rnd_distr(self):
+        return p[0] * np.random.rand * np.random.exponential( - np.random.rand / p[1])
+                
+
+            
 
