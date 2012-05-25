@@ -2,7 +2,27 @@ import numpy as np
 import numpy.random as rnd
 import pyNN
 import pyNN.random
+import utils
 from scipy.spatial import distance
+
+def get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v):
+
+    x0 = tuning_prop[src, 0]
+    y0 = tuning_prop[src, 1]
+    u0 = tuning_prop[src, 2]
+    v0 = tuning_prop[src, 3]
+    x1 = tuning_prop[tgt, 0]
+    y1 = tuning_prop[tgt, 1]
+    u1 = tuning_prop[tgt, 2]
+    v1 = tuning_prop[tgt, 3]
+    dx = utils.torus_distance(x0, x1)
+    dy = utils.torus_distance(x0, x1)
+    latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
+    x_predicted = x0 + u0 * latency  
+    y_predicted = y0 + v0 * latency  
+    p = .5 * np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * sigma_x**2))) \
+            * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+    return p, latency
 
 def compute_weights_from_tuning_prop(tuning_prop, params):
     """
@@ -30,18 +50,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
     for src in xrange(n_cells):
         for tgt in xrange(n_cells):
             if (src != tgt):
-                x0 = tuning_prop[src, 0]
-                y0 = tuning_prop[src, 1]
-                u0 = tuning_prop[src, 2]
-                v0 = tuning_prop[src, 3]
-                x1 = tuning_prop[tgt, 0]
-                y1 = tuning_prop[tgt, 1]
-                u1 = tuning_prop[tgt, 2]
-                v1 = tuning_prop[tgt, 3]
-
-                latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u0**2 + v0**2)
-                p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
-                        * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+                p, latency = get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v)
 
                 delay = min(max(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
                 p_output[i, 0], p_output[i, 1], p_output[i, 2], p_output[i, 3] = src, tgt, p, delay
@@ -75,6 +84,9 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
     output_fn = params['conn_list_ee_fn_base'] + '0.dat'
     print "Saving to file ... ", output_fn
     np.savetxt(output_fn, w_output, fmt='%d\t%d\t%.4e\t%.1e')
+    output_fn = params['conn_list_ee_fn_base'] + 'probabilities.dat'
+    print "Saving to file ... ", output_fn
+    np.savetxt(output_fn, p_output, fmt='%d\t%d\t%.4e\t%.1e')
     return 0
 
 #    np.savetxt(output_fn, np.array(conn_list))
@@ -111,28 +123,7 @@ def compute_weights_from_tuning_prop_distances(tuning_prop, params):
 #            print "debug i %d j %d n_nn %d closest_n.shape:" % (src, j, n_nearest_neighbors), closest_neighbors.shape
             tgt = closest_neighbors[src, j]
             assert (src != tgt)
-            x0 = tuning_prop[src, 0]
-            y0 = tuning_prop[src, 1]
-            u0 = tuning_prop[src, 2]
-            v0 = tuning_prop[src, 3]
-            x1 = tuning_prop[tgt, 0]
-            y1 = tuning_prop[tgt, 1]
-            u1 = tuning_prop[tgt, 2]
-            v1 = tuning_prop[tgt, 3]
-
-            # if we were not on a torus - the connection probabilities would be calculated like this 
-#            latency = np.sqrt((x0 - x1)**2 + (y0 - y1)**2) / np.sqrt(u0**2 + v0**2)
-#            p = .5 * np.exp(-((x0 + u0 * latency - x1)**2 + (y0 + v0 * latency - y1)**2) / (2 * sigma_x**2)) \
-#                    * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
-
-            dx = utils.torus_distance(x0, x1)
-            dy = utils.torus_distance(x0, x1)
-            latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
-            x_predicted = x0 + u0 * latency  
-            y_predicted = y0 + v0 * latency  
-            p = .5 * np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * sigma_x**2))) \
-                    * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
-
+            p, latency = get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v)
 #            p_output[i, 0], p_output[i, 1], p_output[i, 2] = src, tgt, p
             i += 1
             # convert probability to weight

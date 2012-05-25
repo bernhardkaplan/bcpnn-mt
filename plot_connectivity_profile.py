@@ -58,8 +58,7 @@ for tgt in tgts:
     m = dy / dx
     ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'b', lw=line_width)
     rnd = min(1., np.random.rand() + .5)
-    ax1.annotate('(%d, %.2e, %.2e)' % (tgt, w, d), (x_tgt, y_tgt), fontsize=6)
-#    ax1.annotate('(%d, %.2e)' % (tgt, w), ((x_src + x_tgt)/2., (y_src + y_tgt)/2.))
+#    ax1.annotate('(%d, %.2e, %.2e)' % (tgt, w, d), (x_tgt, y_tgt), fontsize=6)
 
 x_tgt = tp[src_cell, 0] 
 y_tgt = tp[src_cell, 1] 
@@ -76,7 +75,7 @@ for src in srcs:
     m = dy / dx
     ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'r', lw=line_width)
     rnd = max(.5, .5 * np.random.rand())
-    ax1.annotate('(%d, %.2e, %.2e)' % (src, w, d), (x_src, y_src), fontsize=6)
+#    ax1.annotate('(%d, %.2e, %.2e)' % (src, w, d), (x_src, y_src), fontsize=6)
 
 #xgrid, ygrid = 0.01, 0.01
 #x = np.arange(0, 1.2, xgrid)

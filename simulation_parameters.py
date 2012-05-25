@@ -49,13 +49,13 @@ class parameter_storage(object):
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['p_to_w_scaling'] = 0.01   # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['p_thresh_connection'] = 1e-3 # connections with a probability of less then this value will be discarded
+        self.params['p_thresh_connection'] = 1e-2 # connections with a probability of less then this value will be discarded
 #        self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_min'] = 0.1          # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_max'] = 30           # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['w_sigma_x'] = 0.5          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.5          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
+        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.25          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
 
         # >>>> Not used when pre-wired connectivity is used
