@@ -503,26 +503,33 @@ def sort_gids_by_distance_to_stimulus(tp, mp, sorting_index=0):
         sorting_index = 3
 
     n_cells = tp[:, 0].size
-#    v_dist = np.zeros(n_cells) # distance in 'velocity space' between stimulus (u, v) and cells' tuning_properties
     x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
 
     n_steps = 100 # the of 
-    x_pos_stim = np.array([mp[0] + mp[2] * i * 1./n_steps for i in xrange(n_steps)])
-    y_pos_stim = np.array([mp[1] + mp[3] * i * 1./n_steps for i in xrange(n_steps)])
     for i in xrange(n_cells):
-        spatial_dist = np.zeros(n_steps)
-        for t in xrange(n_steps):
-            spatial_dist[t] = torus_distance(tp[i, 0], x_pos_stim[t])** 2 + torus_distance(tp[i, 1], y_pos_stim[t])**2
-        min_spatial_dist = np.sqrt(np.min(spatial_dist))
-        velocity_dist = np.sqrt((tp[i, 2] - mp[2])**2 + (tp[i,3] - mp[3])**2)
-        x_dist[i] = min_spatial_dist + velocity_dist
-#        v_dist[i] = np.sqrt((tp[i, 2] - mp[2])**2 + (tp[i,3] - mp[3])**2)
+        x_dist[i] = get_min_distance_to_stim(mp, tp[i, :], n_steps)
 
-#    return x_dist
     cells_closest_to_stim_pos = x_dist.argsort()
 #    cells_closest_to_stim_velocity = v_dist.argsort()
     return cells_closest_to_stim_pos, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
 
+def get_min_distance_to_stim(mp, tp_cell, n_steps=100):
+    """
+    mp : motion_parameters (x,y,u,v)
+    tp_cell : same format as mp
+    n_steps: steps for calculating the motion path
+    """
+    n_steps = 100 # the of 
+    x_pos_stim = np.array([mp[0] + mp[2] * i * 1./n_steps for i in xrange(n_steps)])
+    y_pos_stim = np.array([mp[1] + mp[3] * i * 1./n_steps for i in xrange(n_steps)])
+    spatial_dist = np.zeros(n_steps)
+    for t in xrange(n_steps):
+        spatial_dist[t] = torus_distance(tp_cell[0], x_pos_stim[t])** 2 + torus_distance(tp_cell[1], y_pos_stim[t])**2
+        min_spatial_dist = np.sqrt(np.min(spatial_dist))
+        velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
+    dist =  min_spatial_dist + velocity_dist
+    return dist
+    
 def torus_distance(x0, x1):
     x_lim =  1
     dx = np.abs(x0 - x1) % x_lim

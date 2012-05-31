@@ -6,56 +6,78 @@ import CreateConnections as CC
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 tp = np.loadtxt(params['tuning_prop_means_fn'])
+
 mp = params['motion_params']
 print "Motion parameters", mp
 sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
 
-indices, distances = utils.sort_gids_by_distance_to_stimulus(tp , mp)
-# cells in indices should have the highest response to the stimulus
+indices, distances = utils.sort_gids_by_distance_to_stimulus(tp , mp) # cells in indices should have the highest response to the stimulus
 
 conn_mat, delays = utils.convert_connlist_to_matrix(params['conn_list_ee_fn_base'] + '0.dat', params['n_exc'])
-n = 50
-
-#try:
+n = 20
 
 print "Loading nspikes", params['exc_spiketimes_fn_merged'] + '0.ras'
 nspikes = utils.get_nspikes(params['exc_spiketimes_fn_merged'] + '0.ras', n_cells=params['n_exc'])
-got_spikes = True
-mans = (nspikes.argsort()).tolist()
+mans = (nspikes.argsort()).tolist() # mans = most active neurons
 mans.reverse()
 mans = mans[0:n]
-print "Max nspikes fired:", nspikes[mans], mans
 
-#    print "Cell %d has tuning_prop:" % nspikes.argmax(), tp[nspikes.argmax(), :]
-#except:
-#    print "No nspikes"
-#    got_spikes = False
-#    nspikes = np.zeros(params['n_exc'])
-#    pass
-
-
-# get the tuning properties of the n cells being closest to the stimulus
-print "\n'Good' tuning properties (they should lead to a strong response to the stimulus)"
-good_tp = tp[indices[0:n], :]
-print 'gid\tx_pos\t\ty_pos\tvx\t\tvy'
+print 'w_out_good = weights to other well tuned neurons'
+print 'w_in_good = weights from other well tuned neurons'
+print 'w_out_total = sum of all outgoing weights'
+print 'w_in_total = sum of all incoming weights'
+print 'distance_to_stim = minimal distance to the moving stimulus (linear sum of  (time-varying) spatial distance and (constant) distance in velocity)'
+print "\nGID\tnspikes\tdistance_to_stim\tw_out_good\tw_in_good\tw_out_total\tw_in_total\ttuning_prop"
 for i in xrange(n):
-    print indices[i], tp[indices[i], :]
+    gid = indices[i]
+    other_gids = list(indices)
+    other_gids.remove(gid)
+    w_in_good = conn_mat[other_gids, gid].sum()
+    w_out_good = conn_mat[gid, other_gids].sum()
+    w_in_sum = conn_mat[:, gid].sum()
+    w_out_sum = conn_mat[gid, :].sum()
+    distance_to_stim = utils.get_min_distance_to_stim(mp, tp[gid, :])
+    print '%d\t%d\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e' % (gid, nspikes[gid], distance_to_stim, w_out_good, w_in_good, w_out_sum, w_in_sum), tp[gid, :]
+
+print '\n Look at the most active neurons in the network'
+print 'w_out = weights to other mans (MostActiveNeuronS)'
+print 'w_in = weights from other mans (MostActiveNeuronS)'
+print 'w_out_total = sum of all outgoing weights'
+print 'w_in_total = sum of all incoming weights'
+print 'distance_to_stim = minimal distance to the moving stimulus (linear sum of  (time-varying) spatial distance and (constant) distance in velocity)'
+print "\nGID\tnspikes\tdistance_to_stim\tw_out\tw_in\tw_out_total\tw_in_total\ttuning_prop"
+for i in xrange(n):
+    gid = mans[i]
+    other_gids = list(mans)
+    other_gids.remove(gid)
+    w_in_good = conn_mat[other_gids, gid].sum()
+    w_out_good = conn_mat[gid, other_gids].sum()
+    w_in_sum = conn_mat[:, gid].sum()
+    w_out_sum = conn_mat[gid, :].sum()
+    print '%d\t%d\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e' % (gid, nspikes[gid], distance_to_stim, w_out_good, w_in_good, w_out_sum, w_in_sum), tp[gid, :]
+
+
+print 'Overlap between most active neurons and well-tuned neurons:'
+mans_set = set(mans)
+good_gids = set(indices)
+print mans_set.intersection(good_gids)
+
 # sort them according to their x-pos
-x_sorted_indices = np.argsort(good_tp[:, 0])
-gids = indices[x_sorted_indices]
+x_sorted_indices = np.argsort(tp[indices, 0])
+sorted_gids = indices[x_sorted_indices]
 
 
 print '\nConnection probabilities between the cells with \'good\' tuning properies:'
 conn_probs = []
 latencies = []
 for i in xrange(n):
-    src = gids[i]
-    for tgt in gids:
+    src = sorted_gids[i]
+    for tgt in sorted_gids:
         p, latency = CC.get_p_conn(tp, src, tgt, sigma_x, sigma_v)
         conn_probs.append(p)
         latencies.append(latency)
-        print "p(%d, %d):\t %.3e\tlatency: %.3e\t" % (src, tgt, p, latency)
-    print '\n'
+#        print "p(%d, %d):\t %.3e\tlatency: %.3e\t" % (src, tgt, p, latency)
+#    print '\n'
 
 conn_probs = np.array(conn_probs)
 latencies = np.array(latencies)
@@ -63,24 +85,6 @@ print "Average connection probability between neurons with \'good\' tuning_prop"
 print "Min max and median connection probability between neurons with \'good\' tuning_prop", np.min(conn_probs), np.max(conn_probs), np.median(conn_probs)
 print "Average latencies between neurons with \'good\' tuning_prop", np.mean(latencies), '\t std:', np.std(latencies)
 print "Min and max latencies between neurons with \'good\' tuning_prop", np.min(latencies), np.max(latencies)
-
-#np.histogram(conn_probs, 
-#counts, bins = np.histogram(d, bins=n_bins)
-
-#indices_list = list(indices)
-
-#print good_tp[x_sorted_indices, :]
-
-print "\nGID\tnspikes\tdistance_to_stim\tp and weight_to_next_cell that will see the stimulus (and weight back)\tx_pos"
-
-for i in xrange(n-1):
-
-    src = gids[i]
-    tgt = gids[i+1]
-    p, latency = CC.get_p_conn(tp, src, tgt, sigma_x, sigma_v)
-    print gids[i], '\t', nspikes[gids[i]], '\t', distances[x_sorted_indices[i]], '\t\t', p, '\t', conn_mat[gids[i], gids[i+1]], '\t\t', \
-            conn_mat[gids[i+1], gids[i]], '\t', good_tp[x_sorted_indices[i], 0]
-
 
 print "\nCompare to cells connected via strong weights"
 all_weights = conn_mat.flatten()

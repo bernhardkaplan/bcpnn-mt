@@ -15,7 +15,11 @@ class parameter_storage(object):
     def __init__(self):
 
         self.params = {}
+        self.set_default_params()
+        self.set_filenames()
 
+
+    def set_default_params(self):
         self.params['simulator'] = 'nest'# number of minicolumns 
 
         # ###################
@@ -53,7 +57,7 @@ class parameter_storage(object):
 #        self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 30.)
-        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_x'] = 0.5          # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
 
@@ -135,15 +139,15 @@ class parameter_storage(object):
         self.params['w_inh_noise'] = 0.001          # [nS] mean value for noise ---< columns
         self.params['f_inh_noise'] = 400            # [Hz]
 
+        rnd.seed(self.params['seed'])
 
-
+    def set_filenames(self):
         # ######################
         # FILENAMES and FOLDERS
         # ######################
         # the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns/"# the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns_winit_%s/" % (self.params['initial_connectivity'])# the main folder with all simulation specific content
-
         self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.1e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], self.params['w_sigma_x'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
@@ -228,7 +232,6 @@ class parameter_storage(object):
 
 
 
-        rnd.seed(self.params['seed'])
 
 
     def create_folders(self):
@@ -241,13 +244,17 @@ class parameter_storage(object):
                 print 'Creating folder:\t%s' % f
                 os.system("mkdir %s" % (f))
 
-
     def load_params(self):
         """
         return the simulation parameters in a dictionary
         """
         return self.params
 
+
+    def update_values(self, **kwargs):
+        for key, value in kwargs.iteritems():
+            self.params[key] = value
+        self.set_filenames()
 
     def write_parameters_to_file(self, fn):
 #        print 'Writing parameters to: %s' % (fn)
