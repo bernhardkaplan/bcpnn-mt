@@ -24,7 +24,8 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     import simulation_parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
-    setup(timestep=0.1, min_delay=params['delay_min'], max_delay=params['delay_max'])
+    (delay_min, delay_max) = params['delay_range']
+    setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max)
     rng_v = NumpyRNG(seed = sim_cnt*3147 + params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
     rng_conn = NumpyRNG(seed = params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 
@@ -38,18 +39,20 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
             boundaries=(-80, -60))
 
     if initial_connectivity == 'random':
-        w_range=(1e-4, 5e-3)
-        w_tau = 3.16e-04
+        w_range=(0, 5e-3)
+        w_lambda = params['w_distribution_fit_wlambda']
         w_ee_dist = RandomDistribution('exponential',
-                (w_tau,),
+                (w_lambda,),
                 rng=rng_conn,
-                constrain='redraw',
+                constrain='clip',
+#                constrain='redraw',
                 boundaries=w_range)
+
         delay_dist = RandomDistribution('uniform',
-                (0.1, 30.),
+                params['delay_range'],
                 rng=rng_conn,
                 constrain='redraw',
-                boundaries=(0.1, 30.))
+                boundaries=params['delay_range'])
 
     w_ei_dist = RandomDistribution('normal',
             (params['w_ei_mean'], params['w_ei_sigma']),
@@ -115,14 +118,15 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     # plastic connections are retrieved from the file
 
     if initial_connectivity == 'precomputed':
-        print "Connecting exc - exc from file %s ...."  % (params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
-        connector_ee = FromFileConnector(params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat')
-        prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
+        conn_list_fn = params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat'
 
     else: # random
-        print "Connecting exc - exc by random...."
-        connector_ee = FastFixedProbabilityConnector(params['p_ee'], weights=w_ee_dist, delays=delay_dist)
-        prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
+        conn_list_fn = params['random_weight_list_fn'] + str(sim_cnt) + '.dat'
+#        connector_ee = FastFixedProbabilityConnector(params['p_ee'], weights=w_ee_dist, delays=delay_dist)
+
+    print "Connecting exc - exc from file", conn_list_fn
+    connector_ee = FromFileConnector(conn_list_fn)
+    prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
 
 
     # # # # # # # # # # # # # # # # # # # #

@@ -13,7 +13,7 @@ sim_cnt = 0 # which run do you want to plot?
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 output_fn_base = params['spatial_readout_fn_base'] + 'sim%d_' % sim_cnt
-output_fn_movie = params['spatial_readout_movie']
+output_fn_movie = params['spatial_readout_detailed_movie']
 bg_color = 'k'
 
 # parameters

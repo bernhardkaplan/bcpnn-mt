@@ -25,14 +25,8 @@ def prepare_sim(comm):
     # create the input
     input_spike_trains = utils.create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=my_units) # write to paths defined in the params dictionary
 
-    # create initial connections 
-    # with weights based on cell's tuning properties
     if comm != None:
         comm.barrier() # 
-    print "Proc %d computes initial weights ... " % pc_id
-#    CC.compute_weights_from_tuning_prop_distances(tuning_prop, params)
-    if pc_id == 0 and params['initial_connectivity'] == 'precomputed':
-        CC.compute_weights_from_tuning_prop(tuning_prop, params)
 
     # by random: # ugly function signature
 #    CC.create_conn_list_by_random(params['conn_list_ee_fn_base']+'0.dat', (0, params['n_exc']), (0, params['n_exc']), params['p_ee'], params['w_ee_mean'], params['w_ee_sigma'])

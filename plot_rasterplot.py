@@ -25,7 +25,11 @@ for cell in xrange(int(len(spiketimes))):
 pylab.title('Rasterplot of %s neurons' % cell_type)
 pylab.xlabel('Time [ms]')
 pylab.ylabel('Neuron')
-pylab.show()
+output_fn = params['rasterplot_%s_fig' % cell_type] 
+print "Saving to", output_fn
+pylab.savefig(output_fn)
+
+#pylab.show()
 
 #folder = params['spiketimes_folder']
 #fn_base = params['exc_spiketimes_fn_base'].rsplit(folder)[1]

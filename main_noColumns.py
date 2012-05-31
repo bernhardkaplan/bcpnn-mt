@@ -11,6 +11,8 @@ import utils
 import Bcpnn
 import time
 import prepare_sim as Prep
+import CreateConnections as CC
+
 try:
     from mpi4py import MPI
     USE_MPI = True
@@ -44,7 +46,25 @@ if pc_id == 0:
 
 t1 = time.time()
 if (do_prepare):
+    # prepare stimulus
     Prep.prepare_sim(comm)
+
+if pc_id == 0 and params['initial_connectivity'] == 'precomputed':
+    print "Proc %d computes initial weights ... " % pc_id
+    tuning_prop = np.loadtxt(params['tuning_prop_means_fn'])
+    CC.compute_weights_from_tuning_prop(tuning_prop, params)
+
+elif pc_id == 0 and params['initial_connectivity'] == 'random':
+    print "Proc %d shuffles pre-computed weights ... " % pc_id
+    input_fn = 'NoColumns_winit_precomputed_wsigmaX1.0e-01_motionblur2.5e-01_pthresh1.0e-02_ptow1.0e-02/Connections/conn_list_ee_0.dat'
+    output_fn = params['random_weight_list_fn'] + '0.dat'
+    CC.compute_random_weight_list(input_fn, output_fn)
+
+if comm != None:
+    comm.barrier() # 
+
+
+
 if USE_MPI: comm.barrier()
 t2 = time.time()
 print "Preparation time: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])

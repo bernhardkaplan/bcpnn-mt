@@ -14,8 +14,7 @@ indices, distances = utils.sort_gids_by_distance_to_stimulus(tp , mp)
 # cells in indices should have the highest response to the stimulus
 
 conn_mat, delays = utils.convert_connlist_to_matrix(params['conn_list_ee_fn_base'] + '0.dat', params['n_exc'])
-n = 20
-
+n = 50
 
 #try:
 
@@ -44,6 +43,29 @@ for i in xrange(n):
 # sort them according to their x-pos
 x_sorted_indices = np.argsort(good_tp[:, 0])
 gids = indices[x_sorted_indices]
+
+
+print '\nConnection probabilities between the cells with \'good\' tuning properies:'
+conn_probs = []
+latencies = []
+for i in xrange(n):
+    src = gids[i]
+    for tgt in gids:
+        p, latency = CC.get_p_conn(tp, src, tgt, sigma_x, sigma_v)
+        conn_probs.append(p)
+        latencies.append(latency)
+        print "p(%d, %d):\t %.3e\tlatency: %.3e\t" % (src, tgt, p, latency)
+    print '\n'
+
+conn_probs = np.array(conn_probs)
+latencies = np.array(latencies)
+print "Average connection probability between neurons with \'good\' tuning_prop", np.mean(conn_probs), '\t std:', np.std(conn_probs)
+print "Min max and median connection probability between neurons with \'good\' tuning_prop", np.min(conn_probs), np.max(conn_probs), np.median(conn_probs)
+print "Average latencies between neurons with \'good\' tuning_prop", np.mean(latencies), '\t std:', np.std(latencies)
+print "Min and max latencies between neurons with \'good\' tuning_prop", np.min(latencies), np.max(latencies)
+
+#np.histogram(conn_probs, 
+#counts, bins = np.histogram(d, bins=n_bins)
 
 #indices_list = list(indices)
 
