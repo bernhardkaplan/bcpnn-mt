@@ -74,7 +74,8 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     L_input = np.empty((n_cells, time.shape[0]))
 #    mv = np.zeros((time.shape[0], 3))
     for i_time, time_ in enumerate(time):
-        print "t:", time_
+        if (i_time % 50 == 0):
+            print "t:", time_
         L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast)
         L_input[:, i_time] *= params['f_max_stim']
 #        mv[i_time, 0] = time_
@@ -85,7 +86,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 #    np.savetxt(params['motion_fn'], mv)
 
     for column in my_units:
-        print "cell:", column
+#        print "cell:", column
         rate_of_t = np.array(L_input[column, :]) #  max_of_stim * gauss(time, time_of_max_stim, width_of_stim)
 
         n_steps = rate_of_t.size
@@ -138,14 +139,6 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
             L range between 0 and 1
         """
         x, y = x0 + u0*t, y0 + v0*t # current position of the blob at time t assuming a perfect translation
-#        x_, y_ = x, y
-
-#        ay = (np.int(y) / y_lim + 1) % 2
-#        not_ay = (np.int(y) / y_lim) % 2
-#        b = y % y_lim
-#        c = y_lim - ay * b
-#        y = ay * c + not_ay * b
-#        x, y = np.mod(x, 1.), np.mod(y, 1.) # we are on a torus
 
     for cell in xrange(n_cells): # todo: vectorize
         L[cell] = np.exp( -.5 * (torus_distance(tuning_prop[cell, 0], x))**2/blur_X**2

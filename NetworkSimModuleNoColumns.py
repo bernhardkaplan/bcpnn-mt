@@ -6,8 +6,11 @@ import time
 import numpy as np
 import numpy.random as rnd
 import sys
+import NeuroTools.parameters as ntp
+
 
 def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
+
     simulator_name = params['simulator']
     if simulator_name == 'nest':
         from pyNN.nest import *
@@ -21,9 +24,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     # # # # # # # # # # # # 
     #     S E T U P       #
     # # # # # # # # # # # #
-    import simulation_parameters
-    network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
-    params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
+    # this function expects a parameter dictionary
     (delay_min, delay_max) = params['delay_range']
     setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max)
     rng_v = NumpyRNG(seed = sim_cnt*3147 + params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
@@ -174,14 +175,17 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     # # # # # # # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    B I A S   T O   C E L L S  # 
     # # # # # # # # # # # # # # # # # # # # # # # # # # 
-    print "Setting bias currents ... "
-    bias_currents = []
-    bias_values = np.loadtxt(params['bias_values_fn_base'] + str(sim_cnt) + '.dat')
-    for cell in xrange(params['n_exc']):
-        i_amp = bias_values[cell]
-        dcsource = DCSource({'amplitude' : i_amp})
-        dcsource.inject_into([exc_pop[cell]])
-        bias_currents.append(dcsource)
+#    print "Setting bias currents ... "
+#    bias_currents = []
+#    bias_values = np.loadtxt(params['bias_values_fn_base'] + str(sim_cnt) + '.dat')
+#    for cell in xrange(params['n_exc']):
+#        i_amp = bias_values[cell]
+#        dcsource = DCSource({'amplitude' : i_amp})
+#        dcsource.inject_into([exc_pop[cell]])
+#        bias_currents.append(dcsource)
+
+
+
     #        bias_currents.append(DCSource({'amplitude':i_amp, 'start':0, 'stop':params['t_sim']}))
     #        bias_currents[-1].inject_into([exc_pop[cell]])
 
@@ -247,3 +251,5 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     t2 = time.time()
 
     print "Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])
+
+

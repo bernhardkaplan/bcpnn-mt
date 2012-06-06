@@ -54,6 +54,7 @@ for i in xrange(n):
     w_out_good = conn_mat[gid, other_gids].sum()
     w_in_sum = conn_mat[:, gid].sum()
     w_out_sum = conn_mat[gid, :].sum()
+    distance_to_stim = utils.get_min_distance_to_stim(mp, tp[gid, :])
     print '%d\t%d\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e' % (gid, nspikes[gid], distance_to_stim, w_out_good, w_in_good, w_out_sum, w_in_sum), tp[gid, :]
 
 

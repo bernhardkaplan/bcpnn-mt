@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 import numpy as np
 import simulation_parameters
@@ -59,10 +61,14 @@ class PlotPrediction(object):
     11) same as 9) for theta
     """
 
-    def __init__(self, sim_cnt=0):
+    def __init__(self, params=None, sim_cnt=0):
 
-        self.network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
-        self.params = self.network_params.load_params()                       # params stores cell numbers, etc as a dictionary
+        if params == None:
+            self.network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
+            self.params = self.network_params.load_params()                       # params stores cell numbers, etc as a dictionary
+        else:
+            self.params = params
+        self.no_spikes = False
 
         # define parameters
         self.n_cells = self.params['n_exc']
@@ -91,6 +97,8 @@ class PlotPrediction(object):
         self.sorted_indices_vy = self.tuning_prop[:, 3].argsort()
 
         self.load_spiketimes(sim_cnt)
+        if self.no_spikes:
+            return
         fig_width_pt = 800.0  # Get this from LaTeX using \showthe\columnwidth
         inches_per_pt = 1.0/72.27               # Convert pt to inch
         golden_mean = (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
@@ -126,10 +134,15 @@ class PlotPrediction(object):
         # NeuroTools
 #        spklist = nts.load_spikelist(fn)
 #        spiketrains = spklist.spiketrains
-        d = np.loadtxt(fn)
-        spiketrains = [[] for i in xrange(self.n_cells)]
-        for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, 1])].append(d[i, 0])
+        try:
+            d = np.loadtxt(fn)
+            spiketrains = [[] for i in xrange(self.n_cells)]
+            for i in xrange(d[:, 0].size):
+                spiketrains[int(d[i, 1])].append(d[i, 0])
+        except:
+            print 'WARNING: no spikes found in:', fn
+            self.no_spikes = True
+            return
 
         for gid in xrange(self.params['n_exc']):
 
@@ -210,7 +223,9 @@ class PlotPrediction(object):
                 vy_prediction_trace[cell, i, 0] = self.vy_confidence_binned[cell, past_bin:i].mean()
                 vy_prediction_trace[cell, i, 1] = self.vy_confidence_binned[cell, past_bin:i].std()
             self.vx_moving_avg[i, 0] = np.sum(vx_prediction_trace[:, i, 0] * self.vx_tuning)
-            self.vx_moving_avg[i, 1] = np.sum(vx_prediction_trace[:, i, 1] * self.vx_tuning)
+            self.vx_moving_avg[i, 1] = np.std(vx_prediction_trace[:, i, 1] * self.vx_tuning)
+            self.vy_moving_avg[i, 0] = np.sum(vy_prediction_trace[:, i, 0] * self.vy_tuning)
+            self.vy_moving_avg[i, 1] = np.std(vy_prediction_trace[:, i, 1] * self.vy_tuning)
 
             # 3)
             # rescale activity to negative values

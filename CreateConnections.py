@@ -97,14 +97,16 @@ def compute_weights_from_tuning_prop(tuning_prop, params):
 
 
 
-def compute_random_weight_list(input_fn, output_fn, seed=98765):
+def compute_random_weight_list(input_fn, output_fn, params, seed=98765):
     """
     Open the existing pre-computed (non-random) conn_list and shuffle sources and targets
     """
     rnd.seed(seed)
     d = np.loadtxt(input_fn)
-    rnd.shuffle(d[:, 0])    # shuffle source ids
-    rnd.shuffle(d[:, 1])    # shuffle target ids
+    d[:, 0] = rnd.randint(0, params['n_exc'], d[:, 0].size)
+    d[:, 1] = rnd.randint(0, params['n_exc'], d[:, 0].size)
+#    rnd.shuffle(d[:, 0])    # shuffle source ids
+#    rnd.shuffle(d[:, 1])    # shuffle target ids
 #    rnd.shuffle(d[:, 3])    # shuffle delays ids
 
     np.savetxt(output_fn, d)
@@ -159,23 +161,6 @@ def create_conn_list_by_random_normal(output_fn, sources, targets, p, w_mean, w_
                 conns.append([src, tgt, w, d])
     output_array = np.array(conns)
     np.savetxt(output_fn, output_array)
-
-
-
-def create_connections_between_cells(params, conn_mat_fn):
-    """
-    This function writes 
-    Arguments:
-        params : parameter dictionary (see: simulation_parameters.py)
-        conn_mat_fn : filename for the minicolumn - minicolumn connectivity
-    """
-    for src_mc in xrange(params['n_mc']):
-        for tgt_mc in xrange(params['n_mc']):
-            pass
-
-
-#class MyDistr(pyNN.random.RandomDistribution):
-#    self.rng = ....
 
 
 class MyRNG(pyNN.random.WrappedRNG):

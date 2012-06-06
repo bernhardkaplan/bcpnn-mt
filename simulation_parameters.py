@@ -1,11 +1,7 @@
 import numpy as np
 import numpy.random as rnd
 import os
-"""
-
-BK:
-    TODO: use NeuroTools ParameterSets instead
-"""
+from NeuroTools import parameters as ntp
 
 class parameter_storage(object):
     """
@@ -17,7 +13,7 @@ class parameter_storage(object):
         self.params = {}
         self.set_default_params()
         self.set_filenames()
-
+        self.ParamSet = ntp.ParameterSet(self.params)
 
     def set_default_params(self):
         self.params['simulator'] = 'nest'# number of minicolumns 
@@ -25,7 +21,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 60# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
@@ -53,11 +49,11 @@ class parameter_storage(object):
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['p_to_w_scaling'] = 0.01   # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['p_thresh_connection'] = 1e-3 # connections with a probability of less then this value will be discarded
+        self.params['p_thresh_connection'] = 1e-1 # connections with a probability of less then this value will be discarded
 #        self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 30.)
-        self.params['w_sigma_x'] = 0.5          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
 
@@ -148,7 +144,8 @@ class parameter_storage(object):
         # the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns/"# the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns_winit_%s/" % (self.params['initial_connectivity'])# the main folder with all simulation specific content
-        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.1e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], self.params['w_sigma_x'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
+        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
+                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
@@ -229,10 +226,22 @@ class parameter_storage(object):
         self.params['spatial_readout_detailed_movie'] = '%sspatial_readout_detailed.mp4' % (self.params['movie_folder'])
         self.params['spatial_readout_movie'] = '%sspatial_readout.mp4' % (self.params['movie_folder'])
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
+        self.params['test'] = 'asdf'
+        self.params['response_3d_fig'] = '%s3D_nspikes_winsum_dcellstim.png' % (self.params['figures_folder'])
 
 
 
 
+    def check_folders(self):
+        """
+        Returns True if all folders exist, False otherwise
+        """
+        all_folders_exist = True
+        for f in self.params['folder_names']:
+            if not os.path.exists(f):
+                all_folders_exist = False
+
+        return all_folders_exist
 
     def create_folders(self):
         """
@@ -248,28 +257,36 @@ class parameter_storage(object):
         """
         return the simulation parameters in a dictionary
         """
-        return self.params
+        return self.ParamSet
+#        return self.params
 
 
-    def update_values(self, **kwargs):
+    def update_values(self, kwargs):
         for key, value in kwargs.iteritems():
             self.params[key] = value
+        # update the dependent parameters
         self.set_filenames()
+        self.ParamSet = ntp.ParameterSet(self.params)
 
-    def write_parameters_to_file(self, fn):
-#        print 'Writing parameters to: %s' % (fn)
+    def write_parameters_to_file(self, fn=None):
+        if fn == None:
+            fn = self.params['params_fn']
+        print 'Writing parameters to: %s' % (fn)
+
 #        if not (os.path.isdir(self.params['folder_name'])):
 #            print 'Creating folder:\n\t%s' % self.params['folder_name']
 #            os.system('/bin/mkdir %s' % self.params['folder_name'])
-        output_f = file(fn, 'w')
-        self.list_of_params = self.params.keys()
-        for p in self.params.keys():
-            if (type(p) == type([])):
-                string_to_write = ""
-                for i in p:
-                    string_to_write += str(p[i]) 
-                    string_to_write += '\t'
-                output_f.write('%s' % string_to_write)
-            else:
-                output_f.write('%s = %s\n' % (p, str(self.params.get(p))))
-        output_f.close()
+
+        self.ParamSet.save(fn)
+#        output_f = file(fn, 'w')
+#        self.list_of_params = self.params.keys()
+#        for p in self.params.keys():
+#            if (type(p) == type([])):
+#                string_to_write = ""
+#                for i in p:
+#                    string_to_write += str(p[i]) 
+#                    string_to_write += '\t'
+#                output_f.write('%s' % string_to_write)
+#            else:
+#                output_f.write('%s = %s\n' % (p, str(self.params.get(p))))
+#        output_f.close()
