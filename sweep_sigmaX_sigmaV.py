@@ -7,14 +7,14 @@ import time
 import plot_prediction
 
 
-sigma_x_start = 0.20
+sigma_x_start = 0.4
 sigma_x_step = 0.05
 sigma_x_stop = sigma_x_start + 2 * sigma_x_step
 sigma_x_range = np.arange(sigma_x_start, sigma_x_stop, sigma_x_step)
 
 sigma_v_start = 0.05
 sigma_v_step = 0.05
-sigma_v_stop = sigma_v_start + 2 * sigma_v_step
+sigma_v_stop = sigma_v_start + 1 * sigma_v_step
 sigma_v_range = np.arange(sigma_v_start, sigma_v_stop, sigma_v_step)
 
 try:
@@ -48,6 +48,7 @@ for sigma_v in sigma_v_range:
         if i_ == 0:
             input_folder = str(simStarter.params['input_folder']) # where spikes will be created
             simStarter.prepare_spiketrains(simStarter.params['tuning_prop_means_fn'])
+#            pass
         else:
             simStarter.copy_folder(input_folder, simStarter.params['folder_name'])
 
