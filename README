@@ -12,3 +12,20 @@ Run:
     or 
 
     mpirun -np [number_of_processes] python main_noColumns.py
+
+
+installation on (neuro)debian(virtual machine on MacOsX)
+--------------------------------------------------------
+
+PyNN
+   sudo aptitude install python-pynn
+NEST dependencies
+   sudo aptitude install python-dev
+   sudo aptitude install libncurses-dev
+   sudo aptitude install libreadline-dev
+NEST
+   cd nest-source
+   ./configure
+   make
+   sudo make install
+
