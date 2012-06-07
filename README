@@ -17,13 +17,19 @@ Run:
 installation on (neuro)debian(virtual machine on MacOsX)
 --------------------------------------------------------
 
-PyNN
+   sudo aptitude install ffmpeg 
+
+#PyNN+NeuroTools
    sudo aptitude install python-pynn
-NEST dependencies
+   sudo aptitude install python-pip
+   sudo aptitude install python-imaging
+   sudo pip install NeuroTools
+#NEST dependencies
+   sudo aptitude install gsl-bin libgsl0-dev
    sudo aptitude install python-dev
    sudo aptitude install libncurses-dev
    sudo aptitude install libreadline-dev
-NEST
+#NEST
    cd nest-source
    ./configure
    make
