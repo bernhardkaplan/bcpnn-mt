@@ -48,13 +48,14 @@ class parameter_storage(object):
 #        self.params['initial_connectivity'] = 'random'
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['p_to_w_scaling'] = 0.01   # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['p_thresh_connection'] = 1e-1 # connections with a probability of less then this value will be discarded
+        self.params['p_to_w_scaling'] = 10.  # conversion factor for the pre-computed weights , 0.005 seems good
+#        self.params['p_to_w_scaling'] = 0.005   # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['p_thresh_connection'] = 1e-6 # connections with a probability of less then this value will be discarded
 #        self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 30.)
-        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.25         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 0.3          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.3         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
@@ -71,18 +72,18 @@ class parameter_storage(object):
 
         # exc - inh
         self.params['p_ei'] = 0.1
-        self.params['w_ei_mean'] = 0.003
+        self.params['w_ei_mean'] = 0.002
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
 #        self.params['p_ie'] = 1.
         self.params['p_ie'] = 0.1
-        self.params['w_ie_mean'] = 0.004
+        self.params['w_ie_mean'] = 0.005
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
         self.params['p_ii'] = 0.1
-        self.params['w_ii_mean'] = 0.004          
+        self.params['w_ii_mean'] = 0.001
         self.params['w_ii_sigma'] = 0.001          
 
         # >>> currently not used
@@ -114,7 +115,7 @@ class parameter_storage(object):
         # ######
         self.params['f_max_stim'] = 2000. # [Hz]
         self.params['stim_dur_sigma'] = self.params['t_sim'] *.3 # [ms]
-        self.params['w_input_exc'] = 3.0e-3 # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 2.0e-3 # [nS] mean value for input stimulus ---< exc_units (columns
         self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [nS]
 
 
@@ -148,7 +149,7 @@ class parameter_storage(object):
 #        self.params['folder_name'] = "NoColumns_winit_%s/" % (self.params['initial_connectivity'])# the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
 #                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
-        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_winput%.2e_finput%.2e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
+        self.params['folder_name'] = "Data_winit_%s_wsigmaX%.2e_wsigmaV%.2e_winput%.2e_finput%.2e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
                 self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_input_exc'], self.params['f_max_stim'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']

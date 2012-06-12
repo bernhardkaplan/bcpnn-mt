@@ -4,6 +4,7 @@ import pyNN
 import pyNN.random
 import utils
 from scipy.spatial import distance
+import os
 
 def get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v):
 
@@ -20,7 +21,7 @@ def get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v):
     latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
     x_predicted = x0 + u0 * latency  
     y_predicted = y0 + v0 * latency  
-    p = .5 * np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * sigma_x**2))) \
+    p = np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * sigma_x**2))) \
             * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
     return p, latency
 
@@ -37,63 +38,80 @@ def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
     n_cells = tuning_prop[:, 0].size
     sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
     p_to_w_scaling = params['p_to_w_scaling']
-    p_thresh = params['p_thresh_connection']
-    conn_list = []
-#    output = np.zeros((n_cells ** 2 - n_cells, 4))
-    output = ""
-    p_output = np.zeros((n_cells**2 - n_cells, 4))
-    p_above_threshold = np.zeros(n_cells**2 - n_cells)
-#    p_output = np.zeros((n_cells**2 - n_cells, 5))
-
-
     (delay_min, delay_max) = params['delay_range']
+    if comm != None:
+        pc_id, n_proc = comm.rank, comm.size
+    else:
+        pc_id, n_proc = 0, 1
+    gid_min, gid_max = utils.distribute_n(params['n_exc'], n_proc, pc_id)
+    n_cells = gid_max - gid_min
+    my_cells = range(gid_min, gid_max)
+    output = ""
+    output_fn_base = params['conn_list_ee_fn_base']
+
     i = 0
-    for src in xrange(n_cells):
-        for tgt in xrange(n_cells):
+    for src in my_cells:
+        for tgt in xrange(params['n_exc']):
             if (src != tgt):
                 p, latency = get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v)
-
-                delay = min(max(latency * params['delay_scale'], delay_min), delay_max)
-                p_output[i, 0], p_output[i, 1], p_output[i, 2], p_output[i, 3] = src, tgt, p, delay
+                delay = min(max(latency * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+                output += '%d\t%d\t%.4e\t%.2e\n' % (src, tgt, p, delay)
                 # decide which connection should be discarded
-                if p >= p_thresh:
-                    p_above_threshold[i] = p
                 i += 1
-        
-#                if (p*params['p_to_w_scaling'] >= params['w_init_thresh']):
-#                    w = p * p_to_w_scaling
-#                    delay = min(max(latency * params['delay_scale'], params['delay_min']), params['delay_max'])
-#                    output += "%d\t%d\t%.4e\t%.1e\n" % (src, tgt, w, delay)
-#                    conn_list.append([src, tgt, w, delay])
 
-    # for curiosity print also the probabilities
-#    print "Calculating normalized probabilities"
-#    buff = np.zeros((n_cells**2 - n_cells, 4))
-#    buff[:,:3] = p_output[:,:3]
-#    buff[:, 3] = p_output[:, 2] / p_output[:, 2].sum()
-#    output_fn = params['conn_prob_fn']
-#    np.savetxt(output_fn, buff, fmt='%d\t%d\t%.4e\t%.4e')
+    output_fn = params['conn_list_ee_fn_base'] + 'pid%d.dat' % (pc_id)
+    print 'Process %d writes connections to: %s' % (pc_id, output_fn)
+    f = file(output_fn, 'w')
+    f.write(output)
+    f.flush()
+    f.close()
+    normalize_probabilities(params, comm, params['p_thresh_connection'])
 
-    # convert thresholded probabilities to weight
-    valid_conns = p_above_threshold.nonzero()[0]
-    w_output = np.zeros((valid_conns.size, 4))
-    w_output[:, 0] = p_output[valid_conns, 0]
-    w_output[:, 1] = p_output[valid_conns, 1]
-    w_output[:, 2] = p_output[valid_conns, 2] * p_to_w_scaling
-    w_output[:, 3] = p_output[valid_conns, 3]
 
-    output_fn = params['conn_list_ee_fn_base'] + '0.dat'
-    print "Saving to file ... ", output_fn
-    np.savetxt(output_fn, w_output, fmt='%d\t%d\t%.4e\t%.1e')
-#    output_fn = params['conn_list_ee_fn_base'] + 'probabilities.dat'
-#    print "Saving to file ... ", output_fn
-#    np.savetxt(output_fn, p_output, fmt='%d\t%d\t%.4e\t%.1e')
+def normalize_probabilities(params, comm, p_thresh=None):
+    """
+    Open all files named with params['conn_list_ee_fn_base'], sum the last 3rd column storing the probabilities,
+    reopen all the files, divide by the sum, and save all the files again.
+    
+    """
+    if comm != None:
+        pc_id, n_proc = comm.rank, comm.size
+    else:
+        pc_id, n_proc = 0, 1
 
-    return 0
+    fn = params['conn_list_ee_fn_base'] + 'pid%d.dat' % (pc_id)
+    print 'Reading', fn
+    d = np.loadtxt(fn)
 
-#    np.savetxt(output_fn, np.array(conn_list))
-#    return weight_matrix, latency_matrix
+    if p_thresh != None:
+        indices = np.nonzero(d[:, 2] > p_thresh)[0]
+#        print 'debug indices', indices.shape
+        # resize the output array
+        d = d[indices, :]
+#        print 'd new', d
 
+    p_sum = d[:, 2].sum()
+    if comm != None:
+        p_sum_global = comm.allreduce(p_sum, None)
+    else:
+        p_sum_global = p_sum
+
+    d[:, 2] /= p_sum_global
+
+    fn = params['conn_list_ee_fn_base'] + 'pid%d_normalized.dat' % (pc_id)
+    print 'Writing to ', fn
+    np.savetxt(fn, d)
+
+    # make one file out of many
+    if pc_id == 0:
+        cat_command = 'cat '
+        for pid in xrange(n_proc):
+            fn = params['conn_list_ee_fn_base'] + 'pid%d_normalized.dat ' % (pid)
+            cat_command += fn
+        output_fn = params['conn_list_ee_fn_base'] + '0.dat'
+        cat_command += ' > %s' % output_fn
+        print 'Merging to:', output_fn
+        os.system(cat_command)
 
 
 

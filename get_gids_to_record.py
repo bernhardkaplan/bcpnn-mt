@@ -11,10 +11,11 @@ mp = params['motion_params']
 print "Motion parameters", mp
 sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
 
+print 'utils.sort_gids_by_distance_to_stimulus...'
 indices, distances = utils.sort_gids_by_distance_to_stimulus(tp , mp) # cells in indices should have the highest response to the stimulus
-
+print 'utils.convert_connlist_to_matrix...'
 conn_mat, delays = utils.convert_connlist_to_matrix(params['conn_list_ee_fn_base'] + '0.dat', params['n_exc'])
-n = 20
+n = 50
 
 print "Loading nspikes", params['exc_spiketimes_fn_merged'] + '0.ras'
 nspikes = utils.get_nspikes(params['exc_spiketimes_fn_merged'] + '0.ras', n_cells=params['n_exc'])
@@ -38,6 +39,7 @@ for i in xrange(n):
     w_out_sum = conn_mat[gid, :].sum()
     distance_to_stim = utils.get_min_distance_to_stim(mp, tp[gid, :])
     print '%d\t%d\t%.3e\t%.3e\t%.3e\t%.3e\t%.3e' % (gid, nspikes[gid], distance_to_stim, w_out_good, w_in_good, w_out_sum, w_in_sum), tp[gid, :]
+#    print '%d\t%d\t%.3e\t%.3e\t%.3e' % (gid, nspikes[gid], distance_to_stim, w_in_good, w_in_sum), tp[gid, :]
 
 print '\n Look at the most active neurons in the network'
 print 'w_out = weights to other mans (MostActiveNeuronS)'

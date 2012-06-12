@@ -7,11 +7,15 @@ import time
 import plot_prediction
 
 
-p_thresh_start = 1e-4
-#p_thresh_step = 0.2
-#p_thresh_stop = p_thresh_start + 4 * p_thresh_step
-#p_thresh_range = np.arange(p_thresh_start, p_thresh_stop, p_thresh_step)
-p_thresh_range = [1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]
+#p_to_w_start = 1e-4
+#p_to_w_step = 0.2
+#p_to_w_stop = p_to_w_start + 4 * p_to_w_step
+#p_to_w_range = np.arange(p_to_w_start, p_to_w_stop, p_to_w_step)
+#p_to_w_range = [5e-4, 1e-3, 5e-3, 1e-2, 5e-2]
+#p_to_w_range = [5e-3]
+p_to_w_range = [1., 5., 10., 20., 50., 100.]
+
+p_thresh_range = [1e-2]#, 1e-1]
 
 try:
     from mpi4py import MPI
@@ -32,9 +36,12 @@ t_start = time.time()
 simStarter = SimulationManager.SimulationManager(PS, comm)
 
 i_ = 0
-for p_thresh in p_thresh_range:
+#for p_thresh in p_thresh_range:
+#    new_params = {  'initial_connectivity' : 'precomputed', 'p_thresh_connection' : p_thresh}
+
+for p_to_w in p_to_w_range:
     # -----   pre-computed connectivity 
-    new_params = {  'initial_connectivity' : 'precomputed', 'p_thresh_connection' : p_thresh}
+    new_params = {  'initial_connectivity' : 'precomputed', 'p_to_w_scaling' : p_to_w}
     simStarter.update_values(new_params)
 
     simStarter.create_folders()
@@ -46,8 +53,12 @@ for p_thresh in p_thresh_range:
     else:
         simStarter.copy_folder(input_folder, simStarter.params['folder_name'])
 
-    print "Running precomputed with p_thresh", p_thresh
+    t1 = time.time()
     simStarter.prepare_connections()
+    t2 = time.time()
+    t_run = t2 - t1
+    print "Precomputing weights took: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t_run, (t_run)/60., \
+            simStarter.params['n_cells'], simStarter.params['n_exc'], simStarter.params['n_inh'])
     simStarter.run_sim()
     # analysis 1
     if pc_id == 0:
@@ -86,3 +97,4 @@ t_stop = time.time()
 t_run = t_stop - t_start
 print "Full sweep duration: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t_run, (t_run)/60., \
         simStarter.params['n_cells'], simStarter.params['n_exc'], simStarter.params['n_inh'])
+exit(1)
