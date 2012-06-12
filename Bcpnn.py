@@ -106,10 +106,10 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=N
 
     if (n_proc > 1):
         output_fn_conn_list = params['conn_list_ee_fn_base'] + str(sim_cnt+1) + '.dat'
-        gather_conn_list(comm, new_conn_list, n_total, output_fn_conn_list)
+        utils.gather_conn_list(comm, new_conn_list, n_total, output_fn_conn_list)
 
         output_fn_bias = params['bias_values_fn_base'] + str(sim_cnt+1) + '.dat'
-        gather_bias(comm, bias_dict, n_total, output_fn_bias)
+        utils.gather_bias(comm, bias_dict, n_total, output_fn_bias)
 
     else:
         print "Debug saving to", params['conn_list_ee_fn_base'] + str(sim_cnt+1) + '.dat'
@@ -118,80 +118,6 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=N
         np.savetxt(params['bias_values_fn_base'] + str(sim_cnt+1) + '.dat', bias)
 
 
-def gather_conn_list(comm, data, n_total, output_fn):
-    """
-    This function makes all processes with pc_id > 1 send their data to process 0.
-    pc_id: process id of the calling process
-    n_proc: total number of processes
-    data: data to be sent
-    n_total: total number of elements to be stored
-    """
-
-    pc_id, n_proc = comm.rank, comm.size
-    print "debug pc_id, n_proc", pc_id, n_proc
-    # receiving data
-    if (pc_id == 0):
-        output_data = np.zeros((n_total, 4))
-        # copy the data computed by pc_id 0
-        line_pnt = data[:,0].size
-        output_data[0:line_pnt, :] = data
-        for sender in xrange(1, n_proc):
-            # each process sends a list with four elements: [(src, tgt, w, d), ... ]
-            data = comm.recv(source=sender, tag=sender)
-            print "Master receives from proc %d" % sender, data
-            new_line_pnt = line_pnt + data[:, 0].size
-            # write received data to output buffer
-            output_data[line_pnt:new_line_pnt, :] = data
-            line_pnt = new_line_pnt
-
-        print "DEBUG, Master proc saves weights to", output_fn
-        np.savetxt(output_fn, output_data)
-            
-    # sending data
-    elif (pc_id != 0):
-#            print  pc_id, "sending data to master"
-        # each process sends a dictionary { gid : {pattern : ca_data} }
-        comm.send(data, dest=0, tag=pc_id)
-
-
-def gather_bias(comm, data, n_total, output_fn):
-    """
-    This function makes all processes with pc_id > 1 send their data to process 0.
-    pc_id: process id of the calling process
-    n_proc: total number of processes
-    data: data to be sent; here: dictionary = { gid : bias_value }
-    n_total: total number of elements to be stored
-    """
-    pc_id, n_proc = comm.rank, comm.size
-
-    # receiving data
-    if (pc_id == 0):
-        output_data = np.zeros(n_total)
-        # copy the data computed by pc_id 0
-        for gid in data.keys():
-            if (data[gid] != None):
-                output_data[gid] = data[gid]
-        for sender in xrange(1, n_proc):
-            # each process sends a list with four elements: [(src, tgt, w, d), ... ]
-            data = comm.recv(source=sender, tag=sender)
-            for gid in data.keys():
-                if (data[gid] != None):
-                    output_data[gid] = data[gid]
-#            print "Master receives data of from %d of shape: " % sender, data.shape
-            # write received data to output buffer
-#            print "debug,", output_data[line_pnt:new_line_pnt, :].shape, data.shape
-
-        print "DEBUG, Master proc saves bias to", output_fn
-        np.savetxt(output_fn, output_data)
-        
-    # sending data
-    elif (pc_id != 0):
-#            print pc_id, "sending data to master"
-        # each process sends a dictionary { gid : {pattern : ca_data} }
-        comm.send(data, dest=0, tag=pc_id)
-
-
-    
 
 
 def get_abstract_weight_and_bias(pre, post, alpha=0.01, dt=1, eps=1e-6):
@@ -404,48 +330,4 @@ def bcpnn_offline(params, connection_matrix, sim_cnt=0, pc_id=0, n_proc=1, save_
     np.savetxt(params['bias_values_fn_base'] + str(sim_cnt+1) + '.npy', bias)
 
     return connection_matrix, bias
-
-def get_abstract_weight_and_bias(pre, post, alpha=0.01, dt=1, eps=1e-6):
-    """
-    Arguments:
-        pre, post: abstract activity patterns, valued between 0 and 1
-        alpha: learning rate
-        dt: integration time step
-    """
-
-    assert (len(pre) == len(post)), "Abstract pre and post activity have different lengths!"
-    n = len(pre)
-    pi = np.zeros(n)
-    pj = np.zeros(n)
-    pij = np.zeros(n)
-    bias = np.zeros(n)
-    wij = np.zeros(n)
-    pre_post = np.array(pre) * np.array(post)
-
-    for i in xrange(1, n):
-        # pre
-        dpi = alpha * dt * (pre[i-1] - pi[i-1])
-        pi[i] = pi[i-1] + dpi
-        # post
-        dpj = alpha * dt * (post[i-1] - pj[i-1])
-        pj[i] = pj[i-1] + dpj
-        # joint
-        dpij = alpha * dt * (pre_post[i-1] - pij[i-1])
-        pij[i] = pij[i-1] + dpij
-
-        if ((pi[i] == 0) or (pj[i] == 0)):
-            wij[i] = 0
-        if (pij[i] == 0):
-            wij[i] = eps**2
-        else:
-            wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
-        #elif (pij[i] <= pi[i] * pj[i]): # this condition avoids weights going negative
-
-        # bias
-        if (pj[i] > 0):
-            bias[i] = np.log(pj[i])
-        else:
-            bias[i] = np.log(eps)
-
-    return wij, bias, pi, pj, pij
 

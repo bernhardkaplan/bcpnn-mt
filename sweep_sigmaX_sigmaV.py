@@ -4,17 +4,17 @@ import SimulationManager
 import time
 
 # analysis modules
-import plot_prediction
+#import plot_prediction
 
 
-sigma_x_start = 0.4
-sigma_x_step = 0.05
-sigma_x_stop = sigma_x_start + 2 * sigma_x_step
+sigma_x_start = 0.1
+sigma_x_step = 0.2
+sigma_x_stop = sigma_x_start + 4 * sigma_x_step
 sigma_x_range = np.arange(sigma_x_start, sigma_x_stop, sigma_x_step)
 
-sigma_v_start = 0.05
-sigma_v_step = 0.05
-sigma_v_stop = sigma_v_start + 1 * sigma_v_step
+sigma_v_start = 0.1
+sigma_v_step = 0.2
+sigma_v_stop = sigma_v_start + 4 * sigma_v_step
 sigma_v_range = np.arange(sigma_v_start, sigma_v_stop, sigma_v_step)
 
 try:
@@ -56,10 +56,10 @@ for sigma_v in sigma_v_range:
         simStarter.prepare_connections()
         simStarter.run_sim()
         # analysis 1
-        if pc_id == 0:
-            plot_prediction.plot_prediction(simStarter.params)
-        if comm != None:
-            comm.barrier()
+#        if pc_id == 0:
+#            plot_prediction.plot_prediction(simStarter.params)
+#        if comm != None:
+#            comm.barrier()
 
         # copy files from the previous folder needed for the next simulation
         src1 = simStarter.params['input_folder']
@@ -83,10 +83,10 @@ for sigma_v in sigma_v_range:
         simStarter.prepare_connections(connections_fn)
         print "Running random with sigma_v", i_, sigma_v
         simStarter.run_sim()
-        if pc_id == 0:
-            plot_prediction.plot_prediction(simStarter.params)
-        if comm != None:
-            comm.barrier()
+#        if pc_id == 0:
+#            plot_prediction.plot_prediction(simStarter.params)
+#        if comm != None:
+#            comm.barrier()
         i_ += 1
 
 t_stop = time.time()

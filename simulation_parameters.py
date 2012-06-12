@@ -54,8 +54,10 @@ class parameter_storage(object):
         self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 30.)
         self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.1          # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
+        self.params['w_sigma_v'] = 0.25         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+                                                # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
+                                                # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
 
         # >>>> Not used when pre-wired connectivity is used
         # exc - exc 
@@ -110,9 +112,9 @@ class parameter_storage(object):
         # ######
         # INPUT 
         # ######
-        self.params['f_max_stim'] = 50 * 100.       # [Hz]
+        self.params['f_max_stim'] = 2000. # [Hz]
         self.params['stim_dur_sigma'] = self.params['t_sim'] *.3 # [ms]
-        self.params['w_input_exc'] = 0.002         # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 3.0e-3 # [nS] mean value for input stimulus ---< exc_units (columns
         self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [nS]
 
 
@@ -144,8 +146,10 @@ class parameter_storage(object):
         # the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns/"# the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns_winit_%s/" % (self.params['initial_connectivity'])# the main folder with all simulation specific content
-        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
-                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
+#        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
+#                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
+        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_winput%.2e_finput%.2e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
+                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_input_exc'], self.params['f_max_stim'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
@@ -179,9 +183,8 @@ class parameter_storage(object):
         # output spiketrains
         self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged_' % self.params['spiketimes_folder']
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']
-        self.params['merged_exc_spiketimes_fn_base'] = '%smerged_exc_spikes.ras' % self.params['spiketimes_folder']
         self.params['inh_spiketimes_fn_base'] = '%sinh_spikes_' % self.params['spiketimes_folder']
-        self.params['merged_inh_spiketimes_fn_base'] = '%smerged_inh_spikes.ras' % self.params['spiketimes_folder']
+        self.params['inh_spiketimes_fn_merged'] = '%sinh_spikes_merged_' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
         self.params['inh_volt_fn_base'] = '%sinh_volt.npy' % self.params['volt_folder']
         self.params['ztrace_fn_base'] = '%sztrace_' % self.params['bcpnntrace_folder']
@@ -230,8 +233,6 @@ class parameter_storage(object):
         self.params['response_3d_fig'] = '%s3D_nspikes_winsum_dcellstim.png' % (self.params['figures_folder'])
 
 
-
-
     def check_folders(self):
         """
         Returns True if all folders exist, False otherwise
@@ -263,6 +264,7 @@ class parameter_storage(object):
 
     def update_values(self, kwargs):
         for key, value in kwargs.iteritems():
+#            print 'debug', key, value
             self.params[key] = value
         # update the dependent parameters
         self.set_filenames()
@@ -290,3 +292,51 @@ class parameter_storage(object):
 #            else:
 #                output_f.write('%s = %s\n' % (p, str(self.params.get(p))))
 #        output_f.close()
+
+
+class ParameterContainer(parameter_storage):
+
+    def __init__(self, fn):
+        super(ParameterContainer, self).__init__()
+        self.root_dir = os.path.dirname(fn)
+        # If the folder has been moved, all filenames need to be updated
+        self.update_values({self.params['folder_name'] : self.root_dir})
+
+    def load_params(self, fn):
+        self.params = ntp.ParameterSet(fn)
+
+    def update_values(self, kwargs):
+        for key, value in kwargs.iteritems():
+            self.params[key] = value
+        # update the dependent parameters
+        self.ParamSet = ntp.ParameterSet(self.params)
+
+    def create_folders(self):
+        """
+        Must be called from 'outside' this class before the simulation
+        """
+
+        for f in self.params['folder_names']:
+            if not os.path.exists(f):
+                print 'Creating folder:\t%s' % f
+                os.system("mkdir %s" % (f))
+
+    def load_params(self):
+        """
+        return the simulation parameters in a dictionary
+        """
+        return self.ParamSet
+#        return self.params
+
+
+    def write_parameters_to_file(self, fn=None):
+        if fn == None:
+            fn = self.params['params_fn']
+        print 'Writing parameters to: %s' % (fn)
+
+#        if not (os.path.isdir(self.params['folder_name'])):
+#            print 'Creating folder:\n\t%s' % self.params['folder_name']
+#            os.system('/bin/mkdir %s' % self.params['folder_name'])
+
+        self.ParamSet.save(fn)
+

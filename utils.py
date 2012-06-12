@@ -534,3 +534,75 @@ def torus_distance(x0, x1):
 #    print x0, x1, (x0-x1), dx
     return dx
 
+
+
+def gather_conn_list(comm, data, n_total, output_fn):
+    """
+    This function makes all processes with pc_id > 1 send their data to process 0.
+    pc_id: process id of the calling process
+    n_proc: total number of processes
+    data: data to be sent
+    n_total: total number of elements to be stored
+    """
+
+    pc_id, n_proc = comm.rank, comm.size
+    print "debug pc_id, n_proc", pc_id, n_proc
+    # receiving data
+    if (pc_id == 0):
+        output_data = np.zeros((n_total, 4))
+        # copy the data computed by pc_id 0
+        line_pnt = data[:,0].size
+        output_data[0:line_pnt, :] = data
+        for sender in xrange(1, n_proc):
+            # each process sends a list with four elements: [(src, tgt, w, d), ... ]
+            data = comm.recv(source=sender, tag=sender)
+            print "Master receives from proc %d" % sender, data
+            new_line_pnt = line_pnt + data[:, 0].size
+            # write received data to output buffer
+            output_data[line_pnt:new_line_pnt, :] = data
+            line_pnt = new_line_pnt
+
+        print "DEBUG, Master proc saves weights to", output_fn
+        np.savetxt(output_fn, output_data)
+            
+    # sending data
+    elif (pc_id != 0):
+#            print  pc_id, "sending data to master"
+        comm.send(data, dest=0, tag=pc_id)
+
+
+def gather_bias(comm, data, n_total, output_fn):
+    """
+    This function makes all processes with pc_id > 1 send their data to process 0.
+    pc_id: process id of the calling process
+    n_proc: total number of processes
+    data: data to be sent; here: dictionary = { gid : bias_value }
+    n_total: total number of elements to be stored
+    """
+    pc_id, n_proc = comm.rank, comm.size
+
+    # receiving data
+    if (pc_id == 0):
+        output_data = np.zeros(n_total)
+        # copy the data computed by pc_id 0
+        for gid in data.keys():
+            if (data[gid] != None):
+                output_data[gid] = data[gid]
+        for sender in xrange(1, n_proc):
+            # each process sends a list with four elements: [(src, tgt, w, d), ... ]
+            data = comm.recv(source=sender, tag=sender)
+            for gid in data.keys():
+                if (data[gid] != None):
+                    output_data[gid] = data[gid]
+#            print "Master receives data of from %d of shape: " % sender, data.shape
+            # write received data to output buffer
+#            print "debug,", output_data[line_pnt:new_line_pnt, :].shape, data.shape
+
+        print "DEBUG, Master proc saves bias to", output_fn
+        np.savetxt(output_fn, output_data)
+        
+    # sending data
+    elif (pc_id != 0):
+#            print pc_id, "sending data to master"
+        comm.send(data, dest=0, tag=pc_id)
+

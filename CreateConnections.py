@@ -24,7 +24,7 @@ def get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v):
             * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
     return p, latency
 
-def compute_weights_from_tuning_prop(tuning_prop, params):
+def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
     """
     Arguments:
         tuning_prop: 2 dimensional array with shape (n_cells, 4)

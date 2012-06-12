@@ -1,5 +1,5 @@
-import matplotlib
-matplotlib.use('Agg')
+#import matplotlib
+#matplotlib.use('Agg')
 import pylab
 import numpy as np
 import simulation_parameters
@@ -7,61 +7,7 @@ from NeuroTools import signals as nts
 import utils
 
 class PlotPrediction(object):
-    """
-    Creating an instance of this class plots following figures:
-    1) nspikes_binned 
-        x: time bins
-        y: gid
-        color: nspikes within time_binsize
-
-    2) nspikes_binned_normalized
-        x: time bins
-        y: gid
-        color: nspikes within time_binsize
-
-    # single neuron level
-    3) vx_binned
-        x: time bins
-        y: vx 
-        color: confidence of vx (based on normalized nspikes_binned_normalized)
-
-    4) vy_binned
-        x: time bins
-        y: vy 
-        color: confidence of vy (based on normalized nspikes_binned_normalized)
-
-    # population level: evaluate confidences ('votes')
-    5) vx - prediction
-        x: time bins
-        y: vx_prediction
-        contains several plots:
-        - linear_avg
-        . trace (based on vx_binned_trace), with yerr=vx_binned_trace.std()
-        x non-linear vote
-
-    6) same as 5) for vy
-
-    7) theta-prediction
-        x: time
-        y: arctan2(vy_prediction, vx_prediction)
-        contains several plots, based on the different predictions
-        - linear_avg
-        . trace (based on vx_binned_trace), with yerr=vx_binned_trace.std()
-        x non-linear vote
-
-    # large time-scale, population level
-    bar plots
-    9) vx prediction based on whole population and full run
-        vx_full_run_linear_avg
-        vx_full_run_non_linear
-        x: vx
-        y: confidence 
-
-    10) same as 9) for vy
-    11) same as 9) for theta
-    """
-
-    def __init__(self, params=None, sim_cnt=0):
+    def __init__(self, params=None, data_fn=None, sim_cnt=0):
 
         if params == None:
             self.network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
@@ -69,6 +15,9 @@ class PlotPrediction(object):
         else:
             self.params = params
         self.no_spikes = False
+
+        self.n_fig_x = 2
+        self.n_fig_y = 2
 
         # define parameters
         self.n_cells = self.params['n_exc']
@@ -83,7 +32,7 @@ class PlotPrediction(object):
         self.nspikes_binned = np.zeros((self.n_cells, self.n_bins))             # binned activity over time
         self.nspikes_binned_normalized = np.zeros((self.n_cells, self.n_bins))  # normalized so that for each bin, the sum of the population activity = 1
         self.nspikes_normalized = np.zeros(self.n_cells)                        # activity normalized, so that sum = 1
-
+        self.spiketrains = [[] for i in xrange(self.n_cells)]
 
         # sort the cells by their tuning vx, vy properties
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
@@ -91,12 +40,14 @@ class PlotPrediction(object):
         self.vx_tuning = self.tuning_prop[:, 2].copy()
         self.vx_tuning.sort()
         self.sorted_indices_vx = self.tuning_prop[:, 2].argsort()
+        self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
         # vy
         self.vy_tuning = self.tuning_prop[:, 3].copy()
         self.vy_tuning.sort()
         self.sorted_indices_vy = self.tuning_prop[:, 3].argsort()
+        self.vy_grid = np.linspace(np.min(self.vy_tuning), np.max(self.vy_tuning), self.n_vy_bins, endpoint=True)
 
-        self.load_spiketimes(sim_cnt)
+        self.load_spiketimes(data_fn)
         if self.no_spikes:
             return
         fig_width_pt = 800.0  # Get this from LaTeX using \showthe\columnwidth
@@ -116,7 +67,7 @@ class PlotPrediction(object):
         pylab.rcParams.update(params)
 
 
-    def load_spiketimes(self, sim_cnt):
+    def load_spiketimes(self, fn=None):
         """
         Fills the following arrays with data:
         self.nspikes = np.zeros(self.n_cells)                                   # summed activity
@@ -127,32 +78,30 @@ class PlotPrediction(object):
         """
 
         print(' Loading data .... ')
-        folder = self.params['spiketimes_folder']
-#        fn = self.params['exc_spiketimes_fn_merged'].rsplit(folder)[1] + '%d.dat' % (sim_cnt)
-        fn = self.params['exc_spiketimes_fn_merged'] + '%d.ras' % (sim_cnt)
+#        if fn == None:
+#            sim_cnt = 0
+#            fn = self.params['exc_spiketimes_fn_merged'] + '%d.ras' % (sim_cnt)
         
         # NeuroTools
 #        spklist = nts.load_spikelist(fn)
 #        spiketrains = spklist.spiketrains
-        try:
-            d = np.loadtxt(fn)
-            spiketrains = [[] for i in xrange(self.n_cells)]
-            for i in xrange(d[:, 0].size):
-                spiketrains[int(d[i, 1])].append(d[i, 0])
-        except:
-            print 'WARNING: no spikes found in:', fn
-            self.no_spikes = True
-            return
+#        try:
+        d = np.loadtxt(fn)
+        for i in xrange(d[:, 0].size):
+            self.spiketrains[int(d[i, 1])].append(d[i, 0])
+#        except:
+#            print 'WARNING: no spikes found in:', fn
+#            self.no_spikes = True
+#            return
 
         for gid in xrange(self.params['n_exc']):
 
 #            spiketimes = spiketrains[gid+1.].spike_times
 #            nspikes = spiketimes.size
 
-            spiketimes = spiketrains[gid]
-            nspikes = len(spiketimes)
+            nspikes = len(self.spiketrains[gid])
             if (nspikes > 0):
-                count, bins = np.histogram(spiketimes, bins=self.n_bins)
+                count, bins = np.histogram(self.spiketrains[gid], bins=self.n_bins)
                 self.nspikes_binned[gid, :] = count
             self.nspikes[gid] = nspikes
 
@@ -166,6 +115,29 @@ class PlotPrediction(object):
         nspikes_shifted = self.nspikes - self.nspikes.max()
         nspikes_exp = np.exp(nspikes_shifted)
         self.nspikes_normalized_nonlinear = nspikes_exp / nspikes_exp.sum()
+
+    def bin_speed_estimates(self, v_edges, index=2):
+        """
+        Bring the speed estimates from the neuronal level to broader representation in a grid:
+        index = index in tuning_parameters for the parameter (vx=2, vy=3)
+                    ^
+        vx_binned   |
+                    |
+                    +------>
+                    time_bins
+
+
+        """
+        
+        v_max = self.tuning_prop[:, index].max()
+        output_data = np.zeros((len(v_edges), self.n_bins))
+        for gid in xrange(self.n_cells):
+            n_spikes_binned = self.nspikes_binned
+            v = self.tuning_prop[gid, index] # cell properties
+            y_pos_grid = utils.get_grid_pos_1d(v, v_edges)
+            output_data[y_pos_grid, :] += self.nspikes_binned_normalized[gid, :]
+        return output_data, v_edges
+
 
     def compute_v_estimates(self):
         """
@@ -182,18 +154,24 @@ class PlotPrediction(object):
            3) Compute the prediction based on the the activity of the whole run - not time dependent
            4) Non-linear 'voting' based on 3) 
         """
+        print 'Computing v estimates...'
+        mp = self.params['motion_params']
+
         # momentary result, based on the activity in one time bin
         self.vx_avg = np.zeros(self.n_bins) 
         self.vy_avg = np.zeros(self.n_bins)
+        self.vdiff_avg = np.zeros(self.n_bins)  # stores |v_predicted(t) - v_stimulus(t)|
         # ---> gives theta_avg 
 
         # based on the activity in several time bins
         self.vx_moving_avg = np.zeros((self.n_bins, 2))
         self.vy_moving_avg = np.zeros((self.n_bins, 2))
+        self.vdiff_moving_avg = np.zeros((self.n_bins, 2))
 
         # non linear transformation of vx_avg
         self.vx_non_linear = np.zeros(self.n_bins)
         self.vy_non_linear = np.zeros(self.n_bins)
+        self.vdiff_non_linear = np.zeros(self.n_bins)
 
         trace_length = 100 # [ms] window length for moving average 
         trace_length_in_bins = int(round(trace_length / self.time_binsize))
@@ -214,6 +192,7 @@ class PlotPrediction(object):
             vy_pred = self.vy_confidence_binned[:, i] * self.vy_tuning
             self.vx_avg[i] = np.sum(vx_pred)
             self.vy_avg[i] = np.sum(vy_pred)
+            self.vdiff_avg[i] = np.sqrt((mp[2] - self.vx_avg[i])**2 + (mp[3] - self.vy_avg[i])**2)
 
             # 2) moving average
             past_bin = max(0, min(0, i-trace_length_in_bins))
@@ -226,6 +205,9 @@ class PlotPrediction(object):
             self.vx_moving_avg[i, 1] = np.std(vx_prediction_trace[:, i, 1] * self.vx_tuning)
             self.vy_moving_avg[i, 0] = np.sum(vy_prediction_trace[:, i, 0] * self.vy_tuning)
             self.vy_moving_avg[i, 1] = np.std(vy_prediction_trace[:, i, 1] * self.vy_tuning)
+            self.vdiff_moving_avg[i, 0] = np.sqrt((mp[2] - self.vx_moving_avg[i, 0])**2 + (mp[3] - self.vy_moving_avg[i, 0])**2)
+            self.vdiff_moving_avg[i, 1] = 2 * (self.vx_moving_avg[i, 1] + self.vy_moving_avg[i, 1]) # propagation of uncertainty
+
 
             # 3)
             # rescale activity to negative values
@@ -239,18 +221,19 @@ class PlotPrediction(object):
             vy_votes = (vy_exp / vy_exp.sum()) * self.vy_tuning
             self.vx_non_linear[i] = vx_votes.sum()
             self.vy_non_linear[i] = vy_votes.sum()
+            self.vdiff_non_linear[i] = np.sqrt((mp[2] - self.vx_non_linear[i])**2 + (mp[3] - self.vy_non_linear[i])**2)
 
         # in the first step the trace can not have a standard deviation --> avoid NANs 
         self.vx_moving_avg[0, 0] = np.sum(self.vx_confidence_binned[self.sorted_indices_vx, 0].mean() * self.vx_tuning)
         self.vy_moving_avg[0, 0] = np.sum(self.vy_confidence_binned[self.sorted_indices_vy, 0].mean() * self.vy_tuning)
         self.vx_moving_avg[0, 1] = 0
         self.vy_moving_avg[0, 1] = 0
+        self.vdiff_moving_avg[0, 1] = 0
+        self.vdiff_moving_avg[0, 1] = 0
 
         # ---> time INdependent estimates: based on activity of the full run
 
         # compute the marginalized (over all positions) vx, vy estimates and bin them in a grid
-        self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
-        self.vy_grid = np.linspace(np.min(self.vy_tuning), np.max(self.vy_tuning), self.n_vy_bins, endpoint=True)
         self.vx_marginalized_binned = np.zeros(self.n_vx_bins)
         self.vy_marginalized_binned = np.zeros(self.n_vy_bins)
         self.vx_marginalized_binned_nonlinear = np.zeros(self.n_vx_bins)
@@ -293,147 +276,216 @@ class PlotPrediction(object):
 #        assert (np.sum(self.theta_marginalized_binned_nonlinear) == 1), "Marginalization incorrect: %.1f" % (np.sum(self.theta_marginalized_binned_nonlinear))
 
 
-    def plot(self):
+    def create_fig(self):
         print "plotting ...."
-        self.fig1 = pylab.figure()
-        pylab.subplots_adjust(hspace=0.95)
-        pylab.subplots_adjust(wspace=0.3)
+        self.fig = pylab.figure()
+        pylab.subplots_adjust(hspace=0.35)
+        pylab.subplots_adjust(wspace=0.35)
+
+    def plot_rasterplot(self, cell_type, fig_cnt=1):
+        if cell_type == 'inh':
+            fn = self.params['inh_spiketimes_fn_base'] + '0.ras'
+            n_cells = self.params['n_inh']
+        elif cell_type == 'exc':
+            fn = self.params['exc_spiketimes_fn_merged'] + '0.ras'
+            n_cells = self.params['n_exc']
+        try:
+            nspikes, spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
+        except:
+            spiketimes = []
+
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        for cell in xrange(int(len(spiketimes))):
+            ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=1)
+            
+        ax.set_title('Rasterplot of %s neurons' % cell_type)
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('Neuron GID')
+
+
+    def plot_vx_grid_vs_time(self, fig_cnt=1):
+        print 'plot_vx_grid_vs_time ... '
+        xlabel = 'Time [ms]'
+        ylabel = '$v_x$'
+        title = '$v_x$ binned vs time'
+        vx_grid, v_edges = self.bin_speed_estimates(self.vx_grid, index=2)
+        self.plot_grid_vs_time(vx_grid, title, xlabel, ylabel, v_edges, fig_cnt)
+
+
+    def plot_vy_grid_vs_time(self, fig_cnt=1):
+        print 'plot_vy_grid_vs_time ...'
+        xlabel = 'Time [ms]'
+        ylabel = '$v_y$'
+        title = '$v_y$ binned vs time'
+        vy_grid, v_edges = self.bin_speed_estimates(self.vy_grid, index=3)
+        self.plot_grid_vs_time(vy_grid, title, xlabel, ylabel, v_edges, fig_cnt)
+
+
+    def plot_grid_vs_time(self, data, title='', xlabel='', ylabel='', yticks=[], fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title(title)
+        cax = ax.pcolor(data)
+        ax.set_ylim((0, data[:, 0].size))
+        ax.set_xlim((0, data[0, :].size))
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+        y_ticks = range(len(yticks))[::2]
+        ax.set_yticks(y_ticks)
+        ax.set_yticklabels(['%.2f' %i for i in yticks[::2]])
+
+        ax.set_xticks(range(self.n_bins)[::4])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::4]])
+        pylab.colorbar(cax)
+
+
+    def plot_vdiff(self, fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title('$|v_{stim}-v_{predicted}|$')
+        ax.plot(self.t_axis, self.vdiff_avg, ls='-')
+        ax.errorbar(self.t_axis, self.vdiff_moving_avg[:, 0], yerr=self.vdiff_moving_avg[:, 1], ls='--')
+        ax.plot(self.t_axis, self.vdiff_non_linear, ls=':')
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$v_{diff}$')
+        ny = self.t_axis.size
+        n_ticks = 5
+        t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
+        t_labels= ['%d' % i for i in t_ticks]
+        ax.set_xticks(t_ticks)
+        ax.set_xticklabels(t_labels)
+
+
+    
 
     def plot_nspikes_binned(self):
 
-        self.ax1 = self.fig1.add_subplot(421)
-        self.ax1.set_title('Spiking activity over time')
-        self.cax1 = self.ax1.pcolor(self.nspikes_binned)
-        self.ax1.set_ylim((0, self.nspikes_binned[:, 0].size))
-        self.ax1.set_xlim((0, self.nspikes_binned[0, :].size))
-        self.ax1.set_xlabel('Time [ms]')
-        self.ax1.set_ylabel('GID')
-        self.ax1.set_xticks(range(self.n_bins)[::2])
-        self.ax1.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
-        pylab.colorbar(self.cax1)
+        ax = self.fig.add_subplot(421)
+        ax.set_title('Spiking activity over time')
+        self.cax = ax1.pcolor(self.nspikes_binned)
+        ax.set_ylim((0, self.nspikes_binned[:, 0].size))
+        ax.set_xlim((0, self.nspikes_binned[0, :].size))
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('GID')
+        ax.set_xticks(range(self.n_bins)[::2])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
+        pylab.colorbar(self.cax)
 
     def plot_nspikes_binned_normalized(self):
 
-        self.ax2 = self.fig1.add_subplot(422)
-        self.ax2.set_title('Normalized activity over time')
-        self.cax2 = self.ax2.pcolor(self.nspikes_binned_normalized)
-        self.ax2.set_ylim((0, self.nspikes_binned_normalized[:, 0].size))
-        self.ax2.set_xlim((0, self.nspikes_binned_normalized[0, :].size))
-        self.ax2.set_xlabel('Time [ms]')
-        self.ax2.set_ylabel('GID')
-        self.ax2.set_xticks(range(self.n_bins)[::2])
-        self.ax2.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
-        pylab.colorbar(self.cax2)
+        ax = self.fig.add_subplot(422)
+        ax.set_title('Normalized activity over time')
+        self.cax = ax2.pcolor(self.nspikes_binned_normalized)
+        ax.set_ylim((0, self.nspikes_binned_normalized[:, 0].size))
+        ax.set_xlim((0, self.nspikes_binned_normalized[0, :].size))
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('GID')
+        ax.set_xticks(range(self.n_bins)[::2])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
+        pylab.colorbar(self.cax)
 
 
     def plot_vx_confidence_binned(self):
-        self.ax3 = self.fig1.add_subplot(423)
-        self.ax3.set_title('Vx confidence over time')
-        self.cax3 = self.ax3.pcolor(self.vx_confidence_binned)
-        self.ax3.set_ylim((0, self.vx_confidence_binned[:, 0].size))
-        self.ax3.set_xlim((0, self.vx_confidence_binned[0, :].size))
-        self.ax3.set_xlabel('Time [ms]')
-        self.ax3.set_ylabel('$v_x$')
-        self.ax3.set_xticks(range(self.n_bins)[::2])
-        self.ax3.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
+        ax = self.fig.add_subplot(423)
+        ax.set_title('Vx confidence over time')
+        self.cax = ax.pcolor(self.vx_confidence_binned)
+        ax.set_ylim((0, self.vx_confidence_binned[:, 0].size))
+        ax.set_xlim((0, self.vx_confidence_binned[0, :].size))
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$v_x$')
+        ax.set_xticks(range(self.n_bins)[::2])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         ny = self.vx_tuning.size
         n_ticks = 4
         yticks = [self.vx_tuning[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
         ylabels = ['%.1e' % i for i in yticks]
-        self.ax3.set_yticks([int(i * ny/n_ticks) for i in xrange(n_ticks)])
-        self.ax3.set_yticklabels(ylabels)
-        self.ax3.set_xticks(range(self.n_bins)[::2])
-        self.ax3.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
-        pylab.colorbar(self.cax3)
+        ax.set_yticks([int(i * ny/n_ticks) for i in xrange(n_ticks)])
+        ax.set_yticklabels(ylabels)
+        ax.set_xticks(range(self.n_bins)[::2])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
+        pylab.colorbar(self.cax)
 
 
 
     def plot_vy_confidence_binned(self):
-        self.ax4 = self.fig1.add_subplot(424)
-        self.ax4.set_title('vy confidence over time')
-        self.cax4 = self.ax4.pcolor(self.vy_confidence_binned)
-        self.ax4.set_ylim((0, self.vy_confidence_binned[:, 0].size))
-        self.ax4.set_xlim((0, self.vy_confidence_binned[0, :].size))
-        self.ax4.set_xlabel('Time [ms]')
-        self.ax4.set_ylabel('$v_y$')
-        self.ax4.set_xticks(range(self.n_bins)[::2])
-        self.ax4.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
+        ax = self.fig.add_subplot(424)
+        ax.set_title('vy confidence over time')
+        self.cax = ax.pcolor(self.vy_confidence_binned)
+        ax.set_ylim((0, self.vy_confidence_binned[:, 0].size))
+        ax.set_xlim((0, self.vy_confidence_binned[0, :].size))
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$v_y$')
+        ax.set_xticks(range(self.n_bins)[::2])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         ny = self.vy_tuning.size
         n_ticks = 4
         yticks = [self.vy_tuning[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
         ylabels = ['%.1e' % i for i in yticks]
-        self.ax4.set_yticks([int(i * ny/n_ticks) for i in xrange(n_ticks)])
-        self.ax4.set_yticklabels(ylabels)
-        self.ax4.set_xticks(range(self.n_bins)[::2])
-        self.ax4.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
-        pylab.colorbar(self.cax4)
+        ax.set_yticks([int(i * ny/n_ticks) for i in xrange(n_ticks)])
+        ax.set_yticklabels(ylabels)
+        ax.set_xticks(range(self.n_bins)[::2])
+        ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
+        pylab.colorbar(self.cax)
 
 
-    def plot_vx_estimates(self):
-        self.ax5 = self.fig1.add_subplot(425)
-        self.ax5.set_title('$v_{x}$-predictions: avg, moving_avg, nonlinear')
-        self.ax5.plot(self.t_axis, self.vx_avg, ls='-')
-        self.ax5.errorbar(self.t_axis, self.vx_moving_avg[:, 0], yerr=self.vx_moving_avg[:, 1], ls='--')
-        self.ax5.plot(self.t_axis, self.vx_non_linear, ls=':')
-        self.ax5.set_xlabel('Time [ms]')
-        self.ax5.set_ylabel('$v_x$')
+    def plot_vx_estimates(self, fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title('$v_{x}$-predictions: avg, moving_avg, nonlinear')
+        ax.plot(self.t_axis, self.vx_avg, ls='-')
+        ax.errorbar(self.t_axis, self.vx_moving_avg[:, 0], yerr=self.vx_moving_avg[:, 1], ls='--')
+        ax.plot(self.t_axis, self.vx_non_linear, ls=':')
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$v_x$')
         ny = self.t_axis.size
         n_ticks = 5
         t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
         t_labels= ['%d' % i for i in t_ticks]
-        self.ax5.set_xticks(t_ticks)
-        self.ax5.set_xticklabels(t_labels)
+        ax.set_xticks(t_ticks)
+        ax.set_xticklabels(t_labels)
 
-    def plot_vy_estimates(self):
-        self.ax6 = self.fig1.add_subplot(426)
-        self.ax6.set_title('$v_{y}$-predictions: avg, moving_avg, nonlinear')
-        self.ax6.plot(self.t_axis, self.vy_avg, ls='-')
-        self.ax6.errorbar(self.t_axis, self.vy_moving_avg[:, 0], yerr=self.vy_moving_avg[:, 1], ls='--')
-        self.ax6.plot(self.t_axis, self.vy_non_linear, ls=':')
-        self.ax6.set_xlabel('Time [ms]')
-        self.ax6.set_ylabel('$v_y$')
+    def plot_vy_estimates(self, fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title('$v_{y}$-predictions: avg, moving_avg, nonlinear')
+        ax.plot(self.t_axis, self.vy_avg, ls='-')
+        ax.errorbar(self.t_axis, self.vy_moving_avg[:, 0], yerr=self.vy_moving_avg[:, 1], ls='--')
+        ax.plot(self.t_axis, self.vy_non_linear, ls=':')
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$v_y$')
         ny = self.t_axis.size
         n_ticks = 5
         t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
         t_labels= ['%d' % i for i in t_ticks]
-        self.ax6.set_xticks(t_ticks)
-        self.ax6.set_xticklabels(t_labels)
+        ax.set_xticks(t_ticks)
+        ax.set_xticklabels(t_labels)
 
-    def plot_theta_estimates(self):
-        self.ax7 = self.fig1.add_subplot(427)
-        self.ax7.set_title('$\Theta$-predictions: avg, moving_avg, nonlinear')
-        self.ax7.plot(self.t_axis, self.theta_avg, ls='-')
-        self.ax7.errorbar(self.t_axis, self.theta_moving_avg[:, 0], yerr=self.theta_moving_avg[:, 1], ls='--')
-        self.ax7.plot(self.t_axis, self.theta_non_linear, ls=':')
-        self.ax7.set_xlabel('Time [ms]')
-        self.ax7.set_ylabel('$\Theta$')
+    def plot_theta_estimates(self, fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title('$\Theta$-predictions: avg, moving_avg, nonlinear')
+        ax.plot(self.t_axis, self.theta_avg, ls='-')
+        ax.errorbar(self.t_axis, self.theta_moving_avg[:, 0], yerr=self.theta_moving_avg[:, 1], ls='--')
+        ax.plot(self.t_axis, self.theta_non_linear, ls=':')
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$\Theta$')
         ny = self.t_axis.size
         n_ticks = 5
         t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
         t_labels= ['%d' % i for i in t_ticks]
-        self.ax7.set_xticks(t_ticks)
-        self.ax7.set_xticklabels(t_labels)
-
-    def plot_fullrun_estimates(self):
-        self.fig2 = pylab.figure()
-        pylab.rcParams['legend.fontsize'] = 10
-        pylab.subplots_adjust(hspace=0.5)
-        self.plot_fullrun_estimates_vx()
-        self.plot_fullrun_estimates_vy()
-        self.plot_fullrun_estimates_theta()
+        ax.set_xticks(t_ticks)
+        ax.set_xticklabels(t_labels)
 
 
-    def plot_fullrun_estimates_vx(self):
-        self.ax8 = self.fig2.add_subplot(411)
+    def plot_fullrun_estimates_vx(self, fig_cnt=1):
+        print 'n_fig_x', self.n_fig_x
+        print 'n_fig_y', self.n_fig_y
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         bin_width = .5 * (self.vx_grid[1] - self.vx_grid[0])
         vx_linear = (np.sum(self.vx_grid * self.vx_marginalized_binned), self.get_uncertainty(self.vx_marginalized_binned, self.vx_grid))
         vx_nonlinear = (np.sum(self.vx_grid * self.vx_marginalized_binned_nonlinear), self.get_uncertainty(self.vx_marginalized_binned_nonlinear, self.vx_grid))
-        self.ax8.bar(self.vx_grid, self.vx_marginalized_binned, width=bin_width, label='Linear votes: $v_x=%.2f \pm %.2f$' % (vx_linear[0], vx_linear[1]))
-        self.ax8.bar(self.vx_grid+bin_width, self.vx_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_x=%.2f \pm %.2f$' % (vx_nonlinear[0], vx_nonlinear[1]))
-        self.ax8.set_title('Estimates based on full run activity with %s connectivity\nblue: linear marginalization over all positions, green: non-linear voting' % self.params['initial_connectivity'])
-        self.ax8.set_xlabel('$v_x$')
-        self.ax8.set_ylabel('Confidence')
-        self.ax8.legend()
+        ax.bar(self.vx_grid, self.vx_marginalized_binned, width=bin_width, label='Linear votes: $v_x=%.2f \pm %.2f$' % (vx_linear[0], vx_linear[1]))
+        ax.bar(self.vx_grid+bin_width, self.vx_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_x=%.2f \pm %.2f$' % (vx_nonlinear[0], vx_nonlinear[1]))
+        ax.set_title('Estimates based on full run activity with %s connectivity\nblue: linear marginalization over all positions, green: non-linear voting' % self.params['initial_connectivity'])
+        ax.set_xlabel('$v_x$')
+        ax.set_ylabel('Confidence')
+        ax.legend()
 
 
     def get_uncertainty(self, p, v):
@@ -449,29 +501,29 @@ class PlotPrediction(object):
         weighted_uncertainties = p * uncertainties
         return np.sum(weighted_uncertainties)
 
-    def plot_fullrun_estimates_vy(self):
-        self.ax9 = self.fig2.add_subplot(412)
+    def plot_fullrun_estimates_vy(self, fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         bin_width = .5 * (self.vy_grid[1] - self.vy_grid[0])
         vy_linear = (np.sum(self.vy_grid * self.vy_marginalized_binned), self.get_uncertainty(self.vy_marginalized_binned, self.vy_grid))
         vy_nonlinear = (np.sum(self.vy_grid * self.vy_marginalized_binned_nonlinear), self.get_uncertainty(self.vy_marginalized_binned_nonlinear, self.vy_grid))
-        self.ax9.bar(self.vy_grid, self.vy_marginalized_binned, width=bin_width, label='Linear votes: $v_y=%.2f \pm %.2f$' % (vy_linear[0], vy_linear[1]))
-        self.ax9.bar(self.vy_grid+bin_width, self.vy_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_y=%.2f \pm %.2f$' % (vy_nonlinear[0], vy_nonlinear[1]))
-        self.ax9.set_xlabel('$v_y$')
-        self.ax9.set_ylabel('Confidence')
-        self.ax9.legend()
+        ax.bar(self.vy_grid, self.vy_marginalized_binned, width=bin_width, label='Linear votes: $v_y=%.2f \pm %.2f$' % (vy_linear[0], vy_linear[1]))
+        ax.bar(self.vy_grid+bin_width, self.vy_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $v_y=%.2f \pm %.2f$' % (vy_nonlinear[0], vy_nonlinear[1]))
+        ax.set_xlabel('$v_y$')
+        ax.set_ylabel('Confidence')
+        ax.legend()
 
-    def plot_fullrun_estimates_theta(self):
+    def plot_fullrun_estimates_theta(self, fig_cnt=1):
 
-        self.ax10 = self.fig2.add_subplot(413)
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         bin_width = .5 * (self.theta_grid[-1] - self.theta_grid[-2])
         theta_linear = (np.sum(self.theta_grid * self.theta_marginalized_binned), self.get_uncertainty(self.theta_marginalized_binned, self.theta_grid))
         theta_nonlinear = (np.sum(self.theta_grid * self.theta_marginalized_binned_nonlinear), self.get_uncertainty(self.theta_marginalized_binned_nonlinear, self.theta_grid))
-        self.ax10.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width, label='Linear votes: $\Theta=%.2f \pm %.2f$' % (theta_linear[0], theta_linear[1]))
-        self.ax10.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $\Theta=%.2f \pm %.2f$' % (theta_nonlinear[0], theta_nonlinear[1]))
-        self.ax10.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width)
-        self.ax10.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
-        self.ax10.set_xlim((-np.pi, np.pi))
-        self.ax10.legend()
+        ax.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width, label='Linear votes: $\Theta=%.2f \pm %.2f$' % (theta_linear[0], theta_linear[1]))
+        ax.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g', label='Non-linear votes: $\Theta=%.2f \pm %.2f$' % (theta_nonlinear[0], theta_nonlinear[1]))
+        ax.bar(self.theta_grid, self.theta_marginalized_binned, width=bin_width)
+        ax.bar(self.theta_grid+bin_width, self.theta_marginalized_binned_nonlinear, width=bin_width, facecolor='g')
+        ax.set_xlim((-np.pi, np.pi))
+        ax.legend()
 
 
 #        n_bins = 50
@@ -479,20 +531,20 @@ class PlotPrediction(object):
 #        pred_avg, x = np.histogram(self.theta_avg_fullrun, n_bins)
 #        pred_nonlinear, x = np.histogram(self.theta_nonlinear_fullrun, n_bins)
 #        bin_width = theta_bins[1]-theta_bins[0]
-#        self.ax10.bar(theta_bins[:-1], pred_avg, width=bin_width*.5)
-#        self.ax10.bar(theta_bins[:-1]-.5*bin_width, pred_nonlinear, width=bin_width*.5, facecolor='g')
-#        self.ax10.set_xlim((self.theta_tuning.min() - bin_width, self.theta_tuning.max()))
-        self.ax10.set_xlabel('$\Theta$')
-        self.ax10.set_ylabel('Confidence')
+#        ax.bar(theta_bins[:-1], pred_avg, width=bin_width*.5)
+#        ax.bar(theta_bins[:-1]-.5*bin_width, pred_nonlinear, width=bin_width*.5, facecolor='g')
+#        ax.set_xlim((self.theta_tuning.min() - bin_width, self.theta_tuning.max()))
+        ax.set_xlabel('$\Theta$')
+        ax.set_ylabel('Confidence')
 
-    def plot_nspike_histogram(self):
-        self.ax10 = self.fig2.add_subplot(414)
+    def plot_nspike_histogram(self, fig_cnt=1):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         mean_nspikes = self.nspikes.mean()* 1000./self.params['t_sim'] 
         std_nspikes = self.nspikes.std() * 1000./self.params['t_sim']
-        self.ax10.bar(range(self.params['n_exc']), self.nspikes* 1000./self.params['t_sim'], label='$f_{mean} = (%.1f \pm %.1f)$ Hz' % (mean_nspikes, std_nspikes))
-        self.ax10.set_xlabel('Cell gids')
-        self.ax10.set_ylabel('Output rate $f_{out}$')
-        self.ax10.legend()
+        ax.bar(range(self.params['n_exc']), self.nspikes* 1000./self.params['t_sim'], label='$f_{mean} = (%.1f \pm %.1f)$ Hz' % (mean_nspikes, std_nspikes))
+        ax.set_xlabel('Cell gids')
+        ax.set_ylabel('Output rate $f_{out}$')
+        ax.legend()
 
     def theta_uncertainty(self, vx, dvx, vy, dvy):
         """
@@ -500,3 +552,90 @@ class PlotPrediction(object):
         Please check with http://en.wikipedia.org/wiki/Propagation_of_uncertainty
         """
         return vx / (vx**2 + vy**2) * dvy - vy / (vx**2 + vx**2) * dvx
+
+    def quiver_plot(self, fig_cnt=1):
+        # place cells in spatial grid --> look-up table: gid | (x_pos, y_pos)
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+
+        n_bins_x, n_bins_y = 20, 20
+        H, x_edges, y_edges = np.histogram2d(self.tuning_prop[:,0], self.tuning_prop[:, 1], bins=(n_bins_x, n_bins_y))
+        x_edge_width = x_edges[-1] - x_edges[-2]
+        y_edge_width = y_edges[-1] - y_edges[-2]
+        vx_in_grid = np.zeros((n_bins_x, n_bins_y))
+        vy_in_grid = np.zeros((n_bins_x, n_bins_y))
+        thetas_in_grid = np.zeros((n_bins_x, n_bins_y))
+        v_norm = np.zeros((n_bins_x, n_bins_y))
+
+        cell_pos_in_grid = np.zeros((self.n_cells, 2))
+        for gid in xrange(self.n_cells):
+            x_pos_cell, y_pos_cell = self.tuning_prop[gid, 0], self.tuning_prop[gid, 1] # cell properties
+            x, y = utils.get_grid_pos(x_pos_cell, y_pos_cell, x_edges, y_edges) # cell's position in the grid
+            cell_pos_in_grid[gid, 0] = x + .5 * x_edge_width
+            cell_pos_in_grid[gid, 1] = y + .5 * y_edge_width
+            vx_in_grid[x, y] += self.nspikes[gid] * self.tuning_prop[gid, 2]
+            vy_in_grid[x, y] += self.nspikes[gid] * self.tuning_prop[gid, 3]
+
+#        print 'debug', vx_in_grid.shape, n_bins_x
+#        print 'debug', vy_in_grid.shape, n_bins_y
+        for x in xrange(n_bins_x):
+            for y in xrange(n_bins_y):
+                v_norm[x, y] = np.sqrt(vx_in_grid[x, y]**2 + vy_in_grid[x, y]**2)
+#                thetas[x, y] = np.arctan2(vx_in_grid[x, y], vy_in_grid[x, y])
+        print 'before:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
+#        vx_in_grid /= np.max(v_norm)
+#        vy_in_grid /= np.max(v_norm)
+        scale = 100.
+        vx_in_grid /= scale
+        vy_in_grid /= scale
+        print 'after:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
+        X, Y = np.meshgrid(x_edges, y_edges)
+        Q = pylab.quiver(X, Y, vx_in_grid, vy_in_grid, scale=2.)#, thetas_in_grid)
+        x_key, y_key = .4, 1.02
+        key_label ='key'
+        pylab.quiverkey(Q, x_key, y_key, .1, key_label)
+        l,r,b,t = pylab.axis()
+        dx, dy = r-l, t-b
+        pylab.axis([l-0.25*dx, r+0.25*dx, b-0.25*dy, t+0.25*dy])
+        pylab.show()
+
+    def make_infotextbox(self):
+        pass
+
+#thetas = np.zeros(n_cells)
+#for gid in xrange(n_cells):
+#    thetas[gid] = np.arctan2(tuning_prop[gid, 3], tuning_prop[gid, 2])
+
+#l_max, l_offset = 127, 0
+#"""
+#High confidence --> lightness
+#Orientation (theta) --> hue
+#    h : [0, 360) degree
+#    s : [0, 1] 
+#    l : [0, 1]
+#"""
+#x_max = scale * np.max(tuning_prop[:, 0]) * 1.05
+#y_max = scale * np.max(tuning_prop[:, 1]) * 1.05
+#    fig = pylab.figure()
+#    ax = fig.add_subplot(111, axisbg=bg_color)
+#    ax.set_xlabel('$x$')
+#    ax.set_ylabel('$y$')
+#    ax.set_title('Spatial activity readout')
+
+#    spiking_cells = nspikes_binned[:, frame].nonzero()[0]
+#    z_max = np.max(nspikes_binned_normalized[:, frame])
+#    
+#    print "n_spiking cells in time_bin %d-%d :" % (time_grid[frame], time_grid[frame+1]), spiking_cells.size
+#    for gid in spiking_cells:
+#        (x, y, u, v) = tuning_prop[gid, :]
+#        theta = thetas[gid]
+#        h = (theta + np.pi) / (2 * np.pi) * 360. # theta determines h, h must be [0, 360)
+#        l = (nspikes_binned_normalized[gid, frame] / z_max * l_max + l_offset) / 255. # [0, 1]
+#        s = 1. # saturation [0, 1]
+#        (r, g, b) = utils.convert_hsl_to_rgb(h, s, l)
+#        ax.plot((x*scale, x*scale+u), (y*scale, y*scale+v), c=(r,g,b))
+#    ax.set_xlim((-1.0, x_max))
+#    ax.set_ylim((-1.0, y_max))
+
+#    output_fn_fig = output_fn_base + 'frame%d.png' % (frame)
+#    print "Saving figure: ", output_fn_fig
+#    pylab.savefig(output_fn_fig)

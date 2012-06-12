@@ -17,7 +17,7 @@ output_fn_movie = params['spatial_readout_detailed_movie']
 bg_color = 'k'
 
 # parameters
-n_frames = 20    # number of output figures
+n_frames = 24# number of output figures
 n_bins_x, n_bins_y = 20, 20
 output_arrays = [np.zeros((n_bins_x, n_bins_y)) for i in xrange(n_frames)]
 time_grid = np.linspace(0, params['t_sim'], n_frames+1, endpoint=True)

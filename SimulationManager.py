@@ -3,7 +3,6 @@ import simulation_parameters
 import numpy as np
 import utils
 import time
-import prepare_sim as Prep
 import CreateConnections as CC
 import NetworkSimModuleNoColumns as simulation
 import NeuroTools.parameters as ntp
