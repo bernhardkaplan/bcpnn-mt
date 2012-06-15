@@ -6,7 +6,7 @@ import utils
 from scipy.spatial import distance
 import os
 
-def get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v):
+def get_p_conn(tuning_prop, src, tgt, w_sigma_x, w_sigma_v):
 
     x0 = tuning_prop[src, 0]
     y0 = tuning_prop[src, 1]
@@ -21,8 +21,8 @@ def get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v):
     latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
     x_predicted = x0 + u0 * latency  
     y_predicted = y0 + v0 * latency  
-    p = np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * sigma_x**2))) \
-            * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * sigma_v**2))
+    p = np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * w_sigma_x**2))) \
+            * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * w_sigma_v**2))
     return p, latency
 
 def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
@@ -37,17 +37,18 @@ def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
 
     n_cells = tuning_prop[:, 0].size
     sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
-    p_to_w_scaling = params['p_to_w_scaling']
     (delay_min, delay_max) = params['delay_range']
     if comm != None:
         pc_id, n_proc = comm.rank, comm.size
+        comm.barrier()
     else:
         pc_id, n_proc = 0, 1
+    output_fn = params['conn_list_ee_fn_base'] + 'pid%d.dat' % (pc_id)
+    print "Proc %d computes initial weights to file %s" % (pc_id, output_fn)
     gid_min, gid_max = utils.distribute_n(params['n_exc'], n_proc, pc_id)
     n_cells = gid_max - gid_min
     my_cells = range(gid_min, gid_max)
     output = ""
-    output_fn_base = params['conn_list_ee_fn_base']
 
     i = 0
     for src in my_cells:
@@ -59,16 +60,17 @@ def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
                 # decide which connection should be discarded
                 i += 1
 
-    output_fn = params['conn_list_ee_fn_base'] + 'pid%d.dat' % (pc_id)
     print 'Process %d writes connections to: %s' % (pc_id, output_fn)
     f = file(output_fn, 'w')
     f.write(output)
     f.flush()
     f.close()
-    normalize_probabilities(params, comm, params['p_thresh_connection'])
+    normalize_probabilities(params, comm, params['w_thresh_connection'])
+    if (comm != None):
+        comm.barrier()
 
 
-def normalize_probabilities(params, comm, p_thresh=None):
+def normalize_probabilities(params, comm, w_thresh=None):
     """
     Open all files named with params['conn_list_ee_fn_base'], sum the last 3rd column storing the probabilities,
     reopen all the files, divide by the sum, and save all the files again.
@@ -83,12 +85,6 @@ def normalize_probabilities(params, comm, p_thresh=None):
     print 'Reading', fn
     d = np.loadtxt(fn)
 
-    if p_thresh != None:
-        indices = np.nonzero(d[:, 2] > p_thresh)[0]
-#        print 'debug indices', indices.shape
-        # resize the output array
-        d = d[indices, :]
-#        print 'd new', d
 
     p_sum = d[:, 2].sum()
     if comm != None:
@@ -97,10 +93,15 @@ def normalize_probabilities(params, comm, p_thresh=None):
         p_sum_global = p_sum
 
     d[:, 2] /= p_sum_global
+    d[:, 2] *= params['p_to_w_scaling']
+
+    if w_thresh != None:
+        indices = np.nonzero(d[:, 2] > w_thresh)[0]
+        d = d[indices, :] # resize the output array
 
     fn = params['conn_list_ee_fn_base'] + 'pid%d_normalized.dat' % (pc_id)
     print 'Writing to ', fn
-    np.savetxt(fn, d)
+    np.savetxt(fn, d, fmt='%d\t%d\t%.4e\t%.2e')
 
     # make one file out of many
     if pc_id == 0:

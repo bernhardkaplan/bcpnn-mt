@@ -15,7 +15,8 @@ print 'utils.sort_gids_by_distance_to_stimulus...'
 indices, distances = utils.sort_gids_by_distance_to_stimulus(tp , mp) # cells in indices should have the highest response to the stimulus
 print 'utils.convert_connlist_to_matrix...'
 conn_mat, delays = utils.convert_connlist_to_matrix(params['conn_list_ee_fn_base'] + '0.dat', params['n_exc'])
-n = 50
+#n = 50
+n = int(params['n_exc'] * .05) # fraction of 'interesting' cells
 
 print "Loading nspikes", params['exc_spiketimes_fn_merged'] + '0.ras'
 nspikes = utils.get_nspikes(params['exc_spiketimes_fn_merged'] + '0.ras', n_cells=params['n_exc'])
