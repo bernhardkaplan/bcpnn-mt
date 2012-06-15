@@ -1,3 +1,4 @@
+import sys
 import os
 import simulation_parameters
 import numpy as np
@@ -22,47 +23,64 @@ class SimulationManager(object):
         self.ParameterStorage = parameter_storage # the class around the parameters
         self.params = self.ParameterStorage.load_params()# the parameters in a dictionary
         self.sim_cnt = 0
+        self.cycle_cnt = 0
 
     def update_values(self, new_dict):
         self.ParameterStorage.update_values(new_dict)
         self.params = self.ParameterStorage.load_params() # dictionary storing all the parameters
+        if self.comm != None:
+            print 'Pid %d at Barrier in update values' % self.pc_id
+            sys.stdout.flush()
+            self.comm.Barrier()
+
 
     def copy_folder(self, input_folder, tgt_folder):
         if self.pc_id == 0:
             print "cp -r %s %s" % (input_folder, tgt_folder)
             os.system("cp -r %s %s" % (input_folder, tgt_folder))
-        if self.comm != None:
-            self.comm.barrier()
-
 
     def create_folders(self):
-        folders_exist = self.ParameterStorage.check_folders()
-        if not folders_exist:
-            if self.pc_id == 0:
-                self.ParameterStorage.create_folders()
-                self.ParameterStorage.write_parameters_to_file(self.params['params_fn'])# write parameters to a file
-            if (self.comm != None):
-                self.comm.barrier()
+#        folders_exist = self.ParameterStorage.check_folders()
+#        if not folders_exist:
+        if self.pc_id == 0:
+            self.ParameterStorage.create_folders()
+            self.ParameterStorage.write_parameters_to_file(self.params['params_fn'])# write parameters to a file
+
+        if (self.comm != None):
+            self.comm.Barrier()
+
 
     def prepare_tuning_properties(self):
 
         Preparer = Prepare.Preparer(self.comm)
         Preparer.prepare_tuning_prop(self.params)
         del Preparer
+        if self.comm != None:
+            t1 = time.time()
+            print 'Pid %d at Barrier in prepare_tuning_properties' % self.pc_id
+            self.comm.Barrier()
+#            sys.stdout.flush()
+#            t2 = time.time()
+#            dt = t2 - t1
+#            print "Process %d waites for %.2f sec in prepare_tuning_properties in cycle %d" % (self.pc_id, dt, self.cycle_cnt)
 
     def prepare_spiketrains(self, tp):
         Preparer = Prepare.Preparer(self.comm)
         Preparer.prepare_spiketrains(self.params, tp)
         del Preparer
+        if self.comm != None:
+            print 'Pid %d at Barrier in prepare_spiketrains' % self.pc_id
+            sys.stdout.flush()
+            self.comm.Barrier()
 
 
 
     def prepare_connections(self, input_fn=None):
 
-        if self.pc_id == 0 and self.params['initial_connectivity'] == 'precomputed':
+        if self.params['initial_connectivity'] == 'precomputed':
             print "Proc %d computes initial weights ... " % self.pc_id
             tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
-            CC.compute_weights_from_tuning_prop(tuning_prop, self.params)
+            CC.compute_weights_from_tuning_prop(tuning_prop, self.params, self.comm)
 
         elif self.pc_id == 0 and self.params['initial_connectivity'] == 'random':
             print "Proc %d shuffles pre-computed weights ... " % self.pc_id
@@ -70,7 +88,9 @@ class SimulationManager(object):
             CC.compute_random_weight_list(input_fn, output_fn, self.params)
 
         if self.comm != None:
-            self.comm.barrier()
+            print 'Pid %d at Barrier in prepare_connections' % self.pc_id
+            sys.stdout.flush()
+            self.comm.Barrier()
 
 
     def run_sim(self):
@@ -81,7 +101,12 @@ class SimulationManager(object):
 
         else: 
             print "Pc %d waiting for proc 0 to finish simulation" % self.pc_id
+            time.sleep(5)
+            sys.stdout.flush()
 
         if self.comm != None: 
-            self.comm.barrier()
+            print 'Pid %d at Barrier after run_sim' % self.pc_id
+            sys.stdout.flush()
+            self.comm.Barrier()
+        self.cycle_cnt += 1
 

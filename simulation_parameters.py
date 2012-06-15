@@ -21,7 +21,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 60# np.int(n_cells/N_V/N_theta)
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
@@ -48,9 +48,9 @@ class parameter_storage(object):
 #        self.params['initial_connectivity'] = 'random'
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['p_to_w_scaling'] = 10.  # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['p_to_w_scaling'] = 500.  # conversion factor for the pre-computed weights , 0.005 seems good
 #        self.params['p_to_w_scaling'] = 0.005   # conversion factor for the pre-computed weights , 0.005 seems good
-        self.params['p_thresh_connection'] = 1e-6 # connections with a probability of less then this value will be discarded
+        self.params['w_thresh_connection'] = 1e-5 # connections with a probability of less then this value will be discarded
 #        self.params['w_init_thresh'] = 1e-4     # [nS] if the weight (after converion) is smaller than this value, the connection is discarded
         self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 30.)
@@ -72,7 +72,7 @@ class parameter_storage(object):
 
         # exc - inh
         self.params['p_ei'] = 0.1
-        self.params['w_ei_mean'] = 0.002
+        self.params['w_ei_mean'] = 0.004
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
@@ -126,9 +126,9 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['motion_params'] = (0.5, 0.5, 0.9, 0) # x0, y0, u0, v0.5
+        self.params['motion_params'] = (0.5, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.25, 0.25
+        self.params['blur_X'], self.params['blur_V'] = 0.2, 0.2
 
         # ######
         # NOISE
@@ -149,8 +149,9 @@ class parameter_storage(object):
 #        self.params['folder_name'] = "NoColumns_winit_%s/" % (self.params['initial_connectivity'])# the main folder with all simulation specific content
 #        self.params['folder_name'] = "NoColumns_winit_%s_wsigmaX%.2e_wsigmaV%.2e_motionblur%.1e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
 #                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['blur_X'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
-        self.params['folder_name'] = "Data_winit_%s_wsigmaX%.2e_wsigmaV%.2e_winput%.2e_finput%.2e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
-                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_input_exc'], self.params['f_max_stim'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
+#        self.params['folder_name'] = "120613_winit_%s_wsigmaX%.2e_wsigmaV%.2e_winput%.2e_finput%.2e_pthresh%.1e_ptow%.1e/" % (self.params['initial_connectivity'], \
+#                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_input_exc'], self.params['f_max_stim'], self.params['p_thresh_connection'], self.params['p_to_w_scaling'])
+        self.params['folder_name'] = "120614_winit_%s_ptow_%.2e/" % (self.params['initial_connectivity'], self.params['p_to_w_scaling'])
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
@@ -182,8 +183,8 @@ class parameter_storage(object):
         self.params['input_movie'] = "%sinputmap.mp4" % self.params['movie_folder']# input spike trains filename base
 
         # output spiketrains
-        self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged_' % self.params['spiketimes_folder']
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']
+        self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged_' % self.params['spiketimes_folder']
         self.params['inh_spiketimes_fn_base'] = '%sinh_spikes_' % self.params['spiketimes_folder']
         self.params['inh_spiketimes_fn_merged'] = '%sinh_spikes_merged_' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
@@ -197,6 +198,7 @@ class parameter_storage(object):
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_sigmas_fn'] = '%stuning_prop_sigmas.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_fig_fn'] = '%stuning_properties.png' % (self.params['figures_folder'])
+        self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
 
         self.params['bias_values_fn_base'] = '%sbias_values_' % (self.params['bias_folder'])
 
@@ -230,6 +232,9 @@ class parameter_storage(object):
         self.params['spatial_readout_detailed_movie'] = '%sspatial_readout_detailed.mp4' % (self.params['movie_folder'])
         self.params['spatial_readout_movie'] = '%sspatial_readout.mp4' % (self.params['movie_folder'])
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
+        self.params['grouped_actitivty_fig_fn_base'] = '%sgrouped_activity_' % (self.params['figures_folder'])
+        self.params['conductances_fig_fn_base'] = '%sconductance_' % (self.params['figures_folder'])
+
         self.params['test'] = 'asdf'
         self.params['response_3d_fig'] = '%s3D_nspikes_winsum_dcellstim.png' % (self.params['figures_folder'])
 
@@ -251,6 +256,7 @@ class parameter_storage(object):
         """
 
         for f in self.params['folder_names']:
+            print 'debug create_folders', f, ' exists? ', os.path.exists(f)
             if not os.path.exists(f):
                 print 'Creating folder:\t%s' % f
                 os.system("mkdir %s" % (f))

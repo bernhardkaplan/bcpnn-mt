@@ -7,6 +7,7 @@ import numpy as np
 import numpy.random as rnd
 import sys
 import NeuroTools.parameters as ntp
+import os
 
 
 def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
@@ -97,6 +98,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     inh_pop = Population(params['n_inh'], IF_cond_exp, params['cell_params_inh'], label="inh_pop")
     inh_pop.initialize('v', v_init_dist)
 
+
     print "Loading input spiketrains..."
     # Input spike trains
     input_pop = []
@@ -111,7 +113,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
         ssa = create(SpikeSourceArray, {'spike_times': spike_times})
         input_pop.append(ssa)
     #        input_pop.append(Population(1, SpikeSourceArray, {'spike_times': spike_times}, label="input%d" % cell))
-
     # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    E X C - E X C  #
     # # # # # # # # # # # # # # # # # # # #
@@ -171,6 +172,14 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     #        connector = AllToAllConnector(weights=params['w_input_exc'])    # weights are drawn from the given random distibution
     #        inh_exc_prj = Projection(input_pop[i], exc_pop, connector)
 
+    # # # # # # # # # # # # # # # # # # # #
+    #     P R I N T    W E I G H T S      # 
+    # # # # # # # # # # # # # # # # # # # #
+    print 'Printing weights to :\n  %s\n  %s\n  %s' % (params['conn_list_ei_fn'], params['conn_list_ie_fn'], params['conn_list_ii_fn'])
+    exc_inh_prj.saveConnections(params['conn_list_ei_fn'])
+    inh_exc_prj.saveConnections(params['conn_list_ie_fn'])
+    inh_inh_prj.saveConnections(params['conn_list_ii_fn'])
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    B I A S   T O   C E L L S  # 
@@ -223,12 +232,19 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     print "Recording spikes to file: %s" % (params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
     for cell in xrange(params['n_exc']):
         record(exc_pop[cell], params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
-
-#    for cell in xrange(params['n_exc']):
-#        record_v(exc_pop[cell],"%s%d.v" % (params['exc_volt_fn_base'], cell))#, compatible_output=False)
+    record_exc = False
+    if os.path.exists(params['gids_to_record_fn']):
+        gids_to_record = np.loadtxt(params['gids_to_record_fn'])
+        record_exc = True
+        n_cells_to_record = 20
+        gids_to_record = gids_to_record[:n_cells_to_record]
+        for cell in gids_to_record:
+            cell = int(cell)
+            sys.stdout.flush()
+            record_v(exc_pop[cell],"%s%d.v" % (params['exc_volt_fn_base'], cell))#, compatible_output=False)
 
     inh_pop.record()
-    inh_pop.record_v()
+#    inh_pop.record_v()
 
     print "Running simulation ... "
     run(params['t_sim'])
@@ -236,13 +252,17 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     # # # # # # # # # # # # # # # # #
     #     P R I N T    R E S U L T S 
     # # # # # # # # # # # # # # # # #
-    #    for cell in xrange(params['n_exc']):
-    #        exc_pop[cell].printSpikes("%s%d.ras" % (params['exc_spiketimes_fn_base'], cell))
-    #        exc_pop[cell].print_v("%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
+#    if record_exc:
+#        for cell in gids_to_record:
+#            cell = int(cell)
+#            print_v(exc_pop[cell], "%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
+
+#            exc_pop[cell].print_v("%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
+#            exc_pop[cell].printSpikes("%s%d.ras" % (params['exc_spiketimes_fn_base'], cell))
     #    input_pop[cell].printSpikes("%sinput_spikes_%s.ras" % (params['spiketimes_folder'], cell))
 
     print "Printing inhibitory spikes"
-    inh_pop.printSpikes(params['inh_spiketimes_fn_base'] + '%d.ras' % sim_cnt)
+    inh_pop.printSpikes(params['inh_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
 #    print "Printing inhibitory membrane potentials"
 #    inh_pop.print_v(params['inh_volt_fn_base'], compatible_output=False)
 

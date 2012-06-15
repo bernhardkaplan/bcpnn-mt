@@ -85,14 +85,14 @@ class PlotPrediction(object):
         # NeuroTools
 #        spklist = nts.load_spikelist(fn)
 #        spiketrains = spklist.spiketrains
-#        try:
-        d = np.loadtxt(fn)
-        for i in xrange(d[:, 0].size):
-            self.spiketrains[int(d[i, 1])].append(d[i, 0])
-#        except:
-#            print 'WARNING: no spikes found in:', fn
-#            self.no_spikes = True
-#            return
+        try:
+            d = np.loadtxt(fn)
+            for i in xrange(d[:, 0].size):
+                self.spiketrains[int(d[i, 1])].append(d[i, 0])
+        except:
+            print 'WARNING: no spikes found in:', fn
+            self.no_spikes = True
+            return
 
         for gid in xrange(self.params['n_exc']):
 
@@ -101,7 +101,7 @@ class PlotPrediction(object):
 
             nspikes = len(self.spiketrains[gid])
             if (nspikes > 0):
-                count, bins = np.histogram(self.spiketrains[gid], bins=self.n_bins)
+                count, bins = np.histogram(self.spiketrains[gid], bins=self.n_bins, range=(0, self.params['t_sim']))
                 self.nspikes_binned[gid, :] = count
             self.nspikes[gid] = nspikes
 
@@ -298,6 +298,7 @@ class PlotPrediction(object):
         for cell in xrange(int(len(spiketimes))):
             ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=1)
             
+        ax.set_xlim(0, self.params['t_sim'])
         ax.set_title('Rasterplot of %s neurons' % cell_type)
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('Neuron GID')
@@ -474,8 +475,6 @@ class PlotPrediction(object):
 
 
     def plot_fullrun_estimates_vx(self, fig_cnt=1):
-        print 'n_fig_x', self.n_fig_x
-        print 'n_fig_y', self.n_fig_y
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         bin_width = .5 * (self.vx_grid[1] - self.vx_grid[0])
         vx_linear = (np.sum(self.vx_grid * self.vx_marginalized_binned), self.get_uncertainty(self.vx_marginalized_binned, self.vx_grid))
@@ -581,18 +580,18 @@ class PlotPrediction(object):
             for y in xrange(n_bins_y):
                 v_norm[x, y] = np.sqrt(vx_in_grid[x, y]**2 + vy_in_grid[x, y]**2)
 #                thetas[x, y] = np.arctan2(vx_in_grid[x, y], vy_in_grid[x, y])
-        print 'before:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
 #        vx_in_grid /= np.max(v_norm)
 #        vy_in_grid /= np.max(v_norm)
-        scale = 100.
-        vx_in_grid /= scale
-        vy_in_grid /= scale
+        scale = 2.
+#        vx_in_grid /= scale
+#        vy_in_grid /= scale
         print 'after:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
         X, Y = np.meshgrid(x_edges, y_edges)
-        Q = pylab.quiver(X, Y, vx_in_grid, vy_in_grid, scale=2.)#, thetas_in_grid)
-        x_key, y_key = .4, 1.02
-        key_label ='key'
-        pylab.quiverkey(Q, x_key, y_key, .1, key_label)
+        Q = pylab.quiver(X, Y, vx_in_grid, vy_in_grid, scale=scale)#, thetas_in_grid)
+        x_key, y_key = self.params['motion_params'][0], self.params['motion_params'][1]#.5, 1.02
+        key_label ='Stimulus'
+        key_length = np.sqrt(self.params['motion_params'][2]**2 + self.params['motion_params'][3]**2)
+        pylab.quiverkey(Q, x_key, y_key, key_length, key_label)
         l,r,b,t = pylab.axis()
         dx, dy = r-l, t-b
         pylab.axis([l-0.25*dx, r+0.25*dx, b-0.25*dy, t+0.25*dy])

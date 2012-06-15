@@ -8,6 +8,7 @@ import os
 from scipy.spatial import distance
 from NeuroTools import signals as nts
 import pylab
+import copy
 
 
 def convert_connlist_to_matrix(fn, n_cells):
@@ -469,7 +470,7 @@ def convert_hsl_to_rgb(h, s, l):
     return (r_, g_, b_)
 
 
-def sort_gids_by_distance_to_stimulus(tp, mp, sorting_index=0):
+def sort_gids_by_distance_to_stimulus(tp, mp):
     """
     This function return a list of gids sorted by the distances between cells and the stimulus.
     It calculates the minimal distances between the moving stimulus and the spatial receptive fields of the cells 
@@ -484,17 +485,7 @@ def sort_gids_by_distance_to_stimulus(tp, mp, sorting_index=0):
 
         mp: motion_parameters (x0, y0, u0, v0)
 
-        sorting_index: integer [0, 3] or string ('x', 'y', 'u', 'v')
     """
-    if sorting_index == 'x':
-        sorting_index = 0
-    elif sorting_index == 'y':
-        sorting_index = 1
-    elif sorting_index == 'u':
-        sorting_index = 2
-    elif sorting_index == 'v':
-        sorting_index = 3
-
     n_cells = tp[:, 0].size
     x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
 
@@ -606,3 +597,53 @@ def gather_bias(comm, data, n_total, output_fn):
 #            print pc_id, "sending data to master"
         comm.send(data, dest=0, tag=pc_id)
 
+
+def get_conn_dict(params, conn_fn, comm=None):
+    """
+    Returns a dictionary of dictionaries with cell_gid as keys:
+        conn_dict = { cell_gid : { 'sources' : [], 'w_in' : []}
+        e.g.
+        conn_dict[i] = {
+                'sources'   : [j, k, x] # list of all cells connecting to cell i
+                'w_in'      : [w_ji, w_ki, w_xi]
+                }
+            
+    Currently, this can be used only for the exc-exc connections since those are stored in a file.
+    TODO: Parallelize it
+    """
+    if comm != None:
+        pc_id, n_proc = comm.rank, comm.size
+    else:
+        pc_id, n_proc = 0, 1 
+
+    conn_dict = {}
+    empty_dict = {'sources' : [], 'w_in' : []}
+    for gid in xrange(params['n_exc']):
+        conn_dict[gid] = copy.deepcopy(empty_dict)
+
+    conns = np.loadtxt(conn_fn) # src tgt weight delay
+    for row in xrange(conns[:,0].size):
+        src = int(conns[row, 0])
+        tgt = int(conns[row, 1])
+        w = conns[row, 2]
+        conn_dict[tgt]['sources'].append(src)
+        conn_dict[tgt]['w_in'].append(w)
+
+    return conn_dict
+
+
+def get_incoming_connections(conn_fn, tgt_gids):
+    d = np.loadtxt(conn_fn)
+    c_in = [[] for i in xrange(len(tgt_gids))]
+    for i in xrange(d[:, 0].size):
+        if d[i, 1] == tgt_gid:
+            c_in.append(d[i, :])
+    return c_in
+
+def get_outgoing_connections(conn_fn, src_gid):
+    d = np.loadtxt(conn_fn)
+    c_out = []
+    for i in xrange(d[:, 0].size):
+        if d[i, 0] == src_gid:
+            c_out.append(d[i, :])
+    return c_out

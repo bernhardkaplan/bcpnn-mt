@@ -1,10 +1,10 @@
 import pylab
-import numpy
+import numpy as np
 import sys
 # --------------------------------------------------------------------------
 def get_figsize(fig_width_pt):
     inches_per_pt = 1.0/72.0                # Convert pt to inch
-    golden_mean = (numpy.sqrt(5)-1.0)/2.0    # Aesthetic ratio
+    golden_mean = (np.sqrt(5)-1.0)/2.0    # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
     fig_height = fig_width*golden_mean      # height in inches
     fig_size =  [fig_width,fig_height]      # exact figsize
@@ -35,12 +35,16 @@ if (len(sys.argv) < 2):
 else:
     fn = sys.argv[1]
 
-data = pylab.loadtxt(fn)
+#data = pylab.loadtxt(fn)
+data = np.load(fn)
 
 if (data.ndim == 1):
-    x_axis = numpy.arange(data.size)
+#    x_axis = np.arange(data.size)
 #    pylab.plot(x_axis, data)
-    pylab.scatter(x_axis, data)
+    pylab.scatter(data, np.ones(data.size), 'o')
+    print data
+    pylab.ylim((0, 2))
+
 else:
 #    pylab.scatter(data[:,0], data[:,1])
     pylab.plot(data[:,0], data[:,1], 'o', markersize=1, color='k')
@@ -48,4 +52,9 @@ else:
     pylab.ylim((ymin-1, ymax+1))
 
 
+output_fn = 'delme.dat'
+np.savetxt(output_fn, data)
+output_fn = 'delme.png'
+print output_fn
+pylab.savefig(output_fn)
 pylab.show()

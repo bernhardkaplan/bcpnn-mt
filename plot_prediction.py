@@ -35,8 +35,8 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     plotter.plot_rasterplot('inh', 2)               # 2 
     plotter.plot_vx_grid_vs_time(3)              # 3 
     plotter.plot_vy_grid_vs_time(4)              # 4 
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_ptow%.1e' % (params['prediction_fig_fn_base'], params['initial_connectivity'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['p_thresh_connection'])
+    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_pthresh%.1e' % (params['prediction_fig_fn_base'], params['initial_connectivity'], \
+            params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
     output_fn = output_fn_base + '_0.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
