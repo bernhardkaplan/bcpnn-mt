@@ -10,7 +10,7 @@ import NeuroTools.parameters as ntp
 import os
 
 
-def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
+def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc=True):
 
     simulator_name = params['simulator']
     if simulator_name == 'nest':
@@ -119,16 +119,16 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     # during the learning process load the updated connection matrix
     # plastic connections are retrieved from the file
 
-    if initial_connectivity == 'precomputed':
-        conn_list_fn = params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat'
+    if connect_exc_exc:
+        if initial_connectivity == 'precomputed':
+            conn_list_fn = params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat'
 
-    else: # random
-        conn_list_fn = params['random_weight_list_fn'] + str(sim_cnt) + '.dat'
-#        connector_ee = FastFixedProbabilityConnector(params['p_ee'], weights=w_ee_dist, delays=delay_dist)
+        else: # random
+            conn_list_fn = params['random_weight_list_fn'] + str(sim_cnt) + '.dat'
 
-    print "Connecting exc - exc from file", conn_list_fn
-    connector_ee = FromFileConnector(conn_list_fn)
-    prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
+        print "Connecting exc - exc from file", conn_list_fn
+        connector_ee = FromFileConnector(conn_list_fn)
+        prj_ee = Projection(exc_pop, exc_pop, connector_ee, target='excitatory')
 
 
     # # # # # # # # # # # # # # # # # # # #
@@ -213,6 +213,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
             noise_pop_exc.append(create(SpikeSourcePoisson, {'rate' : params['f_exc_noise']}))
             noise_pop_inh.append(create(SpikeSourcePoisson, {'rate' : params['f_inh_noise']}))
         connect(noise_pop_exc[-1], exc_pop[cell], weight=params['w_exc_noise'], synapse_type='excitatory', delay=1.)
+        connect(noise_pop_inh[-1], exc_pop[cell], weight=params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
 
     print "Connecting noise - inh ... "
     for cell in xrange(params['n_inh']):
@@ -222,6 +223,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
         else:
             noise_pop_exc.append(create(SpikeSourcePoisson, {'rate' : params['f_exc_noise']}))
             noise_pop_inh.append(create(SpikeSourcePoisson, {'rate' : params['f_inh_noise']}))
+        connect(noise_pop_exc[-1], inh_pop[cell], weight=params['w_exc_noise'], synapse_type='excitatory', delay=1.)
         connect(noise_pop_inh[-1], inh_pop[cell], weight=params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
     #        noise_prj_exc.append(Projection(noise_pop_exc[-1], exc_pop[cell], connector))
 
@@ -232,29 +234,38 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
     print "Recording spikes to file: %s" % (params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
     for cell in xrange(params['n_exc']):
         record(exc_pop[cell], params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
+
+    n_cells_to_record = params['n_exc'] * 0.02
     record_exc = False
     if os.path.exists(params['gids_to_record_fn']):
-        gids_to_record = np.loadtxt(params['gids_to_record_fn'])
+        gids_to_record = np.loadtxt(params['gids_to_record_fn'], dtype='int')
         record_exc = True
-        n_cells_to_record = 20
-        gids_to_record = gids_to_record[:n_cells_to_record]
-        for cell in gids_to_record:
-            cell = int(cell)
-            sys.stdout.flush()
-            record_v(exc_pop[cell],"%s%d.v" % (params['exc_volt_fn_base'], cell))#, compatible_output=False)
+        gids_to_record = gids_to_record
+    else:
+        gids_to_record = np.random.randint(0, params['n_exc'], n_cells_to_record)
+
+
+    exc_pop_view = PopulationView(exc_pop, gids_to_record, label='good_exc_neurons')
+    exc_pop_view.record_v()
 
     inh_pop.record()
-#    inh_pop.record_v()
+    inh_pop.record_v()
 
     print "Running simulation ... "
+    t_pre_run = time.time()
     run(params['t_sim'])
+    t_post_run = time.time()
+    t_diff = t_post_run - t_pre_run
+    print "Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (t_diff, (t_diff)/60., params['n_cells'], params['n_exc'], params['n_inh'])
 
     # # # # # # # # # # # # # # # # #
     #     P R I N T    R E S U L T S 
     # # # # # # # # # # # # # # # # #
 #    if record_exc:
-#        for cell in gids_to_record:
-#            cell = int(cell)
+    print 'print_v to file: %s.v' % (params['exc_volt_fn_base'])
+    exc_pop_view.print_v("%s.v" % (params['exc_volt_fn_base']), compatible_output=False)
+#        for gid in gids_to_record:
+#            exc_pop_view[gid].print_v("%s%d.v" % (params['exc_volt_fn_base'], gid), compatible_output=False)
 #            print_v(exc_pop[cell], "%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
 
 #            exc_pop[cell].print_v("%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
@@ -263,13 +274,13 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed'):
 
     print "Printing inhibitory spikes"
     inh_pop.printSpikes(params['inh_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
-#    print "Printing inhibitory membrane potentials"
-#    inh_pop.print_v(params['inh_volt_fn_base'], compatible_output=False)
+    print "Printing inhibitory membrane potentials"
+    inh_pop.print_v("%s.v" % (params['inh_volt_fn_base']), compatible_output=False)
 
     print "calling pyNN.end() ...."
     end()
-    t2 = time.time()
-
-    print "Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (t2-t1, (t2-t1)/60., params['n_cells'], params['n_exc'], params['n_inh'])
+    t_end = time.time()
+    t_diff = t_end - t1
+    print "Full pyNN run time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (t_diff, (t_diff)/60., params['n_cells'], params['n_exc'], params['n_inh'])
 
 

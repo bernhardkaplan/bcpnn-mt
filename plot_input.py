@@ -29,34 +29,47 @@ import sys
 
 # --------------------------------------------------------------------------
 
+"""
 
-fn = sys.argv[1]
+    use:
 
-rate = np.load(fn)
-#data = pylab.loadtxt(fn)
-fn = sys.argv[2]
-spikes = np.load(fn) # spikedata
+    python plot_input.py   [RATE_ENVELOPE]  [SPIKE_INPUT_FILE]
+
+"""
+
+
+rate_fn = sys.argv[1]
+rate = np.load(rate_fn)
+
+spike_fn = sys.argv[2]
+spikes = np.load(spike_fn) # spikedata
 
 #spikes *= 10. # because rate(t) = L(t) was created with a stepsize of .1 ms
 
 n, bins = np.histogram(spikes, bins=20)
-print 'n, bins', n, 'total', np.sum(n), bins
+binsize = bins[1] - bins[0]
+print 'n, bins', n, 'total', np.sum(n), 'binsize:', binsize
 
 fig = pylab.figure()
 ax = fig.add_subplot(211)
 
 rate_half = .5 * (np.max(rate) - np.min(rate))
-print 'spikes', spikes.size
+nspikes = spikes.size
+w_input_exc = 2e-3
+cond_in = w_input_exc * 1000. * nspikes
+print 'Cond_in: %.3e [nS] nspikes: %d' % (cond_in, nspikes)
 ax.plot(spikes, rate_half * np.ones(spikes.size), '|', markersize=1)
 print 'rate', rate
-rate = rate[::10]
-ax.plot(np.arange(rate.size), rate)
+rate = rate[::10] # ::10 because dt for rate creation was 0.1 ms
+ax.plot(np.arange(rate.size), rate, label='Cond_in = %.3e nS' % cond_in)
+ax.legend()
 ax = fig.add_subplot(212)
 ax.bar(bins[:-1], n)
 
+
 #output_fn = 'delme.dat'
 #np.savetxt(output_fn, data)
-output_fn = 'delme.png'
+output_fn = 'delme1.png'
 print output_fn
 pylab.savefig(output_fn)
 pylab.show()

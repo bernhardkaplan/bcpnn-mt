@@ -8,20 +8,14 @@ import CreateConnections as CC
 import NetworkSimModuleNoColumns as simulation
 import NeuroTools.parameters as ntp
 import Prepare
+from ParallelObject import PObject
 
-
-class SimulationManager(object):
+class SimulationManager(PObject):
     """
     Manages simulations
     """
     def __init__(self, parameter_storage, comm=None):
-        if comm != None:
-            self.pc_id, self.n_proc = comm.rank, comm.size
-        else:
-            self.pc_id, self.n_proc = 0, 1
-        self.comm = comm 
-        self.ParameterStorage = parameter_storage # the class around the parameters
-        self.params = self.ParameterStorage.load_params()# the parameters in a dictionary
+        PObject.__init__(self, parameter_storage, comm)
         self.sim_cnt = 0
         self.cycle_cnt = 0
 
@@ -52,8 +46,9 @@ class SimulationManager(object):
 
     def prepare_tuning_properties(self):
 
-        Preparer = Prepare.Preparer(self.comm)
-        Preparer.prepare_tuning_prop(self.params)
+        Preparer = Prepare.Preparer(self.ParameterStorage, self.comm)
+        Preparer.prepare_tuning_prop()
+        Preparer.sort_gids()
         del Preparer
         if self.comm != None:
             t1 = time.time()
@@ -63,10 +58,12 @@ class SimulationManager(object):
 #            t2 = time.time()
 #            dt = t2 - t1
 #            print "Process %d waites for %.2f sec in prepare_tuning_properties in cycle %d" % (self.pc_id, dt, self.cycle_cnt)
+        
+
 
     def prepare_spiketrains(self, tp):
-        Preparer = Prepare.Preparer(self.comm)
-        Preparer.prepare_spiketrains(self.params, tp)
+        Preparer = Prepare.Preparer(self.ParameterStorage, self.comm)
+        Preparer.prepare_spiketrains(tp)
         del Preparer
         if self.comm != None:
             print 'Pid %d at Barrier in prepare_spiketrains' % self.pc_id
@@ -93,11 +90,11 @@ class SimulationManager(object):
             self.comm.Barrier()
 
 
-    def run_sim(self):
+    def run_sim(self, connect_exc_exc=True):
 
         if (self.pc_id == 0):
             print "Simulation run %d: %d cells (%d exc, %d inh)" % (self.sim_cnt+1, self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
-            simulation.run_sim(self.params, self.sim_cnt, self.params['initial_connectivity'])
+            simulation.run_sim(self.params, self.sim_cnt, self.params['initial_connectivity'], connect_exc_exc)
 
         else: 
             print "Pc %d waiting for proc 0 to finish simulation" % self.pc_id

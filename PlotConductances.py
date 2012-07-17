@@ -58,7 +58,7 @@ class PlotConductances(object):
         params = {#'backend': 'png',
 #                  'axes.labelsize': 10,
 #                  'text.fontsize': 10,
-                  'legend.fontsize': 8,
+                  'legend.fontsize': 10,
 #                  'xtick.labelsize': 8,
 #                  'ytick.labelsize': 8,
 #                  'text.usetex': True,
@@ -74,7 +74,12 @@ class PlotConductances(object):
         """
 
         print(' Loading data .... ')
-        d = np.loadtxt(fn)
+        try:
+            d = np.loadtxt(fn)
+        except:
+            self.no_spikes = True
+            return
+
         for i in xrange(d[:, 0].size):
             self.spiketrains[int(d[i, 1])].append(d[i, 0])
 
@@ -90,14 +95,16 @@ class PlotConductances(object):
         for gid in self.good_gids:
             x, y, u, v = self.tuning_prop[gid]
             thetas = np.arctan2(v, u)
-            h = ((thetas[i] + np.pi) / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
-            l = np.sqrt(u**2 + v**2) / np.sqrt(2 * params['v_max']**2) # lightness [0, 1]
+            h = ((thetas + np.pi) / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
+            l = np.sqrt(u**2 + v**2) / np.sqrt(2 * self.params['v_max']**2) # lightness [0, 1]
             s = 1. # saturation
             assert (0 <= h and h < 360)
             assert (0 <= l and l <= 1)
             assert (0 <= s and s <= 1)
             (r, g, b) = utils.convert_hsl_to_rgb(h, s, l)
-            ax.plot(x, y, 'o', c=(r,g,b), markersize=ms)#, edgecolors=None)
+            ax.plot(x, y, 'o', c=(r,g,b), markersize=7, markeredgewidth=0)#, edgecolors=None)
+        ax.set_xlabel('X-position')
+        ax.set_ylabel('Y-position')
 
 
 
@@ -122,8 +129,8 @@ class PlotConductances(object):
     def create_fig(self):
         print "plotting ...."
         self.fig = pylab.figure()
-        pylab.subplots_adjust(hspace=0.35)
-        pylab.subplots_adjust(wspace=0.5)
+        pylab.subplots_adjust(hspace=0.6)
+        pylab.subplots_adjust(wspace=0.3)
 
 
     def plot_rasterplot(self, cell_type, fig_cnt=1):
@@ -176,7 +183,7 @@ class PlotConductances(object):
             spikes_in_rest[t, 1] = binned_spikes_in_rest[:, t].std()
             spikes_in_rest[t, 2] = binned_spikes_in_rest[:, t].sum()
 
-        w = self.params['w_input_exc'] 
+        w = self.params['w_input_exc'] * 1000. # *1000. for us --> nS
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.errorbar(self.t_axis, w * spikes_in_good[:, 0], yerr=w * spikes_in_good[:, 1], label='in \'good\' cells')
         ax.errorbar(self.t_axis, w * spikes_in_rest[:, 0], yerr=w * spikes_in_rest[:, 1], label='in rest')
@@ -205,12 +212,12 @@ class PlotConductances(object):
         if title == None:
             title = 'Average conductances '
         if label == None:
-            label = '$g_{sum} = %.1e$' % (d[:, 2].sum())
+            label = '$g_{sum} = %.1e$ nS' % (d[:, 2].sum())
 
-        params = { 'legend.fontsize': 8}
+        params = { 'legend.fontsize': 10}
         pylab.rcParams.update(params)
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.errorbar(self.t_axis, d[:, 0], yerr=d[:, 1], label=label)
+        ax.errorbar(self.t_axis, 1000. * d[:, 0], yerr=1000. * d[:, 1], label=label)
         ax.set_title(title)
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('Conductances [nS]')
@@ -236,7 +243,7 @@ class PlotConductances(object):
         self.plot_cond_errorbar(self.cond_rest_to_rest, fig_cnt=4, title='Conductance rest --> rest')
 
 
-    def get_intra_network_conductances(self):
+    def get_intra_network_conductances(self, conn_list_fn=None):
         # calculate the (mean, std) conductances between different groups of neurons
         # good (g) -> good
         # g -> rest (r)
@@ -248,16 +255,21 @@ class PlotConductances(object):
         # inh -> all exc
         # inh -> r
         # inh -> g
-        conn_fn = self.params['conn_list_ee_fn_base'] + '0.dat'
-        print 'utils.get_conn_dict ...'
-        self.conn_dict = utils.get_conn_dict(self.params, conn_fn)
+
+        if conn_list_fn == None:
+            if self.params['initial_connectivity'] == 'precomputed':
+                conn_list_fn = self.params['conn_list_ee_fn_base'] + '0.dat'
+            else: 
+                conn_list_fn = self.params['random_weight_list_fn'] + '0.dat'
+        print 'utils.get_conn_dict from file:', conn_list_fn 
+        self.conn_dict = utils.get_conn_dict(self.params, conn_list_fn)
         spike_fn = self.params['exc_spiketimes_fn_merged'] + '0.ras'
 
 
     def get_input_cond(self, tgts, srcs):#, source_spike_fn):
         """
         Calculates the time course for the input conductances into a population of cells given by 'gids'.
-        Should be called after retrieving the connection dictionary form utils (-->util.get_conn_dict, e.g. from self.get_intra_network_conductances)
+        Should be called after retrieving the connection dictionary from utils (-->util.get_conn_dict, e.g. from self.get_intra_network_conductances)
         This only works on binned spikes and hence gives valid information only if
         synaptic time constants are shorter than the time_binsize.
         tgts : list of target gids

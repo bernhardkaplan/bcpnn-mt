@@ -17,8 +17,8 @@ print "Motion parameters", mp
 #            * np.exp(-((u_src-u_tgt)**2 + (v_src - v_tgt)**2) / (2 * sigma_v**2))
 
 
-#conn_list_fn = params['conn_list_ee_fn_base'] + '0.dat'
-conn_list_fn = 'NoColumns_winit_precomputed/Connections/conn_list_ee_0.dat'
+conn_list_fn = params['conn_list_ee_fn_base'] + '0.dat'
+#conn_list_fn = 'NoColumns_winit_precomputed/Connections/conn_list_ee_0.dat'
 #conn_list_fn = 'NoColumns_winit_random/Connections/conn_list_ee_0.dat'
 print "Loading connectivity data from ", conn_list_fn
 conn_mat, delays = utils.convert_connlist_to_matrix(conn_list_fn, params['n_exc'])

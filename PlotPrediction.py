@@ -25,7 +25,7 @@ class PlotPrediction(object):
         self.n_bins = int((self.params['t_sim'] / self.time_binsize) )
         self.time_bins = [self.time_binsize * i for i in xrange(self.n_bins)]
         self.t_axis = np.arange(0, self.n_bins * self.time_binsize, self.time_binsize)
-        self.n_vx_bins, self.n_vy_bins = 20, 20
+        self.n_vx_bins, self.n_vy_bins = 30, 30
 
         # create data structures
         self.nspikes = np.zeros(self.n_cells)                                   # summed activity
@@ -284,7 +284,7 @@ class PlotPrediction(object):
 
     def plot_rasterplot(self, cell_type, fig_cnt=1):
         if cell_type == 'inh':
-            fn = self.params['inh_spiketimes_fn_base'] + '0.ras'
+            fn = self.params['inh_spiketimes_fn_merged'] + '0.ras'
             n_cells = self.params['n_inh']
         elif cell_type == 'exc':
             fn = self.params['exc_spiketimes_fn_merged'] + '0.ras'
@@ -582,7 +582,7 @@ class PlotPrediction(object):
 #                thetas[x, y] = np.arctan2(vx_in_grid[x, y], vy_in_grid[x, y])
 #        vx_in_grid /= np.max(v_norm)
 #        vy_in_grid /= np.max(v_norm)
-        scale = 2.
+        scale = 20.
 #        vx_in_grid /= scale
 #        vy_in_grid /= scale
         print 'after:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
@@ -595,10 +595,13 @@ class PlotPrediction(object):
         l,r,b,t = pylab.axis()
         dx, dy = r-l, t-b
         pylab.axis([l-0.25*dx, r+0.25*dx, b-0.25*dy, t+0.25*dy])
-        pylab.show()
+#        pylab.show()
 
     def make_infotextbox(self):
         pass
+
+if __name__ == '__main__':
+    plot_prediction()
 
 #thetas = np.zeros(n_cells)
 #for gid in xrange(n_cells):

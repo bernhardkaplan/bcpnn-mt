@@ -64,7 +64,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
     n_units = tuning_prop.shape[0]
     n_cells = params['n_exc'] # each unit / column can contain several cells
-    dt = 0.1 # [ms] time step for the non-homogenous Poisson process 
+    dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
     time = np.arange(0, params['t_sim'], dt)
 
     if (my_units == None):
@@ -75,7 +75,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     L_input = np.empty((n_cells, time.shape[0]))
 #    mv = np.zeros((time.shape[0], 3))
     for i_time, time_ in enumerate(time):
-        if (i_time % 50 == 0):
+        if (i_time % 100 == 0):
             print "t:", time_
         L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast)
         L_input[:, i_time] *= params['f_max_stim']
@@ -98,7 +98,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
                 st.append(i * dt) 
         output_fn = tgt_fn_base + str(column)
         np.save(output_fn, np.array(st))
-        output_fn = params['input_folder'] + 'rate_' + str(column)
+        output_fn = params['input_rate_fn_base'] + str(column)
         np.save(output_fn, rate_of_t)
 
 
@@ -391,6 +391,30 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
     else:
         return nspikes
 
+def get_sources(conn_list, target_gid):
+    n = conn_list[:, 0].size 
+    target = target_gid * np.ones(n)
+    mask = conn_list[:, 1] == target
+    sources = conn_list[mask, :]
+    return sources
+
+
+def get_targets(conn_list, source_gid):
+    n = conn_list[:, 0].size 
+    source = source_gid * np.ones(n)
+    mask = conn_list[:, 0] == source
+    targets = conn_list[mask, :]
+    return targets
+
+
+def get_cond_in(nspikes, conn_list, target_gid):
+    cond_in = 0.
+    srcs = get_sources(conn_list, target_gid)
+    for i in xrange(len(srcs)):
+        src_id = srcs[i, 0]
+        cond_in += nspikes[src_id] * srcs[i, 2]
+    return cond_in
+
 
 def get_spiketrains(spiketimes_fn_merged, n_cells=0):
     """
@@ -600,10 +624,10 @@ def gather_bias(comm, data, n_total, output_fn):
 
 def get_conn_dict(params, conn_fn, comm=None):
     """
-    Returns a dictionary of dictionaries with cell_gid as keys:
+    Returns a dictionary of dictionaries with target cell_gid as keys:
         conn_dict = { cell_gid : { 'sources' : [], 'w_in' : []}
         e.g.
-        conn_dict[i] = {
+        conn_dict[i] = { # i = target cell gid
                 'sources'   : [j, k, x] # list of all cells connecting to cell i
                 'w_in'      : [w_ji, w_ki, w_xi]
                 }

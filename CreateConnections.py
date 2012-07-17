@@ -5,6 +5,7 @@ import pyNN.random
 import utils
 from scipy.spatial import distance
 import os
+import time
 
 def get_p_conn(tuning_prop, src, tgt, w_sigma_x, w_sigma_v):
 
@@ -57,7 +58,6 @@ def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
                 p, latency = get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v)
                 delay = min(max(latency * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
                 output += '%d\t%d\t%.4e\t%.2e\n' % (src, tgt, p, delay)
-                # decide which connection should be discarded
                 i += 1
 
     print 'Process %d writes connections to: %s' % (pc_id, output_fn)
@@ -102,8 +102,21 @@ def normalize_probabilities(params, comm, w_thresh=None):
     fn = params['conn_list_ee_fn_base'] + 'pid%d_normalized.dat' % (pc_id)
     print 'Writing to ', fn
     np.savetxt(fn, d, fmt='%d\t%d\t%.4e\t%.2e')
+    time.sleep(3)
 
     # make one file out of many
+#    if pc_id == 0:
+#        data = ''
+#        for pid in xrange(n_proc):
+#            fn = params['conn_list_ee_fn_base'] + 'pid%d_normalized.dat ' % (pid)
+#            f = file(fn, 'r')
+#            data += f.readlines()
+#        output_fn = params['conn_list_ee_fn_base'] + '0.dat'
+#        f = file(output_fn, 'w')
+#        f.write(data)
+#        f.flush()
+#        f.close()
+
     if pc_id == 0:
         cat_command = 'cat '
         for pid in xrange(n_proc):
@@ -113,6 +126,7 @@ def normalize_probabilities(params, comm, w_thresh=None):
         cat_command += ' > %s' % output_fn
         print 'Merging to:', output_fn
         os.system(cat_command)
+        time.sleep(2)
 
 
 

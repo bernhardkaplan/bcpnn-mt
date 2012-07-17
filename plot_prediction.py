@@ -78,13 +78,16 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 
 #    plotter.make_infotextbox()
 
-    pylab.show()
+#    pylab.show()
 
 
 #    plotter.plot_nspikes_binned()               # 1
 #    plotter.plot_nspikes_binned_normalized()    # 2
 #    plotter.plot_vx_confidence_binned()         # 3
 #    plotter.plot_vy_confidence_binned()         # 4
+
+if __name__ == '__main__':
+    plot_prediction()
 
 #folder = 'Data_inputstrength_sweeps/NoColumns_winit_random_wsigmaX2.50e-01_wsigmaV2.50e-01_winput2.00e-03_finput2.00e+03pthresh1.0e-01_ptow1.0e-02/' 
 #params_fn = folder + 'simulation_parameters.info'

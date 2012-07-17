@@ -5,9 +5,11 @@ import PlotConductances as P
 import sys
 import NeuroTools.parameters as ntp
 import simulation_parameters
+import time
 
 def plot_conductances(params=None, data_fn=None, inh_spikes = None):
 
+    t_start = time.time()
     if params== None:
         network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 #        P = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
@@ -24,7 +26,7 @@ def plot_conductances(params=None, data_fn=None, inh_spikes = None):
 
     if plotter.no_spikes:
         return
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_pthresh%.1e' % (params['grouped_actitivty_fig_fn_base'], params['initial_connectivity'], \
+    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_wthresh%.1e' % (params['grouped_actitivty_fig_fn_base'], params['initial_connectivity'], \
             params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
 
     # fig 1
@@ -37,7 +39,7 @@ def plot_conductances(params=None, data_fn=None, inh_spikes = None):
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn)
 
-    output_fn = '%sgoodcell_connections_%s_wsigmaX_%.2f_wsigmaV%.2f_pthresh%.1e' % (params['figures_folder'], params['initial_connectivity'], \
+    output_fn = '%sgoodcell_connections_%s_wsigmaX_%.2f_wsigmaV%.2f_wthresh%.1e.png' % (params['figures_folder'], params['initial_connectivity'], \
             params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
     plotter.create_fig()  # create an empty figure
     plotter.plot_good_cell_connections(1) # subplot 1 + 2
@@ -52,9 +54,13 @@ def plot_conductances(params=None, data_fn=None, inh_spikes = None):
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
 
+    t_stop = time.time()
+    t_run = t_stop - t_start
+    print "PlotConductance duration: %d sec or %.1f min for %d cells (%d exc, %d inh)" % (t_run, (t_run)/60., \
+            params['n_cells'], params['n_exc'], params['n_inh'])
     # fig 3
-    pylab.show()
+#    pylab.show()
 
 if __name__ == '__main__':
-    plot_conductances()
+    plot_conductances(params=None)
 
