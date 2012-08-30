@@ -78,6 +78,7 @@ ax1.plot(bins_w[:-1], eval_exp_dist(bins_w[:-1], opt_params), 'r--', label='Fit:
 #ax1.plot(bins_w[:-1], eval_exp_dist(bins_w[:-1], opt_params[0]), 'r--', label='Fit: $(%.1e) * exp(-w / (%.1e))$' % (opt_w0, opt_wtau))
 ax1.set_xlabel('Weights')
 ax1.set_ylabel('Count')
+title = 'Weight profile $\sigma_{X(V)} = %.1f (%.1f)$' % (params['w_sigma_x'], params['w_sigma_v'])
 ax1.set_title(fn)
 ax1.legend()
 

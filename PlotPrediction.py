@@ -588,9 +588,9 @@ class PlotPrediction(object):
         print 'after:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
         X, Y = np.meshgrid(x_edges, y_edges)
         Q = pylab.quiver(X, Y, vx_in_grid, vy_in_grid, scale=scale)#, thetas_in_grid)
-        x_key, y_key = self.params['motion_params'][0], self.params['motion_params'][1]#.5, 1.02
+        x_key, y_key = self.params['motion_params'][0] * 1.5, self.params['motion_params'][1]#.5, 1.02
         key_label ='Stimulus'
-        key_length = np.sqrt(self.params['motion_params'][2]**2 + self.params['motion_params'][3]**2)
+        key_length = np.sqrt((self.params['motion_params'][2] * scale)**2 + (self.params['motion_params'][3] * scale)**2)
         pylab.quiverkey(Q, x_key, y_key, key_length, key_label)
         l,r,b,t = pylab.axis()
         dx, dy = r-l, t-b

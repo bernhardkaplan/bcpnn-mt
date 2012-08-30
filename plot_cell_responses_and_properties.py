@@ -51,7 +51,7 @@ class PlotCellResponsesPlusProperties(object):
         n_cells = self.params['n_exc']
         self.dist_to_stim = np.zeros(n_cells)
         for i in xrange(n_cells):
-            self.dist_to_stim[i] = utils.get_min_distance_to_stim(self.mp, self.tp[i, :])
+            self.dist_to_stim[i], spatial_dist = utils.get_min_distance_to_stim(self.mp, self.tp[i, :])
 
     def plot(self):
 

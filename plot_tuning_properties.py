@@ -63,10 +63,19 @@ for i in xrange(n_cells):
     ax3.plot((x*scale, x*scale+u), (y*scale, y*scale+v), 'k')
 ax3.set_xlabel('$x$')
 ax3.set_ylabel('$y$')
-ax3.set_title('Preferred directions\n (space was scaled by factor %d)' % scale)
+ax3.set_title('Preferred directions')
 ax3.set_ylim((d[:, 1].min() * 1.05 * scale, d[:, 1].max() * 1.05 * scale))
 ax3.set_xlim((d[:, 0].min() * 1.05 * scale, d[:, 0].max() * 1.05 * scale))
-
+yticks = ax3.get_yticks()
+xticks = ax3.get_xticks()
+yticks_rescaled = []
+xticks_rescaled = []
+for i in xrange(len(yticks)):
+    yticks_rescaled.append(yticks[i] / scale)
+for i in xrange(len(xticks)):
+    xticks_rescaled.append(xticks[i] / scale)
+ax3.set_yticklabels(yticks_rescaled)
+ax3.set_xticklabels(xticks_rescaled)
 
 print "Saving to ... ", params['tuning_prop_fig_fn']
 pylab.savefig(params['tuning_prop_fig_fn'])

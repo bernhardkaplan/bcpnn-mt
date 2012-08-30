@@ -30,7 +30,7 @@ weights1 = conn_mat[src_cell, tgts]
 print "Target cells:", tgts
 print "Weights:", weights1
 weights2 = conn_mat[srcs, src_cell]
-print "Source cells (projecting to the selected one):", srcs
+print "Source cells (projecting to gid %d):" % src_cell, srcs
 print "Weights:", weights2
 weights = weights1.tolist() + weights2.tolist()
 w_max = np.max(weights)
@@ -52,7 +52,7 @@ for tgt in tgts:
     w = conn_mat[src_cell, tgt]
     d = delays[src_cell, tgt]
     line_width = round(w / w_max * lw_max) + 1
-    print "%d %d %.3e %d" % (src_cell, tgt, w, line_width)
+#    print "%d %d %.3e %d" % (src_cell, tgt, w, line_width)
     dx = (x_tgt - x_src)
     dy = (y_tgt - y_src)
     m = dy / dx
@@ -69,7 +69,7 @@ for src in srcs:
     w = conn_mat[src, src_cell]
     d = delays[src, src_cell]
     line_width = round(w / w_max * lw_max) + 1
-    print "%d %d %.3e %d" % (src_cell, src, w, line_width)
+#    print "%d %d %.3e %d" % (src_cell, src, w, line_width)
     dx = (x_tgt - x_src)
     dy = (y_tgt - y_src)
     m = dy / dx
@@ -84,9 +84,10 @@ for src in srcs:
 #Z = connection_probability
 #ax1.pcolor(
 
-fig_fn = 'precomp_conn_profile_%d.png' % src_cell
+fig_fn = params['figures_folder'] + 'precomp_conn_profile_%d.png' % src_cell
 print "Saving fig to", fig_fn
 pylab.savefig(fig_fn)
+pylab.show()
 
 
 

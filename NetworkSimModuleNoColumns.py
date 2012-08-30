@@ -40,22 +40,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
             constrain='redraw',
             boundaries=(-80, -60))
 
-    if initial_connectivity == 'random':
-        w_range=(0, 5e-3)
-        w_lambda = params['w_distribution_fit_wlambda']
-        w_ee_dist = RandomDistribution('exponential',
-                (w_lambda,),
-                rng=rng_conn,
-                constrain='clip',
-#                constrain='redraw',
-                boundaries=w_range)
-
-        delay_dist = RandomDistribution('uniform',
-                params['delay_range'],
-                rng=rng_conn,
-                constrain='redraw',
-                boundaries=params['delay_range'])
-
     w_ei_dist = RandomDistribution('normal',
             (params['w_ei_mean'], params['w_ei_sigma']),
             rng=rng_conn,
@@ -121,7 +105,8 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
 
     if connect_exc_exc:
         if initial_connectivity == 'precomputed':
-            conn_list_fn = params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat'
+            conn_list_fn = params['conn_list_ee_balanced_fn']
+#            conn_list_fn = params['conn_list_ee_fn_base'] + str(sim_cnt) + '.dat'
 
         else: # random
             conn_list_fn = params['random_weight_list_fn'] + str(sim_cnt) + '.dat'
@@ -236,20 +221,25 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
         record(exc_pop[cell], params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
 
     n_cells_to_record = params['n_exc'] * 0.02
-    record_exc = False
+    record_exc = True
     if os.path.exists(params['gids_to_record_fn']):
-        gids_to_record = np.loadtxt(params['gids_to_record_fn'], dtype='int')
+        gids_to_record = np.loadtxt(params['gids_to_record_fn'], dtype='int')[:params['n_gids_to_record']]
         record_exc = True
-        gids_to_record = gids_to_record
     else:
         gids_to_record = np.random.randint(0, params['n_exc'], n_cells_to_record)
 
 
+#   doesn't work with pyNN trunk 0.8.0dev (Rev: 960)
     exc_pop_view = PopulationView(exc_pop, gids_to_record, label='good_exc_neurons')
     exc_pop_view.record_v()
+#    inh_pop_view = PopulationView(inh_pop, np.random.randint(0, params['n_inh'], params['n_gids_to_record']), label='random_inh_neurons')
+#    inh_pop_view.record_v()
+
+#    exc_pop.record()
+#    exc_pop.record_v()
 
     inh_pop.record()
-    inh_pop.record_v()
+#    inh_pop.record_v()
 
     print "Running simulation ... "
     t_pre_run = time.time()
@@ -261,9 +251,9 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
     # # # # # # # # # # # # # # # # #
     #     P R I N T    R E S U L T S 
     # # # # # # # # # # # # # # # # #
-#    if record_exc:
     print 'print_v to file: %s.v' % (params['exc_volt_fn_base'])
     exc_pop_view.print_v("%s.v" % (params['exc_volt_fn_base']), compatible_output=False)
+#    if record_exc:
 #        for gid in gids_to_record:
 #            exc_pop_view[gid].print_v("%s%d.v" % (params['exc_volt_fn_base'], gid), compatible_output=False)
 #            print_v(exc_pop[cell], "%s%d.v" % (params['exc_volt_fn_base'], cell), compatible_output=False)
@@ -272,10 +262,13 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
 #            exc_pop[cell].printSpikes("%s%d.ras" % (params['exc_spiketimes_fn_base'], cell))
     #    input_pop[cell].printSpikes("%sinput_spikes_%s.ras" % (params['spiketimes_folder'], cell))
 
+    print "Printing excitatory membrane potentials"
+    exc_pop.print_v("%s.v" % (params['exc_volt_fn_base']), compatible_output=False)
+
     print "Printing inhibitory spikes"
     inh_pop.printSpikes(params['inh_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
-    print "Printing inhibitory membrane potentials"
-    inh_pop.print_v("%s.v" % (params['inh_volt_fn_base']), compatible_output=False)
+#    print "Printing inhibitory membrane potentials"
+#    inh_pop.print_v("%s.v" % (params['inh_volt_fn_base']), compatible_output=False)
 
     print "calling pyNN.end() ...."
     end()

@@ -21,11 +21,11 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 60# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 40 # np.int(n_cells/N_V/N_theta)
         # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
-        self.params['N_V'], self.params['N_theta'] = 8, 8# resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['sigma_RF_pos'] = .1 # some variability in the position of RFs
         self.params['sigma_RF_speed'] = .1 # some variability in the position of RFs
@@ -44,34 +44,23 @@ class parameter_storage(object):
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
-        self.params['initial_connectivity'] = 'precomputed'
-#        self.params['initial_connectivity'] = 'random'
+        self.params['connect_exc_exc'] = True# enable / disable exc - exc connections for test purpose only
+#        self.params['initial_connectivity'] = 'precomputed'
+        self.params['initial_connectivity'] = 'random'
         self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['p_to_w_scaling'] = 500.  # conversion factor for the pre-computed weights , 0.005 seems good
+        self.params['p_to_w_scaling'] = 50.  # conversion factor for the pre-computed weights
         self.params['w_thresh_connection'] = 1e-5 # connections with a weight less then this value will be discarded
-        self.params['delay_scale'] = 5.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['delay_range'] = (0.1, 30.)
-        self.params['w_sigma_x'] = 0.3          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.3         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['delay_scale'] = 50.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_range'] = (0.1, 100.)
+        self.params['w_sigma_x'] = 0.1          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.1         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
 
-        # >>>> Not used when pre-wired connectivity is used
-        # exc - exc 
-        self.params['p_ee'] = 4.94e-2           # if two MCs are connected, cells within these MCs are connected with this probability (FixedProbabilityConnector)
-        self.params['w_distribution_fit_wlambda'] = 2.36524e+03 # fit to the probability density function of the weight distribution to the pre-computed weights
-                                                # => plot_weight_and_delay_histogram.py
-
-#        self.params['w_ee_mean'] = 0.001           # cells within two MCs are connected with this weight
-#        self.params['w_ee_sigma'] = 0.001           # cells within two MCs are connected with this weight
-        # <<<<< 
-
-        # 
-
         # exc - inh
-        self.params['p_ei'] = 0.1
+        self.params['p_ei'] = 0.25
         self.params['w_ei_mean'] = 0.004
         self.params['w_ei_sigma'] = 0.001          
 
@@ -86,38 +75,36 @@ class parameter_storage(object):
         self.params['w_ii_mean'] = 0.001
         self.params['w_ii_sigma'] = 0.001          
 
-        # >>> currently not used
-        self.params['w_init_max'] = 0.001               # [uS] Maximal weight when creating the initial weight matrix
-        self.params['w_thresh_bcpnn'] = 0.001           # [uS] Threshold under which a weight is set to zero in the cell-to-cell connectivity matrix
-        self.params['dw_scale'] = 1e-4                 # [uS] Weight updates computed by BCPNN are scaled with this factor
-        # <<<<<
-
         # ###################
         # CELL PARAMETERS   #
         # ###################
         # TODO: distribution of parameters (e.g. tau_m)
-        self.params['cell_params_exc'] = {'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':5.0 * 2, 'tau_syn_I':10.0 * 2, 'tau_m' : 10}
-        self.params['cell_params_inh'] = {'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':5.0 * 2, 'tau_syn_I':10.0 * 2, 'tau_m' : 10}
+        self.params['cell_params_exc'] = {'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':5.0, 'tau_syn_I':10.0, 'tau_m' : 10, 'v_reset' : -70}
+        self.params['cell_params_inh'] = {'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':5.0, 'tau_syn_I':10.0, 'tau_m' : 10, 'v_reset' : -70}
+        self.params['tau_syn_exc'] = self.params['cell_params_exc']['tau_syn_E']
+        self.params['tau_syn_inh'] = self.params['cell_params_inh']['tau_syn_I']
         # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
-        self.params['v_init'] = -60                 # [mV]
-        self.params['v_init_sigma'] = 5             # [mV]
+        self.params['v_init'] = -65                 # [mV]
+        self.params['v_init_sigma'] = 3             # [mV]
 
         # ######################
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
         self.params['t_sim'] = 300.
+        self.params['t_stimulus'] = 200.
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
         self.params['tuning_prop_seed'] = 0         # seed for randomized tuning properties
         self.params['dt_rate'] = 0.1 # [ms] time step for the non-homogenous Poisson process 
+        self.params['n_gids_to_record'] = 10
 
         # ######
         # INPUT 
         # ######
-        self.params['f_max_stim'] = 2000. # [Hz]
+        self.params['f_max_stim'] = 5000. # [Hz]
         self.params['stim_dur_sigma'] = self.params['t_sim'] *.3 # [ms]
         self.params['w_input_exc'] = 3.0e-3 # [uS] mean value for input stimulus ---< exc_units (columns
-        self.params['w_input_exc_sigma'] = 0.1 * self.params['w_input_exc']  # [uS]
+        self.params['w_input_exc_sigma'] = 0.01 * self.params['w_input_exc']  # [uS]
 
 
         # ###############
@@ -129,15 +116,20 @@ class parameter_storage(object):
         """
         self.params['motion_params'] = (0.5, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.2, 0.2
+        self.params['blur_X'], self.params['blur_V'] = 0.4, 0.4
+        # the blur parameter represents the input selectivity:
+        # high blur means many cells respond to the stimulus
+        # low blur means high input selectivity, few cells respond
+        # the maximum number of spikes as response to the input alone is not much affected by the blur parameter
+
 
         # ######
         # NOISE
         # ######
         self.params['w_exc_noise'] = 5e-4          # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 2000            # [Hz]
+        self.params['f_exc_noise'] = 1e-10# [Hz] 
         self.params['w_inh_noise'] = 2e-3          # [uS] mean value for noise ---< columns
-        self.params['f_inh_noise'] = 2000            # [Hz]
+        self.params['f_inh_noise'] = 1e-10# [Hz]
 
         rnd.seed(self.params['seed'])
 
@@ -155,8 +147,15 @@ class parameter_storage(object):
         # FILENAMES and FOLDERS
         # ######################
         # the main folder with all simulation specific content
-#        self.params['folder_name'] = "120711_Input_tuning/"
-        self.params['folder_name'] = "120713_winit_%s_ptow_%.2e_blur_%.1e/" % (self.params['initial_connectivity'], self.params['p_to_w_scaling'], self.params['blur_X'])
+        if self.params['connect_exc_exc']:
+            if self.params['initial_connectivity'] == 'precomputed':
+                self.params['folder_name'] = "Testing/"
+            else:
+                self.params['folder_name'] = "Testing_rnd_conn/"
+        else:
+            self.params['folder_name'] = "Testing_no_rec/"
+#        self.params['folder_name'] = 'Testing/'
+#        self.params['folder_name'] = "120713_winit_%s_ptow_%.2e_blur_%.1e/" % (self.params['initial_connectivity'], self.params['p_to_w_scaling'], self.params['blur_X'])
 #        self.params['folder_name'] = "120620_winit_%s_blur_%.1e/" % (self.params['initial_connectivity'], self.params['blur_X'])
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
@@ -222,7 +221,7 @@ class parameter_storage(object):
         # for models not based on minicolumns:
         self.params['conn_prob_fn'] = '%sconn_prob.dat' % (self.params['connections_folder'])
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
-        self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
+        self.params['conn_list_ee_balanced_fn'] = '%sconn_list_ee_balanced.dat' % (self.params['connections_folder'])
         self.params['random_weight_list_fn']  = '%sconn_list_rnd_ee_' % (self.params['connections_folder'])
         self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
         self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])

@@ -18,6 +18,7 @@ def convert_connlist_to_matrix(fn, n_cells):
     conn_list = np.loadtxt(fn)
     m = np.zeros((n_cells, n_cells))
     delays = np.zeros((n_cells, n_cells))
+    print 'utils.convert_connlist_to_matrix(%s, %d) conn_list size: %d' % (fn, n_cells, conn_list[:, 0].size)
     for i in xrange(conn_list[:,0].size):
         src = conn_list[i, 0]
         tgt = conn_list[i, 1]
@@ -65,7 +66,8 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     n_units = tuning_prop.shape[0]
     n_cells = params['n_exc'] # each unit / column can contain several cells
     dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
-    time = np.arange(0, params['t_sim'], dt)
+
+    time = np.arange(0, params['t_stimulus'], dt)
 
     if (my_units == None):
         my_units = xrange(n_units)
@@ -104,7 +106,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
 def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     """
-    This function computes the input to each cell based on the given tuning properties.
+    This function computes the input to each cell for one point in time t based on the given tuning properties.
 
     Arguments:
         tuning_prop: 2-dim np.array; 
@@ -515,7 +517,7 @@ def sort_gids_by_distance_to_stimulus(tp, mp):
 
     n_steps = 100 # the of 
     for i in xrange(n_cells):
-        x_dist[i] = get_min_distance_to_stim(mp, tp[i, :], n_steps)
+        x_dist[i], spatial_dist = get_min_distance_to_stim(mp, tp[i, :], n_steps)
 
     cells_closest_to_stim_pos = x_dist.argsort()
 #    cells_closest_to_stim_velocity = v_dist.argsort()
@@ -536,7 +538,7 @@ def get_min_distance_to_stim(mp, tp_cell, n_steps=100):
         min_spatial_dist = np.sqrt(np.min(spatial_dist))
         velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
     dist =  min_spatial_dist + velocity_dist
-    return dist
+    return dist, spatial_dist
     
 def torus_distance(x0, x1):
     x_lim =  1

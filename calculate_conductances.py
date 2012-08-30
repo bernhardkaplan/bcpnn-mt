@@ -32,6 +32,7 @@ class ConductanceCalculator(object):
         self.g_in_histograms = []
         self.output_fig = self.params['conductances_fig_fn_base']
         self.n_good = self.params['n_exc'] * .05 # fraction of 'good' (well-tuned) cells
+        print 'Number of \'good\' (well-tuned) cells:', self.n_good
 
         self.no_spikes = False
 
@@ -118,7 +119,9 @@ class ConductanceCalculator(object):
             fn = fn_base + '%d.npy' % (tgt)
             d = np.load(fn)
             self.n_input_spikes[i] = d.size
-            self.g_input[i] = w * d.size
+            self.g_input[i] = w * d.size * self.params['tau_syn_exc']
+
+        self.g_input /= self.params['t_stimulus']
         s, mean, std = self.g_input.sum(), self.g_input.mean(), self.g_input.std()
         if label == None:
             label = 'G_input_all'
@@ -132,9 +135,14 @@ class ConductanceCalculator(object):
 
 
 
-    def get_cond(self, conn_dict, src_gids, tgt_gids, nspikes, label):
+    def get_cond(self, conn_dict, src_gids, tgt_gids, nspikes, label, src_type='exc'):
 
         g_in = np.zeros(len(tgt_gids))
+
+        if src_type == 'inh':
+            tau_syn = self.params['tau_syn_inh']
+        else:
+            tau_syn = self.params['tau_syn_exc']
 
         for i_, tgt in enumerate(tgt_gids):
             all_srcs = conn_dict[tgt]['sources']
@@ -142,8 +150,9 @@ class ConductanceCalculator(object):
             srcs = set(all_srcs).intersection(set(src_gids))
             for j_, src in enumerate(srcs):
                 w_index = all_srcs.index(src)
-                g_in[i_] += w_in[w_index] * nspikes[src]
+                g_in[i_] += w_in[w_index] * nspikes[src] * tau_syn
 
+        g_in /= self.params['t_sim']
         mean, std = g_in.mean(), g_in.std()
         print '%s = %.3e +- %.3e' % (label, mean, std)
         self.output.append((mean, std, label))
@@ -169,7 +178,7 @@ class ConductanceCalculator(object):
 
         fig = pylab.figure()
         ax = fig.add_subplot(111)
-
+        pylab.subplots_adjust(bottom=0.15)
         width = .5
         spacing = 4.
         x_axis = np.arange(0, len(self.output) * spacing, spacing) - width
@@ -215,7 +224,7 @@ class ConductanceCalculator(object):
 #                  'text.usetex': True,
                   'figure.figsize': fig_size}
         pylab.rcParams.update(params)
-        pylab.subplots_adjust(hspace=1.00)
+        pylab.subplots_adjust(hspace=1.00, bottom=0.15)
 
         fig = pylab.figure()
         n_fig_y = len(self.g_in_histograms)
@@ -265,19 +274,22 @@ def run_all(params=None):
     C.get_input_spikes(C.rest_gids, label='G_input_rest')
     if C.no_spikes:
         print 'No spikes found, will quit'
+        C.plot()
+        C.plot_g_in_histograms()
         return
-    C.get_cond(C.conn_dict_exc, C.good_gids, C.good_gids, C.nspikes_exc, label='G_good_good')
-    C.get_cond(C.conn_dict_exc, C.good_gids, C.rest_gids, C.nspikes_exc, label='G_good_rest')
-    C.get_cond(C.conn_dict_exc, C.rest_gids, C.good_gids, C.nspikes_exc, label='G_rest_good')
-    C.get_cond(C.conn_dict_exc, C.rest_gids, C.rest_gids, C.nspikes_exc, label='G_rest_rest')
-    C.get_cond(C.conn_dict_exc_inh, C.good_gids, range(C.params['n_inh']), C.nspikes_exc, label='G_good_inh')
-    C.get_cond(C.conn_dict_exc_inh, C.rest_gids, range(C.params['n_inh']), C.nspikes_exc, label='G_rest_inh')
-    C.get_cond(C.conn_dict_inh_exc, range(C.params['n_inh']), C.good_gids, C.nspikes_inh, label='G_inh_good')
-    C.get_cond(C.conn_dict_inh_exc, range(C.params['n_inh']), C.rest_gids, C.nspikes_inh, label='G_inh_rest')
-    C.get_cond(C.conn_dict_inh_exc, range(C.params['n_inh']), range(C.params['n_exc']), C.nspikes_inh, label='G_inh_exc')
-    C.get_cond(C.conn_dict_inh_inh, range(C.params['n_inh']), range(C.params['n_inh']), C.nspikes_inh, label='G_inh_inh')
+    C.get_cond(C.conn_dict_exc, C.good_gids, C.good_gids, C.nspikes_exc, label='G_good_good', src_type='exc')
+    C.get_cond(C.conn_dict_exc, C.good_gids, C.rest_gids, C.nspikes_exc, label='G_good_rest', src_type='exc')
+    C.get_cond(C.conn_dict_exc, C.rest_gids, C.good_gids, C.nspikes_exc, label='G_rest_good', src_type='exc')
+    C.get_cond(C.conn_dict_exc, C.rest_gids, C.rest_gids, C.nspikes_exc, label='G_rest_rest', src_type='exc')
+    C.get_cond(C.conn_dict_exc_inh, C.good_gids, range(C.params['n_inh']), C.nspikes_exc, label='G_good_inh', src_type='exc')
+    C.get_cond(C.conn_dict_exc_inh, C.rest_gids, range(C.params['n_inh']), C.nspikes_exc, label='G_rest_inh', src_type='exc')
+    C.get_cond(C.conn_dict_inh_exc, range(C.params['n_inh']), C.good_gids, C.nspikes_inh, label='G_inh_good', src_type='inh')
+    C.get_cond(C.conn_dict_inh_exc, range(C.params['n_inh']), C.rest_gids, C.nspikes_inh, label='G_inh_rest', src_type='inh')
+    C.get_cond(C.conn_dict_inh_exc, range(C.params['n_inh']), range(C.params['n_exc']), C.nspikes_inh, label='G_inh_exc', src_type='inh')
+    C.get_cond(C.conn_dict_inh_inh, range(C.params['n_inh']), range(C.params['n_inh']), C.nspikes_inh, label='G_inh_inh', src_type='inh')
     C.plot()
     C.plot_g_in_histograms()
+#    pylab.show()
 
 
 if __name__ == '__main__':
