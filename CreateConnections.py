@@ -18,7 +18,7 @@ def get_p_conn(tuning_prop, src, tgt, w_sigma_x, w_sigma_v):
     u1 = tuning_prop[tgt, 2]
     v1 = tuning_prop[tgt, 3]
     dx = utils.torus_distance(x0, x1)
-    dy = utils.torus_distance(x0, x1)
+    dy = utils.torus_distance(y0, y1)
     latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
     x_predicted = x0 + u0 * latency  
     y_predicted = y0 + v0 * latency  

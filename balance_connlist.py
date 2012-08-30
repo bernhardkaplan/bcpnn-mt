@@ -23,7 +23,7 @@ for i in xrange(params['n_exc']):
 w_in_sum_mean = w_in_sum.mean()
 #balancing_factor = (w_in_sum_mean - w_in_sum) / w_in_sum_mean + w_in_sum.max() / w_in_sum_mean
 balancing_factor = w_in_sum.mean() / w_in_sum
-#print 'Every cell gets on average a sum of %.2e +- %.2e [uS] weights' % (w_in_sum.mean(), w_in_sum.std())
+print 'Every cell gets on average a sum of %.2e +- %.2e [uS] weights, min %.2e max %.2e' % (w_in_sum.mean(), w_in_sum.std(), w_in_sum.min(), w_in_sum.max())
 #print 'balancing_factor = %.2e +- %.2e' % (balancing_factor.mean(), balancing_factor.std())
 #print balancing_factor
 
@@ -65,14 +65,13 @@ for i in xrange(n_cells):
 # plotting sums
 x = np.arange(0, n_cells)
 fig = pylab.figure()
-
 # plot the distribution of 'normal' sums of incoming weights
 ax = fig.add_subplot(221)
 ax.bar(x, w_in)
 fs = 12
 ax.set_title('Sum of NORMAL \nincoming weights [uS]', fontsize=fs)
 ax.set_ylabel('w_in_sum [uS]')
-ax.set_xlabel('GID of exc cell'
+ax.set_xlabel('GID of exc cell')
 ax.set_xlim((0, n_cells))
 
 # plot the distribution of balanced incoming weights
@@ -80,7 +79,7 @@ ax = fig.add_subplot(223)
 ax.bar(x, w_in_balanced)
 ax.set_title('Sum of BALANCED \nincoming weights [uS]', fontsize=fs)
 ax.set_ylabel('w_in_sum [uS]')
-ax.set_xlabel('GID of exc cell'
+ax.set_xlabel('GID of exc cell')
 ax.set_xlim((0, n_cells))
 
 # plotting averages
@@ -88,7 +87,7 @@ ax = fig.add_subplot(222)
 ax.bar(x, w_in_avg)
 ax.set_title('Average NORMAL \nincoming connection weight [uS]', fontsize=fs)
 ax.set_ylabel('average w_in [uS]')
-ax.set_xlabel('GID of exc cell'
+ax.set_xlabel('GID of exc cell')
 ax.set_xlim((0, n_cells))
 
 # balanced
@@ -96,7 +95,7 @@ ax = fig.add_subplot(224)
 ax.bar(x, w_in_avg_balanced)
 ax.set_title('Average BALANCED \nincoming connection weight [uS]', fontsize=fs)
 ax.set_ylabel('average w_in [uS]')
-ax.set_xlabel('GID of exc cell'
+ax.set_xlabel('GID of exc cell')
 ax.set_xlim((0, n_cells))
 
 pylab.subplots_adjust(hspace=0.5)
