@@ -3,7 +3,6 @@
 import pylab
 import numpy as np
 import simulation_parameters
-from NeuroTools import signals as nts
 import utils
 
 class PlotPrediction(object):
@@ -36,11 +35,17 @@ class PlotPrediction(object):
 
         # sort the cells by their tuning vx, vy properties
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
+        assert (self.tuning_prop[:, 0].size == self.params['n_exc']), 'Number of cells does not match in %s and simulation_parameters!\n Wrong tuning_prop file?' % self.params['tuning_prop_means_fn']
         # vx
         self.vx_tuning = self.tuning_prop[:, 2].copy()
         self.vx_tuning.sort()
         self.sorted_indices_vx = self.tuning_prop[:, 2].argsort()
-        self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
+        self.vx_min, self.vx_max = -0.2, 0.6
+        # maximal range of vx_speeds
+#        self.vx_min, self.vx_max = np.min(self.vx_tuning), np.max(self.vx_tuning)
+        self.vx_grid = np.linspace(self.vx_min, self.vx_max, self.n_vx_bins, endpoint=True)
+        #self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
+
         # vy
         self.vy_tuning = self.tuning_prop[:, 3].copy()
         self.vy_tuning.sort()
@@ -57,6 +62,7 @@ class PlotPrediction(object):
         fig_height = fig_width*golden_mean      # height in inches
         fig_size =  [fig_width,fig_height]
         params = {#'backend': 'png',
+                  'titel.fontsize': 16,
 #                  'axes.labelsize': 10,
 #                  'text.fontsize': 10,
 #                  'legend.fontsize': 10,
@@ -82,9 +88,6 @@ class PlotPrediction(object):
 #            sim_cnt = 0
 #            fn = self.params['exc_spiketimes_fn_merged'] + '%d.ras' % (sim_cnt)
         
-        # NeuroTools
-#        spklist = nts.load_spikelist(fn)
-#        spiketrains = spklist.spiketrains
         try:
             d = np.loadtxt(fn)
             for i in xrange(d[:, 0].size):
@@ -129,7 +132,6 @@ class PlotPrediction(object):
 
         """
         
-        v_max = self.tuning_prop[:, index].max()
         output_data = np.zeros((len(v_edges), self.n_bins))
         for gid in xrange(self.n_cells):
             n_spikes_binned = self.nspikes_binned
@@ -325,7 +327,7 @@ class PlotPrediction(object):
     def plot_grid_vs_time(self, data, title='', xlabel='', ylabel='', yticks=[], fig_cnt=1):
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title(title)
-        cax = ax.pcolor(data)
+        cax = ax.pcolormesh(data)
         ax.set_ylim((0, data[:, 0].size))
         ax.set_xlim((0, data[0, :].size))
         ax.set_xlabel(xlabel)
@@ -342,12 +344,13 @@ class PlotPrediction(object):
 
     def plot_vdiff(self, fig_cnt=1):
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.set_title('$|v_{stim}-v_{predicted}|$')
+        ax.set_title('Prediction error: $|v_{diff}| = |v_{stim}-v_{predicted}|$')#, fontsize=self.plot_params['title_fs'])
         ax.plot(self.t_axis, self.vdiff_avg, ls='-')
         ax.errorbar(self.t_axis, self.vdiff_moving_avg[:, 0], yerr=self.vdiff_moving_avg[:, 1], ls='--')
         ax.plot(self.t_axis, self.vdiff_non_linear, ls=':')
         ax.set_xlabel('Time [ms]')
-        ax.set_ylabel('$v_{diff}$')
+        ax.set_ylabel('$|v_{diff}|$')
+        ax.set_xlim(0, self.params['t_sim'])
         ny = self.t_axis.size
         n_ticks = 5
         t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
@@ -362,7 +365,7 @@ class PlotPrediction(object):
 
         ax = self.fig.add_subplot(421)
         ax.set_title('Spiking activity over time')
-        self.cax = ax1.pcolor(self.nspikes_binned)
+        self.cax = ax1.pcolormesh(self.nspikes_binned)
         ax.set_ylim((0, self.nspikes_binned[:, 0].size))
         ax.set_xlim((0, self.nspikes_binned[0, :].size))
         ax.set_xlabel('Time [ms]')
@@ -375,7 +378,7 @@ class PlotPrediction(object):
 
         ax = self.fig.add_subplot(422)
         ax.set_title('Normalized activity over time')
-        self.cax = ax2.pcolor(self.nspikes_binned_normalized)
+        self.cax = ax2.pcolormesh(self.nspikes_binned_normalized)
         ax.set_ylim((0, self.nspikes_binned_normalized[:, 0].size))
         ax.set_xlim((0, self.nspikes_binned_normalized[0, :].size))
         ax.set_xlabel('Time [ms]')
@@ -388,9 +391,10 @@ class PlotPrediction(object):
     def plot_vx_confidence_binned(self):
         ax = self.fig.add_subplot(423)
         ax.set_title('Vx confidence over time')
-        self.cax = ax.pcolor(self.vx_confidence_binned)
+        self.cax = ax.pcolormesh(self.vx_confidence_binned)
         ax.set_ylim((0, self.vx_confidence_binned[:, 0].size))
-        ax.set_xlim((0, self.vx_confidence_binned[0, :].size))
+#        ax.set_xlim((0, self.vx_confidence_binned[0, :].size))
+        ax.set_xlim(0, self.params['t_sim'])
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('$v_x$')
         ax.set_xticks(range(self.n_bins)[::2])
@@ -410,9 +414,10 @@ class PlotPrediction(object):
     def plot_vy_confidence_binned(self):
         ax = self.fig.add_subplot(424)
         ax.set_title('vy confidence over time')
-        self.cax = ax.pcolor(self.vy_confidence_binned)
+        self.cax = ax.pcolormesh(self.vy_confidence_binned)
         ax.set_ylim((0, self.vy_confidence_binned[:, 0].size))
-        ax.set_xlim((0, self.vy_confidence_binned[0, :].size))
+#        ax.set_xlim((0, self.vy_confidence_binned[0, :].size))
+        ax.set_xlim(0, self.params['t_sim'])
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('$v_y$')
         ax.set_xticks(range(self.n_bins)[::2])

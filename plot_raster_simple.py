@@ -29,32 +29,29 @@ pylab.rcParams.update(params2)
 
 # --------------------------------------------------------------------------
 
+fns = sys.argv[1:]
 
-if (len(sys.argv) < 2):
-    fn = raw_input("Please enter data file to be plotted\n")
-else:
-    fn = sys.argv[1]
+for fn in fns:
+    data = pylab.loadtxt(fn)
 
-#data = pylab.loadtxt(fn)
-data = np.load(fn)
+    fig = pylab.figure()
+    ax = fig.add_subplot(111)
+    if (data.ndim == 1):
+        x_axis = np.arange(data.size)
+        ax.scatter(x_axis, data)
+    else:
+        ax.plot(data[:,0], data[:,1], 'o', markersize=1, color='k')
 
-if (data.ndim == 1):
-#    x_axis = np.arange(data.size)
-#    pylab.plot(x_axis, data)
-    pylab.scatter(data, np.ones(data.size), 'o')
-    print data
-    pylab.ylim((0, 2))
+    ax.set_title(fn)
+#    ax.set_xlim((0, 1000))
+    print 'xlim:', ax.get_xlim()
+#    ax.set_ylim((0, data[:, 1].max()))
 
-else:
-#    pylab.scatter(data[:,0], data[:,1])
-    pylab.plot(data[:,0], data[:,1], 'o', markersize=1, color='k')
-    ymin, ymax = data[:, 1].min(), data[:, 1].max()
-    pylab.ylim((ymin-1, ymax+1))
+pylab.show()
 
-
-output_fn = 'delme.dat'
-np.savetxt(output_fn, data)
-output_fn = 'delme.png'
-print output_fn
-pylab.savefig(output_fn)
+#output_fn = 'delme.dat'
+#np.savetxt(output_fn, data)
+#output_fn = 'delme.png'
+#print output_fn
+#pylab.savefig(output_fn)
 pylab.show()

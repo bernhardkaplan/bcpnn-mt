@@ -77,7 +77,7 @@ latencies = []
 for i in xrange(n):
     src = sorted_gids[i]
     for tgt in sorted_gids:
-        p, latency = CC.get_p_conn(tp, src, tgt, sigma_x, sigma_v)
+        p, latency = CC.get_p_conn(tp[src, :], tp[tgt, :], sigma_x, sigma_v)
         conn_probs.append(p)
         latencies.append(latency)
 #        print "p(%d, %d):\t %.3e\tlatency: %.3e\t" % (src, tgt, p, latency)

@@ -6,8 +6,6 @@ import numpy as np
 import numpy.random as rnd
 import os
 from scipy.spatial import distance
-from NeuroTools import signals as nts
-import pylab
 import copy
 
 
@@ -344,7 +342,9 @@ def spatial_readout(particles, N_X, N_Y, hue, hue_zoom, fig_width, width, ywidth
     ywidth = width * np.float(N_Y) / N_X
     if display:
 #        print fig_width, fig_width * np.float(N_Y) / N_X
-        fig = pylab.figure()#figsize=(fig_width, fig_width * np.float(N_Y) / N_X))
+#        fig = pylab.figure()#figsize=(fig_width, fig_width * np.float(N_Y) / N_X))
+        # BK: the following code has been modified to remove import pylab from the utils.py file in order to run it on the cluster
+        fig = None
         a = fig.add_axes([0., 0., 1., 1.])
         if hue:
 # TODO : overlay image and use RGB(A) information
@@ -353,7 +353,8 @@ def spatial_readout(particles, N_X, N_Y, hue, hue_zoom, fig_width, width, ywidth
             a.imshow(np.fliplr(np.rot90(v_hist/v_hist.max(),3)), interpolation='nearest', origin='lower', extent=(-width/2, width/2, -ywidth/2., ywidth/2.))#, vmin=0., vmax=v_hist.max())
 #            pylab.axis('image')
         else:
-            a.pcolor(x_edges, y_edges, v_hist, cmap=pylab.bone(), vmin=0., vmax=v_hist.max(), edgecolor='k')
+#            a.pcolor(x_edges, y_edges, v_hist, cmap=pylab.bone(), vmin=0., vmax=v_hist.max(), edgecolor='k')
+            pass 
         a.axis([-width/2, width/2, -ywidth/2., ywidth/2.])
 
         return fig, a
@@ -673,3 +674,32 @@ def get_outgoing_connections(conn_fn, src_gid):
         if d[i, 0] == src_gid:
             c_out.append(d[i, :])
     return c_out
+
+
+def linear_transformation(x, y_min, y_max):
+    """
+    x : the range to be transformed
+    y_min, y_max : lower and upper boundaries for the range into which x
+                   is transformed to
+    Returns y = f(x), f(x) = m * x + b
+    """
+    x_min = np.min(x)
+    x_max = np.max(x)
+#    print 'debug linear transformation x_min, x_max', x_min, x_max
+    m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
+#    if (x_max / x_min) == np.inf:
+#        print 'inf'
+#        exit(1)
+#    if (x_max - x_min) == np.nan:
+#        print 'nan'
+#        exit(1)
+#    m = (y_max - y_min * (1. - x_max - x_max / x_min)) / (x_max - x_min)
+    b = (y_min * x_max - y_max * x_min) / (x_max - x_min)
+#    print 'debug m, b', m, b
+    return (m * x + b)
+
+def merge_files(input_fn_base, output_fn):
+
+    cmd = 'cat %s* > %s' % (input_fn_base, output_fn)
+    os.system(cmd)
+

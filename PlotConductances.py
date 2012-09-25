@@ -3,7 +3,6 @@
 import pylab
 import numpy as np
 import simulation_parameters
-from NeuroTools import signals as nts
 import utils
 
 class PlotConductances(object):
@@ -258,7 +257,7 @@ class PlotConductances(object):
 
         if conn_list_fn == None:
             if self.params['initial_connectivity'] == 'precomputed':
-                conn_list_fn = self.params['conn_list_ee_fn_base'] + '0.dat'
+                conn_list_fn = self.params['merged_conn_list_ee']
             else: 
                 conn_list_fn = self.params['random_weight_list_fn'] + '0.dat'
         print 'utils.get_conn_dict from file:', conn_list_fn 

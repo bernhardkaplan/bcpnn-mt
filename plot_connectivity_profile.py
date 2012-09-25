@@ -17,9 +17,8 @@ print "Motion parameters", mp
 #            * np.exp(-((u_src-u_tgt)**2 + (v_src - v_tgt)**2) / (2 * sigma_v**2))
 
 
-conn_list_fn = params['conn_list_ee_fn_base'] + '0.dat'
-#conn_list_fn = 'NoColumns_winit_precomputed/Connections/conn_list_ee_0.dat'
-#conn_list_fn = 'NoColumns_winit_random/Connections/conn_list_ee_0.dat'
+#conn_list_fn = params['conn_list_ee_fn_base'] + 'merged.dat'
+conn_list_fn = params['connections_folder'] + 'merged_conn_list_ee.dat'
 print "Loading connectivity data from ", conn_list_fn
 conn_mat, delays = utils.convert_connlist_to_matrix(conn_list_fn, params['n_exc'])
 
@@ -43,7 +42,7 @@ ax1 = fig.add_subplot(111)
 # plot the source cell position
 x_src = tp[src_cell, 0] 
 y_src = tp[src_cell, 1] 
-ax1.plot(x_src, y_src, 'o', c='k', markersize=2)
+#ax1.plot(x_src, y_src, 'o', c='k', markersize=2)
 
 for tgt in tgts:
     x_tgt = tp[tgt, 0] 
@@ -56,7 +55,7 @@ for tgt in tgts:
     dx = (x_tgt - x_src)
     dy = (y_tgt - y_src)
     m = dy / dx
-    ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'b', lw=line_width)
+    target_plot = ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'b--', lw=line_width)
     rnd = min(1., np.random.rand() + .5)
 #    ax1.annotate('(%d, %.2e, %.2e)' % (tgt, w, d), (x_tgt, y_tgt), fontsize=6)
 
@@ -73,9 +72,18 @@ for src in srcs:
     dx = (x_tgt - x_src)
     dy = (y_tgt - y_src)
     m = dy / dx
-    ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'r', lw=line_width)
+    source_plot = ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'r:', lw=line_width)
     rnd = max(.5, .5 * np.random.rand())
 #    ax1.annotate('(%d, %.2e, %.2e)' % (src, w, d), (x_src, y_src), fontsize=6)
+
+ax1.legend((target_plot[0], source_plot[0]), ('outgoing connections', 'incoming connections'))
+
+title = 'Connectivity profile of cell %d\ntp:' % (src_cell) + str(tp[src_cell, :])
+title += '\nw_sigma_x=%.2f w_sigma_v=%.2f' % (params['w_sigma_x'], params['w_sigma_v'])
+ax1.set_title(title)
+ax1.set_xlabel('x position')
+ax1.set_ylabel('y position')
+#pylab.legend(('outgoing connections', 'incoming connections'))
 
 #xgrid, ygrid = 0.01, 0.01
 #x = np.arange(0, 1.2, xgrid)

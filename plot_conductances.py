@@ -39,12 +39,12 @@ def plot_conductances(params=None, data_fn=None, inh_spikes = None):
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn)
 
-    output_fn = '%sgoodcell_connections_%s_wsigmaX_%.2f_wsigmaV%.2f_wthresh%.1e.png' % (params['figures_folder'], params['initial_connectivity'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
-    plotter.create_fig()  # create an empty figure
-    plotter.plot_good_cell_connections(1) # subplot 1 + 2
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn)
+#    output_fn = '%sgoodcell_connections_%s_wsigmaX_%.2f_wsigmaV%.2f_wthresh%.1e.png' % (params['figures_folder'], params['initial_connectivity'], \
+#            params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
+#    plotter.create_fig()  # create an empty figure
+#    plotter.plot_good_cell_connections(1) # subplot 1 + 2
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn)
 
     # fig 2
     plotter.create_fig()  # create an empty figure

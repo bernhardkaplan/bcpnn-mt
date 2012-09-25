@@ -1,0 +1,17 @@
+import os
+import numpy as np
+
+blur_x_start = 0.05
+blur_x_stop = 0.75
+blur_x_step = 0.05
+
+blur_v = 0.2
+
+blur_range = np.arange(blur_x_start, blur_x_stop, blur_x_step)
+
+for i_, blur_x in enumerate(blur_range):
+#    blur_v = blur_x
+    os.system('python prepare_tuning_prop.py %f %f' % (blur_x, blur_v))
+    os.system('mpirun -np 8 python prepare_spike_trains.py %f %f' % (blur_x, blur_v))
+    os.system('python analyse_input.py %f %f %d' % (blur_x, blur_v, i_))
+    os.system('python plot_input_spiketrains.py %f %f' % (blur_x, blur_v))

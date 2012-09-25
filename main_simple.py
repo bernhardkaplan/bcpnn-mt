@@ -23,15 +23,16 @@ except:
 PS = simulation_parameters.parameter_storage()
 params = PS.load_params()                       # params stores cell numbers, etc as a dictionary
 PS.create_folders()
+PS.write_parameters_to_file()
 print 'n_cells=%d\tn_exc=%d\tn_inh=%d' % (params['n_cells'], params['n_exc'], params['n_inh'])
 
 analyse = True
 # # # # # # # # # # # # 
 #     P R E P A R E   #
 # # # # # # # # # # # #
-prepare_tuning_prop = False
-prepare_spike_trains = False
-prepare_connections = True
+prepare_tuning_prop = True
+prepare_spike_trains = True
+prepare_connections = False
 if (prepare_tuning_prop):
     tuning_prop = utils.set_tuning_prop(params, mode='hexgrid', v_max=params['v_max'])        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
     if pc_id == 0:
@@ -76,24 +77,24 @@ if analyse and pc_id == 0:
 # # # # # # # # # # # # # #
 #     S I M U L A T E     #
 # # # # # # # # # # # # # #
-sim_cnt = 0
-if (pc_id == 0):
-    print "Simulation run: %d cells (%d exc, %d inh)" % (params['n_cells'], params['n_exc'], params['n_inh'])
-    simulation.run_sim(params, sim_cnt, params['initial_connectivity'], params['connect_exc_exc'])
+#sim_cnt = 0
+#if (pc_id == 0):
+#    print "Simulation run: %d cells (%d exc, %d inh)" % (params['n_cells'], params['n_exc'], params['n_inh'])
+#    simulation.run_sim(params, sim_cnt, params['initial_connectivity'], params['connect_exc_exc'])
 
-if comm != None:
-    comm.Barrier()
+#if comm != None:
+#    comm.Barrier()
 
 # # # # # # # # # # # # # #
 #     A N A L Y S I S     #
 # # # # # # # # # # # # # #
-if analyse and pc_id == 0:
-    plot_prediction.plot_prediction(params)
-    os.system('python analyse_simple.py')
-    print 'blur:', params['blur_X'], params['blur_V']
-    print 'w_sigma:', params['w_sigma_x'], params['w_sigma_v']
-    os.system('python plot_voltage_noCompatibleOutput.py %s.v' % params['exc_volt_fn_base'])
-    import calculate_conductances as cc
-    cc.run_all(params)
-    plot_conductances.plot_conductances(params)
+#if analyse and pc_id == 0:
+#    plot_prediction.plot_prediction(params)
+#    os.system('python analyse_simple.py')
+#    print 'blur:', params['blur_X'], params['blur_V']
+#    print 'w_sigma:', params['w_sigma_x'], params['w_sigma_v']
+#    os.system('python plot_voltage_noCompatibleOutput.py %s.v' % params['exc_volt_fn_base'])
+#    import calculate_conductances as cc
+#    cc.run_all(params)
+#    plot_conductances.plot_conductances(params)
 

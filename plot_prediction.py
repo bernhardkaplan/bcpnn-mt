@@ -89,7 +89,7 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 if __name__ == '__main__':
     plot_prediction()
 
-#folder = 'Data_inputstrength_sweeps/NoColumns_winit_random_wsigmaX2.50e-01_wsigmaV2.50e-01_winput2.00e-03_finput2.00e+03pthresh1.0e-01_ptow1.0e-02/' 
+#folder = 'Data_inputstrength_swepng/NoColumns_winit_random_wsigmaX2.50e-01_wsigmaV2.50e-01_winput2.00e-03_finput2.00e+03pthresh1.0e-01_ptow1.0e-02/' 
 #params_fn = folder + 'simulation_parameters.info'
 #data_fn = folder + 'Spikes/exc_spikes_merged_0.ras'
 #inh_spikes = folder + 'Spikes/inh_spikes_0.ras'

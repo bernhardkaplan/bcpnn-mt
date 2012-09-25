@@ -30,28 +30,40 @@ import sys
 
 # --------------------------------------------------------------------------
 
-"""
 
-    use:
+if len(sys.argv) == 2:
+    gid = int(sys.argv[1])
+    import simulation_parameters
+    ps = simulation_parameters.parameter_storage()
+    params = ps.params
+    rate_fn = params['input_rate_fn_base'] + str(gid) + '.npy'
+    spike_fn = params['input_st_fn_base'] + str(gid) + '.npy'
 
-    python plot_input.py   [RATE_ENVELOPE]  [SPIKE_INPUT_FILE]
+elif len(sys.argv) == 3:
+    rate_fn = sys.argv[1]
+    spike_fn = sys.argv[2]
+else:
+    info = "\n\tuse:\n \
+    \t\tpython plot_input.py   [RATE_ENVELOPE_FILE]  [SPIKE_INPUT_FILE]\n \
+    \tor: \n\
+    \t\tpython plot_input.py [gid of the cell to plot]" 
+    print info
 
-"""
-
-
-rate_fn = sys.argv[1]
 rate = np.load(rate_fn)
+rate /= np.max(rate)
+y_min = rate.min()
+y_max = rate.max()
 
-spike_fn = sys.argv[2]
 spikes = np.load(spike_fn) # spikedata
 
 #spikes *= 10. # because rate(t) = L(t) was created with a stepsize of .1 ms
 
-n, bins = np.histogram(spikes, bins=15)
-binsize = bins[1] - bins[0]
+n, bins = np.histogram(spikes, bins=20)
+binsize = round(bins[1] - bins[0])
 print 'n, bins', n, 'total', np.sum(n), 'binsize:', binsize
 
 fig = pylab.figure()
+pylab.subplots_adjust(hspace=0.35)
 ax = fig.add_subplot(211)
 
 rate_half = .5 * (np.max(rate) - np.min(rate))
@@ -60,15 +72,26 @@ w_input_exc = 2e-3
 cond_in = w_input_exc * 1000. * nspikes
 print 'Cond_in: %.3e [nS] nspikes: %d' % (cond_in, nspikes)
 ax.set_title('Input spike train and L(t)')
-ax.plot(spikes, rate_half * np.ones(spikes.size), '|', markersize=1)
+for s in spikes:
+    ax.plot((s, s), (0.2 * (y_max-y_min) + y_min, 0.8 * (y_max-y_min) + y_min), c='k')
+#ax.plot(spikes, rate_half * np.ones(spikes.size), '|', markersize=1)
+#ax.plot(spikes, 0.5 * np.ones(spikes.size), '|', markersize=1)
 print 'rate', rate
+
 rate = rate[::10] # ::10 because dt for rate creation was 0.1 ms
-ax.plot(np.arange(rate.size), rate, label='Cond_in = %.3e nS' % cond_in)
-ax.legend()
+ax.plot(np.arange(rate.size), rate, label='Cond_in = %.3e nS' % cond_in, lw=2, c='b')
+ax.set_xlabel('Time [ms]')
+ax.set_ylabel('Normalized motion energy')
+
+
+
+#ax.legend()
 ax = fig.add_subplot(212)
-ax.bar(bins[:-1], n)
+ax.bar(bins[:-1], n, width= bins[1] - bins[0])
 ax.set_title('Binned input spike train, binsize=%.1f ms' % binsize)
 
+ax.set_ylabel('Number of input spikes')
+ax.set_xlabel('Times [ms]')
 
 #output_fn = 'delme.dat'
 #np.savetxt(output_fn, data)

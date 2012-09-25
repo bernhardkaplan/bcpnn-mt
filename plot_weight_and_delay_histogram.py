@@ -3,6 +3,7 @@ import pylab
 import simulation_parameters
 import sys
 from scipy.optimize import leastsq
+import os
 
 # load simulation parameters
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
@@ -12,6 +13,18 @@ if (len(sys.argv) < 2):
     sim_cnt = 0
     fn = params['conn_list_ee_fn_base'] + '%d.dat' % sim_cnt
     output_fn = params['weight_and_delay_fig']
+    if not os.path.exists(fn):
+        tmp_fn = 'delme_tmp_%d' % (np.random.randint(0, 1e7))
+        cat = 'cat %s* > %s' % (params['conn_list_ee_fn_base'], tmp_fn)
+        sort = 'sort -gk 2 -gk 1 %s > %s' % (tmp_fn, fn)
+        del_tmp_fn = 'rm %s' % (tmp_fn)
+        print cat
+        os.system(cat)
+        print sort
+        os.system(sort)
+        print del_tmp_fn
+        os.system(del_tmp_fn)
+
 else:
     fn = sys.argv[1]
     output_fn = fn.rsplit('.dat')[0] + '.png'
@@ -92,6 +105,6 @@ ax2.legend()
 
 print "Saving to:", output_fn
 pylab.savefig(output_fn)
-#pylab.show()
+pylab.show()
 
 

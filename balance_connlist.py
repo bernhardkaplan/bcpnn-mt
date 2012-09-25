@@ -2,6 +2,7 @@ import numpy as np
 import utils
 import pylab
 import sys
+import os
 
 import simulation_parameters
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
@@ -10,7 +11,19 @@ tp = np.loadtxt(params['tuning_prop_means_fn'])
 mp = params['motion_params']
 print "Motion parameters", mp
 
-conn_list_fn = params['conn_list_ee_fn_base'] + '0.dat'
+conn_list_fn = params['merged_conn_list_ee']
+if not os.path.exists(conn_list_fn):
+    tmp_fn = 'delme_tmp_%d' % (np.random.randint(0, 1e7))
+    cat = 'cat %s* > %s' % (params['conn_list_ee_fn_base'], tmp_fn)
+    sort = 'sort -gk 2 -gk 1 %s > %s' % (tmp_fn, conn_list_fn)
+    del_tmp_fn = 'rm %s' % (tmp_fn)
+    print cat
+    os.system(cat)
+    print sort
+    os.system(sort)
+    print del_tmp_fn
+    os.system(del_tmp_fn)
+
 conn_list_balanced_fn = params['conn_list_ee_balanced_fn']
 print "Loading connectivity data from ", conn_list_fn
 conn_mat, delays = utils.convert_connlist_to_matrix(conn_list_fn, params['n_exc'])

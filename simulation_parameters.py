@@ -16,19 +16,29 @@ class parameter_storage(object):
         self.ParamSet = ntp.ParameterSet(self.params)
 
     def set_default_params(self):
-        self.params['simulator'] = 'nest'# number of minicolumns 
+        self.params['simulator'] = 'nest'
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 40 # np.int(n_cells/N_V/N_theta)
-        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3)))
-        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
+        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
+
+#        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+#        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
+
+#        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+#        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
+
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .1 # some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .1 # some variability in the position of RFs
+        self.params['sigma_RF_pos'] = .1# some variability in the position of RFs
+        self.params['sigma_RF_speed'] = .1# some variability in the position of RFs
 
         # ###################
         # NETWORK PARAMETERS
@@ -40,39 +50,43 @@ class parameter_storage(object):
         self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
         self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
+        print 'n_cells: %d\tn_exc: %d\tn_inh: %d' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
 
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
         self.params['connect_exc_exc'] = True# enable / disable exc - exc connections for test purpose only
-#        self.params['initial_connectivity'] = 'precomputed'
-        self.params['initial_connectivity'] = 'random'
-        self.params['conn_mat_init_sparseness'] = 0.1   # sparseness of the initial connection matrix; 0.0 : no connections, 1.0 : full (all-to-all) connectivity
+        self.params['initial_connectivity'] = 'precomputed'
+#        self.params['initial_connectivity'] = 'random'
+        self.params['p_ee'] = 0.05# fraction of network cells allowed to connect to each target cell, used in CreateConnections
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['p_to_w_scaling'] = 50.  # conversion factor for the pre-computed weights
         self.params['w_thresh_connection'] = 1e-5 # connections with a weight less then this value will be discarded
-        self.params['delay_scale'] = 50.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
-        self.params['delay_range'] = (0.1, 100.)
-        self.params['w_sigma_x'] = 0.1          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.1         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['delay_scale'] = 1.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_range'] = (0.1, 200.)
+        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.25         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
+        self.params['w_tgt_in'] = 0.15 # [uS]
+        self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
+        self.params['w_max'] = 5e-3
+        self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc'])
 
         # exc - inh
-        self.params['p_ei'] = 0.25
-        self.params['w_ei_mean'] = 0.004
+        self.params['p_ei'] = self.params['p_ee']
+        self.params['w_ei_mean'] = 0.005
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
 #        self.params['p_ie'] = 1.
-        self.params['p_ie'] = 0.25
-        self.params['w_ie_mean'] = 0.004
+        self.params['p_ie'] = self.params['p_ee']
+        self.params['w_ie_mean'] = 0.010
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
-        self.params['p_ii'] = 0.1
-        self.params['w_ii_mean'] = 0.001
+        self.params['p_ii'] = self.params['p_ee']
+        self.params['w_ii_mean'] = 0.002
         self.params['w_ii_sigma'] = 0.001          
 
         # ###################
@@ -91,21 +105,19 @@ class parameter_storage(object):
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
-        self.params['t_sim'] = 300.
-        self.params['t_stimulus'] = 200.
+        self.params['t_sim'] = 400.                 # [ms] total simulation time
+        self.params['t_stimulus'] = 200.            # [ms] time when stimulus ends
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
         self.params['tuning_prop_seed'] = 0         # seed for randomized tuning properties
-        self.params['dt_rate'] = 0.1 # [ms] time step for the non-homogenous Poisson process 
-        self.params['n_gids_to_record'] = 10
+        self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
+        self.params['dt_rate'] = 0.1                # [ms] time step for the non-homogenous Poisson process 
+        self.params['n_gids_to_record'] = 50
 
         # ######
         # INPUT 
         # ######
-        self.params['f_max_stim'] = 5000. # [Hz]
-        self.params['stim_dur_sigma'] = self.params['t_sim'] *.3 # [ms]
-        self.params['w_input_exc'] = 3.0e-3 # [uS] mean value for input stimulus ---< exc_units (columns
-        self.params['w_input_exc_sigma'] = 0.01 * self.params['w_input_exc']  # [uS]
-
+        self.params['f_max_stim'] = 3000. # [Hz]
+        self.params['w_input_exc'] = 2.5e-3 # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
@@ -126,10 +138,15 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-        self.params['w_exc_noise'] = 5e-4          # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 1e-10# [Hz] 
-        self.params['w_inh_noise'] = 2e-3          # [uS] mean value for noise ---< columns
-        self.params['f_inh_noise'] = 1e-10# [Hz]
+        self.params['w_exc_noise'] = 1e-3          # [uS] mean value for noise ---< columns
+        self.params['f_exc_noise'] = 2000# [Hz] 
+        self.params['w_inh_noise'] = 1e-3          # [uS] mean value for noise ---< columns
+        self.params['f_inh_noise'] = 2000# [Hz]
+#        self.params['w_exc_noise'] = 1e-8          # [uS] mean value for noise ---< columns
+#        self.params['f_exc_noise'] = 1e-8# [Hz] 
+#        self.params['w_inh_noise'] = 1e-8          # [uS] mean value for noise ---< columns
+#        self.params['f_inh_noise'] = 1e-8# [Hz]
+
 
         rnd.seed(self.params['seed'])
 
@@ -147,16 +164,24 @@ class parameter_storage(object):
         # FILENAMES and FOLDERS
         # ######################
         # the main folder with all simulation specific content
-        if self.params['connect_exc_exc']:
-            if self.params['initial_connectivity'] == 'precomputed':
-                self.params['folder_name'] = "Testing/"
-            else:
-                self.params['folder_name'] = "Testing_rnd_conn/"
-        else:
-            self.params['folder_name'] = "Testing_no_rec/"
-#        self.params['folder_name'] = 'Testing/'
-#        self.params['folder_name'] = "120713_winit_%s_ptow_%.2e_blur_%.1e/" % (self.params['initial_connectivity'], self.params['p_to_w_scaling'], self.params['blur_X'])
-#        self.params['folder_name'] = "120620_winit_%s_blur_%.1e/" % (self.params['initial_connectivity'], self.params['blur_X'])
+#        if self.params['connect_exc_exc']:
+#            if self.params['initial_connectivity'] == 'precomputed':
+#                self.params['folder_name'] = "Testing/"
+#            else:
+#                self.params['folder_name'] = "Testing_rnd_conn/"
+#        else:
+#            self.params['folder_name'] = "Testing_no_rec/"
+
+#        self.params['folder_name'] = "Debugging_lineareWeightMapping_wsigmax%.2f_v%.2f/" % (self.params['w_sigma_x'], self.params['w_sigma_v'])
+#        self.params['folder_name'] = "Debugging_balancedWeightIn_wsigmax%.2f_v%.2f/" % (self.params['w_sigma_x'], self.params['w_sigma_v'])
+#        self.params['folder_name'] = "Debugging_wtgtin%.2f_wsigmax%.2f_v%.2f/" % (self.params['w_tgt_in'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+
+
+#        self.params['folder_name'] = "Debugging_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e_random/" % (self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+#        self.params['folder_name'] = "Debugging_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % (self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+#        self.params['folder_name'] = "BarcelonaSimulationData/"
+        self.params['folder_name'] = "LargeScaleModel_blur0.4/"
+
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
@@ -221,6 +246,8 @@ class parameter_storage(object):
         # for models not based on minicolumns:
         self.params['conn_prob_fn'] = '%sconn_prob.dat' % (self.params['connections_folder'])
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
+        self.params['merged_conn_list_ee'] = '%smerged_conn_list_ee.dat' % (self.params['connections_folder'])
+        self.params['conn_list_ee_conv_constr_fn_base'] = '%sconn_list_ee_conv_constr_' % (self.params['connections_folder']) # convergence constrained, i.e. each cell gets limited input
         self.params['conn_list_ee_balanced_fn'] = '%sconn_list_ee_balanced.dat' % (self.params['connections_folder'])
         self.params['random_weight_list_fn']  = '%sconn_list_rnd_ee_' % (self.params['connections_folder'])
         self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])

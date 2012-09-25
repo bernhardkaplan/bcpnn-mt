@@ -5,7 +5,6 @@ import numpy as np
 import simulation_parameters
 import utils
 import os
-from NeuroTools import signals as nts
 from NeuroTools import parameters as ntp
 
 class PlotSpikeActivity(object):
@@ -71,9 +70,6 @@ class PlotSpikeActivity(object):
         print(' Loading data .... ')
 #        folder = self.params['spiketimes_folder']
 #        fn = self.params['exc_spiketimes_fn_merged'].rsplit(folder)[1] + '%d.dat' % (sim_cnt)
-        # NeuroTools
-#        spklist = nts.load_spikelist(fn)
-#        spiketrains = spklist.spiketrains
         try:
             d = np.loadtxt(fn)
             self.spiketrains = [[] for i in xrange(self.n_cells)]

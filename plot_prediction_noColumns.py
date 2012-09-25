@@ -4,7 +4,6 @@ import numpy as np
 #import os
 #import re
 import simulation_parameters
-from NeuroTools import signals as nts
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 

@@ -20,11 +20,12 @@ def sort_cells_by_distance_to_stimulus(n_cells):
     for i in xrange(n_cells):
         gid = indices[i]
         print gid, '\t', distances[i], tp[gid, :]
+    return indices, distances
 
 
 
-n_cells = 20
-sort_cells_by_distance_to_stimulus(n_cells)
+n_cells = params['n_gids_to_record']
+idx, dist = sort_cells_by_distance_to_stimulus(n_cells)
 
 d = np.loadtxt(params['exc_spiketimes_fn_merged'] + '0.ras')
 if d.size > 0:
@@ -32,13 +33,13 @@ if d.size > 0:
     spiking_cells = np.nonzero(nspikes)[0]
     fired_spikes = nspikes[spiking_cells]
    
-    print '\nspiking cells', len(spiking_cells), spiking_cells, '\n percentage of spiking cells', float(len(spiking_cells))  / params['n_exc']
     print 'Number of spikes (sum, max, mean, std):\t%d\t%d\t%.2f\t%.2f' % (nspikes.sum(), nspikes.max(), nspikes.mean(), nspikes.std())
+    print '\nspiking cells', len(spiking_cells), spiking_cells, '\n fraction of spiking cells', float(len(spiking_cells))  / params['n_exc']
     print 'fired_spikes mean %.2f +- %.2f' % (fired_spikes.mean(), fired_spikes.std()), fired_spikes
 else:
     print 'NO SPIKES'
+    exit(1)
 
-#try:
-#except:
-#    d = np.loadtxt(params['exc_spiketimes_fn_merged'] + '0.ras')
-#    print 'Number of spikes:', d.size
+tp = np.loadtxt(params['tuning_prop_means_fn'])
+
+

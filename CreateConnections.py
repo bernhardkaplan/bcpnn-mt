@@ -1,22 +1,31 @@
 import numpy as np
 import numpy.random as rnd
-import pyNN
-import pyNN.random
 import utils
 from scipy.spatial import distance
 import os
 import time
 
-def get_p_conn(tuning_prop, src, tgt, w_sigma_x, w_sigma_v):
+def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v):
+    """
+    tp_src is a list/array with the 4 tuning property values of the source cell: x, y, u, v
+        
+    Latex code for formulas:
+    \delta_{latency} = \frac{\sqrt{d_{torus}(x_0, x_1)^2 + d_{torus}(y_0, y_1)^2}}{\sqrt{u_0^2 + v_0^2}}
+    x_{predicted} = x_0 + u_0 \cdot \delta_{latency}
+    y_{predicted} = y_0 + v_0 \cdot \delta_{latency}
+    p = exp(-\frac{(d_{torus}(x_{predicted}, x_1))^2 + (d_{torus}(y_{predicted}, y_1))^2}{2 \cdot \sigma_{space}^2})
+        \cdot exp(-\frac{(u_0-u_1)^2 + (v_0 - v_1)^2}{2 \cdot \sigma_V^2})
+ 
+    """
 
-    x0 = tuning_prop[src, 0]
-    y0 = tuning_prop[src, 1]
-    u0 = tuning_prop[src, 2]
-    v0 = tuning_prop[src, 3]
-    x1 = tuning_prop[tgt, 0]
-    y1 = tuning_prop[tgt, 1]
-    u1 = tuning_prop[tgt, 2]
-    v1 = tuning_prop[tgt, 3]
+    x0 = tp_src[0]
+    y0 = tp_src[1]
+    u0 = tp_src[2]
+    v0 = tp_src[3]
+    x1 = tp_tgt[0]
+    y1 = tp_tgt[1]
+    u1 = tp_tgt[2]
+    v1 = tp_tgt[3]
     dx = utils.torus_distance(x0, x1)
     dy = utils.torus_distance(y0, y1)
     latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
@@ -25,6 +34,95 @@ def get_p_conn(tuning_prop, src, tgt, w_sigma_x, w_sigma_v):
     p = np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * w_sigma_x**2))) \
             * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * w_sigma_v**2))
     return p, latency
+
+def get_tp_distance(tp_src, tp_tgt, w_sigma_x, w_sigma_v):
+    """
+    tp_src is a list/array with the 4 tuning property values of the source cell: x, y, u, v
+        
+    Latex code for formulas:
+    \delta_{latency} = \frac{\sqrt{d_{torus}(x_0, x_1)^2 + d_{torus}(y_0, y_1)^2}}{\sqrt{u_0^2 + v_0^2}}
+    x_{predicted} = x_0 + u_0 \cdot \delta_{latency}
+    y_{predicted} = y_0 + v_0 \cdot \delta_{latency}
+    p = exp(-\frac{(d_{torus}(x_{predicted}, x_1))^2 + (d_{torus}(y_{predicted}, y_1))^2}{2 \cdot \sigma_{space}^2})
+        \cdot exp(-\frac{(u_0-u_1)^2 + (v_0 - v_1)^2}{2 \cdot \sigma_V^2})
+ 
+    """
+
+    x0 = tp_src[0]
+    y0 = tp_src[1]
+    u0 = tp_src[2]
+    v0 = tp_src[3]
+    x1 = tp_tgt[0]
+    y1 = tp_tgt[1]
+    u1 = tp_tgt[2]
+    v1 = tp_tgt[3]
+    dx = utils.torus_distance(x0, x1)
+    dy = utils.torus_distance(y0, y1)
+    latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
+    x_predicted = x0 + u0 * latency  
+    y_predicted = y0 + v0 * latency  
+    p = np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * w_sigma_x**2))) \
+            * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * w_sigma_v**2))
+    return p, latency
+
+
+def compute_weights_convergence_constrained(tuning_prop, params, comm=None):
+    """
+    This function computes for each target the X % of source cells which have the highest
+    connection probability to the target cell.
+
+    Arguments:
+        tuning_prop: 2 dimensional array with shape (n_cells, 4)
+            tp[:, 0] : x-position
+            tp[:, 1] : y-position
+            tp[:, 2] : u-position (speed in x-direction)
+            tp[:, 3] : v-position (speed in y-direction)
+    """
+    if comm != None:
+        pc_id, n_proc = comm.rank, comm.size
+        comm.barrier()
+    else:
+        pc_id, n_proc = 0, 1
+    gid_min, gid_max = utils.distribute_n(params['n_exc'], n_proc, pc_id)
+    sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
+    (delay_min, delay_max) = params['delay_range']
+    output_fn = params['conn_list_ee_conv_constr_fn_base'] + 'pid%d.dat' % (pc_id)
+    print "Proc %d computes initial weights for gids (%d, %d) to file %s" % (pc_id, gid_min, gid_max, output_fn)
+    conn_file = open(output_fn, 'w')
+    my_cells = range(gid_min, gid_max)
+    n_src_cells = round(params['p_ee'] * params['n_exc']) # number of sources per target neuron
+    output = np.zeros((len(my_cells), n_src_cells+1), dtype='int')
+    weights = np.zeros((len(my_cells), n_src_cells+1), dtype='int')
+
+    output = ''
+    cnt = 0
+    for tgt in my_cells:
+        p = np.zeros(params['n_exc'])
+        latency = np.zeros(params['n_exc'])
+        for src in xrange(params['n_exc']):
+            if (src != tgt):
+                p[src], latency[src] = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v)
+        sorted_indices = np.argsort(p)
+        sources = sorted_indices[-params['n_src_cells_per_neuron']:] 
+        w = params['w_tgt_in'] / p[sources].sum() * p[sources]
+#        w = utils.linear_transformation(w, params['w_min'], params['w_max'])
+        for i in xrange(len(sources)):
+#            w[i] = max(params['w_min'], min(w[i], params['w_max']))
+            src = sources[i]
+            delay = min(max(latency[src] * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+            d_ij = utils.euclidean(tuning_prop[src, :], tuning_prop[tgt, :])
+            output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (src, tgt, w[i], delay, d_ij)
+            cnt += 1
+
+    print 'PID %d Writing %d connections to file: %s' % (pc_id, cnt, output_fn)
+    conn_file.write(output)
+    conn_file.close()
+
+    if (comm != None):
+        comm.barrier()
+
+
+
 
 def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
     """
@@ -55,7 +153,7 @@ def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
     for src in my_cells:
         for tgt in xrange(params['n_exc']):
             if (src != tgt):
-                p, latency = get_p_conn(tuning_prop, src, tgt, sigma_x, sigma_v)
+                p, latency = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v)
                 delay = min(max(latency * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
                 output += '%d\t%d\t%.4e\t%.2e\n' % (src, tgt, p, delay)
                 i += 1
@@ -102,7 +200,6 @@ def normalize_probabilities(params, comm, w_thresh=None):
     fn = params['conn_list_ee_fn_base'] + 'pid%d_normalized.dat' % (pc_id)
     print 'Writing to ', fn
     np.savetxt(fn, d, fmt='%d\t%d\t%.4e\t%.2e')
-    time.sleep(3)
 
     # make one file out of many
 #    if pc_id == 0:
@@ -126,7 +223,6 @@ def normalize_probabilities(params, comm, w_thresh=None):
         cat_command += ' > %s' % output_fn
         print 'Merging to:', output_fn
         os.system(cat_command)
-        time.sleep(2)
 
 
 
@@ -136,9 +232,9 @@ def compute_random_weight_list(input_fn, output_fn, params, seed=98765):
     """
     rnd.seed(seed)
     d = np.loadtxt(input_fn)
-    d[:, 0] = rnd.randint(0, params['n_exc'], d[:, 0].size)
-    d[:, 1] = rnd.randint(0, params['n_exc'], d[:, 0].size)
-#    rnd.shuffle(d[:, 0])    # shuffle source ids
+#    d[:, 0] = rnd.randint(0, params['n_exc'], d[:, 0].size)
+#    d[:, 1] = rnd.randint(0, params['n_exc'], d[:, 0].size)
+    rnd.shuffle(d[:, 0])    # shuffle source ids
 #    rnd.shuffle(d[:, 1])    # shuffle target ids
 #    rnd.shuffle(d[:, 3])    # shuffle delays ids
 
@@ -195,21 +291,6 @@ def create_conn_list_by_random_normal(output_fn, sources, targets, p, w_mean, w_
     output_array = np.array(conns)
     np.savetxt(output_fn, output_array)
 
-
-class MyRNG(pyNN.random.WrappedRNG):
-    def __init__(self):
-        self.rng
-    def _next(self, distribution, n, parameters):
-        return self.draw(n, parameters)
-
-    def draw(self, n, p):
-        d = np.zeros(n)
-        for i in xrange(n):
-            d[i] = self.rnd_distr(p)
-
-    def rnd_distr(self):
-        return p[0] * np.random.rand * np.random.exponential( - np.random.rand / p[1])
-                
 
             
 

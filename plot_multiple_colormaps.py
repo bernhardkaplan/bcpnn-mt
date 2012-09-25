@@ -43,6 +43,7 @@ for fn in sys.argv[1:]:
     #    data_rev[n_row - row, :] = data[row, :]
 
     fig = pylab.figure()
+#    fig = pylab.figure(facecolor='black')
     ax = fig.add_subplot(111)
     print "plotting ...."
     #cax = ax.imshow(data[:,:12])
@@ -50,9 +51,9 @@ for fn in sys.argv[1:]:
 
 
     ax.set_title(fn)
-    cax = ax.pcolor(data)#, edgecolor='k', linewidths='1')
-    #cax = ax.pcolor(data, cmap='binary')
-    #cax = ax.pcolor(data, cmap='RdBu')
+    cax = ax.pcolormesh(data)#, edgecolor='k', linewidths='1')
+#    cax = ax.pcolormesh(data, cmap='bone')
+    #cax = ax.pcolormesh(data, cmap='RdBu')
 
     ax.set_ylim(0, data.shape[0])
     ax.set_xlim(0, data.shape[1])

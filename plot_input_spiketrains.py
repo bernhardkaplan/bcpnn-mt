@@ -5,24 +5,27 @@ import re
 import numpy as np
 import matplotlib
 import utils
+import sys
 
 # load simulation parameters
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
+params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
 folder = params['input_folder']
 fn_base = params['input_st_fn_base'].rsplit(folder)[1]
 n_cells = params['n_cells']
 
 output_fn_base = params['input_fig_fn_base']
-output_fn_movie = params['input_movie']
-bg_color = 'k'
+output_fn_movie = params['input_movie'].rsplit('.')[0] + 'blur_%.2e_%.2e.mp4' % (params['blur_X'], params['blur_V'])
+bg_color = 'white'
+#pylab.rcParams['figure.facecolor'] = bg_color
 
 # parameters
 n_frames = 24# number of output figures
 n_bins_x, n_bins_y = 20, 20
 output_arrays = [np.zeros((n_bins_x, n_bins_y)) for i in xrange(n_frames)]
-time_grid = np.linspace(0, params['t_sim'], n_frames+1, endpoint=True)
+time_grid = np.linspace(0, params['t_stimulus'], n_frames+1, endpoint=True)
 tuning_prop = np.loadtxt(params['tuning_prop_means_fn'])
 
 H, x_edges, y_edges = np.histogram2d(tuning_prop[:,0], tuning_prop[:, 1], bins=(n_bins_x, n_bins_y))
@@ -37,7 +40,7 @@ for gid in xrange(n_cells):
         binned_spikes, time_bins = np.histogram(spiketrain, time_grid)
         x_pos_cell, y_pos_cell = tuning_prop[gid, 0], tuning_prop[gid, 1] # cell properties
         x_pos_grid, y_pos_grid = utils.get_grid_pos(x_pos_cell, y_pos_cell, x_edges, y_edges) # cell's position in the grid
-        print "%d\t%.3e\t%.3e: x:%d\ty:%d  binned_spikes.max: %d" % (gid, x_pos_cell, y_pos_cell, x_pos_grid, y_pos_grid, binned_spikes.max())
+#        print "%d\t%.3e\t%.3e: x:%d\ty:%d  binned_spikes.max: %d" % (gid, x_pos_cell, y_pos_cell, x_pos_grid, y_pos_grid, binned_spikes.max())
         z_max = max(binned_spikes.max(), z_max)
         for frame in xrange(n_frames): # put activity in right time bin (output figure)
             output_arrays[frame][x_pos_grid, y_pos_grid] += binned_spikes[frame]
@@ -50,20 +53,10 @@ for frame in xrange(n_frames):
     print "Saving to file: ", output_fn_dat
     np.savetxt(output_fn_dat, output_arrays[frame])
 
-    print "Plotting frame: ", frame
-    fig = pylab.figure()
-    ax = fig.add_subplot(111, axisbg=bg_color)
+#    print "Plotting frame: ", frame
 
-    n_ticks = 5
-    y_ticks = [y_edges[i * n_bins_y/n_ticks] for i in xrange(n_ticks)]
-    y_labels = ['%.1e' % i for i in y_ticks]
-    ax.set_yticks([i * n_bins_y/n_ticks for i in xrange(n_ticks)])
-    ax.set_yticklabels(y_labels)
-    x_ticks = [x_edges[i * n_bins_x/n_ticks] for i in xrange(n_ticks)]
-    x_labels = ['%.1e' % i for i in x_ticks]
-    ax.set_xticks([i * n_bins_x/n_ticks for i in xrange(n_ticks)])
-    ax.set_xticklabels(x_labels)
-
+    fig = pylab.figure(facecolor=bg_color)
+    ax = fig.add_subplot(111)
     ax.set_ylabel('$y$')
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
@@ -71,18 +64,33 @@ for frame in xrange(n_frames):
 
 #     simple colormap
     norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=z_max)
-    cax = ax.pcolor(output_arrays[frame], norm=norm)#, edgecolor='k', linewidths='1')
-    pylab.colorbar(cax, cmap=pylab.bone())
+    cax = ax.pcolormesh(output_arrays[frame], norm=norm)#, cmap='bone')#, edgecolor='k', linewidths='1')
+#    cax = ax.pcolormesh(output_arrays[frame], cmap='bone')#, edgecolor='k', linewidths='1')
+    pylab.colorbar(cax)#, cmap=pylab.bone())
+
+
+    yticks = ax.get_yticks()
+    xticks = ax.get_xticks()
+    yticks_rescaled = []
+    xticks_rescaled = []
+    for i in xrange(len(yticks)):
+        yticks_rescaled.append(yticks[i] / n_bins_y)
+    for i in xrange(len(xticks)):
+        xticks_rescaled.append(xticks[i] / n_bins_x)
+    ax.set_yticklabels(yticks_rescaled)
+    ax.set_xticklabels(xticks_rescaled)
+
 
     print "Saving figure: ", output_fn_fig
-    pylab.savefig(output_fn_fig)
+    pylab.savefig(output_fn_fig, facecolor=bg_color)
+
 
 
 # let's make a movie!
 print 'Creating the movie in file:', output_fn_movie
-fps = 12 # frames per second
+fps = 6 # frames per second
 input_fn = output_fn_base + 'frame%d.png'
-command = "ffmpeg -f image2 -r %f -i %s -b 72000 %s" % (fps, input_fn, output_fn_movie)
+command = "avconv -f image2 -r %f -i %s -b 72000 %s" % (fps, input_fn, output_fn_movie)
 os.system("rm %s" % output_fn_movie) # remove old one
 os.system(command)
 
