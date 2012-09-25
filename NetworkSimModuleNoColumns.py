@@ -123,9 +123,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
     print 'Connecting cells exc - exc ...'
     debug_connectivity = True
     if debug_connectivity:
-#        debug_fn = 'debug_output_' + '%d.dat' % (pc_id)
-#        debug_file = open(debug_fn, 'w')
-#        debug_output = ''
         conn_list_fn = params['conn_list_ee_fn_base'] + '%d.dat' % (pc_id)
         conn_file = open(conn_list_fn, 'w')
         output = ''
@@ -145,7 +142,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
                         p[src], latency[src] = CC.get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v) #                            print 'debug pc_id src tgt ', pc_id, src, tgt#, int(ID) < params['n_exc']
                 sorted_indices = np.argsort(p)
                 sources = sorted_indices[-params['n_src_cells_per_neuron']:] 
-#                debug_output += 'tgt: %d\t' + str(p[sources]) + '\tsources' + str(sources) + '\n' 
                 p_max_local = max(p_max_local, max(p[sources]))
 #                p_min_local = min(p_min_local, min(p[sources]))
                 local_weights[i_] = p[sources]
@@ -158,7 +154,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
 #                all_p_min = comm.allgather(p_min_local, rcvbuf)
                 p_max_global = max(all_p_max)
 #                p_min_global = min(all_p_min)
-#                print 'debug, pc_id %d p_min_local %f, p_min_global %f' % (pc_id, p_min_local, p_min_global), all_p_min
                 w_max = params['w_max'] * p_max_local / p_max_global
                 w_min = params['w_min']
 #                w_min = params['w_min'] * p_min_local / p_min_global
@@ -189,27 +184,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
                 p_ = p[sources][non_zero_idx]
                 l_ = latency[sources][non_zero_idx]
 
-#                all_p_sources = p[sources]
-#                all_idx = p[sources] > 0
-#                non_zero_idx = np.nonzero(all_idx)[0]
-#                idx = non_zero_idx
-#                info = 'all_p[sources]' + str(all_p_sources)
-#                info += 'min p[all_idx] = %d, argmin p[all_idx] = %d, p[argmin] = %.10e, p[argmin] > 0? %d\n' % (np.min(p[all_idx]), np.argmin(p[all_idx]),p[np.argmin(p[all_idx])], p[np.argmin(p[all_idx])] > 0)
-#                info += 'min p[non_zero_idx] = %d, argmin p[non_zero_id] = %d, p[argmin] = %.10e, p[argmin] > 0? %d\n' % (np.min(p[non_zero_idx]), np.argmin(p[non_zero_idx]),p[np.argmin(p[non_zero_idx])], p[np.argmin(p[non_zero_idx])] > 0)
-#                info += 'p[all_idx]\n' + str(p[all_idx])
-#                info += 'p[non_zero_idx]\n' + str(p[non_zero_idx])
-#                print info
-#                sources = np.unique(sources)
-#                non_zero_idx = p[sources] > 1e-8
-#                sources = np.nonzero(non_zero_idx)[0]
-#                sources = np.nonzero(p[sources] > 1e-2])[0]
-#                w = params['w_tgt_in'] / p[sources].sum() * p[sources]
-#                a = np.max(p[idx]) / np.min(p[idx])
-#                if a == np.inf:
-#                    print 'ERRRRRRRRROR p[sources]', p[sources], idx, p[idx], a, np.min(p[idx]), np.max(p[idx])
-#                    print 'inf', pc_id
-#                    exit(1)
-
                 w = utils.linear_transformation(p_, params['w_min'], params['w_max'])
 #                if w = nan:
 #                print 'debug pid tgt w', pc_id, tgt, w, '\nnonzeros idx', idx, p[idx]
@@ -221,10 +195,10 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
                         output += '%d\t%d\t%.2e\t%.2e\n' % (non_zero_idx[i], tgt, w[i], delay) #                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], latency[sources[i]], p[sources[i]])
                     cnt += 1
             """
-            Different possibilities to do it:
+            Different possibilities to draw random connections:
             1) Calculate the weights as above and sample sources randomly
             2) Load a file --> From FileConnector
-            3) Create a random distribution
+            3) Create a random distribution with similar parameters as the non-random connectivition distribution
             w_ee_dist = RandomDistribution('normal',
                     (params['w_ee_mean'], params['w_ee_sigma']),
                     rng=rng_conn,
