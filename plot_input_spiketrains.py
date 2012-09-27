@@ -84,8 +84,6 @@ for frame in xrange(n_frames):
     print "Saving figure: ", output_fn_fig
     pylab.savefig(output_fn_fig, facecolor=bg_color)
 
-
-
 # let's make a movie!
 print 'Creating the movie in file:', output_fn_movie
 fps = 6 # frames per second

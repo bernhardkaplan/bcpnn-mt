@@ -130,7 +130,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
         tuning_prop = np.loadtxt(params['tuning_prop_means_fn'])
         sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v']
         cnt = 0
-        if initial_connectivity == 'precomputed':
+        if initial_connectivity == 'precomputed_linear_transform':
             print 'Computing connections ...'
             p_max_local, p_min_local = 0., 0.
             local_weights = [np.zeros(params['n_src_cells_per_neuron']) for i in xrange(params['n_exc'])]
@@ -158,9 +158,26 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
                 w_min = params['w_min']
 #                w_min = params['w_min'] * p_min_local / p_min_global
 
-
             for i_, tgt in enumerate(local_idx_exc):
-#                w = utils.linear_transformation(local_weights[i_], w_min, w_max)
+                w = utils.linear_transformation(local_weights[i_], w_min, w_max)
+#                w = params['w_tgt_in'] / p[sources].sum() * p[sources]
+                for i in xrange(len(sources)):
+#                        w[i] = max(params['w_min'], min(w[i], params['w_max']))
+                    delay = min(max(latency[sources[i]] * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+                    connect(exc_pop[sources[i]], exc_pop[tgt], w[i], delay=delay, synapse_type='excitatory')
+                    if debug_connectivity:
+                        output += '%d\t%d\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], delay) #                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], latency[sources[i]], p[sources[i]])
+                    cnt += 1
+
+        elif initial_connectivity == 'precomputed_convergence_constrained':
+            for i_, tgt in enumerate(local_idx_exc):
+                p = np.zeros(params['n_exc'])
+                latency = np.zeros(params['n_exc'])
+                for src in xrange(params['n_exc']):
+                    if (src != tgt):
+                        p[src], latency[src] = CC.get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v) #                            print 'debug pc_id src tgt ', pc_id, src, tgt#, int(ID) < params['n_exc']
+                sorted_indices = np.argsort(p)
+                sources = sorted_indices[-params['n_src_cells_per_neuron']:] 
                 w = params['w_tgt_in'] / p[sources].sum() * p[sources]
                 for i in xrange(len(sources)):
 #                        w[i] = max(params['w_min'], min(w[i], params['w_max']))

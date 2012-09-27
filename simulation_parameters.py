@@ -21,15 +21,15 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
-        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
-
-#        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
 #        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
 #        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
+#        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
+
+        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
 
 #        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
 #        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
@@ -56,19 +56,21 @@ class parameter_storage(object):
         # CONNECTIVITY PARAMETERS
         # #######################
         self.params['connect_exc_exc'] = True# enable / disable exc - exc connections for test purpose only
-        self.params['initial_connectivity'] = 'precomputed'
+        # there are three different ways to set up the connections:
+#        self.params['initial_connectivity'] = 'precomputed_linear_transform'
+        self.params['initial_connectivity'] = 'precomputed_convergence_constrained'
 #        self.params['initial_connectivity'] = 'random'
-        self.params['p_ee'] = 0.05# fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.02# fraction of network cells allowed to connect to each target cell, used in CreateConnections
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['w_thresh_connection'] = 1e-5 # connections with a weight less then this value will be discarded
-        self.params['delay_scale'] = 1.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_scale'] = 10.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 200.)
         self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.25         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
-        self.params['w_tgt_in'] = 0.15 # [uS]
+        self.params['w_tgt_in'] = 0.10 # [uS]
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 5e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc'])
@@ -128,7 +130,7 @@ class parameter_storage(object):
         """
         self.params['motion_params'] = (0.5, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.4, 0.4
+        self.params['blur_X'], self.params['blur_V'] = 0.05, 0.05
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -164,23 +166,19 @@ class parameter_storage(object):
         # FILENAMES and FOLDERS
         # ######################
         # the main folder with all simulation specific content
-#        if self.params['connect_exc_exc']:
-#            if self.params['initial_connectivity'] == 'precomputed':
-#                self.params['folder_name'] = "Testing/"
-#            else:
-#                self.params['folder_name'] = "Testing_rnd_conn/"
-#        else:
-#            self.params['folder_name'] = "Testing_no_rec/"
-
-#        self.params['folder_name'] = "Debugging_lineareWeightMapping_wsigmax%.2f_v%.2f/" % (self.params['w_sigma_x'], self.params['w_sigma_v'])
-#        self.params['folder_name'] = "Debugging_balancedWeightIn_wsigmax%.2f_v%.2f/" % (self.params['w_sigma_x'], self.params['w_sigma_v'])
-#        self.params['folder_name'] = "Debugging_wtgtin%.2f_wsigmax%.2f_v%.2f/" % (self.params['w_tgt_in'], self.params['w_sigma_x'], self.params['w_sigma_v'])
-
-
-#        self.params['folder_name'] = "Debugging_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e_random/" % (self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
-#        self.params['folder_name'] = "Debugging_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % (self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
-#        self.params['folder_name'] = "BarcelonaSimulationData/"
-        self.params['folder_name'] = "LargeScaleModel_blur0.4/"
+        if self.params['connect_exc_exc']:
+            if self.params['initial_connectivity'] == 'precomputed_linear_transform':
+                self.params['folder_name'] = "Debugging_LT_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
+                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+            elif self.params['initial_connectivity'] == 'precomputed_convergence_constrained':
+                self.params['folder_name'] = "Debugging_BW_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
+                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+            else:
+                self.params['folder_name'] = "Debugging_rndConn_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
+                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+        else:
+                self.params['folder_name'] = "Debugging_noRec_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
+                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
 
         self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']

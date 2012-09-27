@@ -31,6 +31,7 @@ import sys
 # --------------------------------------------------------------------------
 
 
+params_loaded = False
 if len(sys.argv) == 2:
     gid = int(sys.argv[1])
     import simulation_parameters
@@ -38,6 +39,7 @@ if len(sys.argv) == 2:
     params = ps.params
     rate_fn = params['input_rate_fn_base'] + str(gid) + '.npy'
     spike_fn = params['input_st_fn_base'] + str(gid) + '.npy'
+    params_loaded = True
 
 elif len(sys.argv) == 3:
     rate_fn = sys.argv[1]
@@ -93,9 +95,11 @@ ax.set_title('Binned input spike train, binsize=%.1f ms' % binsize)
 ax.set_ylabel('Number of input spikes')
 ax.set_xlabel('Times [ms]')
 
+if params_loaded:
+    output_fn = params['figures_folder'] + 'input_%d.png' % (gid)
+    print 'Saving to', output_fn
+    pylab.savefig(output_fn)
+
 #output_fn = 'delme.dat'
 #np.savetxt(output_fn, data)
-output_fn = 'delme1.png'
-print 'Saving to', output_fn
-pylab.savefig(output_fn)
-pylab.show()
+#pylab.show()
