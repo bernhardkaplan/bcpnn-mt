@@ -224,6 +224,48 @@ def normalize_probabilities(params, comm, w_thresh=None):
         print 'Merging to:', output_fn
         os.system(cat_command)
 
+def get_indices_in_vicinity(src_pos, tgt_pos, radius=.0, n=10):
+    """
+    This function calculates for each vector in 'tgt_pos' those 'n' indices in 'src_pos' which have approximately a distance of 'radius' from target.
+    Input:
+     src_pos : array of x, y values
+     src_pos[i, 0] : x-pos of source i
+     src_pos[i, 1] : y-pos of source i
+    
+     tgt_pos : same format as src_pos
+     n : number of incoming connections per target cell
+
+    Returns :
+     one adjacency list with same length as targets (=tgt_pos[:, 0].size) containing the source indices (row indices in src_pos) which have a distance of approx 'radius' distance from the target
+     - one list of same size with the distances 
+    """
+
+    n_tgt = tgt_pos[:, 0].size
+    n_src = src_pos[:, 0].size
+    output_indices, output_distances = np.zeros((n_tgt, n)), np.zeros((n_tgt, n))
+    for tgt in xrange(n_tgt):
+        # calculate the distance between the target and all sources
+        dist = np.zeros(n_src)
+        x0, y0 = tgt_pos[tgt, 0], tgt_pos[tgt, 1]
+        for src in xrange(n_src):
+            x1, y1 = src_pos[src, 0], src_pos[src, 1]
+            dx = utils.torus_distance(x0, x1)
+            dy = utils.torus_distance(y0, y1)
+            dist[src] = abs(np.sqrt(dx**2 + dy**2) - radius)
+
+        # choose n closest indices
+        idx = dist.argsort()[:n]
+        output_indices[tgt, :] = idx
+        for i in xrange(n):
+            src = idx[i]
+
+            dx = utils.torus_distance(src_pos[src, 0], tgt_pos[tgt, 0])
+            dy = utils.torus_distance(src_pos[src, 1], tgt_pos[tgt, 1])
+            output_distances[tgt, i] = np.sqrt(dx**2 + dy**2)
+
+    return output_indices, output_distances
+
+
 
 
 def compute_random_weight_list(input_fn, output_fn, params, seed=98765):

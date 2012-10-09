@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 import simulation_parameters
 import sys
@@ -105,6 +107,6 @@ ax2.legend()
 
 print "Saving to:", output_fn
 pylab.savefig(output_fn)
-pylab.show()
+#pylab.show()
 
 

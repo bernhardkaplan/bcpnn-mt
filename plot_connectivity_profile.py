@@ -34,7 +34,8 @@ print "Weights:", weights2
 weights = weights1.tolist() + weights2.tolist()
 w_max = np.max(weights)
 w_min = np.min(weights)
-lw_max = 6
+print 'w_max, w_min', w_max, w_min
+lw_max = 10
 
 print "Plotting..."
 fig = pylab.figure()
@@ -44,31 +45,36 @@ x_src = tp[src_cell, 0]
 y_src = tp[src_cell, 1] 
 #ax1.plot(x_src, y_src, 'o', c='k', markersize=2)
 
-for tgt in tgts:
+lws = utils.linear_transformation(conn_mat[src_cell, tgts], 1, lw_max)
+print 'debug weights', conn_mat[src_cell, tgts]
+print 'debug lws', lws
+for i_, tgt in enumerate(tgts):
     x_tgt = tp[tgt, 0] 
     y_tgt = tp[tgt, 1] 
     ax1.plot(x_tgt, y_tgt, 'o', c='b', markersize=1)
     w = conn_mat[src_cell, tgt]
     d = delays[src_cell, tgt]
-    line_width = round(w / w_max * lw_max) + 1
-#    print "%d %d %.3e %d" % (src_cell, tgt, w, line_width)
+#    line_width = round(w / w_max * lw_max) + 1
+    line_width = lws[i_]
+    print "src tgt w lw %d %d %.3e %d" % (src_cell, tgt, w, line_width)
     dx = (x_tgt - x_src)
     dy = (y_tgt - y_src)
     m = dy / dx
-    target_plot = ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'b--', lw=line_width)
+    target_plot = ax1.plot((x_src, x_tgt), (y_src, y_tgt), 'k-', lw=line_width)
     rnd = min(1., np.random.rand() + .5)
-#    ax1.annotate('(%d, %.2e, %.2e)' % (tgt, w, d), (x_tgt, y_tgt), fontsize=6)
+    ax1.annotate('(%d, %.2e, %.2e)' % (tgt, w, d), (x_tgt, y_tgt), fontsize=8)
 
+lws = utils.linear_transformation(conn_mat[srcs, src_cell], 1, lw_max)
 x_tgt = tp[src_cell, 0] 
 y_tgt = tp[src_cell, 1] 
-for src in srcs:
+for i_, src in enumerate(srcs):
     x_src = tp[src, 0] 
     y_src = tp[src, 1] 
     ax1.plot(x_src, y_src, 'o', c='r', markersize=1)
     w = conn_mat[src, src_cell]
     d = delays[src, src_cell]
-    line_width = round(w / w_max * lw_max) + 1
-#    print "%d %d %.3e %d" % (src_cell, src, w, line_width)
+    line_width = lws[i_]
+#    print "src tgt w lw %d %d %.3e %d" % (src_cell, src, w, line_width)
     dx = (x_tgt - x_src)
     dy = (y_tgt - y_src)
     m = dy / dx
@@ -76,7 +82,11 @@ for src in srcs:
     rnd = max(.5, .5 * np.random.rand())
 #    ax1.annotate('(%d, %.2e, %.2e)' % (src, w, d), (x_src, y_src), fontsize=6)
 
-ax1.legend((target_plot[0], source_plot[0]), ('outgoing connections', 'incoming connections'))
+# plot the predicted direction
+x, y, u, v = tp[src_cell, 0], tp[src_cell, 1], tp[src_cell, 2], tp[src_cell, 3]
+direction = ax1.plot((x, x+u), (y, y+v), 'yD-.', lw=5)
+
+ax1.legend((target_plot[0], source_plot[0], direction[0]), ('outgoing connections', 'incoming connections', 'predicted direction'))
 
 title = 'Connectivity profile of cell %d\ntp:' % (src_cell) + str(tp[src_cell, :])
 title += '\nw_sigma_x=%.2f w_sigma_v=%.2f' % (params['w_sigma_x'], params['w_sigma_v'])

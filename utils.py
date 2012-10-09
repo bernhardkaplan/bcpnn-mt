@@ -289,6 +289,43 @@ def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
 
     return tuning_prop
 
+def set_hexgrid_positions(params, n):
+
+    N_RF = n #
+    NX = np.int(np.sqrt(N_RF*np.sqrt(3)))
+    NY = np.int(np.sqrt(N_RF/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+    RF = np.zeros((2, NX*NY))
+    X, Y = np.mgrid[0:1:1j*(NX+1), 0:1:1j*(NY+1)]
+
+    # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
+    X, Y = X[1:, 1:], Y[1:, 1:]
+    # Add to every even Y a half RF width to generate hex grid
+    Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
+    RF[0, :] = X.ravel()
+    RF[1, :] = Y.ravel()
+    for i in xrange(RF[0, :].size):
+        RF[0, i] *= (1. + params['sigma_RF_pos'] * rnd.randn())
+        RF[1, i] *= (1. + params['sigma_RF_pos'] * rnd.randn())
+
+    return RF.transpose()
+
+
+def get_predicted_stim_pos(tp):
+    """
+    For each cell this function calculates the target position based on the tuning_prop of the cell:
+    x_predicted = (x_0 + v_0) % 1
+    """
+    n_pos = tp[:, 0].size
+    pos = np.zeros((n_pos, 2))
+    for i in xrange(n_pos):
+        x_predicted = (tp[i, 0] + tp[i, 2]) % 1
+        y_predicted = (tp[i, 1] + tp[i, 3]) % 1
+        pos[i, 0], pos[i, 1] = x_predicted, y_predicted
+    return pos
+
+    
+
+
 def spatial_readout(particles, N_X, N_Y, hue, hue_zoom, fig_width, width, ywidth, display=True):
     """
     Reads-out particles into a probability density function in spatial space.
@@ -542,15 +579,17 @@ def get_min_distance_to_stim(mp, tp_cell, n_steps=100):
     return dist, spatial_dist
     
 def torus_distance(x0, x1):
-    x_lim =  1
-    dx = np.abs(x0 - x1) % x_lim
-    increasing = (np.int(2. * dx) / x_lim) % 2
-    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
-    b = dx % x_lim
-    c = x_lim - increasing * b
-    dx = (increasing * c + decreasing * b) % x_lim
-#    print x0, x1, (x0-x1), dx
-    return dx
+    return x0 - x1
+
+#def torus_distance(x0, x1):
+#    x_lim =  1
+#    dx = np.abs(x0 - x1) % x_lim
+#    increasing = (np.int(2. * dx) / x_lim) % 2
+#    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
+#    b = dx % x_lim
+#    c = x_lim - increasing * b
+#    dx = (increasing * c + decreasing * b) % x_lim
+#    return dx
 
 
 

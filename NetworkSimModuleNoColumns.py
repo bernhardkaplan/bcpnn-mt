@@ -133,7 +133,8 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
         if initial_connectivity == 'precomputed_linear_transform':
             print 'Computing connections ...'
             p_max_local, p_min_local = 0., 0.
-            local_weights = [np.zeros(params['n_src_cells_per_neuron']) for i in xrange(params['n_exc'])]
+            local_weights = [np.zeros(params['n_src_cells_per_neuron']) for i in xrange(len(local_idx_exc))]
+            local_sources = [[] for i in xrange(len(local_idx_exc))]
             for i_, tgt in enumerate(local_idx_exc):
                 p = np.zeros(params['n_exc'])
                 latency = np.zeros(params['n_exc'])
@@ -145,6 +146,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
                 p_max_local = max(p_max_local, max(p[sources]))
 #                p_min_local = min(p_min_local, min(p[sources]))
                 local_weights[i_] = p[sources]
+                local_sources[i_] = sources
 
             if comm != None:
                 # communicate the local p to all other nodes
@@ -160,13 +162,14 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
 
             for i_, tgt in enumerate(local_idx_exc):
                 w = utils.linear_transformation(local_weights[i_], w_min, w_max)
+                sources = local_sources[i_]
 #                w = params['w_tgt_in'] / p[sources].sum() * p[sources]
                 for i in xrange(len(sources)):
 #                        w[i] = max(params['w_min'], min(w[i], params['w_max']))
                     delay = min(max(latency[sources[i]] * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
                     connect(exc_pop[sources[i]], exc_pop[tgt], w[i], delay=delay, synapse_type='excitatory')
                     if debug_connectivity:
-                        output += '%d\t%d\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], delay) #                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], latency[sources[i]], p[sources[i]])
+                        output += '%d\t%d\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], delay) 
                     cnt += 1
 
         elif initial_connectivity == 'precomputed_convergence_constrained':

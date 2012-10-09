@@ -37,7 +37,7 @@ class parameter_storage(object):
 #        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .1# some variability in the position of RFs
+        self.params['sigma_RF_pos'] = .05# some variability in the position of RFs
         self.params['sigma_RF_speed'] = .1# some variability in the position of RFs
 
         # ###################
@@ -57,16 +57,16 @@ class parameter_storage(object):
         # #######################
         self.params['connect_exc_exc'] = True# enable / disable exc - exc connections for test purpose only
         # there are three different ways to set up the connections:
-#        self.params['initial_connectivity'] = 'precomputed_linear_transform'
-        self.params['initial_connectivity'] = 'precomputed_convergence_constrained'
+        self.params['initial_connectivity'] = 'precomputed_linear_transform'
+#        self.params['initial_connectivity'] = 'precomputed_convergence_constrained'
 #        self.params['initial_connectivity'] = 'random'
         self.params['p_ee'] = 0.02# fraction of network cells allowed to connect to each target cell, used in CreateConnections
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['w_thresh_connection'] = 1e-5 # connections with a weight less then this value will be discarded
         self.params['delay_scale'] = 10.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 200.)
-        self.params['w_sigma_x'] = 0.25          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.25         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 0.5          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.5         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
@@ -76,13 +76,13 @@ class parameter_storage(object):
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc'])
 
         # exc - inh
-        self.params['p_ei'] = self.params['p_ee']
+        self.params['p_ei'] = 0.1 #self.params['p_ee']
         self.params['w_ei_mean'] = 0.005
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
 #        self.params['p_ie'] = 1.
-        self.params['p_ie'] = self.params['p_ee']
+        self.params['p_ie'] = 0.1 #self.params['p_ee']
         self.params['w_ie_mean'] = 0.010
         self.params['w_ie_sigma'] = 0.001          
 
@@ -118,8 +118,8 @@ class parameter_storage(object):
         # ######
         # INPUT 
         # ######
-        self.params['f_max_stim'] = 3000. # [Hz]
-        self.params['w_input_exc'] = 2.5e-3 # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['f_max_stim'] = 5000. # [Hz]
+        self.params['w_input_exc'] = 3.0e-3 # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
@@ -130,7 +130,7 @@ class parameter_storage(object):
         """
         self.params['motion_params'] = (0.5, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.05, 0.05
+        self.params['blur_X'], self.params['blur_V'] = 0.1, 0.75
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -224,10 +224,13 @@ class parameter_storage(object):
         self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
         self.params['rasterplot_inh_fig'] = '%srasterplot_inh.png' % (self.params['figures_folder'])
 
+        # tuning properties and other cell parameter files
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_sigmas_fn'] = '%stuning_prop_sigmas.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_fig_fn'] = '%stuning_properties.png' % (self.params['figures_folder'])
+        self.params['inh_cell_pos_fn'] = '%sinh_cell_positions.dat' % (self.params['parameters_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
+        self.params['predicted_positions_fn'] = '%spredicted_positions.dat' % (self.params['parameters_folder'])
 
         self.params['bias_values_fn_base'] = '%sbias_values_' % (self.params['bias_folder'])
 
@@ -252,6 +255,9 @@ class parameter_storage(object):
         self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])
         self.params['conn_list_ii_fn'] = '%sconn_list_ii.dat' % (self.params['connections_folder'])
         self.params['conn_list_input_fn'] = '%sconn_list_input.dat' % (self.params['connections_folder'])
+        self.params['exc_inh_adjacency_list_fn'] = '%sexc_to_inh_indices.dat' % (self.params['connections_folder']) # row = target inh cell index, elements = exc source indices
+        self.params['exc_inh_distances_fn'] = '%sexc_to_inh_distances.dat' % (self.params['connections_folder']) # file storing distances between the exc and inh cells, row = target inh cell index
+        self.params['exc_inh_weights_fn'] = '%sexc_to_inh_weights.dat' % (self.params['connections_folder']) # same format as exc_inh_distances_fn, containing the exc - inh weights
 
         # BCPNN TRACES
         self.params['weights_fn_base'] = '%sweight_trace_' % (self.params['weights_folder'])

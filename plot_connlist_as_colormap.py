@@ -34,14 +34,14 @@ n_cells = params['n_exc']
 tuning_prop = np.loadtxt(params['tuning_prop_means_fn'])
 conn_list = np.loadtxt(fn)
 
-def map_weights_to_tuning_properties(tp, merged_conn_fn):
-    n_tp_bins = 20
-    tp_index = 2  # 0 - x, 1 - y, 2 - v_x, 3 - v_y
-    tp_grid = np.linspace(tuning_prop[:, tp_index].min(), tuning_prop[:, tp_index[:, tp_index].max())
-    w_in = np.zeros(n_tp_bins)
+#def map_weights_to_tuning_properties(tp, merged_conn_fn):
+#    n_tp_bins = 20
+#    tp_index = 2  # 0 - x, 1 - y, 2 - v_x, 3 - v_y
+#    tp_grid = np.linspace(tuning_prop[:, tp_index].min(), tuning_prop[:, tp_index[:, tp_index].max())
+#    w_in = np.zeros(n_tp_bins)
 
-    for i in xrange(conn_list[:, 0].size):
-        src, tgt, w, delay = conn_list[i, :]
+#    for i in xrange(conn_list[:, 0].size):
+#        src, tgt, w, delay = conn_list[i, :]
 
 
 
