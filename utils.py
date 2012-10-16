@@ -98,7 +98,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
                 st.append(i * dt) 
         output_fn = tgt_fn_base + str(column)
         np.save(output_fn, np.array(st))
-        output_fn = params['input_rate_fn_base'] + str(column)
+        output_fn = params['input_rate_fn_base'] + str(column) + '.npy'
         np.save(output_fn, rate_of_t)
 
 

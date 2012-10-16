@@ -10,7 +10,6 @@ PS = simulation_parameters.parameter_storage()
 params = PS.load_params()                       # params stores cell numbers, etc as a dictionary
 
 
-
 def sort_cells_by_distance_to_stimulus(n_cells):
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     mp = params['motion_params']

@@ -21,20 +21,20 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
-        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
+#        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+#        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
 
 #        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
 #        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
 #        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
 #        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
 
-#        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
-#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
+        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['sigma_RF_pos'] = .05# some variability in the position of RFs
@@ -135,7 +135,7 @@ class parameter_storage(object):
         """
         self.params['motion_params'] = (0.2, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.15, 0.35
+        self.params['blur_X'], self.params['blur_V'] = 0.10, 0.30
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -171,27 +171,28 @@ class parameter_storage(object):
         # FILENAMES and FOLDERS
         # ######################
         # the main folder with all simulation specific content
-#        folder_name = 'Debugging_'
-        folder_name = 'LargeScaleModel_'
-        if self.params['selective_inhibition']:
-            folder_name += 'selectiveInh_'
-        if self.params['connect_exc_exc']:
-            if self.params['initial_connectivity'] == 'precomputed_linear_transform':
-                folder_name += 'LT_'
-            elif self.params['initial_connectivity'] == 'precomputed_convergence_constrained':
-                folder_name += 'CC_'
-            else:
-                folder_name += 'rndConn_'
-        else:
-            folder_name += 'noRec_'
-        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e/" % \
-                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+#        folder_name = 'LargeScaleModel_'
+#        if self.params['selective_inhibition']:
+#            folder_name += 'selectiveInh_'
+#        if self.params['connect_exc_exc']:
+#            if self.params['initial_connectivity'] == 'precomputed_linear_transform':
+#                folder_name += 'LT_'
+#            elif self.params['initial_connectivity'] == 'precomputed_convergence_constrained':
+#                folder_name += 'CC_'
+#            else:
+#                folder_name += 'rndConn_'
+#        else:
+#            folder_name += 'noRec_'
+#        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e/" % \
+#                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+
+        folder_name = 'Abstract/'
 		
         self.params['folder_name'] = folder_name 
-	print 'Folder name:', self.params['folder_name']
+        print 'Folder name:', self.params['folder_name']
 
-        #self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
-        self.params['input_folder'] = "InputSpikeTrains/"
+        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
+#        self.params['input_folder'] = "InputSpikeTrains/"
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
         self.params['parameters_folder'] = "%sParameters/" % self.params['folder_name']
@@ -218,6 +219,7 @@ class parameter_storage(object):
         # input spiketrains
         self.params['input_st_fn_base'] = "%sstim_spike_train_" % self.params['input_folder']# input spike trains filename base
         self.params['input_rate_fn_base'] = "%srate_" % self.params['input_folder']# input spike trains filename base
+        self.params['input_sum_fn'] = "%sinput_sum.dat" % (self.params['input_folder'])
         self.params['motion_fn'] = "%smotion_xy.dat" % self.params['input_folder']# input spike trains filename base
         self.params['input_fig_fn_base'] = "%sinputmap_" % self.params['figures_folder']# input spike trains filename base
         self.params['input_movie'] = "%sinputmap.mp4" % self.params['movie_folder']# input spike trains filename base
