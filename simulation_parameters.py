@@ -21,15 +21,15 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-#        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
-#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
-
-        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
+
+#        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+#        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
 
 #        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
 #        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
@@ -47,8 +47,12 @@ class parameter_storage(object):
 #        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
         self.params['n_exc_per_mc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['fraction_inh_cells'] = 0.25        # fraction of inhibitory cells in the network
-        self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
+        self.params['fraction_inh_cells'] = 0.25 # fraction of inhibitory cells in the network
+        self.params['N_RF_INH'] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
+        self.params['N_RF_X_INH'] = np.int(np.sqrt(self.params['N_RF_INH']*np.sqrt(3)))
+        self.params['N_RF_Y_INH'] = np.int(np.sqrt(self.params['N_RF_INH']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH']
+#        self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
         print 'n_cells: %d\tn_exc: %d\tn_inh: %d' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
 
@@ -56,39 +60,40 @@ class parameter_storage(object):
         # CONNECTIVITY PARAMETERS
         # #######################
         self.params['connect_exc_exc'] = True# enable / disable exc - exc connections for test purpose only
+        self.params['selective_inhibition'] = True# if True: inh cells have tuning prop and receive input from exc according to those
         # there are three different ways to set up the connections:
         self.params['initial_connectivity'] = 'precomputed_linear_transform'
 #        self.params['initial_connectivity'] = 'precomputed_convergence_constrained'
 #        self.params['initial_connectivity'] = 'random'
-        self.params['p_ee'] = 0.02# fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.01# fraction of network cells allowed to connect to each target cell, used in CreateConnections
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['w_thresh_connection'] = 1e-5 # connections with a weight less then this value will be discarded
-        self.params['delay_scale'] = 10.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
+        self.params['delay_scale'] = 20.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 200.)
-        self.params['w_sigma_x'] = 0.5          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.5         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 0.10          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.10         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
         self.params['w_tgt_in'] = 0.10 # [uS]
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
-        self.params['w_max'] = 5e-3
+        self.params['w_max'] = 4e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc'])
 
         # exc - inh
-        self.params['p_ei'] = 0.1 #self.params['p_ee']
+        self.params['p_ei'] = 0.05 #self.params['p_ee']
         self.params['w_ei_mean'] = 0.005
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
 #        self.params['p_ie'] = 1.
-        self.params['p_ie'] = 0.1 #self.params['p_ee']
-        self.params['w_ie_mean'] = 0.010
+        self.params['p_ie'] = 0.05 #self.params['p_ee']
+        self.params['w_ie_mean'] = 0.005
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
         self.params['p_ii'] = self.params['p_ee']
-        self.params['w_ii_mean'] = 0.002
+        self.params['w_ii_mean'] = 0.003
         self.params['w_ii_sigma'] = 0.001          
 
         # ###################
@@ -128,9 +133,9 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['motion_params'] = (0.5, 0.5, 0.3, 0) # x0, y0, u0, v0.5
+        self.params['motion_params'] = (0.2, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.1, 0.75
+        self.params['blur_X'], self.params['blur_V'] = 0.15, 0.35
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -166,21 +171,27 @@ class parameter_storage(object):
         # FILENAMES and FOLDERS
         # ######################
         # the main folder with all simulation specific content
+#        folder_name = 'Debugging_'
+        folder_name = 'LargeScaleModel_'
+        if self.params['selective_inhibition']:
+            folder_name += 'selectiveInh_'
         if self.params['connect_exc_exc']:
             if self.params['initial_connectivity'] == 'precomputed_linear_transform':
-                self.params['folder_name'] = "Debugging_LT_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
-                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+                folder_name += 'LT_'
             elif self.params['initial_connectivity'] == 'precomputed_convergence_constrained':
-                self.params['folder_name'] = "Debugging_BW_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
-                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+                folder_name += 'CC_'
             else:
-                self.params['folder_name'] = "Debugging_rndConn_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
-                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+                folder_name += 'rndConn_'
         else:
-                self.params['folder_name'] = "Debugging_noRec_delayScale%d_blurX%.2e_blurV%.2e_wsigma%.2e_wsigma%.2e/" % \
+            folder_name += 'noRec_'
+        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e/" % \
                         (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
+		
+        self.params['folder_name'] = folder_name 
+	print 'Folder name:', self.params['folder_name']
 
-        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
+        #self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
+        self.params['input_folder'] = "InputSpikeTrains/"
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
         self.params['parameters_folder'] = "%sParameters/" % self.params['folder_name']
@@ -202,7 +213,7 @@ class parameter_storage(object):
                             self.params['movie_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
-        self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['folder_name'])
+        self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['parameters_folder'])
 
         # input spiketrains
         self.params['input_st_fn_base'] = "%sstim_spike_train_" % self.params['input_folder']# input spike trains filename base
@@ -251,9 +262,17 @@ class parameter_storage(object):
         self.params['conn_list_ee_conv_constr_fn_base'] = '%sconn_list_ee_conv_constr_' % (self.params['connections_folder']) # convergence constrained, i.e. each cell gets limited input
         self.params['conn_list_ee_balanced_fn'] = '%sconn_list_ee_balanced.dat' % (self.params['connections_folder'])
         self.params['random_weight_list_fn']  = '%sconn_list_rnd_ee_' % (self.params['connections_folder'])
-        self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
-        self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])
-        self.params['conn_list_ii_fn'] = '%sconn_list_ii.dat' % (self.params['connections_folder'])
+        self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder'])
+        self.params['delay_mat_fn_base'] = '%sdelay_mat_' % (self.params['connections_folder'])
+
+        self.params['conn_list_ei_fn_base'] = '%sconn_list_ei_' % (self.params['connections_folder'])
+        self.params['merged_conn_list_ei'] = '%smerged_conn_list_ei.dat' % (self.params['connections_folder'])
+        self.params['conn_list_ie_fn_base'] = '%sconn_list_ie_' % (self.params['connections_folder'])
+        self.params['merged_conn_list_ie'] = '%smerged_conn_list_ie.dat' % (self.params['connections_folder'])
+
+#        self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
+#        self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])
+#        self.params['conn_list_ii_fn'] = '%sconn_list_ii.dat' % (self.params['connections_folder'])
         self.params['conn_list_input_fn'] = '%sconn_list_input.dat' % (self.params['connections_folder'])
         self.params['exc_inh_adjacency_list_fn'] = '%sexc_to_inh_indices.dat' % (self.params['connections_folder']) # row = target inh cell index, elements = exc source indices
         self.params['exc_inh_distances_fn'] = '%sexc_to_inh_distances.dat' % (self.params['connections_folder']) # file storing distances between the exc and inh cells, row = target inh cell index

@@ -163,7 +163,6 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
             for i_, tgt in enumerate(local_idx_exc):
                 w = utils.linear_transformation(local_weights[i_], w_min, w_max)
                 sources = local_sources[i_]
-#                w = params['w_tgt_in'] / p[sources].sum() * p[sources]
                 for i in xrange(len(sources)):
 #                        w[i] = max(params['w_min'], min(w[i], params['w_max']))
                     delay = min(max(latency[sources[i]] * params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
@@ -249,18 +248,59 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
     # # # # # # # # # # # # # # # # # # # #
     #    connector_ei = FastFixedProbabilityConnector(params['p_exc_inh_global'], weights=params['w_exc_inh_global'], delays=delay_dist)
     #    connector_ei = FromFileConnector(params['conn_list_ei_fn'])
-    print "Connecting exc - inh ..."
-    connector_ei = FastFixedProbabilityConnector(params['p_ei'], weights=w_ei_dist, delays=delay_dist)
-    exc_inh_prj = Projection(exc_pop, inh_pop, connector_ei, target='excitatory')
+    if params['selective_inhibition']:
+        conn_list_fn = params['conn_list_ei_fn_base'] + '%d.dat' % (pc_id)
+        conn_file = open(conn_list_fn, 'w')
+        output = ''
+
+        print "Connecting exc - inh with selective inhibition" 
+        exc_inh_adj = np.loadtxt(params['exc_inh_adjacency_list_fn'])
+        for inh in local_idx_inh:
+            exc_srcs = exc_inh_adj[inh, :]
+            for exc in exc_srcs:
+                connect(exc_pop[int(exc)], inh_pop[int(inh)], params['w_ei_mean'], delay=2, synapse_type='excitatory')
+                output += '%d\t%d\t%.2e\t%.2e\n' % (exc, inh, params['w_ei_mean'], 2) 
+        print 'Writing E -> I connections to file:', conn_list_fn
+        conn_file.write(output)
+        conn_file.close()
+    else:
+        print "Connecting exc - inh non-selective inhibition" 
+        connector_ei = FastFixedProbabilityConnector(params['p_ei'], weights=w_ei_dist, delays=delay_dist)
+        exc_inh_prj = Projection(exc_pop, inh_pop, connector_ei, target='excitatory')
 
     # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    I N H - E X C  #
     # # # # # # # # # # # # # # # # # # # #
     #    connector_ie = FastFixedProbabilityConnector(params['p_inh_exc_global'], weights=params['w_inh_exc_global'], delays=delay_dist)
     #    connector_ie = FromFileConnector(params['conn_list_ie_fn'])
-    print "Connecting inh - exc ..."
-    connector_ie = FastFixedProbabilityConnector(params['p_ie'], weights=w_ie_dist, delays=delay_dist)
-    inh_exc_prj = Projection(inh_pop, exc_pop, connector_ie, target='inhibitory')
+    if params['selective_inhibition']:
+        conn_list_fn = params['conn_list_ie_fn_base'] + '%d.dat' % (pc_id)
+        conn_file = open(conn_list_fn, 'w')
+        output = ''
+        print "Connecting inh - exc with selective inhibition"
+        inh_pos = np.loadtxt(params['inh_cell_pos_fn'])
+        tuning_prop = np.loadtxt(params['tuning_prop_means_fn'])
+        n_ie = int(round(params['p_ie'] * params['n_inh']))
+        for exc in local_idx_exc:
+            x_e, y_e = tuning_prop[exc, 0], tuning_prop[exc, 1]
+            dist_ie = np.zeros(params['n_inh'])
+            for inh in xrange(params['n_inh']):
+                x_i, y_i = inh_pos[inh, 0], inh_pos[inh, 1]
+                dx, dy = utils.torus_distance(x_e, x_i), utils.torus_distance(y_e, y_i)
+                dist_ie[inh] = np.sqrt(dx**2 + dy**2)
+            idx = np.argsort(dist_ie)
+            inh_src = idx[:n_ie]
+            for i in xrange(n_ie):
+                connect(inh_pop[int(inh_src[i])], exc_pop[int(exc)], params['w_ie_mean'], delay=2, synapse_type='inhibitory')
+                output += '%d\t%d\t%.2e\t%.2e\n' % (inh_src[i], exc, params['w_ie_mean'], 2) 
+        print 'Writing I -> E connections to file:', conn_list_fn
+        conn_file.write(output)
+        conn_file.close()
+
+    else:
+        print "Connecting inh - exc ..."
+        connector_ie = FastFixedProbabilityConnector(params['p_ie'], weights=w_ie_dist, delays=delay_dist)
+        inh_exc_prj = Projection(inh_pop, exc_pop, connector_ie, target='inhibitory')
 
     # # # # # # # # # # # # # # # # # # # #
     #     C O N N E C T    I N H - I N H  #
@@ -275,11 +315,11 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
     # # # # # # # # # # # # # # # # # # # #
     #     P R I N T    W E I G H T S      # 
     # # # # # # # # # # # # # # # # # # # #
-    print 'Printing weights to :\n  %s\n  %s\n  %s' % (params['conn_list_ei_fn'], params['conn_list_ie_fn'], params['conn_list_ii_fn'])
-    exc_inh_prj.saveConnections(params['conn_list_ei_fn'])
-    inh_exc_prj.saveConnections(params['conn_list_ie_fn'])
-    inh_inh_prj.saveConnections(params['conn_list_ii_fn'])
-    times['t_save_conns'] = timer.diff()
+#    print 'Printing weights to :\n  %s\n  %s\n  %s' % (params['conn_list_ei_fn'], params['conn_list_ie_fn'], params['conn_list_ii_fn'])
+#    exc_inh_prj.saveConnections(params['conn_list_ei_fn'])
+#    inh_exc_prj.saveConnections(params['conn_list_ie_fn'])
+#    inh_inh_prj.saveConnections(params['conn_list_ii_fn'])
+#    times['t_save_conns'] = timer.diff()
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # #

@@ -31,8 +31,10 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v):
     latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
     x_predicted = x0 + u0 * latency  
     y_predicted = y0 + v0 * latency  
-    p = np.exp(-((utils.torus_distance(x_predicted, x1))**2 + (utils.torus_distance(y_predicted, y1))**2 / (2 * w_sigma_x**2))) \
-            * np.exp(-((u0-u1)**2 + (v0 - v1)**2) / (2 * w_sigma_v**2))
+    p = np.exp(-.5 * (utils.torus_distance(x_predicted, x1))**2 / w_sigma_x**2 \
+               -.5 * (utils.torus_distance(y_predicted, y1))**2 / w_sigma_x**2) \
+      * np.exp(-.5 * (u0 - u1)**2 / w_sigma_v ** 2 \
+               -.5 * (v0 - v1)**2 / w_sigma_v ** 2)
     return p, latency
 
 def get_tp_distance(tp_src, tp_tgt, w_sigma_x, w_sigma_v):
@@ -224,43 +226,54 @@ def normalize_probabilities(params, comm, w_thresh=None):
         print 'Merging to:', output_fn
         os.system(cat_command)
 
-def get_indices_in_vicinity(src_pos, tgt_pos, radius=.0, n=10):
+def get_exc_inh_connections(pred_pos, inh_pos, tp_exc, n=10):
     """
-    This function calculates for each vector in 'tgt_pos' those 'n' indices in 'src_pos' which have approximately a distance of 'radius' from target.
+    This function calculates the adjacency matrix for the exc to inh connections.
     Input:
-     src_pos : array of x, y values
-     src_pos[i, 0] : x-pos of source i
-     src_pos[i, 1] : y-pos of source i
+     pred_pos : array of x, y values storing the positions approximately predicted by exc cells (pred_pos = (x, y) + (u, v))
+     pred_pos[i, 0] : x-pos of exc cell i
+     pred_pos[i, 1] : y-pos of exc cell i
     
-     tgt_pos : same format as src_pos
+     inh_pos : same format as pred_pos, positions of inhibitory cells
      n : number of incoming connections per target cell
 
     Returns :
-     one adjacency list with same length as targets (=tgt_pos[:, 0].size) containing the source indices (row indices in src_pos) which have a distance of approx 'radius' distance from the target
+     one adjacency list with n_inh lines containing the exc cell indices connecting to the inh cell in the given line
      - one list of same size with the distances 
     """
 
-    n_tgt = tgt_pos[:, 0].size
-    n_src = src_pos[:, 0].size
+    n_tgt = inh_pos[:, 0].size
+    n_src = pred_pos[:, 0].size
     output_indices, output_distances = np.zeros((n_tgt, n)), np.zeros((n_tgt, n))
     for tgt in xrange(n_tgt):
         # calculate the distance between the target and all sources
         dist = np.zeros(n_src)
-        x0, y0 = tgt_pos[tgt, 0], tgt_pos[tgt, 1]
-        for src in xrange(n_src):
-            x1, y1 = src_pos[src, 0], src_pos[src, 1]
-            dx = utils.torus_distance(x0, x1)
-            dy = utils.torus_distance(y0, y1)
-            dist[src] = abs(np.sqrt(dx**2 + dy**2) - radius)
+        x0, y0 = inh_pos[tgt, 0], inh_pos[tgt, 1]
+#        for src in xrange(n_src):
+#            x1, y1 = pred_pos[src, 0], pred_pos[src, 1]
+#            dx = utils.torus_distance(x0, x1)
+#            dy = utils.torus_distance(y0, y1)
+#            dist[src] = np.sqrt(dx**2 + dy**2)
+        # choose n most distance indices
+#        idx = dist.argsort()[-n:]
 
-        # choose n closest indices
-        idx = dist.argsort()[:n]
+        # calculate the scalar product between the vector exc-inh and the predicted vector
+        abs_scalar_products = np.zeros(n_src)
+        for src in xrange(n_src):
+            x_e, y_e = tp_exc[src, 0], tp_exc[src, 1]
+            x_pred, y_pred = pred_pos[src, 0], pred_pos[src, 1]
+            v_exc_inh = (x0 - x_e, y0 - y_e)
+            v_exc_pred = (tp_exc[src, 2], tp_exc[src, 3])
+#            v_exc_pred= (x_pred - x_e, y_pred - y_e)
+            abs_scalar_products[src] = abs(sum(v_exc_inh[i] * v_exc_pred[i] for i in xrange(len(v_exc_inh))))
+
+        # choose those indices with smallest scalar product (smallest projection of v_exc_pred onto v_exc_inh)
+        idx = abs_scalar_products.argsort()[:n]
         output_indices[tgt, :] = idx
         for i in xrange(n):
             src = idx[i]
-
-            dx = utils.torus_distance(src_pos[src, 0], tgt_pos[tgt, 0])
-            dy = utils.torus_distance(src_pos[src, 1], tgt_pos[tgt, 1])
+            dx = utils.torus_distance(pred_pos[src, 0], inh_pos[tgt, 0])
+            dy = utils.torus_distance(pred_pos[src, 1], inh_pos[tgt, 1])
             output_distances[tgt, i] = np.sqrt(dx**2 + dy**2)
 
     return output_indices, output_distances

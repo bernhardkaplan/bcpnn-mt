@@ -40,9 +40,9 @@ class PlotPrediction(object):
         self.vx_tuning = self.tuning_prop[:, 2].copy()
         self.vx_tuning.sort()
         self.sorted_indices_vx = self.tuning_prop[:, 2].argsort()
-#        self.vx_min, self.vx_max = -0.2, 0.6
+        self.vx_min, self.vx_max = -0.3, 0.8
         # maximal range of vx_speeds
-        self.vx_min, self.vx_max = np.min(self.vx_tuning), np.max(self.vx_tuning)
+#        self.vx_min, self.vx_max = np.min(self.vx_tuning), np.max(self.vx_tuning)
         self.vx_grid = np.linspace(self.vx_min, self.vx_max, self.n_vx_bins, endpoint=True)
         #self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
 
@@ -50,7 +50,9 @@ class PlotPrediction(object):
         self.vy_tuning = self.tuning_prop[:, 3].copy()
         self.vy_tuning.sort()
         self.sorted_indices_vy = self.tuning_prop[:, 3].argsort()
-        self.vy_grid = np.linspace(np.min(self.vy_tuning), np.max(self.vy_tuning), self.n_vy_bins, endpoint=True)
+        self.vy_min, self.vy_max = -0.5, 0.5
+#        self.vy_min, self.vy_max = np.min(self.vy_tuning), np.max(self.vy_tuning)
+        self.vy_grid = np.linspace(self.vy_min, self.vy_max, self.n_vy_bins, endpoint=True)
 
         self.load_spiketimes(data_fn)
         if self.no_spikes:
@@ -557,49 +559,42 @@ class PlotPrediction(object):
         """
         return vx / (vx**2 + vy**2) * dvy - vy / (vx**2 + vx**2) * dvx
 
-    def quiver_plot(self, fig_cnt=1):
+
+    def quiver_plot(self, weights, title='', fig_cnt=1):
+        """
+        Cells are binned according to their spatial position (tuning prop) and for each spatial bin, the resulting predicted vector is computed:
+         - v_prediction[x, y] = sum of all predicted directions by cells positioned at x, y
+         weights = confidence for each cell's vote
+        """
         # place cells in spatial grid --> look-up table: gid | (x_pos, y_pos)
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
 
         n_bins_x, n_bins_y = 20, 20
-        H, x_edges, y_edges = np.histogram2d(self.tuning_prop[:,0], self.tuning_prop[:, 1], bins=(n_bins_x, n_bins_y))
+        x_edges = np.linspace(self.tuning_prop[:, 0].min(), self.tuning_prop[:, 0].max(), n_bins_x)
+        y_edges = np.linspace(self.tuning_prop[:, 1].min(), self.tuning_prop[:, 1].max(), n_bins_y)
         x_edge_width = x_edges[-1] - x_edges[-2]
         y_edge_width = y_edges[-1] - y_edges[-2]
         vx_in_grid = np.zeros((n_bins_x, n_bins_y))
         vy_in_grid = np.zeros((n_bins_x, n_bins_y))
-        thetas_in_grid = np.zeros((n_bins_x, n_bins_y))
         v_norm = np.zeros((n_bins_x, n_bins_y))
 
-        cell_pos_in_grid = np.zeros((self.n_cells, 2))
         for gid in xrange(self.n_cells):
             x_pos_cell, y_pos_cell = self.tuning_prop[gid, 0], self.tuning_prop[gid, 1] # cell properties
             x, y = utils.get_grid_pos(x_pos_cell, y_pos_cell, x_edges, y_edges) # cell's position in the grid
-            cell_pos_in_grid[gid, 0] = x + .5 * x_edge_width
-            cell_pos_in_grid[gid, 1] = y + .5 * y_edge_width
-            vx_in_grid[x, y] += self.nspikes[gid] * self.tuning_prop[gid, 2]
-            vy_in_grid[x, y] += self.nspikes[gid] * self.tuning_prop[gid, 3]
+            vx_in_grid[x, y] += weights[gid] * self.tuning_prop[gid, 2]
+            vy_in_grid[x, y] += weights[gid] * self.tuning_prop[gid, 3]
 
-#        print 'debug', vx_in_grid.shape, n_bins_x
-#        print 'debug', vy_in_grid.shape, n_bins_y
-        for x in xrange(n_bins_x):
-            for y in xrange(n_bins_y):
-                v_norm[x, y] = np.sqrt(vx_in_grid[x, y]**2 + vy_in_grid[x, y]**2)
-#                thetas[x, y] = np.arctan2(vx_in_grid[x, y], vy_in_grid[x, y])
-#        vx_in_grid /= np.max(v_norm)
-#        vy_in_grid /= np.max(v_norm)
-        scale = 20.
-#        vx_in_grid /= scale
-#        vy_in_grid /= scale
-        print 'after:', np.max(v_norm), vx_in_grid.max(), vy_in_grid.max()
-        X, Y = np.meshgrid(x_edges, y_edges)
-        Q = pylab.quiver(X, Y, vx_in_grid, vy_in_grid, scale=scale)#, thetas_in_grid)
-        x_key, y_key = self.params['motion_params'][0] * 1.5, self.params['motion_params'][1]#.5, 1.02
+        scale = .1
+        ax.quiver(x_edges, y_edges, vx_in_grid, vy_in_grid, angles='xy', scale_units='xy', scale=scale)
+        x_key, y_key, u_key, v_key = self.params['motion_params'][0], self.params['motion_params'][1], self.params['motion_params'][2], self.params['motion_params'][3]
+        key_scale = 1#.05
         key_label ='Stimulus'
-        key_length = np.sqrt((self.params['motion_params'][2] * scale)**2 + (self.params['motion_params'][3] * scale)**2)
-        pylab.quiverkey(Q, x_key, y_key, key_length, key_label)
+        ax.quiver(x_key, y_key, u_key, v_key, color='y', angles='xy', scale_units='xy', scale=key_scale)
+        ax.annotate(key_label, (x_key, y_key-0.1), fontsize=12)
         l,r,b,t = pylab.axis()
         dx, dy = r-l, t-b
-        pylab.axis([l-0.25*dx, r+0.25*dx, b-0.25*dy, t+0.25*dy])
+        ax.set_title(title)
+#        pylab.axis([l-0.1*dx, r+0.1*dx, b-0.1*dy, t+0.1*dy])
 #        pylab.show()
 
     def make_infotextbox(self):

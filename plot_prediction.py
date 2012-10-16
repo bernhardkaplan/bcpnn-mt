@@ -29,14 +29,14 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 
     # fig 1
     # neuronal level
+    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_pthresh%.1e' % (params['prediction_fig_fn_base'], params['initial_connectivity'], \
+            params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
 
     plotter.create_fig()  # create an empty figure
     plotter.plot_rasterplot('exc', 1)               # 1 
     plotter.plot_rasterplot('inh', 2)               # 2 
     plotter.plot_vx_grid_vs_time(3)              # 3 
     plotter.plot_vy_grid_vs_time(4)              # 4 
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_pthresh%.1e' % (params['prediction_fig_fn_base'], params['initial_connectivity'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
     output_fn = output_fn_base + '_0.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
@@ -71,10 +71,22 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     plotter.n_fig_x = 1
     plotter.n_fig_y = 1
     plotter.create_fig()
-    plotter.quiver_plot(1)
+    weights = [plotter.nspikes_binned_normalized[i, :].sum() / plotter.n_bins for i in xrange(plotter.n_cells)]
+    plotter.quiver_plot(weights, fig_cnt=1)
     output_fn = output_fn_base + '_quiver.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
+
+    plotter.n_fig_x = 1
+    plotter.n_fig_y = 1
+    time_binsize = plotter.time_binsize
+    for i in xrange(plotter.n_bins):
+        plotter.create_fig()
+        title = 'Predicted directions after spatial marginalization\nt=%.1f - %.1f [ms]' % (i*time_binsize, (i+1)*time_binsize)
+        plotter.quiver_plot(plotter.nspikes_binned_normalized[:, i], title=title, fig_cnt=1)
+        output_fn = params['figures_folder'] + 'quiver_%d.png' % i
+        print 'Saving figure to:', output_fn
+        pylab.savefig(output_fn)
 
 #    plotter.make_infotextbox()
 

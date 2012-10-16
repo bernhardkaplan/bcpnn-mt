@@ -118,8 +118,6 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     """
     n_cells = tuning_prop[:, 0].size
     motion_params = params['motion_params']
-    n = params['N_RF_X']
-    m = params['N_RF_Y']
     L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
@@ -133,7 +131,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
              - to a gaussian blob
             as a function of the distance between 
              - the center of the receptive fields,
-             - the currentpostio of the blob.
+             - the current position of the blob.
              
             # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
             
@@ -289,11 +287,8 @@ def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
 
     return tuning_prop
 
-def set_hexgrid_positions(params, n):
+def set_hexgrid_positions(params, NX, NY):
 
-    N_RF = n #
-    NX = np.int(np.sqrt(N_RF*np.sqrt(3)))
-    NY = np.int(np.sqrt(N_RF/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
     RF = np.zeros((2, NX*NY))
     X, Y = np.mgrid[0:1:1j*(NX+1), 0:1:1j*(NY+1)]
 
@@ -474,23 +469,23 @@ def get_spiketrains(spiketimes_fn_merged, n_cells=0):
 
 def get_grid_pos(x0, y0, xedges, yedges):
 
-    x_index, y_index = 0, 0
+    x_index, y_index = len(xedges)-1, len(yedges)-1
     for (ix, x) in enumerate(xedges[1:]):
-        if x0 < x:
+        if x0 <= x:
             x_index = ix
             break
             
     for (iy, y) in enumerate(yedges[1:]):
-        if y0 < y:
+        if y0 <= y:
             y_index = iy
             break
     return (x_index, y_index)
 
 def get_grid_pos_1d(x0, xedges):
 
-    x_index, y_index = 0, 0
+    x_index = len(xedges)-1
     for (ix, x) in enumerate(xedges[1:]):
-        if x0 < x:
+        if x0 <= x:
             x_index = ix
             break
             
