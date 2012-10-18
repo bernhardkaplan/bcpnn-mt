@@ -159,6 +159,9 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
                 w_max = params['w_max'] * p_max_local / p_max_global
                 w_min = params['w_min']
 #                w_min = params['w_min'] * p_min_local / p_min_global
+            else:
+                w_max = params['w_max']
+                w_min = params['w_min']
 
             for i_, tgt in enumerate(local_idx_exc):
                 w = utils.linear_transformation(local_weights[i_], w_min, w_max)
