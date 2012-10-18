@@ -40,6 +40,7 @@ def return_plot(subplot_code, fig=None):
         x, y, u, v = tp[i, :]
         ax.plot(x, y, 'o', c=(r,g,b), markersize=ms)
         if l < .75:
+#        if i >= 440:
             ax.annotate('%d' % i, (x+0.01, y+0.01), fontsize=10)
 
     ax.set_xlim((0, 1))

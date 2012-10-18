@@ -58,48 +58,38 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
         my_units: tuple of integers (start, begin), in case of parallel execution each processor creates spike trains for its own units or columns
 
     """
-    motion_params = params['motion_params']
-    # each cell will get its own spike train stored in the following file + cell gid
-    tgt_fn_base = os.path.abspath(params['input_st_fn_base'])
-    n_units = tuning_prop.shape[0]
-    n_cells = params['n_exc'] # each unit / column can contain several cells
-    dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
 
+    dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
     time = np.arange(0, params['t_stimulus'], dt)
 
     if (my_units == None):
-        my_units = xrange(n_units)
+        my_units = xrange(tp.shape[0])
     else:
         my_units = xrange(my_units[0], my_units[1])
 
+    n_cells = len(my_units)
     L_input = np.empty((n_cells, time.shape[0]))
-#    mv = np.zeros((time.shape[0], 3))
     for i_time, time_ in enumerate(time):
         if (i_time % 100 == 0):
             print "t:", time_
-        L_input[:, i_time] = get_input(tuning_prop, params, time_/params['t_sim'], contrast=contrast)
+        L_input[:, i_time] = get_input(tuning_prop[my_units, :], params, time_/params['t_sim'])
         L_input[:, i_time] *= params['f_max_stim']
-#        mv[i_time, 0] = time_
-#        mv[i_time, 1] = x
-#        mv[i_time, 2] = y
-#    
-#    print "Debug, saving motion to:", params['motion_fn']
-#    np.savetxt(params['motion_fn'], mv)
 
-    for column in my_units:
-#        print "cell:", column
-        rate_of_t = np.array(L_input[column, :]) #  max_of_stim * gauss(time, time_of_max_stim, width_of_stim)
-
+    for i_, unit in enumerate(my_units):
+        rate_of_t = np.array(L_input[i_, :]) 
+        output_fn = params['input_rate_fn_base'] + str(unit) + '.npy'
+        np.save(output_fn, rate_of_t)
+        # each cell will get its own spike train stored in the following file + cell gid
         n_steps = rate_of_t.size
         st = []
         for i in xrange(n_steps):
             r = rnd.rand()
             if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
                 st.append(i * dt) 
-        output_fn = tgt_fn_base + str(column)
+#        output_fn = tgt_fn_base + str(column)
+        output_fn = params['input_st_fn_base'] + str(unit) + '.npy'
         np.save(output_fn, np.array(st))
-        output_fn = params['input_rate_fn_base'] + str(column) + '.npy'
-        np.save(output_fn, rate_of_t)
+
 
 
 def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
@@ -158,7 +148,6 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
 
 
 
-
 def distribute_list(l, n_proc, pid):
     """
     l: list of elements to be distributed among n_proc processors
@@ -177,6 +166,7 @@ def distribute_list(l, n_proc, pid):
         file_id_max = file_id_min + n_files_per_proc
     sublist = [l[i] for i in range(file_id_min, file_id_max)]
     return sublist
+
 
 def distribute_n(n, n_proc, pid):
     """

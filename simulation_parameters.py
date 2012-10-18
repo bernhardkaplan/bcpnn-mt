@@ -31,7 +31,7 @@ class parameter_storage(object):
 #        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
 #        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
 
-        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 20# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
@@ -113,11 +113,12 @@ class parameter_storage(object):
         # ###################### 
         self.params['seed'] = 12345
         self.params['t_sim'] = 400.                 # [ms] total simulation time
-        self.params['t_stimulus'] = 200.            # [ms] time when stimulus ends
+        self.params['t_stimulus'] = 800.            # [ms] time when stimulus ends
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
         self.params['tuning_prop_seed'] = 0         # seed for randomized tuning properties
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
-        self.params['dt_rate'] = 0.1                # [ms] time step for the non-homogenous Poisson process 
+        self.params['dt_rate'] = 5.0                # [ms] time step for the non-homogenous Poisson process 
+        # 1.0 for abstract learning, 0.1 when used as envelope for poisson procees
         self.params['n_gids_to_record'] = 50
 
         # ######
@@ -133,9 +134,9 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['motion_params'] = (0.2, 0.5, 0.3, 0) # x0, y0, u0, v0.5
+        self.params['motion_params'] = (0.1, 0.5, 0.3, 0) # x0, y0, u0, v0.5
         self.params['v_max'] = 1.0  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['blur_X'], self.params['blur_V'] = 0.10, 0.30
+        self.params['blur_X'], self.params['blur_V'] = 0.1, 0.1
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -186,7 +187,8 @@ class parameter_storage(object):
 #        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e/" % \
 #                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
 
-        folder_name = 'Abstract/'
+#        folder_name = 'Abstract/'
+        folder_name = 'Debug/'
 		
         self.params['folder_name'] = folder_name 
         print 'Folder name:', self.params['folder_name']
@@ -264,6 +266,7 @@ class parameter_storage(object):
         self.params['conn_list_ee_conv_constr_fn_base'] = '%sconn_list_ee_conv_constr_' % (self.params['connections_folder']) # convergence constrained, i.e. each cell gets limited input
         self.params['conn_list_ee_balanced_fn'] = '%sconn_list_ee_balanced.dat' % (self.params['connections_folder'])
         self.params['random_weight_list_fn']  = '%sconn_list_rnd_ee_' % (self.params['connections_folder'])
+
         self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder'])
         self.params['delay_mat_fn_base'] = '%sdelay_mat_' % (self.params['connections_folder'])
 
@@ -281,6 +284,8 @@ class parameter_storage(object):
         self.params['exc_inh_weights_fn'] = '%sexc_to_inh_weights.dat' % (self.params['connections_folder']) # same format as exc_inh_distances_fn, containing the exc - inh weights
 
         # BCPNN TRACES
+        self.params['weight_matrix_abstract'] = '%sweight_matrix_abstract.dat' % (self.params['weights_folder'])
+        self.params['bias_matrix_abstract'] = '%sbias_matrix_abstract.dat' % (self.params['weights_folder'])
         self.params['weights_fn_base'] = '%sweight_trace_' % (self.params['weights_folder'])
         self.params['bias_fn_base'] = '%sbias_trace_' % (self.params['bias_folder'])
 
