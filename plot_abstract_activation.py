@@ -6,7 +6,7 @@ import utils
 import sys
 
 # load simulation parameters
-def return_plot(subplot_code, fig=None):
+def return_plot(subplot_code, input_fn=None, fig=None):
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
@@ -20,8 +20,13 @@ def return_plot(subplot_code, fig=None):
     pylab.rcParams['lines.markeredgewidth'] = 0
 
     input_sum = np.zeros(n_cells)
+    if input_fn == None:
+        input_fn_base = params['input_rate_fn_base'] 
+    else:
+        input_fn_base = input_fn
+
     for i in xrange(n_cells):
-        input_fn = params['input_rate_fn_base'] + str(i) + '.dat'
+        input_fn = input_fn_base + str(i) + '.dat'
         rate = np.loadtxt(input_fn)
         input_sum[i] = rate.sum()
 
@@ -41,7 +46,7 @@ def return_plot(subplot_code, fig=None):
         ax.plot(x, y, 'o', c=(r,g,b), markersize=ms)
         if l < .75:
 #        if i >= 440:
-            ax.annotate('%d' % i, (x+0.01, y+0.01), fontsize=10)
+            ax.annotate('%d' % i, (x+0.005, y+0.005), fontsize=10)
 
     ax.set_xlim((0, 1))
     ax.set_ylim((0, 1))
@@ -50,7 +55,16 @@ def return_plot(subplot_code, fig=None):
     #pylab.savefig(output_fn_fig)#, facecolor=bg_color)
     return ax
 
+
+
 if __name__ == '__main__':
-    return_plot(111)
+    utils.sort_cells_by_distance_to_stimulus(20)
+
+    if len(sys.argv) > 1:
+        input_fn = sys.argv[1]
+    else:
+        input_fn = None
+    return_plot(111, input_fn=input_fn)
+
     pylab.show()
 

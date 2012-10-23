@@ -2,7 +2,8 @@ import pylab
 import numpy as np
 import sys
 
-def plot_all(pre_id, post_id, fig=None, text=None, show=True, output_fn=None):
+def plot_all(params, pre_id, post_id, fig=None, text=None, show=True, output_fn=None, **kwargs):
+
     # --------------------------------------------------------------------------
     def get_figsize(fig_width_pt):
         inches_per_pt = 1.0/72.0                # Convert pt to inch
@@ -44,37 +45,36 @@ def plot_all(pre_id, post_id, fig=None, text=None, show=True, output_fn=None):
     pylab.rcParams.update(params2)
     # --------------------------------------------------------------------------
 
-    import plot_stimulus_and_cell_tp as psac
 
-    import simulation_parameters
-    PS = simulation_parameters.parameter_storage()
-    params = PS.params
+    # get filenames from keywords or set the default names
+    input_fn_base = kwargs.get('input_fn_base', params['input_rate_fn_base'])
+    L_i_fn = input_fn_base + '%d.dat' % (pre_id)
+    L_j_fn = input_fn_base + '%d.dat' % (post_id)
+#    L_i_fn = kwargs.get('L_i_fn', params['input_rate_fn_base'] + "%d.dat" % pre_id)
+#    L_j_fn = kwargs.get('L_j_fn', params['input_rate_fn_base'] + "%d.dat" % post_id)
+    wij_fn = kwargs.get('wij_fn', params['weights_fn_base'] + '%d_%d.dat' % (pre_id, post_id))
+    bias_fn = kwargs.get('bias_fn', params['bias_fn_base'] + "%d.dat" % (post_id))
+    zi_fn = kwargs.get('zi_fn', params['ztrace_fn_base'] + "%d.dat" % pre_id)
+    zj_fn = kwargs.get('zj_fn', params['ztrace_fn_base'] + "%d.dat" % post_id)
+    ei_fn = kwargs.get('ei_fn', params['etrace_fn_base'] + "%d.dat" % pre_id)
+    ej_fn = kwargs.get('ej_fn', params['etrace_fn_base'] + "%d.dat" % post_id)
+    eij_fn = kwargs.get('eij_fn', params['etrace_fn_base'] + "%d_%d.dat" % (pre_id, post_id))
+    pi_fn = kwargs.get('pi_fn', params['ptrace_fn_base'] + "%d.dat" % pre_id)
+    pj_fn = kwargs.get('pj_fn', params['ptrace_fn_base'] + "%d.dat" % post_id)
+    pij_fn = kwargs.get('pij_fn', params['ptrace_fn_base'] + "%d_%d.dat" % (pre_id, post_id))
 
-    input_fn = params['input_rate_fn_base'] + "%d.dat" % pre_id
-    L_i = np.loadtxt(input_fn)
-    input_fn = params['input_rate_fn_base'] + "%d.dat" % post_id
-    L_j = np.loadtxt(input_fn)
-
-    input_fn = params['weights_fn_base'] + '%d_%d.dat' % (pre_id, post_id)
-    d_wij = np.loadtxt(input_fn)
-    input_fn = params['bias_fn_base'] + "%d_%d.dat" % (pre_id, post_id)
-    d_bias = np.loadtxt(input_fn)
-    input_fn = params['ztrace_fn_base'] + "%d.dat" % pre_id
-    d_zi = np.loadtxt(input_fn)
-    input_fn = params['ztrace_fn_base'] + "%d.dat" % post_id
-    d_zj = np.loadtxt(input_fn)
-    input_fn = params['etrace_fn_base'] + "%d.dat" % pre_id
-    d_ei = np.loadtxt(input_fn)
-    input_fn = params['etrace_fn_base'] + "%d.dat" % post_id
-    d_ej = np.loadtxt(input_fn)
-    input_fn = params['etrace_fn_base'] + "%d_%d.dat" % (pre_id, post_id)
-    d_eij = np.loadtxt(input_fn)
-    input_fn = params['ptrace_fn_base'] + "%d.dat" % pre_id
-    d_pi = np.loadtxt(input_fn)
-    input_fn = params['ptrace_fn_base'] + "%d.dat" % post_id
-    d_pj = np.loadtxt(input_fn)
-    input_fn = params['ptrace_fn_base'] + "%d_%d.dat" % (pre_id, post_id)
-    d_pij = np.loadtxt(input_fn)
+    L_i = np.loadtxt(L_i_fn)
+    L_j = np.loadtxt(L_j_fn)
+    d_wij = np.loadtxt(wij_fn)
+    d_bias = np.loadtxt(bias_fn)
+    d_zi = np.loadtxt(zi_fn)
+    d_zj = np.loadtxt(zj_fn)
+    d_ei = np.loadtxt(ei_fn)
+    d_ej = np.loadtxt(ej_fn)
+    d_eij = np.loadtxt(eij_fn)
+    d_pi = np.loadtxt(pi_fn)
+    d_pj = np.loadtxt(pj_fn)
+    d_pij = np.loadtxt(pij_fn)
 
     t_axis = np.arange(0, d_zi.size * params['dt_rate'], params['dt_rate'])
 
@@ -96,7 +96,7 @@ def plot_all(pre_id, post_id, fig=None, text=None, show=True, output_fn=None):
     #ax.plot(d_volt_2[:, 0], d_volt_2[:, 1])
     ax.set_title("Input signal")
 
-    ax = psac.return_plot([pre_id, post_id], '%d%d%d' % (n_rows, n_cols, 2), fig)
+    ax = psac.return_plot([pre_id, post_id], '%d%d%d' % (n_rows, n_cols, 2), fig, input_fn_base=input_fn_base)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_title("Stimulus, and predicted directions")
@@ -167,6 +167,42 @@ if __name__ == '__main__':
     else:
         pre_id = int(sys.argv[1])
         post_id = int(sys.argv[2])
-    plot_all(pre_id, post_id)
 
+    import plot_stimulus_and_cell_tp as psac
+    import simulation_parameters
+    PS = simulation_parameters.parameter_storage()
+    params = PS.params
+
+#    plot_all(params, pre_id, post_id)
+
+    iteration = 0
+#    L_i_fn = "%sTrainingInput_%d/%s%d.dat" % (params['folder_name'], iteration, params['abstract_input_fn_base'], pre_id)
+#    L_j_fn = "%sTrainingInput_%d/%s%d.dat" % (params['folder_name'], iteration, params['abstract_input_fn_base'], post_id)
+    input_fn_base = '%sTrainingInput_%d/%s' % (params['folder_name'], iteration, params['abstract_input_fn_base'])
+    wij_fn = "%s/wij_%d_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    bias_fn = "%s/bias_%d_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    zi_fn = "%s/zi_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
+    zj_fn = "%s/zj_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
+    ei_fn = "%s/ei_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
+    ej_fn = "%s/ej_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
+    pi_fn = "%s/pi_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
+    pj_fn = "%s/pj_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
+    eij_fn = '%s/eij_%d_%d_%d.dat' % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    pij_fn = '%s/pij_%d_%d_%d.dat' % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+
+
+    plot_all(params, pre_id, post_id, \
+#            L_i_fn=L_i_fn, \
+#            L_j_fn=L_j_fn, \
+            input_fn_base=input_fn_base, \
+            wij_fn=wij_fn, \
+            bias_fn=bias_fn, \
+            zi_fn=zi_fn, \
+            zj_fn=zj_fn, \
+            ei_fn=ei_fn, \
+            ej_fn=ej_fn, \
+            eij_fn=eij_fn, \
+            pi_fn=pi_fn, \
+            pj_fn=pj_fn, \
+            pij_fn=pij_fn)
 

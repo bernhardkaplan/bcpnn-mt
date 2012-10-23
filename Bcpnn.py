@@ -120,56 +120,16 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=N
 
 
 
-def get_abstract_weight_and_bias(pre, post, alpha=0.01, dt=1, eps=1e-6):
-    """
-    Arguments:
-        pre, post: abstract activity patterns, valued between 0 and 1
-        alpha: learning rate
-        dt: integration time step
-    """
 
-    assert (len(pre) == len(post)), "Abstract pre and post activity have different lengths!"
-    n = len(pre)
-    pi = np.zeros(n)
-    pj = np.zeros(n)
-    pij = np.zeros(n)
-    bias = np.zeros(n)
-    wij = np.zeros(n)
-    pre_post = np.array(pre) * np.array(post)
+def compute_traces(si, tau_z=10, tau_e=100, tau_p=1000, eps=1e-6, initial_value=None):
+    dt = 1.
+    n = si.size
+    if initial_value == None:
+        initial_value = (0.01, 0.01, 0.01)
 
-    for i in xrange(1, n):
-        # pre
-        dpi = alpha * dt * (pre[i-1] - pi[i-1])
-        pi[i] = pi[i-1] + dpi
-        # post
-        dpj = alpha * dt * (post[i-1] - pj[i-1])
-        pj[i] = pj[i-1] + dpj
-        # joint
-        dpij = alpha * dt * (pre_post[i-1] - pij[i-1])
-        pij[i] = pij[i-1] + dpij
-
-        if ((pi[i] == 0) or (pj[i] == 0)):
-            wij[i] = 0
-        if (pij[i] == 0):
-            wij[i] = eps**2
-        else:
-            wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
-        #elif (pij[i] <= pi[i] * pj[i]): # this condition avoids weights going negative
-
-        # bias
-        if (pj[i] > 0):
-            bias[i] = np.log(pj[i])
-        else:
-            bias[i] = np.log(eps)
-
-    return wij, bias, pi, pj, pij
-
-def compute_traces(si, tau_z=10, tau_e=100, tau_p=1000, dt=1, f_max=1000., eps=1e-6):
-    n = len(si)
-    initial_value = 0.01
-    zi = np.ones(n) * initial_value
-    ei = np.ones(n) * initial_value
-    pi = np.ones(n) * initial_value
+    zi = np.ones(n) * initial_value[0]
+    ei = np.ones(n) * initial_value[1]
+    pi = np.ones(n) * initial_value[2]
     for i in xrange(1, n):
         dzi = dt * (si[i] - zi[i-1] + eps) / tau_z
         zi[i] = zi[i-1] + dzi
@@ -181,13 +141,13 @@ def compute_traces(si, tau_z=10, tau_e=100, tau_p=1000, dt=1, f_max=1000., eps=1
         # pre-synaptic probability pi follows zi
         dpi = dt * (ei[i] - pi[i-1]) / tau_p
         pi[i] = pi[i-1] + dpi
-    return pi, ei, zi
+
+    return zi, ei, pi
 
 
-def compute_pij(zi, zj, pi, pj, tau_eij=100, tau_pij=1000, get_traces=False, dt=1, eps=1e-6):
+def compute_pij(zi, zj, pi, pj, tau_eij, tau_pij, get_traces=False, dt=1., initial_value=0.01):
 
-    n = len(zi)
-    initial_value = 0.01
+    n = zi.size
     eij = np.ones(n) * initial_value ** 2
     pij = np.ones(n) * initial_value ** 2
     wij = np.zeros(n)
@@ -210,15 +170,14 @@ def compute_pij(zi, zj, pi, pj, tau_eij=100, tau_pij=1000, get_traces=False, dt=
     if (get_traces):
         return wij, bias, pij, eij
     else:
-        return pij[-1], pij.max(), wij[-1], bias[-1]
-
+        return pij[-1], wij[-1], bias[-1]
 
 
 def get_spiking_weight_and_bias(pre_trace, post_trace, get_traces=False, bin_size=1, \
-        tau_dict = None, dt=1, f_max=1000.):#, eps=1e-6):
+        tau_dict = None, dt=1., f_max=1000., initial_value=0.01):#, eps=1e-6):
     """
     Arguments:
-        pre_trace, post_trace: pre-synaptic activity (0 mean no spike, 1 means spike) (not spike trains!)
+        pre_trace, post_trace: pre-synaptic activity (0 means no spike, 1 means spike) (not spike trains!)
         
     """
     assert (len(pre_trace) == len(post_trace)), "Abstract pre and post activity have different lengths!"
@@ -227,13 +186,13 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, get_traces=False, bin_siz
                     'tau_ei' : 100,   'tau_ej' : 100, 'tau_eij' : 100,
                     'tau_pi' : 1000,  'tau_pj' : 1000, 'tau_pij' : 1000,
                     }
+        print 'WARNING: No bcpnn parameters given, taking defaults. tau_dict=', tau_dict
 
 #    if bin_size != 1:
 #   TODO:
 #        return get_spiking_weight_and_bias_binned(pre_spikes, post_spikes, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, eps=1e-2)
 
     eps = dt / tau_dict['tau_pi']
-    initial_value = 0.01
     n = len(pre_trace)
     si = pre_trace      # spiking activity (spikes have a width and a height)
     sj = post_trace
@@ -246,16 +205,16 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, get_traces=False, bin_siz
     pj = np.ones(n) * initial_value
     pij = np.ones(n) * initial_value**2
     wij = np.zeros(n)
-    w_nolog = np.zeros(n)
     bias = np.ones(n) * np.log(initial_value)
     spike_height = 1000. / f_max
+
     for i in xrange(1, n):
         # pre-synaptic trace zi follows si
-        dzi = dt * (si[i] * spike_height- zi[i-1] + eps) / tau_dict['tau_zi']
+        dzi = dt * (si[i] - zi[i-1] + eps) / tau_dict['tau_zi']
         zi[i] = zi[i-1] + dzi
 
         # post-synaptic trace zj follows sj
-        dzj = dt * (sj[i] * spike_height- zj[i-1] + eps) / tau_dict['tau_zj']
+        dzj = dt * (sj[i] * spike_height - zj[i-1] + eps) / tau_dict['tau_zj']
         zj[i] = zj[i-1] + dzj
 
         # pre-synaptic trace zi follows zi
@@ -284,7 +243,6 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, get_traces=False, bin_siz
 
         # weights
         wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
-        w_nolog[i] = pij[i] / (pi[i] * pj[i])
 
         # bias
         bias[i] = np.log(pj[i])

@@ -264,9 +264,9 @@ def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
         index = 0
         random_rotation = 2*np.pi*rnd.rand(params['N_RF_X']*params['N_RF_Y'])
         # todo do the same for v_rho?
-        for i_v_rho, rho in enumerate(v_rho):
-            for i_theta, theta in enumerate(v_theta):
-                for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
+        for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
+            for i_v_rho, rho in enumerate(v_rho):
+                for i_theta, theta in enumerate(v_theta):
                     tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()
                     tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()
                     tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) \
@@ -563,18 +563,18 @@ def get_min_distance_to_stim(mp, tp_cell, n_steps=100):
     dist =  min_spatial_dist + velocity_dist
     return dist, spatial_dist
     
-def torus_distance(x0, x1):
-    return x0 - x1
-
 #def torus_distance(x0, x1):
-#    x_lim =  1
-#    dx = np.abs(x0 - x1) % x_lim
-#    increasing = (np.int(2. * dx) / x_lim) % 2
-#    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
-#    b = dx % x_lim
-#    c = x_lim - increasing * b
-#    dx = (increasing * c + decreasing * b) % x_lim
-#    return dx
+#    return x0 - x1
+
+def torus_distance(x0, x1):
+    x_lim =  1
+    dx = np.abs(x0 - x1) % x_lim
+    increasing = (np.int(2. * dx) / x_lim) % 2
+    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
+    b = dx % x_lim
+    c = x_lim - increasing * b
+    dx = (increasing * c + decreasing * b) % x_lim
+    return dx
 
 
 
@@ -726,4 +726,19 @@ def merge_files(input_fn_base, output_fn):
 
     cmd = 'cat %s* > %s' % (input_fn_base, output_fn)
     os.system(cmd)
+
+
+def sort_cells_by_distance_to_stimulus(n_cells):
+    import simulation_parameters
+    network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
+    params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    mp = params['motion_params']
+    indices, distances = sort_gids_by_distance_to_stimulus(tp , mp) # cells in indices should have the highest response to the stimulus
+    print 'Motion parameters', mp
+    print 'GID\tdist_to_stim\tx\ty\tu\tv\t\t'
+    for i in xrange(n_cells):
+        gid = indices[i]
+        print gid, '\t', distances[i], tp[gid, :]
+    return indices, distances
 

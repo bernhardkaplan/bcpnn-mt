@@ -31,14 +31,14 @@ class parameter_storage(object):
 #        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
 #        self.params['N_V'], self.params['N_theta'] = 6, 6# resolution in velocity norm and direction
 
-        self.params['N_RF'] = 20# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .05# some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .1# some variability in the position of RFs
+        self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
+        self.params['sigma_RF_speed'] = .05 # some variability in the position of RFs
 
         # ###################
         # NETWORK PARAMETERS
@@ -70,8 +70,8 @@ class parameter_storage(object):
         self.params['w_thresh_connection'] = 1e-5 # connections with a weight less then this value will be discarded
         self.params['delay_scale'] = 20.        # delays are computed based on the expected latency of the stimulus to reach to cells multiplied with this factor
         self.params['delay_range'] = (0.1, 200.)
-        self.params['w_sigma_x'] = 0.10          # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.10         # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 0.30          # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.30         # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
@@ -112,8 +112,8 @@ class parameter_storage(object):
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
-        self.params['t_sim'] = 400.                 # [ms] total simulation time
-        self.params['t_stimulus'] = 800.            # [ms] time when stimulus ends
+        self.params['t_sim'] = 100.                 # [ms] total simulation time
+        self.params['t_stimulus'] = 200.            # [ms] time when stimulus ends
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
         self.params['tuning_prop_seed'] = 0         # seed for randomized tuning properties
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
@@ -187,8 +187,10 @@ class parameter_storage(object):
 #        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e/" % \
 #                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
 
-#        folder_name = 'Abstract/'
-        folder_name = 'Debug/'
+#        folder_name = 'LargeScaleModel_selectiveInh_LT_delayScale20_blurX1.50e-01_blurV3.50e-01_wsigmax3.00e-01_wsigmav3.00e-01/'
+#        folder_name = 'Training/'
+        folder_name = 'Abstract/'
+#        folder_name = 'Debug/'
 		
         self.params['folder_name'] = folder_name 
         print 'Folder name:', self.params['folder_name']
@@ -204,6 +206,7 @@ class parameter_storage(object):
         self.params['bcpnntrace_folder'] = "%sBcpnnTraces/" % self.params['folder_name']
         self.params['figures_folder'] = "%sFigures/" % self.params['folder_name']
         self.params['movie_folder'] = "%sMovies/" % self.params['folder_name']
+        self.params['training_input_folder'] = "%sTrainingInput/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['folder_names'] = [self.params['folder_name'], \
                             self.params['spiketimes_folder'], \
                             self.params['volt_folder'], \
@@ -214,6 +217,7 @@ class parameter_storage(object):
                             self.params['bcpnntrace_folder'], \
                             self.params['figures_folder'], \
                             self.params['movie_folder'], \
+#                            self.params['training_input_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
         self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['parameters_folder'])
@@ -225,6 +229,9 @@ class parameter_storage(object):
         self.params['motion_fn'] = "%smotion_xy.dat" % self.params['input_folder']# input spike trains filename base
         self.params['input_fig_fn_base'] = "%sinputmap_" % self.params['figures_folder']# input spike trains filename base
         self.params['input_movie'] = "%sinputmap.mp4" % self.params['movie_folder']# input spike trains filename base
+
+        # abstract input
+        self.params['abstract_input_fn_base'] = 'abstract_input_'
 
         # output spiketrains
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']

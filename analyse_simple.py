@@ -9,22 +9,8 @@ import utils
 PS = simulation_parameters.parameter_storage()
 params = PS.load_params()                       # params stores cell numbers, etc as a dictionary
 
-
-def sort_cells_by_distance_to_stimulus(n_cells):
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
-    mp = params['motion_params']
-    indices, distances = utils.sort_gids_by_distance_to_stimulus(tp , mp) # cells in indices should have the highest response to the stimulus
-    print 'Motion parameters', mp
-    print 'GID\tdist_to_stim\tx\ty\tu\tv\t\t'
-    for i in xrange(n_cells):
-        gid = indices[i]
-        print gid, '\t', distances[i], tp[gid, :]
-    return indices, distances
-
-
-
 n_cells = params['n_gids_to_record']
-idx, dist = sort_cells_by_distance_to_stimulus(n_cells)
+idx, dist = utils.sort_cells_by_distance_to_stimulus(n_cells)
 
 d = np.loadtxt(params['exc_spiketimes_fn_merged'] + '0.ras')
 if d.size > 0:

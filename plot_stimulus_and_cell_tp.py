@@ -6,9 +6,11 @@ import utils
 import sys
 
 # load simulation parameters
-def return_plot(cell_gids=[], subplot_code=111, fig=None):
+def return_plot(cell_gids=[], subplot_code=111, fig=None, input_fn_base=None):
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
+    if input_fn_base == None:
+        input_fn_base = params['input_rate_fn_base']
 
     fn = params['tuning_prop_means_fn']
     mp = params['motion_params']
@@ -24,7 +26,7 @@ def return_plot(cell_gids=[], subplot_code=111, fig=None):
 
     input_sum = np.zeros(n_cells)
     for i, gid in enumerate(cell_gids):
-        input_fn = params['input_rate_fn_base'] + str(gid) + '.dat'
+        input_fn = input_fn_base + str(gid) + '.dat'
         rate = np.loadtxt(input_fn)
         input_sum[i] = rate.sum()
 

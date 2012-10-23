@@ -64,8 +64,8 @@ for i in xrange(n_cells):
 ax3.set_xlabel('$x$')
 ax3.set_ylabel('$y$')
 ax3.set_title('Preferred directions')
-ax3.set_ylim((d[:, 1].min() * 1.05 * scale, d[:, 1].max() * 1.05 * scale))
-ax3.set_xlim((d[:, 0].min() * 1.05 * scale, d[:, 0].max() * 1.05 * scale))
+ax3.set_ylim((d[:, 1].min() * 0.60 * scale, d[:, 1].max() * 1.10 * scale))
+ax3.set_xlim((d[:, 0].min() * 0.60 * scale, d[:, 0].max() * 1.10 * scale))
 yticks = ax3.get_yticks()
 xticks = ax3.get_xticks()
 yticks_rescaled = []
