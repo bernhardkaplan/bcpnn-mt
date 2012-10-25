@@ -6,14 +6,17 @@ import utils
 import sys
 
 # load simulation parameters
-def return_plot(cell_gids=[], subplot_code=111, fig=None, input_fn_base=None):
+def return_plot(cell_gids=[], subplot_code=111, fig=None, input_fn_base=None, motion_params=None):
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
     if input_fn_base == None:
         input_fn_base = params['input_rate_fn_base']
 
     fn = params['tuning_prop_means_fn']
-    mp = params['motion_params']
+    if motion_params == None:
+        mp = params['motion_params']
+    else:
+        mp = motion_params
     tp = np.loadtxt(fn)
 
     if len(cell_gids) == 0:
@@ -55,7 +58,7 @@ def return_plot(cell_gids=[], subplot_code=111, fig=None, input_fn_base=None):
     # plot stimulus
     stim_color = 'y'
     ax.quiver(mp[0], mp[1], mp[2], mp[3], angles='xy', scale_units='xy', scale=1, color=stim_color, headwidth=6)
-    ax.annotate('Stimulus', (mp[0]+mp[2], mp[1]+0.1), fontsize=12, color=stim_color)
+    ax.annotate('Stimulus', (mp[0]+.5*mp[2], mp[1]+0.1), fontsize=12, color=stim_color)
 
     ax.set_xlim((0, 1))
     ax.set_ylim((0, 1))

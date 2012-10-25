@@ -2,7 +2,7 @@ import pylab
 import numpy as np
 import sys
 
-def plot_all(params, pre_id, post_id, fig=None, text=None, show=True, output_fn=None, **kwargs):
+def plot_all(params, pre_id, post_id, iteration, fig=None, text=None, show=True, output_fn=None, **kwargs):
 
     # --------------------------------------------------------------------------
     def get_figsize(fig_width_pt):
@@ -44,7 +44,9 @@ def plot_all(params, pre_id, post_id, fig=None, text=None, show=True, output_fn=
 
     pylab.rcParams.update(params2)
     # --------------------------------------------------------------------------
-
+    
+    motion_params_fn = "%sTrainingInput_%d/input_params.txt" % (params['folder_name'], iteration)
+    mp = np.loadtxt(motion_params_fn)
 
     # get filenames from keywords or set the default names
     input_fn_base = kwargs.get('input_fn_base', params['input_rate_fn_base'])
@@ -96,7 +98,7 @@ def plot_all(params, pre_id, post_id, fig=None, text=None, show=True, output_fn=
     #ax.plot(d_volt_2[:, 0], d_volt_2[:, 1])
     ax.set_title("Input signal")
 
-    ax = psac.return_plot([pre_id, post_id], '%d%d%d' % (n_rows, n_cols, 2), fig, input_fn_base=input_fn_base)
+    ax = psac.return_plot([pre_id, post_id], '%d%d%d' % (n_rows, n_cols, 2), fig, input_fn_base=input_fn_base, motion_params=mp)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_title("Stimulus, and predicted directions")
@@ -136,8 +138,9 @@ def plot_all(params, pre_id, post_id, fig=None, text=None, show=True, output_fn=
 
     ax = fig.add_subplot(n_rows, n_cols, 9)
     if text == None:
-        text = ''
-        text = 'tp_pre: ' + str(tp[pre_id, :])
+        text = 'iteration: %d\n' % (iteration)
+        text += 'pre_id=%d  post_id=%d\n' % (pre_id, post_id)
+        text += 'tp_pre: ' + str(tp[pre_id, :])
         text += '\ntp_post: ' + str(tp[post_id, :])
         text += '\nstim: ' + str(params['motion_params'])
     ax.annotate(text, (.1, .1), fontsize=12)
@@ -160,13 +163,15 @@ def plot_all(params, pre_id, post_id, fig=None, text=None, show=True, output_fn=
         return fig
 
 if __name__ == '__main__':
-    if (len(sys.argv) < 3):
+    if (len(sys.argv) < 4):
         print "Please give 2 gids to be plotted:\n"
         pre_id = int(raw_input("GID 1:\n"))
         post_id = int(raw_input("GID 2:\n"))
+        iteration = int(raw_input("Iteration:\n"))
     else:
         pre_id = int(sys.argv[1])
         post_id = int(sys.argv[2])
+        iteration = int(sys.argv[3])
 
     import plot_stimulus_and_cell_tp as psac
     import simulation_parameters
@@ -175,23 +180,22 @@ if __name__ == '__main__':
 
 #    plot_all(params, pre_id, post_id)
 
-    iteration = 0
 #    L_i_fn = "%sTrainingInput_%d/%s%d.dat" % (params['folder_name'], iteration, params['abstract_input_fn_base'], pre_id)
 #    L_j_fn = "%sTrainingInput_%d/%s%d.dat" % (params['folder_name'], iteration, params['abstract_input_fn_base'], post_id)
     input_fn_base = '%sTrainingInput_%d/%s' % (params['folder_name'], iteration, params['abstract_input_fn_base'])
-    wij_fn = "%s/wij_%d_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
-    bias_fn = "%s/bias_%d_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
-    zi_fn = "%s/zi_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
-    zj_fn = "%s/zj_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
-    ei_fn = "%s/ei_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
-    ej_fn = "%s/ej_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
-    pi_fn = "%s/pi_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
-    pj_fn = "%s/pj_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
-    eij_fn = '%s/eij_%d_%d_%d.dat' % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
-    pij_fn = '%s/pij_%d_%d_%d.dat' % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    wij_fn = "%swij_%d_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    bias_fn = "%sbias_%d_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    zi_fn = "%szi_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
+    zj_fn = "%szj_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
+    ei_fn = "%sei_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
+    ej_fn = "%sej_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
+    pi_fn = "%spi_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, pre_id)
+    pj_fn = "%spj_%d_%d.dat" % (params['bcpnntrace_folder'], iteration, post_id)
+    eij_fn = '%seij_%d_%d_%d.dat' % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
+    pij_fn = '%spij_%d_%d_%d.dat' % (params['bcpnntrace_folder'], iteration, pre_id, post_id)
 
 
-    plot_all(params, pre_id, post_id, \
+    plot_all(params, pre_id, post_id, iteration, \
 #            L_i_fn=L_i_fn, \
 #            L_j_fn=L_j_fn, \
             input_fn_base=input_fn_base, \

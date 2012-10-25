@@ -145,13 +145,13 @@ def compute_traces(si, tau_z=10, tau_e=100, tau_p=1000, eps=1e-6, initial_value=
     return zi, ei, pi
 
 
-def compute_pij(zi, zj, pi, pj, tau_eij, tau_pij, get_traces=False, dt=1., initial_value=0.01):
+def compute_pij(zi, zj, pi, pj, tau_eij, tau_pij, get_traces=False, dt=1., initial_values=(1e-4, 1e-4, 0, np.log(1e-2))):
 
     n = zi.size
-    eij = np.ones(n) * initial_value ** 2
-    pij = np.ones(n) * initial_value ** 2
-    wij = np.zeros(n)
-    bias = np.ones(n) * np.log(initial_value)
+    eij = np.ones(n) * initial_values[0]
+    pij = np.ones(n) * initial_values[1]
+    wij = np.ones(n) * initial_values[2]
+    bias = np.ones(n) * initial_values[3]
     for i in xrange(1, n):
         # joint 
         deij = dt * (zi[i] * zj[i] - eij[i-1]) / tau_eij

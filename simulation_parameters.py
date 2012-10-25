@@ -113,7 +113,7 @@ class parameter_storage(object):
         # ###################### 
         self.params['seed'] = 12345
         self.params['t_sim'] = 100.                 # [ms] total simulation time
-        self.params['t_stimulus'] = 200.            # [ms] time when stimulus ends
+        self.params['t_stimulus'] = 300.            # [ms] time when stimulus ends
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
         self.params['tuning_prop_seed'] = 0         # seed for randomized tuning properties
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
