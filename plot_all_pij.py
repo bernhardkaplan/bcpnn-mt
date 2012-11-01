@@ -23,7 +23,7 @@ d = np.loadtxt(fn)
 
 n_cells = params['n_exc']
 wij_matrix = np.zeros((n_cells, n_cells))
-bias_matrix = np.zeros((n_cells, n_cells))
+bias_matrix = np.zeros(n_cells)
 
 
 w_min = -6.
@@ -34,7 +34,7 @@ norm = matplotlib.mpl.colors.Normalize(vmin=w_min, vmax=w_max)
 for line in xrange(d[:, 0].size):
     i, j, pij_, wij, bias_j = d[line, :]
 #    print 'debug i, j, w_ij, bias_j', i, j, wij, bias_j
-    bias_matrix[:, j] = bias_j
+    bias_matrix[j] = bias_j
     wij_matrix[i, j] = wij
 #    wij_matrix[j, i] = wij
 
@@ -71,7 +71,8 @@ output_fn = params['folder_name'] + 'TrainingResults_%d/' % iteration + 'wij_mat
 print 'Saving to:', output_fn
 np.savetxt(output_fn, wij_matrix)
 
-#np.savetxt(params['bias_matrix_abstract'], bias_matrix)
+output_fn_bias = params['folder_name'] + 'TrainingResults_%d/' % iteration + 'bias_%d.dat' % (iteration)
+np.savetxt(output_fn_bias, bias_matrix)
 output_fn = params['figures_folder'] + 'weight_matrix_%d.png' % (iteration)
 print 'Saving figure to:', output_fn
 pylab.savefig(output_fn)

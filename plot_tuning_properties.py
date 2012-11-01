@@ -15,8 +15,9 @@ pylab.rcParams['lines.markeredgewidth'] = 0
 #matplotlib.rc('markeredgewidth'=0)
 
 
-fn = params['tuning_prop_means_fn']
-d = np.loadtxt(fn)
+#fn = params['tuning_prop_means_fn']
+#d = np.loadtxt(fn)
+d = utils.set_tuning_prop(params, mode='hexgrid', v_max=params['v_max'])        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
 
 n_cells = d[:, 0].size
 scale = 20.

@@ -33,11 +33,14 @@ class AbstractTrainer(object):
             self.tuning_prop = utils.set_tuning_prop(self.params, mode='hexgrid', v_max=self.params['v_max'])
             np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop)
 
+        if comm != None:
+            comm.barrier()
+
         self.initial_value = 1e-5
+        tau_p = self.params['t_stimulus'] * self.n_stim # tau_p should be in the order of t_stimulus * n_iterations
         self.tau_dict = {'tau_zi' : 50.,    'tau_zj' : 5., 
                         'tau_ei' : 50.,   'tau_ej' : 50., 'tau_eij' : 50.,
-                        'tau_pi' : 2400.,  'tau_pj' : 2400., 'tau_pij' : 2400.,
-                        # tau_p should be in the order of t_stimulus * n_iterations
+                        'tau_pi' : tau_p,  'tau_pj' : tau_p, 'tau_pij' : tau_p,
                         }
         self.eps = .1 * self.initial_value
         self.normalize = True # normalize input within a 'hypercolumn'
@@ -51,7 +54,7 @@ class AbstractTrainer(object):
         self.my_conns = utils.distribute_list(all_conns, n_proc, pc_id)
 
  
-    def create_stimuli(self, random_order=False):
+    def create_stimuli(self, random_order=False, test_stim=False):
 
         distance_from_center = 0.5
         center = (0.5, 0.5)
@@ -86,7 +89,7 @@ class AbstractTrainer(object):
                     x_stop = x0 + u0 * self.params['t_stimulus'] / params['t_sim']
                     y_stop = y0 + v0 * self.params['t_stimulus'] / params['t_sim']
                     input_str = '#x0\ty0\tu0\tv0\n'
-                    input_str += '%.4e\t%.4e\t%.4e\t%.4e' % (x0, y0, u0, v0)
+                    input_str += '%.4e\t%.4e\t%.4e\t%.4e\n' % (x0, y0, u0, v0)
 
         #            input_str = 'x0=%.4f\ny0 %.4f\nu0 %.4f\nv0 %.4f\nv=%.4f\nx_stop %.4f\ny_stop %.4f' % (x0, y0, u0, v0, np.sqrt(u0**2 + v0**2), x_stop, y_stop)
 
@@ -103,7 +106,10 @@ class AbstractTrainer(object):
                     output_file = open(self.training_input_folder + 'input_params.txt', 'w')
                     output_file.write(input_str)
                     output_file.close()
-                    self.create_input_vectors(normalize=self.normalize)
+                    if test_stim:
+                        self.create_input_vectors_blanking(t_blank=(0.4, 0.6), normalize=self.normalize)
+                    else:
+                        self.create_input_vectors(normalize=self.normalize)
                     if self.comm != None:
                         self.comm.barrier()
                     iteration += 1
@@ -116,7 +122,7 @@ class AbstractTrainer(object):
         n_cells = len(self.my_units)
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
         time = np.arange(0, params['t_stimulus'], dt)
-        L_input = np.empty((n_cells, time.shape[0]))
+        L_input = np.zeros((n_cells, time.shape[0]))
         for i_time, time_ in enumerate(time):
             if (i_time % 100 == 0):
                 print "t:", time_
@@ -136,12 +142,52 @@ class AbstractTrainer(object):
             self.comm.barrier()
 
 
+    def create_input_vectors_blanking(self, t_blank=(0.25, 0.75), normalize=True):
+        """
+        Stimulus is calculated only until
+            t_stop * self.params['t_stimulus']
+        """
+        output_fn_base = self.training_input_folder + self.params['abstract_input_fn_base']
+        n_cells = len(self.my_units)
+        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
+        time = np.arange(0, self.params['t_stimulus'], dt) # only stimulate until 
+        L_input = np.zeros((n_cells, self.params['t_stimulus'] / dt))
+
+        time_blank = np.arange(t_blank[0] * self.params['t_stimulus'], t_blank[1] * self.params['t_stimulus'], dt)
+        blank_idx = np.arange(time.shape[0] * t_blank[0], time.shape[0] * t_blank[1])
+
+        for i_time, time_ in enumerate(time):
+            if (i_time % 100 == 0):
+                print "t:", time_
+            L_input[:, i_time] = utils.get_input(self.tuning_prop[self.my_units, :], self.params, time_/self.params['t_sim'])
+
+        for i in blank_idx:
+            L_input[:, i] = 0.
+#            if (i_time % 10 == 0):
+#                print "Blanking stimulus at t:", time_
+
+
+        for i_, unit in enumerate(self.my_units):
+            output_fn = output_fn_base + str(unit) + '.dat'
+            np.savetxt(output_fn, L_input[i_, :])
+
+        if self.comm != None:
+            self.comm.barrier()
+
+        if normalize:
+            self.normalize_input(output_fn_base)
+
+        if self.comm != None:
+            self.comm.barrier()
+
+
+
     def normalize_input(self, fn_base):
 
         if pc_id == 0:
             print 'normalize_input'
             dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
-            L_input = np.empty((self.params['n_exc'], self.params['t_stimulus']/dt))
+            L_input = np.zeros((self.params['n_exc'], self.params['t_stimulus']/dt))
 
             v_max = self.params['v_max']
             if self.params['log_scale']==1:
@@ -152,16 +198,26 @@ class AbstractTrainer(object):
                                 endpoint=True, base=self.params['log_scale'])
             v_theta = np.linspace(0, 2*np.pi, self.params['N_theta'], endpoint=False)
             index = 0
+            hc_idx = 0
+            hcs = np.zeros((self.params['N_RF_X']*self.params['N_RF_Y'], self.params['N_theta'] * self.params['N_V']))
             for i_RF in xrange(self.params['N_RF_X']*self.params['N_RF_Y']):
                 index_start = index
+                idx_in_hc = 0
                 for i_v_rho, rho in enumerate(v_rho):
                     for i_theta, theta in enumerate(v_theta):
                         fn = fn_base + str(index) + '.dat'
                         L_input[index, :] = np.loadtxt(fn)
+                        hcs[hc_idx, idx_in_hc] = index
+                        idx_in_hc += 1
                         index += 1
                 index_stop = index
-                if (L_input[index_start:index_stop, :].sum() > 1):
-                    L_input[index_start:index_stop, :] /= L_input[index_start:index_stop, :].sum()
+                for t in xrange(L_input[0, :].size):
+                    if (L_input[index_start:index_stop, t].sum() > 1):
+                        L_input[index_start:index_stop, t] = 1.
+                hc_idx += 1
+
+            hc_output_fn = params['parameters_folder'] + 'hc_list.dat'
+            np.savetxt(hc_output_fn, hcs)
 
             for cell in xrange(self.params['n_exc']):
                 output_fn = fn_base + str(cell) + '.dat'
@@ -394,7 +450,6 @@ class AbstractTrainer(object):
 
 if __name__ == '__main__':
 
-
     try:
         from mpi4py import MPI
         USE_MPI = True
@@ -418,18 +473,15 @@ if __name__ == '__main__':
 
     AT = AbstractTrainer(params, n_speeds, n_cycles, n_stim, comm)
 
-    cells_to_record = [85, 161, 111, 71, 339]
+    cells_to_record = [85, 161, 71, 339]
     selected_connections = []
     for src in cells_to_record:
         for tgt in cells_to_record:
             if src != tgt:
                 selected_connections.append((src, tgt))
-#    AT.selected_conns = [(85, 337)]
     AT.selected_conns = selected_connections
                         
-
-
-    AT.create_stimuli(random_order=True)
+    AT.create_stimuli(random_order=True, test_stim=False)
     AT.train()
 
 

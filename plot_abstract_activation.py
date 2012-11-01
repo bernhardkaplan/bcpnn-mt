@@ -34,10 +34,10 @@ def return_plot(subplot_code, iteration=None, fig=None):
     if fig == None:
         fig = pylab.figure(facecolor=bg_color)
     ax = fig.add_subplot(subplot_code)
+    h = 240.
+    s = 1. # saturation
     for i in xrange(n_cells):
-        h = 240.
         l = 1. - 0.5 * input_sum[i] / input_max
-        s = 1. # saturation
         assert (0 <= h and h < 360)
         assert (0 <= l and l <= 1)
         assert (0 <= s and s <= 1)
@@ -45,7 +45,6 @@ def return_plot(subplot_code, iteration=None, fig=None):
         x, y, u, v = tp[i, :]
         ax.plot(x, y, 'o', c=(r,g,b), markersize=ms)
         if l < .75:
-#        if i >= 440:
             ax.annotate('%d' % i, (x+0.005, y+0.005), fontsize=10)
 
     stim_color = 'k'
@@ -62,7 +61,6 @@ def return_plot(subplot_code, iteration=None, fig=None):
     print "Saving figure: ", output_fn
     pylab.savefig(output_fn)#, facecolor=bg_color)
     return ax
-
 
 
 if __name__ == '__main__':

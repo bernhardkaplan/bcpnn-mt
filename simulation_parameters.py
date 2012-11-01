@@ -37,8 +37,8 @@ class parameter_storage(object):
         self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
         self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .05 # some variability in the position of RFs
+        self.params['sigma_RF_pos'] = .15 # some variability in the position of RFs
+        self.params['sigma_RF_speed'] = .15 # some variability in the position of RFs
 
         # ###################
         # NETWORK PARAMETERS
@@ -112,12 +112,12 @@ class parameter_storage(object):
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
-        self.params['t_sim'] = 100.                 # [ms] total simulation time
-        self.params['t_stimulus'] = 300.            # [ms] time when stimulus ends
+        self.params['t_sim'] = 200.                 # [ms] total simulation time
+        self.params['t_stimulus'] = 100.            # [ms] time when stimulus ends
         self.params['n_sim'] = 1                    # number of simulations (iterations) - 1 for learning
         self.params['tuning_prop_seed'] = 0         # seed for randomized tuning properties
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
-        self.params['dt_rate'] = 5.0                # [ms] time step for the non-homogenous Poisson process 
+        self.params['dt_rate'] = 0.1                # [ms] time step for the non-homogenous Poisson process 
         # 1.0 for abstract learning, 0.1 when used as envelope for poisson procees
         self.params['n_gids_to_record'] = 50
 
@@ -188,9 +188,8 @@ class parameter_storage(object):
 #                        (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
 
 #        folder_name = 'LargeScaleModel_selectiveInh_LT_delayScale20_blurX1.50e-01_blurV3.50e-01_wsigmax3.00e-01_wsigmav3.00e-01/'
-#        folder_name = 'Training/'
-        folder_name = 'Abstract/'
-#        folder_name = 'Debug/'
+#        folder_name = 'Abstract/'
+        folder_name = 'InputAnalysis_SpikingModel/'
 		
         self.params['folder_name'] = folder_name 
         print 'Folder name:', self.params['folder_name']
@@ -201,6 +200,7 @@ class parameter_storage(object):
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
         self.params['parameters_folder'] = "%sParameters/" % self.params['folder_name']
         self.params['connections_folder'] = "%sConnections/" % self.params['folder_name']
+        self.params['activity_folder'] = "%sANNActivity/" % self.params['folder_name']
         self.params['weights_folder'] = "%sWeights/" % self.params['folder_name']
         self.params['bias_folder'] = "%sBias/" % self.params['folder_name']
         self.params['bcpnntrace_folder'] = "%sBcpnnTraces/" % self.params['folder_name']
@@ -212,6 +212,7 @@ class parameter_storage(object):
                             self.params['volt_folder'], \
                             self.params['parameters_folder'], \
                             self.params['connections_folder'], \
+                            self.params['activity_folder'], \
                             self.params['weights_folder'], \
                             self.params['bias_folder'], \
                             self.params['bcpnntrace_folder'], \

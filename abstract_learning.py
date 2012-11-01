@@ -30,7 +30,7 @@ def prepare_input(tp, params, my_units=None):
         my_units = xrange(my_units[0], my_units[1])
 
     n_cells = len(my_units)
-    L_input = np.empty((n_cells, time.shape[0]))
+    L_input = np.zeros((n_cells, time.shape[0]))
 #    offset = 100
     for i_time, time_ in enumerate(time):
         if (i_time % 100 == 0):
@@ -49,7 +49,7 @@ def normalize_input(params):
     if pc_id == 0:
         print 'normalize_input'
         dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
-        L_input = np.empty((params['n_exc'], params['t_stimulus']/dt))
+        L_input = np.zeros((params['n_exc'], params['t_stimulus']/dt))
 
         v_max = params['v_max']
         if params['log_scale']==1:

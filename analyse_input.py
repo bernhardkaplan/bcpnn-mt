@@ -10,8 +10,8 @@ import simulation_parameters
 network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
 params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
-#params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
-#file_count = int(sys.argv[3])
+params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
+file_count = int(sys.argv[3])
 print 'Blur', params['blur_X'], params['blur_V']
 
 
@@ -77,11 +77,19 @@ for fn in os.listdir(folder):
 receiving_nrns = all_spikes.nonzero()[0]
 n_receiving_nrns = len(receiving_nrns)
 input_spikes = all_spikes[receiving_nrns]
+#print 'debug', type(input_spikes)
+if len(input_spikes) == 0:
+    input_spikes_mean = 0.
+    input_spikes_std = 0.
+else:
+    input_spikes_mean = input_spikes.mean()
+    input_spikes_std = input_spikes.std()
+
 #print 'Neurons receiving inputs:', receiving_nrns
 #print 'n spikes :', input_spikes[receiving_nrns]
 print 'Num spike receiving neurons: %d ~ %.2f percent of all' % (n_receiving_nrns, n_receiving_nrns / float(params['n_exc']) * 100.)
 print ' average number of spikes: %.2f +- (%.2f)   g_exc = %.2e +- (%2.e) [uS]' \
-        % (input_spikes.mean(), input_spikes.std(), nspikes_to_g(input_spikes.mean(), w_exc), nspikes_to_g(input_spikes.std(), w_exc))
+        % (input_spikes_mean, input_spikes_std, nspikes_to_g(input_spikes_mean, w_exc), nspikes_to_g(input_spikes_std, w_exc))
 idx = all_spikes.argsort().tolist()
 idx.reverse()
 #print input_spikes[idx]
@@ -115,8 +123,8 @@ label_text = ''
 #label_text += 'nspikes_in\n'
 label_text += 'nspikes_in_sum = %d\n' % (all_spikes.sum())
 label_text += 'nspikes_in_mean = %.2f +- %.2f\n' % (all_spikes.mean(), all_spikes.std())
-label_text += 'nspikes_in_non-zeros mean = %.2f +- %.2f\n' % (input_spikes.mean(), input_spikes.std())
-label_text += 'nspikes_in_non-zero mean rate = %.2f +- %.2f [Hz]\n' % (input_spikes.mean() / t_stim, input_spikes.std() / t_stim)
+label_text += 'nspikes_in_non-zeros mean = %.2f +- %.2f\n' % (input_spikes_mean, input_spikes_std)
+label_text += 'nspikes_in_non-zero mean rate = %.2f +- %.2f [Hz]\n' % (input_spikes_mean / t_stim, input_spikes_std / t_stim)
 label_text += 'g_in_sum = %d [uS]\n' % (g_in_all.sum())
 label_text += 'g_in_mean = %.2f +- %.2f [uS]\n' % (g_in_all.mean(), g_in_all.std())
 label_text += 'g_in_nonzero_mean = %.2f +- %.2f [uS]\n' % (g_in.mean(), g_in.std())
@@ -140,13 +148,20 @@ print 'Info:',label_text
 pylab.text(text_pos_x, text_pos_y, label_text, bbox=dict(pad=5.0, ec="k", fc="none"))
 
 
-output_fig = params['figures_folder'] + 'input_analysis.png'
-print 'Output fig:', output_fig
+#output_fig = params['figures_folder'] + 'input_analysis.png'
+#print 'Output fig:', output_fig
 #output_fig = 'Figures_BlurSweep/' + 'fin%d_w%.1e_blurXV%.1e_%.1e.png' % (params['f_max_stim'], params['w_input_exc'], params['blur_X'], params['blur_V'])
 #print 'Saving to:', output_fig
 #pylab.savefig(output_fig)
 #output_fig = params['figures_folder'] + '%d.png' % (file_count)
-#output_fig = 'Figures_BlurSweep/' + '%d.png' % (file_count)
+output_fig = 'Figures_BlurSweep/' + '%d.png' % (file_count)
+
+# only needed when a sweep is done
+output_fn = 'Figures_BlurSweep/nspikes_blur_sweep.dat'
+output_file = open(output_fn, 'a')
+output_string = '%.2e\t%.2e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\n' % (params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std)
+output_file.write(output_string)
+output_file.close()
 #print 'Saving to:', output_fig
 pylab.savefig(output_fig)
 #pylab.show()

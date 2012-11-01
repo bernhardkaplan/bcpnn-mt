@@ -600,9 +600,6 @@ class PlotPrediction(object):
     def make_infotextbox(self):
         pass
 
-if __name__ == '__main__':
-    plot_prediction()
-
 #thetas = np.zeros(n_cells)
 #for gid in xrange(n_cells):
 #    thetas[gid] = np.arctan2(tuning_prop[gid, 3], tuning_prop[gid, 2])

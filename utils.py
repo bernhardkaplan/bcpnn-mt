@@ -68,7 +68,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
         my_units = xrange(my_units[0], my_units[1])
 
     n_cells = len(my_units)
-    L_input = np.empty((n_cells, time.shape[0]))
+    L_input = np.zeros((n_cells, time.shape[0]))
     for i_time, time_ in enumerate(time):
         if (i_time % 100 == 0):
             print "t:", time_
