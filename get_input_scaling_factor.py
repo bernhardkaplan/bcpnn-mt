@@ -32,6 +32,8 @@ def peval_function(x, p):
 #    return p[0] / x**p[1]
 #    y = p[2] * mlab.normpdf(x, p[0], p[1]) + p[3]
     y = p[3] + p[0] / (x - p[1])**p[2]
+#    y = p[3] + p[0] / (x)**p[2]
+#    y = p[0] * np.exp(p[1] * (x - p[2])) + p[3]
     return y
 
 
@@ -46,38 +48,96 @@ d = np.loadtxt(input_fn)
 fig = pylab.figure()
 ax = fig.add_subplot(111)
 
+###############
+# PLOT NSPIKES 
+###############
 
 blur_x_start = 0.025
-blur_x_stop = 0.95
+blur_x_stop = 0.7
 blur_x_step = 0.025
 blur_range = np.arange(blur_x_start, blur_x_stop, blur_x_step)
 n = blur_range.size
-m = 6
+
+y_axis_idx = 3
+m = 5
+
 idx_0 = n * m
 idx_1 = n * (m + 1)
-print 'idx:', idx_0, idx_1
-
 x = d[idx_0:idx_1, 0]
-y = 1. / d[idx_0:idx_1, 2]
-print 'blur :', x
-print 'y:', y
-#x = d[::n, 0]
-#y = d[::n, 2]
-ax.plot(x, y, 'o-')
+blur_x = d[idx_0:idx_1, 0]
+blur_v = d[idx_0:idx_1, 1]
+ax.plot(x, d[idx_0:idx_1, y_axis_idx], 'o-', label='blur_v=%.3f' % blur_v.mean())
+ax.legend(loc='upper left')
+ax.set_ylabel('Average number of input spikes into one cell')
+ax.set_xlabel('blur_x')
+
+
+###############
+# PLOT INVERSE
+###############
+desired_value = 15 # desired value for the average number of input spikes
+
+fig = pylab.figure()
+ax = fig.add_subplot(111)
+
+idx_0 = n * m
+idx_1 = n * (m + 1)
+x = d[idx_0:idx_1, 0]
+y = desired_value / d[idx_0:idx_1, y_axis_idx]
+blur_x = d[idx_0:idx_1, 0]
+blur_v = d[idx_0:idx_1, 1]
+ax.plot(x, y, 'o-', label='inverse')
 
 # fit a function on to the dependecy 
 # x vs 1/y --- or ---- blur_ vs 1/nspikes ----> gives the function for the scaling factor 
-
-#guess_params = [1., .1]
-#guess_params = [1., -.1, .1, .1]
-guess_params = [1., .01, .1, .1]
+guess_params = [1., .01, .1, .01] # 1 / x**c
+#guess_params = [1., -10., .1, .01] # for exp(-tau/x)
 opt_params = leastsq(residuals_function, guess_params, args=(x, y), maxfev=10000)
 print 'opt_params', opt_params[0]
 opt_func = peval_function(x, opt_params[0])
+ax.plot(x, opt_func, lw=3, label='fitted function')
 
-#my_func = peval_function(x, [.0, .2, .1, .01])
+ax.set_title('Fitting a scaling function to %d / data,\ndata: average number of input spikes' % (desired_value))
+ax.set_ylabel('desired_value / data')
+ax.set_xlabel('blur_x')
+#my_func = peval_function(x, guess_params)
+#ax.plot(x, my_func, lw=3, label='initial guess')
 
-ax.plot(x, opt_func, lw=3)
-#ax.plot(x, my_func, lw=3)
+ax.legend()
+
+##########################################
+# PLOT THE EXPECTED NUMBER OF INPUT SPIKES
+##########################################
+fig = pylab.figure()
+ax = fig.add_subplot(111)
+#f_max_0 = 5000
+y_scaled = opt_func * d[idx_0:idx_1, y_axis_idx]
+print 'debug', opt_func[0], d[idx_0:idx_0+1, y_axis_idx]
+#print 'debug', opt_func[0] * 1./ d[idx_0:idx_0+1, y_axis_idx]
+print 'y_scale', y_scaled
+ax.plot(x, y_scaled, label='fit * data')
+ax.set_title('Expected number of average input spikes after scaling\nshould be constant at desired_value=%d' % (desired_value))
+ax.set_ylabel('Average number of input spikes')
+ax.set_xlabel('blur_x')
+ax.legend()
+
+
+
+####################################################################################
+# PLOT THE MAX NUMBER OF INPUT SPIKES (INTO THE BEST TUNED CELL)
+####################################################################################
+fig = pylab.figure()
+ax = fig.add_subplot(111)
+y_axis_idx = 6
+idx_0 = n * m
+idx_1 = n * (m + 1)
+x = d[idx_0:idx_1, 0]
+blur_x = d[idx_0:idx_1, 0]
+blur_v = d[idx_0:idx_1, 1]
+ax.plot(x, d[idx_0:idx_1, y_axis_idx], 'o-', label='blur_v=%.3f' % blur_v.mean())
+ax.legend(loc='upper left')
+ax.set_ylabel('Max number of input spikes')
+ax.set_xlabel('blur_x')
+
 
 pylab.show()

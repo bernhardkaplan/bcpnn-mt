@@ -22,7 +22,7 @@ if (colored):
     norm = matplotlib.mpl.colors.Normalize(vmin=code.min(), vmax=code.max())
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
     rgba_colors = m.to_rgba(code)
-    p = ax.scatter(d[:,0], d[:,1], d[:,2], c=numpy.array(rgba_colors), marker='o', linewidth='5', edgecolor=rgba_colors)#, cmap='seismic')
+    p = ax.scatter(d[:,0], d[:,1], d[:,3], c=numpy.array(rgba_colors), marker='o', linewidth='5', edgecolor=rgba_colors)#, cmap='seismic')
     m.set_array(code)
     fig.colorbar(m)
 else:

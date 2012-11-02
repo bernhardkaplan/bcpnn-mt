@@ -81,9 +81,11 @@ input_spikes = all_spikes[receiving_nrns]
 if len(input_spikes) == 0:
     input_spikes_mean = 0.
     input_spikes_std = 0.
+    input_spikes_max = 0.
 else:
     input_spikes_mean = input_spikes.mean()
     input_spikes_std = input_spikes.std()
+    input_spikes_max= input_spikes.max()
 
 #print 'Neurons receiving inputs:', receiving_nrns
 #print 'n spikes :', input_spikes[receiving_nrns]
@@ -159,7 +161,9 @@ output_fig = 'Figures_BlurSweep/' + '%d.png' % (file_count)
 # only needed when a sweep is done
 output_fn = 'Figures_BlurSweep/nspikes_blur_sweep.dat'
 output_file = open(output_fn, 'a')
-output_string = '%.2e\t%.2e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\n' % (params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std)
+output_string = '%.2e\t%.2e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\t%d\n' % (params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std, input_spikes_max)
+#   0                       1               2               3                   4               5                   5                   6
+#(params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std, input_spikes_max)
 output_file.write(output_string)
 output_file.close()
 #print 'Saving to:', output_fig
