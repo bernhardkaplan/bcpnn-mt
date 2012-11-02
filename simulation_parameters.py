@@ -44,7 +44,6 @@ class parameter_storage(object):
         # NETWORK PARAMETERS
         # ###################
         self.params['n_mc'] = 1# number of minicolumns 
-#        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
         self.params['n_exc_per_mc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['fraction_inh_cells'] = 0.25 # fraction of inhibitory cells in the network
@@ -52,7 +51,6 @@ class parameter_storage(object):
         self.params['N_RF_X_INH'] = np.int(np.sqrt(self.params['N_RF_INH']*np.sqrt(3)))
         self.params['N_RF_Y_INH'] = np.int(np.sqrt(self.params['N_RF_INH']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
         self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH']
-#        self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
         print 'n_cells: %d\tn_exc: %d\tn_inh: %d' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
 
@@ -86,7 +84,6 @@ class parameter_storage(object):
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
-#        self.params['p_ie'] = 1.
         self.params['p_ie'] = 0.05 #self.params['p_ee']
         self.params['w_ie_mean'] = 0.005
         self.params['w_ie_sigma'] = 0.001          
@@ -218,7 +215,6 @@ class parameter_storage(object):
                             self.params['bcpnntrace_folder'], \
                             self.params['figures_folder'], \
                             self.params['movie_folder'], \
-#                            self.params['training_input_folder'], \
                             self.params['input_folder']] # to be created if not yet existing
 
         self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['parameters_folder'])
