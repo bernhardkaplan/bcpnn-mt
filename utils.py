@@ -742,3 +742,17 @@ def sort_cells_by_distance_to_stimulus(n_cells):
         print gid, '\t', distances[i], tp[gid, :]
     return indices, distances
 
+
+def scale_input_frequency(x):
+    """
+    How these optimal values come about:
+      - run run_input_analysis.py, analyse_input.py to get different the average number of input
+      spike into a cell for different blur_x/v values
+      - run get_input_scaling_factor.py with the file written by analyse_input.py 
+      to find the fitted function and these parameters
+
+      Purpose of all this is to have similar input excitation into the whole network for different blur_x/v values
+    """
+    p = [2.64099116e-01,   3.27055672e-02,  9.66385641e-03,   3.24742098e-03, -4.62469854e-05,  -1.34801304e-06]
+    y = p[0] + p[1] / x + p[2] / x**2 + p[3] / x**3 + p[4] / x**4 + p[5] / x**5
+    return y

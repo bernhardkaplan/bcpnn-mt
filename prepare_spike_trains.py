@@ -13,6 +13,11 @@ PS.write_parameters_to_file()
 print 'n_cells=%d\tn_exc=%d\tn_inh=%d' % (params['n_cells'], params['n_exc'], params['n_inh'])
 print 'Blur', params['blur_X'], params['blur_V']
 
+scale_input_frequency = True
+if scale_input_frequency:
+    scaling_factor = utils.scale_input_frequency(params['blur_X'])
+    params['f_max_stim'] *= scaling_factor
+
 try:
     from mpi4py import MPI
     USE_MPI = True
