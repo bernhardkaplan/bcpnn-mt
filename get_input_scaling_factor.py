@@ -31,11 +31,12 @@ def residuals_function(p, x, y):
 def peval_function(x, p):
 #    return p[0] / x**p[1]
 #    y = p[2] * mlab.normpdf(x, p[0], p[1]) + p[3]
-    y = p[3] + p[0] / (x - p[1])**p[2]
-#    y = p[3] + p[0] / (x)**p[2]
+#    y = p[3] + p[0] / (x - p[1])**p[2]
+#    y = p[0] + p[1] / (x)**p[2] +  p[3] / x**p[4] + p[5] / x
+#    y = p[0] + p[1] * np.exp((x - p[2])**2 / p[3]**2)
+    y = p[0] + p[1] / x + p[2] / x**2 + p[3] / x**3 + p[4] / x**4 + p[5] / x**5
 #    y = p[0] * np.exp(p[1] * (x - p[2])) + p[3]
     return y
-
 
 
 input_fn = 'Figures_BlurSweep/nspikes_blur_sweep.dat'
@@ -52,14 +53,11 @@ ax = fig.add_subplot(111)
 # PLOT NSPIKES 
 ###############
 
-blur_x_start = 0.025
-blur_x_stop = 0.7
-blur_x_step = 0.025
-blur_range = np.arange(blur_x_start, blur_x_stop, blur_x_step)
+blur_range = np.unique(d[:, 0])
 n = blur_range.size
 
-y_axis_idx = 3
-m = 5
+y_axis_idx = 2
+m = 0
 
 idx_0 = n * m
 idx_1 = n * (m + 1)
@@ -75,7 +73,9 @@ ax.set_xlabel('blur_x')
 ###############
 # PLOT INVERSE
 ###############
-desired_value = 15 # desired value for the average number of input spikes
+# the desired value depends of course on what you try to balance (all spikes coming into the network, the average, ...)
+#desired_value = 15 # desired value for the average number of input spikes
+desired_value = 6000 # desired value for the average number of input spikes
 
 fig = pylab.figure()
 ax = fig.add_subplot(111)
@@ -90,8 +90,12 @@ ax.plot(x, y, 'o-', label='inverse')
 
 # fit a function on to the dependecy 
 # x vs 1/y --- or ---- blur_ vs 1/nspikes ----> gives the function for the scaling factor 
-guess_params = [1., .01, .1, .01] # 1 / x**c
-#guess_params = [1., -10., .1, .01] # for exp(-tau/x)
+#guess_params = [1., .01, .1, .01] # 1 / x**c
+#guess_params = [1., .0, 2., 0.] # 1 / x**c
+#guess_params = [0., .1, 3., 1., 2., 1.] # 1 / x**2 + 1 / x + c
+guess_params = [0., 1., 1., 1., 1., 1.]
+#guess_params = [0., .1, 1., 1., .1] # inverse gauss
+#guess_params = [500., -100., .0, .01] # for exp(-tau/x)
 opt_params = leastsq(residuals_function, guess_params, args=(x, y), maxfev=10000)
 print 'opt_params', opt_params[0]
 opt_func = peval_function(x, opt_params[0])
@@ -120,7 +124,6 @@ ax.set_title('Expected number of average input spikes after scaling\nshould be c
 ax.set_ylabel('Average number of input spikes')
 ax.set_xlabel('blur_x')
 ax.legend()
-
 
 
 ####################################################################################
