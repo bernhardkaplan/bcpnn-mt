@@ -5,7 +5,7 @@ import sys
 import simulation_parameters
 PS = simulation_parameters.parameter_storage()
 params = PS.load_params()                       # params stores cell numbers, etc as a dictionary
-params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
+#params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
 PS.set_filenames()
 PS.create_folders()
 PS.write_parameters_to_file()
