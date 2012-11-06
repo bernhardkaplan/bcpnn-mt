@@ -30,7 +30,9 @@ installation on (neuro)debian(virtual machine on MacOsX)
    sudo aptitude install libncurses-dev
    sudo aptitude install libreadline-dev
 #NEST
-   cd nest-source
+   wget http://www.nest-initiative.org/download/yHTCUpeiTsCr/nest-2.0.0.tar.gz
+   tar zxvf nest-2.0.0.tar.gz
+   cd nest-2.0.0
    ./configure
    make
    sudo make install
