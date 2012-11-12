@@ -1,5 +1,6 @@
 .DS*
 NoColumns*
+results
 *pyc
 *dat
 *npy
