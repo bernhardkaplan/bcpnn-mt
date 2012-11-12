@@ -585,11 +585,11 @@ class PlotPrediction(object):
             vy_in_grid[x, y] += weights[gid] * self.tuning_prop[gid, 3]
 
         scale = .1
-        ax.quiver(x_edges, y_edges, vx_in_grid, vy_in_grid, angles='xy', scale_units='xy', scale=scale)
+        ax.quiver(x_edges, y_edges, vx_in_grid, vy_in_grid, angles='xy', scale=scale)
         x_key, y_key, u_key, v_key = self.params['motion_params'][0], self.params['motion_params'][1], self.params['motion_params'][2], self.params['motion_params'][3]
         key_scale = 1#.05
         key_label ='Stimulus'
-        ax.quiver(x_key, y_key, u_key, v_key, color='y', angles='xy', scale_units='xy', scale=key_scale)
+        ax.quiver(x_key, y_key, u_key, v_key, color='y', angles='xy', scale=key_scale)
         ax.annotate(key_label, (x_key, y_key-0.1), fontsize=12)
         l,r,b,t = pylab.axis()
         dx, dy = r-l, t-b

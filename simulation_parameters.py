@@ -186,7 +186,8 @@ class parameter_storage(object):
 
 #        folder_name = 'LargeScaleModel_selectiveInh_LT_delayScale20_blurX1.50e-01_blurV3.50e-01_wsigmax3.00e-01_wsigmav3.00e-01/'
 #        folder_name = 'Abstract/'
-        folder_name = 'InputAnalysis_SpikingModel_ScaledInput/'
+#        folder_name = 'InputAnalysis_SpikingModel_ScaledInput/'
+        folder_name = 'results/'
 		
         self.params['folder_name'] = folder_name 
         print 'Folder name:', self.params['folder_name']

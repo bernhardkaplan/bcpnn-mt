@@ -8,6 +8,7 @@ mpirun -np $NCPUS python prepare_connections.py
 echo 'Preparation stopped at' `date`
 mpirun -np $NCPUS python NetworkSimModuleNoColumns.py
 echo 'Simulation stopped at' `date`
-python analyse_simple.py
+python analyse_simple.py 0.1 0.3
 python analyse_input.py
+python plot_prediction.py 
 echo 'Stopping at' `date`
