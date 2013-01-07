@@ -1,13 +1,13 @@
 import os
 import numpy as np
 
-blur_x_start = 0.01
-blur_x_stop = 0.6
-blur_x_step = 0.01
+blur_x_start = 0.02
+blur_x_stop = 0.5
+blur_x_step = 0.02
 blur_range = np.arange(blur_x_start, blur_x_stop, blur_x_step)
 
 idx = 0
-blur_v = 0.15
+blur_v = 0.05
 #for i_, blur_v in enumerate(blur_range):
 for j_, blur_x in enumerate(blur_range):
     os.system('python prepare_tuning_prop.py %f %f' % (blur_x, blur_v))

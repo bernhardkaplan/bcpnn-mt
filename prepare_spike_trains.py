@@ -5,7 +5,17 @@ import sys
 import simulation_parameters
 PS = simulation_parameters.parameter_storage()
 params = PS.load_params()                       # params stores cell numbers, etc as a dictionary
+# either:
 #params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
+# or:
+try: # try to get motion params from command line
+    params['motion_params'] = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])
+    seed = int(sys.argv[5])
+except: # take the standard ones
+    mp = params['motion_params']
+    seed = params['input_spikes_seed']
+
+
 PS.set_filenames()
 PS.create_folders()
 PS.write_parameters_to_file()
@@ -13,7 +23,7 @@ PS.write_parameters_to_file()
 print 'n_cells=%d\tn_exc=%d\tn_inh=%d' % (params['n_cells'], params['n_exc'], params['n_inh'])
 print 'Blur', params['blur_X'], params['blur_V']
 
-scale_input_frequency = True
+scale_input_frequency = False
 if scale_input_frequency:
     scaling_factor = utils.scale_input_frequency(params['blur_X'])
     params['f_max_stim'] *= scaling_factor
@@ -36,6 +46,6 @@ except:
     exit(1)
 
 my_units = utils.distribute_n(params['n_exc'], n_proc, pc_id)
-input_spike_trains = utils.create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=my_units) # write to paths defined in the params dictionary
+utils.create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=my_units, seed=seed) # write to paths defined in the params dictionary
 if comm != None:
     comm.barrier()

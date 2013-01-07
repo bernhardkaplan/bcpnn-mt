@@ -47,7 +47,7 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
     #     S E T U P       #
     # # # # # # # # # # # #
     (delay_min, delay_max) = params['delay_range']
-    setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max)
+    setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=params['seed'])
     rng_v = NumpyRNG(seed = sim_cnt*3147 + params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
     rng_conn = NumpyRNG(seed = params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 

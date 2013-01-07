@@ -77,16 +77,16 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
 
-    plotter.n_fig_x = 1
-    plotter.n_fig_y = 1
-    time_binsize = plotter.time_binsize
-    for i in xrange(plotter.n_bins):
-        plotter.create_fig()
-        title = 'Predicted directions after spatial marginalization\nt=%.1f - %.1f [ms]' % (i*time_binsize, (i+1)*time_binsize)
-        plotter.quiver_plot(plotter.nspikes_binned_normalized[:, i], title=title, fig_cnt=1)
-        output_fn = params['figures_folder'] + 'quiver_%d.png' % i
-        print 'Saving figure to:', output_fn
-        pylab.savefig(output_fn)
+#    plotter.n_fig_x = 1
+#    plotter.n_fig_y = 1
+#    time_binsize = plotter.time_binsize
+#    for i in xrange(plotter.n_bins):
+#        plotter.create_fig()
+#        title = 'Predicted directions after spatial marginalization\nt=%.1f - %.1f [ms]' % (i*time_binsize, (i+1)*time_binsize)
+#        plotter.quiver_plot(plotter.nspikes_binned_normalized[:, i], title=title, fig_cnt=1)
+#        output_fn = params['figures_folder'] + 'quiver_%d.png' % i
+#        print 'Saving figure to:', output_fn
+#        pylab.savefig(output_fn)
 
 #    plotter.make_infotextbox()
 
