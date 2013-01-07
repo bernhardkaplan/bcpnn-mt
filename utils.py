@@ -40,7 +40,7 @@ def convert_spiketrain_to_trace(st, n):
 
 
 
-def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=None):
+def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=None, seed=None):
     """
     This function writes spike trains to a dedicated path specified in the params dict
     Spike trains are generated for each unit / minicolumn based on the function's arguments the following way:
@@ -59,8 +59,12 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
     """
 
+    if seed == None:
+        seed = params['input_spikes_seed']
+    rnd.seed(seed)
     dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
-    time = np.arange(0, params['t_stimulus'], dt)
+#    time = np.arange(0, params['t_stimulus'], dt)
+    time = np.arange(0, params['t_sim'], dt)
 
     if (my_units == None):
         my_units = xrange(tp.shape[0])
@@ -72,7 +76,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     for i_time, time_ in enumerate(time):
         if (i_time % 100 == 0):
             print "t:", time_
-        L_input[:, i_time] = get_input(tuning_prop[my_units, :], params, time_/params['t_sim'])
+        L_input[:, i_time] = get_input(tuning_prop[my_units, :], params, time_/params['t_stimulus'])
         L_input[:, i_time] *= params['f_max_stim']
 
     for i_, unit in enumerate(my_units):
@@ -92,7 +96,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
 
 
-def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
+def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='dot'):
     """
     This function computes the input to each cell for one point in time t based on the given tuning properties.
 
@@ -103,11 +107,12 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
             tuning_prop[:, 1] : y-position
             tuning_prop[:, 2] : u-position (speed in x-direction)
             tuning_prop[:, 3] : v-position (speed in y-direction)
-        t: time in the period is between 0 (included) and 1. (excluded)
+        t: time in the period (not restricted to 0 .. 1)
         motion: type of motion (TODO: filename to movie, ... ???)
     """
     n_cells = tuning_prop[:, 0].size
-    motion_params = params['motion_params']
+    if motion_params == None:
+        motion_params = params['motion_params']
     L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
@@ -206,7 +211,7 @@ def get_time_of_max_stim(tuning_prop, motion_params):
     return t_min
 
 
-def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
+def set_tuning_prop(params, mode='hexgrid'):
     """
     Place n_exc excitatory cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
@@ -226,6 +231,8 @@ def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
 
     rnd.seed(params['tuning_prop_seed'])
     tuning_prop = np.zeros((params['n_exc'], 4))
+    v_max = params['v_max_tp']
+    v_min = params['v_min_tp']
     if mode=='random':
         # place the columns on a grid with the following dimensions
         x_max = int(round(np.sqrt(params['n_cells'])))
@@ -242,9 +249,9 @@ def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
     elif mode=='hexgrid':
 
         if params['log_scale']==1:
-            v_rho = np.linspace(v_max/params['N_V'], v_max, num=params['N_V'], endpoint=True)
+            v_rho = np.linspace(v_min, v_max, num=params['N_V'], endpoint=True)
         else:
-            v_rho = np.logspace(np.log(v_max/params['N_V'])/np.log(params['log_scale']),
+            v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
                             np.log(v_max)/np.log(params['log_scale']), num=params['N_V'],
                             endpoint=True, base=params['log_scale'])
         v_theta = np.linspace(0, 2*np.pi, params['N_theta'], endpoint=False)
@@ -262,8 +269,8 @@ def set_tuning_prop(params, mode='hexgrid', v_max=1.0):
     
         # wrapping up:
         index = 0
-        random_rotation = 2*np.pi*rnd.rand(params['N_RF_X']*params['N_RF_Y'])
-        # todo do the same for v_rho?
+        random_rotation = 2*np.pi*rnd.rand(params['N_RF_X']*params['N_RF_Y']) * params['sigma_RF_direction']
+            # todo do the same for v_rho?
         for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
             for i_v_rho, rho in enumerate(v_rho):
                 for i_theta, theta in enumerate(v_theta):
@@ -538,7 +545,7 @@ def sort_gids_by_distance_to_stimulus(tp, mp):
     n_cells = tp[:, 0].size
     x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
 
-    n_steps = 100 # the of 
+    n_steps = 50 # the of 
     for i in xrange(n_cells):
         x_dist[i], spatial_dist = get_min_distance_to_stim(mp, tp[i, :], n_steps)
 
@@ -563,18 +570,20 @@ def get_min_distance_to_stim(mp, tp_cell, n_steps=100):
     dist =  min_spatial_dist + velocity_dist
     return dist, spatial_dist
     
-#def torus_distance(x0, x1):
-#    return x0 - x1
 
 def torus_distance(x0, x1):
-    x_lim =  1
-    dx = np.abs(x0 - x1) % x_lim
-    increasing = (np.int(2. * dx) / x_lim) % 2
-    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
-    b = dx % x_lim
-    c = x_lim - increasing * b
-    dx = (increasing * c + decreasing * b) % x_lim
-    return dx
+    return x0 - x1
+
+
+#def torus_distance(x0, x1):
+#    x_lim =  1
+#    dx = np.abs(x0 - x1) % x_lim
+#    increasing = (np.int(2. * dx) / x_lim) % 2
+#    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
+#    b = dx % x_lim
+#    c = x_lim - increasing * b
+#    dx = (increasing * c + decreasing * b) % x_lim
+#    return dx
 
 
 
