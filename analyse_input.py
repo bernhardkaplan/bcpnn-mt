@@ -154,20 +154,20 @@ pylab.text(text_pos_x, text_pos_y, label_text, bbox=dict(pad=5.0, ec="k", fc="no
 #print 'Output fig:', output_fig
 #output_fig = 'Figures_BlurSweep/' + 'fin%d_w%.1e_blurXV%.1e_%.1e.png' % (params['f_max_stim'], params['w_input_exc'], params['blur_X'], params['blur_V'])
 
+output_fig = params['figures_folder'] + 'input_analysis.png'
 print 'Saving to:', output_fig
 pylab.savefig(output_fig)
-output_fig = params['figures_folder']
 
 #output_fig = 'Figures_BlurSweep/' + '%d.png' % (file_count)
 
 # only needed when a sweep is done
-output_fn = 'Figures_BlurSweep/nspikes_blur_sweep_new_unscaled.dat'
-output_file = open(output_fn, 'a')
-output_string = '%.2e\t%.2e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\t%d\n' % (params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std, input_spikes_max)
+#output_fn = 'Figures_BlurSweep/nspikes_blur_sweep_new_unscaled.dat'
+#output_file = open(output_fn, 'a')
+#output_string = '%.2e\t%.2e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\t%d\n' % (params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std, input_spikes_max)
 #   0                       1               2               3                   4               5                   5                   6
 #(params['blur_X'], params['blur_V'], all_spikes.sum(), all_spikes.mean(), all_spikes.std(), input_spikes_mean, input_spikes_std, input_spikes_max)
-output_file.write(output_string)
-output_file.close()
+#output_file.write(output_string)
+#output_file.close()
 #print 'Saving to:', output_fig
-pylab.savefig(output_fig)
+#pylab.savefig(output_fig)
 #pylab.show()

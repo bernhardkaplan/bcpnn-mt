@@ -31,8 +31,9 @@ print "Saving tuning_prop to file:", params['tuning_prop_means_fn']
 np.savetxt(params['tuning_prop_means_fn'], tuning_prop)
 
 
+print 'Calculating gids to record...'
 mp = params['motion_params']
-indices, distances = utils.sort_gids_by_distance_to_stimulus(tuning_prop, mp) # cells in indices should have the highest response to the stimulus
+indices, distances = utils.sort_gids_by_distance_to_stimulus(tuning_prop, mp, params) # cells in indices should have the highest response to the stimulus
 n = params['n_gids_to_record']
 np.savetxt(params['gids_to_record_fn'], indices[:n], fmt='%d')
 print 'Saving gids to record to: ', params['gids_to_record_fn']

@@ -63,8 +63,9 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
         seed = params['input_spikes_seed']
     rnd.seed(seed)
     dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
-#    time = np.arange(0, params['t_stimulus'], dt)
-    time = np.arange(0, params['t_sim'], dt)
+
+    time = np.arange(0, params['t_stimulus'], dt)
+#    time = np.arange(0, params['t_sim'], dt)
 
     if (my_units == None):
         my_units = xrange(tp.shape[0])
@@ -526,7 +527,7 @@ def convert_hsl_to_rgb(h, s, l):
     return (r_, g_, b_)
 
 
-def sort_gids_by_distance_to_stimulus(tp, mp):
+def sort_gids_by_distance_to_stimulus(tp, mp, params):
     """
     This function return a list of gids sorted by the distances between cells and the stimulus.
     It calculates the minimal distances between the moving stimulus and the spatial receptive fields of the cells 
@@ -544,31 +545,34 @@ def sort_gids_by_distance_to_stimulus(tp, mp):
     """
     n_cells = tp[:, 0].size
     x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
-
-    n_steps = 50 # the of 
+    t_stop = params['t_sim']
     for i in xrange(n_cells):
-        x_dist[i], spatial_dist = get_min_distance_to_stim(mp, tp[i, :], n_steps)
+        x_dist[i], spatial_dist = get_min_distance_to_stim(mp, tp[i, :], params)
 
     cells_closest_to_stim_pos = x_dist.argsort()
 #    cells_closest_to_stim_velocity = v_dist.argsort()
     return cells_closest_to_stim_pos, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
 
-def get_min_distance_to_stim(mp, tp_cell, n_steps=100):
+def get_min_distance_to_stim(mp, tp_cell, params):
     """
     mp : motion_parameters (x,y,u,v)
     tp_cell : same format as mp
     n_steps: steps for calculating the motion path
     """
-    n_steps = 100 # the of 
-    x_pos_stim = np.array([mp[0] + mp[2] * i * 1./n_steps for i in xrange(n_steps)])
-    y_pos_stim = np.array([mp[1] + mp[3] * i * 1./n_steps for i in xrange(n_steps)])
-    spatial_dist = np.zeros(n_steps)
-    for t in xrange(n_steps):
-        spatial_dist[t] = torus_distance(tp_cell[0], x_pos_stim[t])** 2 + torus_distance(tp_cell[1], y_pos_stim[t])**2
-        min_spatial_dist = np.sqrt(np.min(spatial_dist))
-        velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
+    if params['abstract']:
+        time = np.arange(0, params['t_sim'], params['dt_rate'])
+    else: # use larger time step to numerically find minimum distance --> faster
+        time = np.arange(0, params['t_sim'], 20 * params['dt_rate'])
+    spatial_dist = np.zeros(time.shape[0])
+    for i_time, time_ in enumerate(time):
+        x_pos_stim = mp[0] + mp[2] * time_ / params['t_stimulus']
+        y_pos_stim = mp[1] + mp[3] * time_ / params['t_stimulus']
+#        spatial_dist[t] = torus_distance(tp_cell[0], x_pos_stim[t])**2 + torus_distance(tp_cell[1], y_pos_stim[t])**2
+        spatial_dist[i_time] = (tp_cell[0] - x_pos_stim)** 2 + (tp_cell[1] - y_pos_stim)**2
+    min_spatial_dist = np.sqrt(np.min(spatial_dist))
+    velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
     dist =  min_spatial_dist + velocity_dist
-    return dist, spatial_dist
+    return dist, min_spatial_dist
     
 
 def torus_distance(x0, x1):
@@ -743,7 +747,7 @@ def sort_cells_by_distance_to_stimulus(n_cells):
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     mp = params['motion_params']
-    indices, distances = sort_gids_by_distance_to_stimulus(tp , mp) # cells in indices should have the highest response to the stimulus
+    indices, distances = sort_gids_by_distance_to_stimulus(tp , mp, params) # cells in indices should have the highest response to the stimulus
     print 'Motion parameters', mp
     print 'GID\tdist_to_stim\tx\ty\tu\tv\t\t'
     for i in xrange(n_cells):

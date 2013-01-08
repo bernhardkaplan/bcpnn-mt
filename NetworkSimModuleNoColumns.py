@@ -427,6 +427,9 @@ def run_sim(params, sim_cnt, initial_connectivity='precomputed', connect_exc_exc
     exc_pop_view.print_v("%s.v" % (params['exc_volt_fn_base']), compatible_output=False)
     print "Printing excitatory spikes"
     exc_pop.printSpikes(params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
+    nspikes = exc_pop.get_spike_counts(gather=False)
+    print '%d get spike counts:', nspikes
+
     print "Printing inhibitory spikes"
     inh_pop.printSpikes(params['inh_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
     print "Printing inhibitory membrane potentials"
