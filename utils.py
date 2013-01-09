@@ -212,7 +212,7 @@ def get_time_of_max_stim(tuning_prop, motion_params):
     return t_min
 
 
-def set_tuning_prop(params, mode='hexgrid'):
+def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
     """
     Place n_exc excitatory cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
@@ -231,35 +231,47 @@ def set_tuning_prop(params, mode='hexgrid'):
     """
 
     rnd.seed(params['tuning_prop_seed'])
-    tuning_prop = np.zeros((params['n_exc'], 4))
+    if cell_type == 'exc':
+        n_cells = params['n_exc']
+        n_theta = params['N_theta']
+        n_v = params['N_V']
+        n_rf_x = params['N_RF_X']
+        n_rf_y = params['N_RF_Y']
+    else:
+        n_cells = params['n_inh']
+        n_theta = params['N_theta_inh']
+        n_v = params['N_V_INH']
+        n_rf_x = params['N_RF_X_INH']
+        n_rf_y = params['N_RF_Y_INH']
+
+    tuning_prop = np.zeros((n_cells, 4))
     v_max = params['v_max_tp']
     v_min = params['v_min_tp']
     if mode=='random':
         # place the columns on a grid with the following dimensions
-        x_max = int(round(np.sqrt(params['n_cells'])))
-        y_max = int(round(np.sqrt(params['n_cells'])))
+        x_max = int(round(np.sqrt(n_cells)))
+        y_max = int(round(np.sqrt(n_cells)))
         if (params['n_cells'] > x_max * y_max):
             x_max += 1
 
         for i in xrange(params['n_cells']):
             tuning_prop[i, 0] = (i % x_max) / float(x_max)   # spatial rf centers are on a grid
             tuning_prop[i, 1] = (i / x_max) / float(y_max)
-            tuning_prop[i, 2] = v_max * rnd.randn()
-            tuning_prop[i, 3] = v_max * rnd.randn()
+            tuning_prop[i, 2] = v_max * rnd.randn() + v_min
+            tuning_prop[i, 3] = v_max * rnd.randn() + v_min
 
     elif mode=='hexgrid':
-
         if params['log_scale']==1:
-            v_rho = np.linspace(v_min, v_max, num=params['N_V'], endpoint=True)
+            v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
         else:
             v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
-                            np.log(v_max)/np.log(params['log_scale']), num=params['N_V'],
+                            np.log(v_max)/np.log(params['log_scale']), num=n_v,
                             endpoint=True, base=params['log_scale'])
-        v_theta = np.linspace(0, 2*np.pi, params['N_theta'], endpoint=False)
+        v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
         parity = np.arange(params['N_V']) % 2
 
-        RF = np.zeros((2, params['N_RF_X']*params['N_RF_Y']))
-        X, Y = np.mgrid[0:1:1j*(params['N_RF_X']+1), 0:1:1j*(params['N_RF_Y']+1)]
+        RF = np.zeros((2, n_rf_x * n_rf_y))
+        X, Y = np.mgrid[0:1:1j*(n_rf_x+1), 0:1:1j*(n_rf_y+1)]
     
         # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
         X, Y = X[1:, 1:], Y[1:, 1:]
@@ -270,16 +282,16 @@ def set_tuning_prop(params, mode='hexgrid'):
     
         # wrapping up:
         index = 0
-        random_rotation = 2*np.pi*rnd.rand(params['N_RF_X']*params['N_RF_Y']) * params['sigma_RF_direction']
+        random_rotation = 2*np.pi*rnd.rand(n_rf_x * n_rf_y) * params['sigma_RF_direction']
             # todo do the same for v_rho?
-        for i_RF in xrange(params['N_RF_X']*params['N_RF_Y']):
+        for i_RF in xrange(n_rf_x * n_rf_y):
             for i_v_rho, rho in enumerate(v_rho):
                 for i_theta, theta in enumerate(v_theta):
                     tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()
                     tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()
-                    tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) \
+                    tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
-                    tuning_prop[index, 3] = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / params['N_theta']) \
+                    tuning_prop[index, 3] = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
                     index += 1
 

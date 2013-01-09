@@ -29,10 +29,10 @@ class parameter_storage(object):
 #        self.params['N_V'], self.params['N_theta'] = 10, 10# resolution in velocity norm and direction
 
         # Medium-scale system
-        self.params['N_RF'] = 80# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 70# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 3, 6# resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 3, 8# resolution in velocity norm and direction
 
         # Minimum sized system
 #        self.params['N_RF'] = 9# np.int(n_cells/N_V/N_theta)
@@ -62,11 +62,10 @@ class parameter_storage(object):
         print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
         print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
         self.params['abstract_input_scaling_factor'] = 1.
-        self.params['log_scale'] = 2. # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .10 # some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .10 # some variability in the speed of RFs
-        self.params['sigma_RF_direction'] = .10 * 2 * np.pi # some variability in the direction of RFs
-
+        self.params['log_scale'] = 2. # bas4 of the logarithmic tiling of particle_grid; linear if equal to one
+        self.params['sigma_RF_pos'] = .0 # some variability in the position of RFs
+        self.params['sigma_RF_speed'] = .0 # some variability in the speed of RFs
+        self.params['sigma_RF_direction'] = .0 * 2 * np.pi # some variability in the direction of RFs
         self.params['sigma_theta_training'] = 2 * np.pi * 0.00
 
 
@@ -77,14 +76,18 @@ class parameter_storage(object):
 #        self.params['n_exc_per_mc' ] = 1024 # number of excitatory cells per minicolumn
         self.params['n_exc_per_mc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['fraction_inh_cells'] = 0.25 # fraction of inhibitory cells in the network
-        self.params['N_RF_INH'] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
+        self.params['fraction_inh_cells'] = 0.20 # fraction of inhibitory cells in the network, only approximately!
+        self.params['N_theta_inh'] = self.params['N_theta']
+        self.params['N_V_INH'] = 2
+        self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF'] * float(self.params['N_V'] * self.params['N_theta']) / (self.params['N_V_INH'] * self.params['N_theta_inh'])))
         self.params['N_RF_X_INH'] = np.int(np.sqrt(self.params['N_RF_INH']*np.sqrt(3)))
         self.params['N_RF_Y_INH'] = np.int(np.sqrt(self.params['N_RF_INH']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH']
+
+        self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH'] * self.params['N_theta_inh'] * self.params['N_V_INH']
 #        self.params['n_inh' ] = int(round(self.params['n_exc'] * self.params['fraction_inh_cells']))
         self.params['n_cells'] = self.params['n_mc'] * self.params['n_exc_per_mc'] + self.params['n_inh']
-        print 'n_cells: %d\tn_exc: %d\tn_inh: %d' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
+        print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh/n_exc = %.3f\tn_cells/n_inh = %.3f' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
+                self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
 
         # #######################
         # CONNECTIVITY PARAMETERS
@@ -105,20 +108,20 @@ class parameter_storage(object):
                                                 # large w_sigma: high connection probability (independent of tuning_properties)
                                                 # small w_sigma_*: deviation from unaccelerated movements become less likely, straight line movements preferred
                                                 # large w_sigma_*: broad (deviation from unaccelerated movements possible to predict)
-        self.params['w_tgt_in'] = 0.20 # [uS]
+        self.params['w_tgt_in'] = 0.25 # [uS]
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 4e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc'])
 
         # exc - inh
         self.params['p_ei'] = 0.05 #self.params['p_ee']
-        self.params['w_ei_mean'] = 0.005
+        self.params['w_ei_mean'] = 0.006
         self.params['w_ei_sigma'] = 0.001          
 
         # inh - exc
 #        self.params['p_ie'] = 1.
         self.params['p_ie'] = 0.05 #self.params['p_ee']
-        self.params['w_ie_mean'] = 0.005
+        self.params['w_ie_mean'] = 0.006
         self.params['w_ie_sigma'] = 0.001          
 
         # inh - inh
@@ -180,7 +183,7 @@ class parameter_storage(object):
         """
         self.params['motion_params'] = (0.1, 0.5, 0.2, 0) # x0, y0, u0, v0.5
         self.params['v_max_tp'] = 0.50  # [a.u.] maximal velocity in visual space for tuning_parameters (for each component), 1. means the whole visual field is traversed
-        self.params['v_min_tp'] = 0.20  # [a.u.] minimal velocity in visual space for training
+        self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for training
         self.params['v_max_training'] = 0.2
         self.params['v_min_training'] = 0.2
         self.params['blur_X'], self.params['blur_V'] = .10, .10
@@ -233,11 +236,10 @@ class parameter_storage(object):
                 folder_name += 'rndConn_'
         else:
             folder_name += 'noRec_'
-        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e/" % \
+        folder_name += "delayScale%d_blurX%.2e_blurV%.2e_wsigmax%.2e_wsigmav%.2e_np8/" % \
                         (self.params['delay_scale'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'])
 
 #        folder_name = 'LargeScaleModel_selectiveInh_LT_delayScale20_blurX1.50e-01_blurV3.50e-01_wsigmax3.00e-01_wsigmav3.00e-01/'
-
 #        folder_name = 'SpikingModel/'
 #        if self.params['abstract']:
 #            folder_name = 'TuningCurvesAbstract/'
@@ -309,9 +311,11 @@ class parameter_storage(object):
         self.params['rasterplot_inh_fig'] = '%srasterplot_inh.png' % (self.params['figures_folder'])
 
         # tuning properties and other cell parameter files
-        self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder'])
+        self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder']) # for excitatory cells
+        self.params['tuning_prop_inh_fn'] = '%stuning_prop_inh.prm' % (self.params['parameters_folder']) # for inhibitory cells
         self.params['tuning_prop_sigmas_fn'] = '%stuning_prop_sigmas.prm' % (self.params['parameters_folder'])
-        self.params['tuning_prop_fig_fn'] = '%stuning_properties.png' % (self.params['figures_folder'])
+        self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
+        self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['inh_cell_pos_fn'] = '%sinh_cell_positions.dat' % (self.params['parameters_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
         self.params['predicted_positions_fn'] = '%spredicted_positions.dat' % (self.params['parameters_folder'])
@@ -323,38 +327,39 @@ class parameter_storage(object):
         self.params['bias_values_fn_base'] = '%sbias_values_' % (self.params['bias_folder'])
 
         # CONNECTION FILES
-        # connection matrices are n x n matrices with weights as elements
-        self.params['conn_mat_mc_mc_init'] = '%sconn_mat_init.npy' % (self.params['connections_folder'])
         self.params['weight_and_delay_fig'] = '%sweights_and_delays.png' % (self.params['figures_folder'])
-
-        self.params['conn_mat_mc_mc_fn_base'] = '%sconn_mat_mc_mc_' % (self.params['connections_folder'])
-        self.params['conn_mat_ee_fn_base'] = '%sconn_mat_ee_' % (self.params['connections_folder'])
-        # conn_mat_0_1 contains the cell-to-cell weights from minicolumn 0 to minicolumn 1
 
         # connection lists have the following format: src_gid  tgt_gid  weight  delay
         # for models not based on minicolumns:
-        self.params['conn_prob_fn'] = '%sconn_prob.dat' % (self.params['connections_folder'])
+        # E - E 
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
         self.params['merged_conn_list_ee'] = '%smerged_conn_list_ee.dat' % (self.params['connections_folder'])
+        # E - I
+        self.params['conn_list_ei_fn_base'] = '%sconn_list_ei_' % (self.params['connections_folder'])
+        self.params['merged_conn_list_ei'] = '%smerged_conn_list_ei.dat' % (self.params['connections_folder'])
+        # I - E
+        self.params['conn_list_ie_fn_base'] = '%sconn_list_ie_' % (self.params['connections_folder'])
+        self.params['merged_conn_list_ie'] = '%smerged_conn_list_ie.dat' % (self.params['connections_folder'])
+        # I - I
+        self.params['conn_list_ii_fn_base'] = '%sconn_list_ii_' % (self.params['connections_folder'])
+        self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
+
+        # variations for different connectivity patterns 
         self.params['conn_list_ee_conv_constr_fn_base'] = '%sconn_list_ee_conv_constr_' % (self.params['connections_folder']) # convergence constrained, i.e. each cell gets limited input
         self.params['conn_list_ee_balanced_fn'] = '%sconn_list_ee_balanced.dat' % (self.params['connections_folder'])
         self.params['random_weight_list_fn']  = '%sconn_list_rnd_ee_' % (self.params['connections_folder'])
 
-        self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder'])
+        # used for different projections ['ee', 'ei', 'ie', 'ii'] for plotting
+        self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder']) 
         self.params['delay_mat_fn_base'] = '%sdelay_mat_' % (self.params['connections_folder'])
 
-        self.params['conn_list_ei_fn_base'] = '%sconn_list_ei_' % (self.params['connections_folder'])
-        self.params['merged_conn_list_ei'] = '%smerged_conn_list_ei.dat' % (self.params['connections_folder'])
-        self.params['conn_list_ie_fn_base'] = '%sconn_list_ie_' % (self.params['connections_folder'])
-        self.params['merged_conn_list_ie'] = '%smerged_conn_list_ie.dat' % (self.params['connections_folder'])
-
-#        self.params['conn_list_ei_fn'] = '%sconn_list_ei.dat' % (self.params['connections_folder'])
-#        self.params['conn_list_ie_fn'] = '%sconn_list_ie.dat' % (self.params['connections_folder'])
-#        self.params['conn_list_ii_fn'] = '%sconn_list_ii.dat' % (self.params['connections_folder'])
-        self.params['conn_list_input_fn'] = '%sconn_list_input.dat' % (self.params['connections_folder'])
         self.params['exc_inh_adjacency_list_fn'] = '%sexc_to_inh_indices.dat' % (self.params['connections_folder']) # row = target inh cell index, elements = exc source indices
         self.params['exc_inh_distances_fn'] = '%sexc_to_inh_distances.dat' % (self.params['connections_folder']) # file storing distances between the exc and inh cells, row = target inh cell index
         self.params['exc_inh_weights_fn'] = '%sexc_to_inh_weights.dat' % (self.params['connections_folder']) # same format as exc_inh_distances_fn, containing the exc - inh weights
+
+        # for minicolumnar based units:
+        self.params['conn_mat_ee_fn_base'] = '%sconn_mat_ee_' % (self.params['connections_folder'])
+        # conn_mat_0_1 contains the cell-to-cell weights from minicolumn 0 to minicolumn 1
 
         # BCPNN TRACES
         self.params['weight_matrix_abstract'] = '%sweight_matrix_abstract.dat' % (self.params['weights_folder'])

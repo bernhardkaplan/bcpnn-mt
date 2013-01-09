@@ -26,14 +26,18 @@ PS.write_parameters_to_file()
 #    pc_id, n_proc, comm = 0, 1, None
 #    print "MPI not used"
 
-tuning_prop = utils.set_tuning_prop(params, mode='hexgrid')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+tuning_prop_exc = utils.set_tuning_prop(params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
 print "Saving tuning_prop to file:", params['tuning_prop_means_fn']
-np.savetxt(params['tuning_prop_means_fn'], tuning_prop)
+np.savetxt(params['tuning_prop_means_fn'], tuning_prop_exc)
 
 
 print 'Calculating gids to record...'
 mp = params['motion_params']
-indices, distances = utils.sort_gids_by_distance_to_stimulus(tuning_prop, mp, params) # cells in indices should have the highest response to the stimulus
+indices, distances = utils.sort_gids_by_distance_to_stimulus(tuning_prop_exc, mp, params) # cells in indices should have the highest response to the stimulus
 n = params['n_gids_to_record']
 np.savetxt(params['gids_to_record_fn'], indices[:n], fmt='%d')
 print 'Saving gids to record to: ', params['gids_to_record_fn']
+
+tuning_prop_inh= utils.set_tuning_prop(params, mode='hexgrid', cell_type='inh')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+print "Saving tuning_prop to file:", params['tuning_prop_inh_fn']
+np.savetxt(params['tuning_prop_inh_fn'], tuning_prop_inh)
