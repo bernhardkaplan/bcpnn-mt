@@ -9,14 +9,14 @@ from scipy.spatial import distance
 import copy
 
 
-def convert_connlist_to_matrix(fn, n_cells):
+def convert_connlist_to_matrix(fn, n_src, n_tgt):
     """
     Convert the connlist which is in format (src, tgt, weight, delay) to a weight matrix.
     """
     conn_list = np.loadtxt(fn)
-    m = np.zeros((n_cells, n_cells))
-    delays = np.zeros((n_cells, n_cells))
-    print 'utils.convert_connlist_to_matrix(%s, %d) conn_list size: %d' % (fn, n_cells, conn_list[:, 0].size)
+    m = np.zeros((n_src, n_tgt))
+    delays = np.zeros((n_src, n_tgt))
+    print 'utils.convert_connlist_to_matrix(%s, %d, %d) conn_list size: %d' % (fn, n_src, n_tgt, conn_list[:, 0].size)
     for i in xrange(conn_list[:,0].size):
         src = conn_list[i, 0]
         tgt = conn_list[i, 1]
@@ -64,8 +64,9 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     rnd.seed(seed)
     dt = params['dt_rate'] # [ms] time step for the non-homogenous Poisson process 
 
-    time = np.arange(0, params['t_stimulus'], dt)
-#    time = np.arange(0, params['t_sim'], dt)
+#    time = np.arange(0, params['t_stimulus'], dt)
+    time = np.arange(0, params['t_sim'], dt)
+    blank_idx = np.arange(1./dt * params['t_stimulus'], 1. / dt * (params['t_stimulus'] + params['t_blank']))
 
     if (my_units == None):
         my_units = xrange(tp.shape[0])
@@ -79,6 +80,10 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
             print "t:", time_
         L_input[:, i_time] = get_input(tuning_prop[my_units, :], params, time_/params['t_stimulus'])
         L_input[:, i_time] *= params['f_max_stim']
+
+    for i_time in blank_idx:
+        L_input[:, i_time] = 0.
+
 
     for i_, unit in enumerate(my_units):
         rate_of_t = np.array(L_input[i_, :]) 
@@ -237,16 +242,22 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
         n_v = params['N_V']
         n_rf_x = params['N_RF_X']
         n_rf_y = params['N_RF_Y']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
     else:
         n_cells = params['n_inh']
         n_theta = params['N_theta_inh']
         n_v = params['N_V_INH']
         n_rf_x = params['N_RF_X_INH']
         n_rf_y = params['N_RF_Y_INH']
+        if n_v == 1:
+            v_min = params['v_min_tp'] + .5 * (params['v_max_tp'] - params['v_min_tp'])
+            v_max = v_min
+        else:
+            v_max = params['v_max_tp']
+            v_min = params['v_min_tp']
 
     tuning_prop = np.zeros((n_cells, 4))
-    v_max = params['v_max_tp']
-    v_min = params['v_min_tp']
     if mode=='random':
         # place the columns on a grid with the following dimensions
         x_max = int(round(np.sqrt(n_cells)))
@@ -591,6 +602,14 @@ def torus_distance(x0, x1):
     return x0 - x1
 
 
+def torus_distance(x0, x1):
+    return min(abs(x0 - x1), 1. - abs(x0 - x1))
+
+def torus_distance2D(x1, x2, y1, y2):
+    return np.sqrt(min(abs(x1 - x2), 1. - abs(x1 - x2))**2 + min(abs(y1 - y2), 1. - abs(y1-y2))**2)
+    # if not on a torus:
+#    return np.sqrt( (x1 - x2)**2 + (y1 - y2)**2)
+
 #def torus_distance(x0, x1):
 #    x_lim =  1
 #    dx = np.abs(x0 - x1) % x_lim
@@ -734,6 +753,8 @@ def linear_transformation(x, y_min, y_max):
     """
     x_min = np.min(x)
     x_max = np.max(x)
+    if x_min == x_max:
+        x_max = x_min * 1.0001
 #    print 'debug linear transformation x_min, x_max', x_min, x_max
     m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
 #    if (x_max / x_min) == np.inf:

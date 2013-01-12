@@ -110,7 +110,7 @@ g_in = nspikes_to_g(input_spikes, params['w_input_exc'])
 
 g_in_sorted = np.copy(g_in)
 g_in_sorted.sort()
-pmax = 0.10
+pmax = 0.05
 n_ = round(pmax * params['n_exc'])
 
 fig = pylab.figure()
