@@ -25,6 +25,16 @@ def convert_connlist_to_matrix(fn, n_src, n_tgt):
     return m, delays
 
 
+def extract_trace(d, gid):
+    """
+    d : voltage trace from a saved with compatible_output=False
+    gid : cell_gid
+    """
+    mask = gid * np.ones(d[:, 0].size)
+    indices = mask == d[:, 0]
+    time_axis, volt = d[indices, 1], d[indices, 2]
+    return time_axis, volt
+
 def convert_spiketrain_to_trace(st, n):
     """
     st: spike train in the format [time, id]
@@ -38,7 +48,19 @@ def convert_spiketrain_to_trace(st, n):
     return trace
 
 
+def low_pass_filter(trace, tau=10, initial_value=0.001, dt=1., spike_height=1.):
+    """
+    trace can be e.g. a spike train trace, i.e. all elements are 0 except spike times = 1,
+    """
 
+    eps = 0.0001
+    n = len(trace)
+    zi = np.ones(n) * initial_value
+    for i in xrange(1, n):
+        # pre-synaptic trace zi follows trace 
+        dzi = dt * (trace[i] * spike_height - zi[i-1] + eps) / tau
+        zi[i] = zi[i-1] + dzi
+    return zi
 
 def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=None, seed=None):
     """
@@ -210,11 +232,30 @@ def get_time_of_max_stim(tuning_prop, motion_params):
     to the RF.
     t_min = (mu_x * u0 + mu_y * v0 - v0 * y0 + u0 * x0) / (v0**2 + u0**2)
     """
-    mu_x = tuning_prop[0] #+ np.sign(rnd.uniform(-1, 1)) * sigma_x
-    mu_y = tuning_prop[1] #+ np.sign(rnd.uniform(-1, 1)) * sigma_y
-    x0, y0, u0, v0 = motion_params
-    t_min = (mu_x * u0 + mu_y * v0 - v0 * y0 + u0 * x0) / (u0**2 + v0**2)
+    x_i, y_i, u_i, v_i = tuning_prop
+    x_stim, y_stim, u_stim, v_stim = motion_params
+    t_min = (u_stim * (x_i - x_stim) + v_stim * (y_i - y_stim)) / (u_stim**2 + v_stim**2)
     return t_min
+
+
+def get_time_of_max_response(spikes, range=None, n_binsizes=1):
+    """
+    For n_binsizes the average max response will be computed.
+    Average max response is the mean of those bins that have the maximum number of spikes in it.
+    """
+    binsizes = np.linspace(5, 50, n_binsizes)
+    t_max_depending_on_binsize = np.zeros((n_binsizes, 2))
+    for i in xrange(n_binsizes):
+        n_bins = binsizes[i]
+        n, bins = np.histogram(spikes, bins=n_bins, range=range)
+        binsize = round(bins[1] - bins[0])
+        bins_with_max_height = (n == n.max()).nonzero()[0]
+        times_with_max_response = binsize * bins_with_max_height + .5 * binsize
+        t_max, t_max_std = times_with_max_response.mean(), times_with_max_response.std()
+        t_max_depending_on_binsize[i, 0] = t_max
+        t_max_depending_on_binsize[i, 1] = t_max_std
+    return t_max_depending_on_binsize[:, 0].mean(), t_max_depending_on_binsize[:, 1].mean()
+
 
 
 def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
@@ -550,7 +591,7 @@ def convert_hsl_to_rgb(h, s, l):
     return (r_, g_, b_)
 
 
-def sort_gids_by_distance_to_stimulus(tp, mp, params):
+def sort_gids_by_distance_to_stimulus(tp, mp, params, local_gids=None):
     """
     This function return a list of gids sorted by the distances between cells and the stimulus.
     It calculates the minimal distances between the moving stimulus and the spatial receptive fields of the cells 
@@ -566,15 +607,20 @@ def sort_gids_by_distance_to_stimulus(tp, mp, params):
         mp: motion_parameters (x0, y0, u0, v0)
 
     """
-    n_cells = tp[:, 0].size
+    if local_gids == None: 
+        n_cells = tp[:, 0].size
+    else:
+        n_cells = len(local_gids)
     x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
-    t_stop = params['t_sim']
     for i in xrange(n_cells):
         x_dist[i], spatial_dist = get_min_distance_to_stim(mp, tp[i, :], params)
 
     cells_closest_to_stim_pos = x_dist.argsort()
-#    cells_closest_to_stim_velocity = v_dist.argsort()
-    return cells_closest_to_stim_pos, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
+    if local_gids != None:
+        gids_closest_to_stim = local_gids[cells_closest_to_stim_pos]
+        return gids_closest_to_stim, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
+    else:
+        return cells_closest_to_stim_pos, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
 
 def get_min_distance_to_stim(mp, tp_cell, params):
     """
@@ -585,7 +631,7 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     if params['abstract']:
         time = np.arange(0, params['t_sim'], params['dt_rate'])
     else: # use larger time step to numerically find minimum distance --> faster
-        time = np.arange(0, params['t_sim'], 20 * params['dt_rate'])
+        time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
     spatial_dist = np.zeros(time.shape[0])
     for i_time, time_ in enumerate(time):
         x_pos_stim = mp[0] + mp[2] * time_ / params['t_stimulus']
@@ -755,8 +801,12 @@ def linear_transformation(x, y_min, y_max):
     x_max = np.max(x)
     if x_min == x_max:
         x_max = x_min * 1.0001
+
+    return (y_min + (y_max - y_min) / (x_max - x_min) * (x - x_min))
+
 #    print 'debug linear transformation x_min, x_max', x_min, x_max
-    m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
+#    m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
+#    m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
 #    if (x_max / x_min) == np.inf:
 #        print 'inf'
 #        exit(1)
@@ -764,9 +814,9 @@ def linear_transformation(x, y_min, y_max):
 #        print 'nan'
 #        exit(1)
 #    m = (y_max - y_min * (1. - x_max - x_max / x_min)) / (x_max - x_min)
-    b = (y_min * x_max - y_max * x_min) / (x_max - x_min)
+#    b = (y_min * x_max - y_max * x_min) / (x_max - x_min)
 #    print 'debug m, b', m, b
-    return (m * x + b)
+#    return (m * x + b)
 
 def merge_files(input_fn_base, output_fn):
 
