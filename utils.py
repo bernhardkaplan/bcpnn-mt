@@ -16,13 +16,44 @@ def convert_connlist_to_matrix(fn, n_src, n_tgt):
     conn_list = np.loadtxt(fn)
     m = np.zeros((n_src, n_tgt))
     delays = np.zeros((n_src, n_tgt))
-    print 'utils.convert_connlist_to_matrix(%s, %d, %d) conn_list size: %d' % (fn, n_src, n_tgt, conn_list[:, 0].size)
+    print 'utils.convert_connlist_to_matrix(%s, %d, %d)' % (fn, n_src, n_tgt)
+#    print 'utils.convert_connlist_to_matrix(%s, %d, %d) conn_list size: %d' % (fn, n_src, n_tgt, conn_list[:, 0].size)
     for i in xrange(conn_list[:,0].size):
         src = conn_list[i, 0]
         tgt = conn_list[i, 1]
         m[src, tgt] = conn_list[i, 2]
         delays[src, tgt] = conn_list[i, 3]
     return m, delays
+
+
+def convert_connlist_to_adjlist_srcidx(fn, n_src):
+    """
+    Convert the connlist which is in format (src, tgt, weight, delay) to an
+    adjacency list:
+    src : [tgt_0, ..., tgt_n]
+    """
+    conn_list = np.loadtxt(fn)
+    print 'utils.convert_connlist_to_adjlist(%s, %d, %d)' % (fn, n_src)
+    adj_list = [[] for i in xrange(n_src)]
+    for src in xrange(n_src):
+        targets = get_targets(conn_list, src)
+        adj_list[src] = targets[:, 1:].tolist()
+    return adj_list
+
+
+def convert_connlist_to_adjlist_tgtidx(fn, n_tgt):
+    """
+    Convert the connlist which is in format (src, tgt, weight, delay) to an
+    adjacency list:
+    src : [tgt_0, ..., tgt_n]
+    """
+    conn_list = np.loadtxt(fn)
+    print 'utils.convert_connlist_to_adjlist(%s, %d, %d)' % (fn, n_tgt)
+    adj_list = [[] for i in xrange(n_tgt)]
+    for tgt in xrange(n_src):
+        targets = get_targets(conn_list, tgt)
+        adj_list[tgt] = targets[:, [0, 2, 3]].tolist()
+    return adj_list
 
 
 def extract_trace(d, gid):
@@ -160,11 +191,10 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
             
             L range between 0 and 1
         """
-        x, y = x0 + u0*t, y0 + v0*t # current position of the blob at time t assuming a perfect translation
+        x, y = (x0 + u0*t) % 1., (y0 + v0*t) % 1. # current position of the blob at time t assuming a perfect translation
 
     for cell in xrange(n_cells): # todo: vectorize
-        L[cell] = np.exp( -.5 * (torus_distance(tuning_prop[cell, 0], x))**2/blur_X**2
-                          -.5 * (torus_distance(tuning_prop[cell, 1], y))**2/blur_X**2
+        L[cell] = np.exp( -.5 * (torus_distance2D(tuning_prop[cell, 0], x, tuning_prop[cell, 1], y)**2 / blur_X**2)
                           -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
                           -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
                           )
@@ -257,6 +287,99 @@ def get_time_of_max_response(spikes, range=None, n_binsizes=1):
     return t_max_depending_on_binsize[:, 0].mean(), t_max_depending_on_binsize[:, 1].mean()
 
 
+def set_limited_tuning_properties(params, y_range=(0, 1.), x_range=(0, 1.), u_range=(0, 1.), v_range=(0, 1.), cell_type='exc'):
+    """
+    This function uses the same algorithm as set_tuning_prop, but discards those cells
+    that are out of the given parameter range.
+    Purpose of this is to simulate a sub-network of cells with only limited tuning properties 
+    and tune this network.
+    """
+
+    rnd.seed(params['tuning_prop_seed'])
+    if cell_type == 'exc':
+        n_cells = params['n_exc']
+        n_theta = params['N_theta']
+        n_v = params['N_V']
+        n_rf_x = params['N_RF_X']
+        n_rf_y = params['N_RF_Y']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+    else:
+        n_cells = params['n_inh']
+        n_theta = params['N_theta_inh']
+        n_v = params['N_V_INH']
+        n_rf_x = params['N_RF_X_INH']
+        n_rf_y = params['N_RF_Y_INH']
+        if n_v == 1:
+            v_min = params['v_min_tp'] + .5 * (params['v_max_tp'] - params['v_min_tp'])
+            v_max = v_min
+        else:
+            v_max = params['v_max_tp']
+            v_min = params['v_min_tp']
+
+    tuning_prop = np.zeros((n_cells, 4))
+    if params['log_scale']==1:
+        v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+    else:
+        v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
+                        np.log(v_max)/np.log(params['log_scale']), num=n_v,
+                        endpoint=True, base=params['log_scale'])
+    v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
+    parity = np.arange(params['N_V']) % 2
+
+    RF = np.zeros((2, n_rf_x * n_rf_y))
+    X, Y = np.mgrid[0:1:1j*(n_rf_x+1), 0:1:1j*(n_rf_y+1)]
+
+    # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
+    X, Y = X[1:, 1:], Y[1:, 1:]
+    # Add to every even Y a half RF width to generate hex grid
+    Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
+    RF[0, :] = X.ravel()
+    RF[1, :] = Y.ravel()
+
+    # wrapping up:
+    index = 0
+    random_rotation = 2*np.pi*rnd.rand(n_rf_x * n_rf_y) * params['sigma_RF_direction']
+    neuron_in_range = np.zeros((n_cells, 1), dtype=bool)
+    for i_RF in xrange(n_rf_x * n_rf_y):
+        for i_v_rho, rho in enumerate(v_rho):
+            for i_theta, theta in enumerate(v_theta):
+                x_pos = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
+                y_pos = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_height']
+                v_x = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
+                        * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                v_y = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
+                        * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+
+                tuning_prop[index, 0] = x_pos 
+                tuning_prop[index, 1] = y_pos
+                tuning_prop[index, 2] = v_x
+                tuning_prop[index, 3] = v_y
+                if ((x_pos > x_range[0]) and (x_pos <= x_range[1]) \
+                        and (y_pos > y_range[0]) and (y_pos <= y_range[1]) \
+                        and (v_x > u_range[0]) and (v_x <= u_range[1]) \
+                        and (v_y > v_range[0]) and (v_y <= v_range[1])):
+                    neuron_in_range[index] = True
+                index += 1
+
+    n_cells_in_range = neuron_in_range.nonzero()[0].size
+    tp_good = np.zeros((n_cells_in_range, 4))
+    tp_good = tuning_prop[neuron_in_range.nonzero()[0], :]
+
+    idx_out_of_range = np.ones((n_cells, 1), dtype=int)
+    idx_out_of_range -= neuron_in_range
+    n_cells_out_of_range = idx_out_of_range.nonzero()[0].size
+    assert (n_cells_out_of_range + n_cells_in_range == n_cells), 'Number of cells in/out of range do not sum to one'
+    tp_out_of_range = np.zeros((n_cells_out_of_range, 4))
+    tp_out_of_range = tuning_prop[idx_out_of_range, :]
+    
+    return tp_good, tp_out_of_range
+
+
+
+
+
+
 
 def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
     """
@@ -322,15 +445,21 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
         v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
         parity = np.arange(params['N_V']) % 2
 
+
+        xlim = (0, params['torus_width'])
+        ylim = (0, np.sqrt(3) * params['torus_height'])
+
         RF = np.zeros((2, n_rf_x * n_rf_y))
         X, Y = np.mgrid[0:1:1j*(n_rf_x+1), 0:1:1j*(n_rf_y+1)]
+        X, Y = np.mgrid[xlim[0]:xlim[1]:1j*(n_rf_x+1), ylim[0]:ylim[1]:1j*(n_rf_y+1)]
     
         # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
         X, Y = X[1:, 1:], Y[1:, 1:]
         # Add to every even Y a half RF width to generate hex grid
         Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
         RF[0, :] = X.ravel()
-        RF[1, :] = Y.ravel()
+        RF[1, :] = Y.ravel() 
+        RF[1, :] /= np.sqrt(3) # scale to get a regular hexagonal grid
     
         # wrapping up:
         index = 0
@@ -339,8 +468,9 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
         for i_RF in xrange(n_rf_x * n_rf_y):
             for i_v_rho, rho in enumerate(v_rho):
                 for i_theta, theta in enumerate(v_theta):
-                    tuning_prop[index, 0] = RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()
-                    tuning_prop[index, 1] = RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()
+                    # for plotting this looks nicer, and due to the torus property it doesn't make a difference
+                    tuning_prop[index, 0] = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn())# % params['torus_width']
+                    tuning_prop[index, 1] = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn())# % params['torus_height']
                     tuning_prop[index, 2] = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
                     tuning_prop[index, 3] = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
@@ -478,11 +608,20 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
         n_cells = 1 + int(np.max(d[:, 1]))# highest gid
     nspikes = np.zeros(n_cells)
     spiketrains = [[] for i in xrange(n_cells)]
+    if (d.size == 0):
+        if get_spiketrains:
+            return nspikes, spiketrains
+        else:
+            return spiketrains
     # seperate spike trains for all the cells
-    for i in xrange(d[:, 0].size):
-        spiketrains[int(d[i, 1])].append(d[i, 0])
-    for gid in xrange(n_cells):
-        nspikes[gid] = len(spiketrains[gid])
+    if d.shape == (2,):
+        nspikes[int(d[1])] = 1
+        spiketrains[int(d[1])] = [d[0]]
+    else:
+        for i in xrange(d[:, 0].size):
+            spiketrains[int(d[i, 1])].append(d[i, 0])
+        for gid in xrange(n_cells):
+            nspikes[gid] = len(spiketrains[gid])
     if get_spiketrains:
         return nspikes, spiketrains
     else:
@@ -513,21 +652,27 @@ def get_cond_in(nspikes, conn_list, target_gid):
     return cond_in
 
 
-def get_spiketrains(spiketimes_fn_merged, n_cells=0):
+def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
     """
     Returns an array with the number of spikes fired by each cell.
     nspikes[gid]
     if n_cells is not given, the length of the array will be the highest gid (not advised!)
     """
-    d = np.loadtxt(spiketimes_fn_merged)
+    if type(spiketimes_fn_or_array) == type(''):
+        d = np.loadtxt(spiketimes_fn_or_array)
+    elif type(spiketimes_fn_or_array) == type(np.array([])):
+        d = spiketimes_fn_or_array
     if (n_cells == 0):
         n_cells = 1 + np.max(d[:, 1])# highest gid
     nspikes = np.zeros(n_cells)
     spiketrains = [[] for i in xrange(n_cells)]
     # seperate spike trains for all the cells
+    if d.size == 0:
+        return spiketrains
     for i in xrange(d[:, 0].size):
         spiketrains[int(d[i, 1])].append(d[i, 0])
     return spiketrains
+
 
 def get_grid_pos(x0, y0, xedges, yedges):
 
@@ -622,6 +767,7 @@ def sort_gids_by_distance_to_stimulus(tp, mp, params, local_gids=None):
     else:
         return cells_closest_to_stim_pos, x_dist[cells_closest_to_stim_pos]#, cells_closest_to_stim_velocity
 
+
 def get_min_distance_to_stim(mp, tp_cell, params):
     """
     mp : motion_parameters (x,y,u,v)
@@ -651,21 +797,13 @@ def torus_distance(x0, x1):
 def torus_distance(x0, x1):
     return min(abs(x0 - x1), 1. - abs(x0 - x1))
 
-def torus_distance2D(x1, x2, y1, y2):
-    return np.sqrt(min(abs(x1 - x2), 1. - abs(x1 - x2))**2 + min(abs(y1 - y2), 1. - abs(y1-y2))**2)
+def torus_distance2D(x1, x2, y1, y2, w=1., h=1.):
+    """
+    w and h are the width (x) and height (y) of the grid, respectively.
+    """
+    return np.sqrt(min(abs(x1 - x2), abs(w - abs(x1 - x2)))**2 + min(abs(y1 - y2), abs(h - abs(y1-y2)))**2)
     # if not on a torus:
 #    return np.sqrt( (x1 - x2)**2 + (y1 - y2)**2)
-
-#def torus_distance(x0, x1):
-#    x_lim =  1
-#    dx = np.abs(x0 - x1) % x_lim
-#    increasing = (np.int(2. * dx) / x_lim) % 2
-#    decreasing = (np.int(2. * dx) / x_lim + 1) % 2
-#    b = dx % x_lim
-#    c = x_lim - increasing * b
-#    dx = (increasing * c + decreasing * b) % x_lim
-#    return dx
-
 
 
 def gather_conn_list(comm, data, n_total, output_fn):
@@ -678,7 +816,6 @@ def gather_conn_list(comm, data, n_total, output_fn):
     """
 
     pc_id, n_proc = comm.rank, comm.size
-    print "debug pc_id, n_proc", pc_id, n_proc
     # receiving data
     if (pc_id == 0):
         output_data = np.zeros((n_total, 4))
@@ -773,16 +910,16 @@ def get_conn_dict(params, conn_fn, comm=None):
     return conn_dict
 
 
-def get_incoming_connections(conn_fn, tgt_gids):
-    d = np.loadtxt(conn_fn)
+def get_incoming_connections(d, tgt_gids):
+#    d = conn_list
     c_in = [[] for i in xrange(len(tgt_gids))]
     for i in xrange(d[:, 0].size):
         if d[i, 1] == tgt_gid:
             c_in.append(d[i, :])
     return c_in
 
-def get_outgoing_connections(conn_fn, src_gid):
-    d = np.loadtxt(conn_fn)
+def get_outgoing_connections(d, src_gid):
+#    d = conn_list
     c_out = []
     for i in xrange(d[:, 0].size):
         if d[i, 0] == src_gid:
@@ -839,6 +976,25 @@ def sort_cells_by_distance_to_stimulus(n_cells):
     return indices, distances
 
 
+def get_pmax(p_effective, w_sigma):
+    """
+    When using isotropic connectivity, the connections are drawn based upon
+    this formula:
+        p_ij = p_max * np.exp(-d_ij / (2 * w_sigma_x**2))
+
+    This function return the p_max to use in order to get a desired p_effective
+
+    p_effective vs p_max has been simulated for different w_sigma values
+    --> p_max is linearly dependent on p_effective, and the gradient is dependent on w_sigma (exponential decay works ok)
+    """
+#[  8.95125352e+16,   2.39952941e-02,   1.24175654e+00,   6.00227030e-02]
+    fit_wsigma = [4.99190053e+17,   2.26167398e-02,   1.37350638e+00,   5.74608862e-02]
+    gradient  = fit_wsigma[0] * np.exp( - w_sigma**fit_wsigma[3] / fit_wsigma[1]) + fit_wsigma[2]
+    p_max = gradient * p_effective
+    return p_max
+    
+
+
 def scale_input_frequency(x):
     """
     How these optimal values come about:
@@ -852,3 +1008,82 @@ def scale_input_frequency(x):
     p = [2.64099116e-01,   3.27055672e-02,  9.66385641e-03,   3.24742098e-03, -4.62469854e-05,  -1.34801304e-06]
     y = p[0] + p[1] / x + p[2] / x**2 + p[3] / x**3 + p[4] / x**4 + p[5] / x**5
     return y
+
+
+
+def resolve_src_tgt(conn_type, params):
+    """
+    Deliver the correct source and target parameters based on conn_type
+    """
+
+    if conn_type == 'ee':
+        n_src, n_tgt = params['n_exc'], params['n_exc']
+#        tp_src = tuning_prop_exc
+#        tp_tgt = tuning_prop_exc
+        syn_type = 'excitatory'
+
+    elif conn_type == 'ei':
+        n_src, n_tgt = params['n_exc'], params['n_inh']
+#        tp_src = tuning_prop_exc
+#        tp_tgt = tuning_prop_inh
+        syn_type = 'excitatory'
+
+    elif conn_type == 'ie':
+        n_src, n_tgt = params['n_inh'], params['n_exc']
+#        tp_src = tuning_prop_inh
+#        tp_tgt = tuning_prop_exc
+        syn_type = 'inhibitory'
+
+    elif conn_type == 'ii':
+        n_src, n_tgt = params['n_inh'], params['n_inh']
+#        tp_src = tuning_prop_inh
+#        tp_tgt = tuning_prop_inh
+        syn_type = 'inhibitory'
+
+    return (n_src, n_tgt, syn_type)
+#    return (n_src, n_tgt, tp_src, tp_tgt, syn_type)
+
+
+def resolve_src_tgt_with_tp(conn_type, params):
+    """
+    Deliver the correct source and target parameters based on conn_type
+    """
+    if conn_type == 'ee':
+        n_src, n_tgt = params['n_exc'], params['n_exc']
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tp_src = tuning_prop_exc
+        tp_tgt = tuning_prop_exc
+        syn_type = 'excitatory'
+
+    elif conn_type == 'ei':
+        n_src, n_tgt = params['n_exc'], params['n_inh']
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
+        tp_src = tuning_prop_exc
+        tp_tgt = tuning_prop_inh
+        syn_type = 'excitatory'
+
+    elif conn_type == 'ie':
+        n_src, n_tgt = params['n_inh'], params['n_exc']
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
+        tp_src = tuning_prop_inh
+        tp_tgt = tuning_prop_exc
+        syn_type = 'inhibitory'
+
+    elif conn_type == 'ii':
+        n_src, n_tgt = params['n_inh'], params['n_inh']
+        tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
+        tp_src = tuning_prop_inh
+        tp_tgt = tuning_prop_inh
+        syn_type = 'inhibitory'
+
+    return (n_src, n_tgt, tp_src, tp_tgt)
+
+
+
+def convert_to_url(fn):
+    p = os.path.realpath('.')
+    s = 'file://%s/%s' % (p, fn)
+    return s
+

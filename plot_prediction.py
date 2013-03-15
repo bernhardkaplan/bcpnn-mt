@@ -5,6 +5,8 @@ import PlotPrediction as P
 import sys
 import NeuroTools.parameters as ntp
 import simulation_parameters
+import os
+import utils
 
 def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 
@@ -13,15 +15,15 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 #        P = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
         params = network_params.params
 
-    sim_cnt = 0
     if data_fn == None:
-        data_fn = params['exc_spiketimes_fn_merged'] + '%d.ras' % (sim_cnt)
+        data_fn = params['exc_spiketimes_fn_merged'] + '.ras'
 
 #    if inh_spikes == None:
-#        inh_spikes = params['inh_spiketimes_fn_merged'] + '%d.ras' % (sim_cnt)
+#        inh_spikes = params['inh_spiketimes_fn_merged'] + '.ras'
+
+#    params['t_sim'] = 1200
 
     plotter = P.PlotPrediction(params, data_fn)
-#    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
     pylab.rcParams['axes.labelsize'] = 14
     pylab.rcParams['axes.titlesize'] = 16
     if plotter.no_spikes:
@@ -33,10 +35,12 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 
     # fig 1
     # neuronal level
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_pthresh%.1e' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['w_thresh_connection'])
+    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_delayScale%d_scaleLatency%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
+            params['w_sigma_x'], params['w_sigma_v'], params['delay_scale'], params['scale_latency'])
+
 
     plotter.create_fig()  # create an empty figure
+    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
     plotter.n_fig_x = 2
     plotter.n_fig_y = 3
     plotter.plot_rasterplot('exc', 1)               # 1 
@@ -61,10 +65,12 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     plotter.plot_x_estimates(4)
     plotter.plot_y_estimates(5) 
     plotter.plot_xdiff(6)
-#    plotter.plot_theta_estimates(5)
     output_fn = output_fn_base + '_1.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
+
+#    plotter.plot_theta_estimates(5)
+
 
     # fig 3
     # population level, long time-scale
@@ -81,6 +87,15 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
 
+    # fig 4
+    plotter.n_fig_x = 1
+    plotter.n_fig_y = 2
+    output_fn = output_fn_base + '_4.png'
+    plotter.create_fig()  # create an empty figure
+    plotter.plot_network_activity('exc', 1)
+    plotter.plot_network_activity('inh', 2)
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn)
 
     plotter.n_fig_x = 1
     plotter.n_fig_y = 1
@@ -91,6 +106,7 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn)
 
+    plotter.save_data()
 #    plotter.n_fig_x = 1
 #    plotter.n_fig_y = 1
 #    time_binsize = plotter.time_binsize
@@ -113,12 +129,27 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 #    plotter.plot_vy_confidence_binned()         # 4
 
 if __name__ == '__main__':
-    plot_prediction()
+
+
+    if len(sys.argv) > 1:
+        param_fn = sys.argv[1]
+        if os.path.isdir(param_fn):
+            param_fn += '/Parameters/simulation_parameters.info'
+        import NeuroTools.parameters as NTP
+        fn_as_url = utils.convert_to_url(param_fn)
+        print 'debug ', fn_as_url
+        params = NTP.ParameterSet(fn_as_url)
+        print 'Loading parameters from', param_fn
+        plot_prediction(params=params)
+
+    else:
+        print '\nPlotting the default parameters give in simulation_parameters.py\n'
+        plot_prediction()
 
 #folder = 'Data_inputstrength_swepng/NoColumns_winit_random_wsigmaX2.50e-01_wsigmaV2.50e-01_winput2.00e-03_finput2.00e+03pthresh1.0e-01_ptow1.0e-02/' 
 #params_fn = folder + 'simulation_parameters.info'
-#data_fn = folder + 'Spikes/exc_spikes_merged_0.ras'
-#inh_spikes = folder + 'Spikes/inh_spikes_0.ras'
+#data_fn = folder + 'Spikes/exc_spikes_merged_.ras'
+#inh_spikes = folder + 'Spikes/inh_spikes_.ras'
 #tuning_prop_means_fn = folder + 'Parameters/tuning_prop_means.prm'
 #output_fn = folder + 'Figures/prediction_0.png'
 
@@ -131,7 +162,7 @@ if __name__ == '__main__':
 #params = PS.params
 #PS.update_values(new_params)
 #print 'debug', PS.params['folder_name']
-#data_fn = params['exc_spiketimes_fn_merged'] + '0.ras'
+#data_fn = params['exc_spiketimes_fn_merged'] + '.ras'
 #print 'data_fn: ', data_fn
 #exit(1)
 

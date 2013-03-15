@@ -127,6 +127,7 @@ label_text += 'nspikes_in_sum = %d\n' % (all_spikes.sum())
 label_text += 'nspikes_in_mean = %.2f +- %.2f\n' % (all_spikes.mean(), all_spikes.std())
 label_text += 'nspikes_in_non-zeros mean = %.2f +- %.2f\n' % (input_spikes_mean, input_spikes_std)
 label_text += 'nspikes_in_non-zero mean rate = %.2f +- %.2f [Hz]\n' % (input_spikes_mean / t_stim, input_spikes_std / t_stim)
+label_text += 'nspikes_in_top_%d_percent (mean) = %.2f +- %.2f [#]\n' % (pmax * 100, sorted_input_spikes[-n_:].mean(), sorted_input_spikes[-n_:].std())
 label_text += 'g_in_sum = %d [uS]\n' % (g_in_all.sum())
 label_text += 'g_in_mean = %.2f +- %.2f [uS]\n' % (g_in_all.mean(), g_in_all.std())
 label_text += 'g_in_nonzero_mean = %.2f +- %.2f [uS]\n' % (g_in.mean(), g_in.std())
@@ -145,7 +146,7 @@ title = 'Input parameters:\n blur_x(v)=%.1e (%.1e)\n f=%d Hz w=%.1e uS' % (param
 ax1.set_title(title)
 pylab.subplots_adjust(top=0.85)
 
-(text_pos_x, text_pos_y) = ax2.get_xlim()[1] * 0.03, ax2.get_ylim()[1] * 0.55
+(text_pos_x, text_pos_y) = ax2.get_xlim()[1] * 0.03, ax2.get_ylim()[1] * 0.50
 print 'Info:',label_text
 pylab.text(text_pos_x, text_pos_y, label_text, bbox=dict(pad=5.0, ec="k", fc="none"))
 
@@ -170,4 +171,4 @@ pylab.savefig(output_fig)
 #output_file.close()
 #print 'Saving to:', output_fig
 #pylab.savefig(output_fig)
-#pylab.show()
+pylab.show()
