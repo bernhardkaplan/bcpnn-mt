@@ -38,11 +38,63 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
 
     d_ij = utils.torus_distance2D(tp_src[0], tp_tgt[0], tp_src[1], tp_tgt[1])
     latency = d_ij / np.sqrt(tp_src[2]**2 + tp_src[3]**2)
-    x_predicted = tp_src[0] + tp_src[2] * latency * scale_latency
-    y_predicted = tp_src[1] + tp_src[3] * latency * scale_latency
-    p = np.exp(- (utils.torus_distance2D(x_predicted, tp_tgt[0], y_predicted, tp_tgt[1]))**2 / (2 * w_sigma_x**2)) \
-            * np.exp(- ((tp_src[2] - tp_tgt[2])**2 + (tp_src[3] - tp_tgt[3])**2) / (2 * w_sigma_v**2))
+#    if latency < scale_latency:
+    x_predicted = tp_src[0] + tp_src[2] * latency
+    y_predicted = tp_src[1] + tp_src[3] * latency
+    sigma_x = w_sigma_x#* np.sqrt(latency)
+    sigma_v = w_sigma_v# * np.sqrt(latency)
+    v1 = (tp_src[2], tp_src[3])
+    v2 = (tp_tgt[2], tp_tgt[3])
+    p = np.exp(- (utils.torus_distance2D(x_predicted, tp_tgt[0], y_predicted, tp_tgt[1]))**2 / (2 * sigma_x**2)) \
+            * np.exp( (np.dot(v1, v2) / (np.sqrt(np.dot(v1, v1) * np.dot(v2, v2)))) / sigma_v**2)
     return p, latency
+
+#            * np.exp(- ((tp_src[2] - tp_tgt[2])**2 + (tp_src[3] - tp_tgt[3])**2) / (2 * sigma_v**2))
+#        p *= np.exp(- latency / scale_latency)
+#    else:
+#        return 0., 0.
+
+def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
+    """
+    Calculates the connection probabilities for all source cells targeting one cell.
+    tp_src = np.array, shape = (n_src, 4)
+    tp_tgt = (x, y, u, v)
+    """
+    n_src = tp_src[:, 0].size
+    d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
+    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
+    x_predicted = tp_src[:, 0] + tp_src[:, 2] * latency
+    y_predicted = tp_src[:, 1] + tp_src[:, 3] * latency
+    dist_prediction_tgt = utils.torus_distance2D_vec(x_predicted, tp_tgt[0] * np.ones(n_src), y_predicted, tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
+    sigma_x = w_sigma_x#* np.sqrt(latency)
+    sigma_v = w_sigma_v# * np.sqrt(latency)
+    v_src = np.array((tp_src[:, 2], tp_src[:, 3]))
+    v_src = v_src.transpose()
+#    v_tgt = np.array((tp_tgt[2] * np.ones(n_src), tp_tgt[3] * np.ones(n_src)))
+    v_tgt = np.array([tp_tgt[2], tp_tgt[3]])
+    v_tgt_norm = tp_tgt[2]**2 + tp_tgt[3]**2
+#    v_src_sq = v_src**2
+    v_src_norm = v_src[:, 0]**2 + v_src[:, 1]**2
+    cos_array = np.dot(v_src, v_tgt)
+#    print 'v_src_norm', v_src_norm
+#    print 'v_tgt_norm', v_tgt_norm
+    cos_array /= np.sqrt(v_src_norm * v_tgt_norm)
+#    print 'cos_array', cos_array
+#    print 'd_ij', d_ij
+    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(cos_array/(sigma_v**2))
+#    print np.exp(-dist_prediction_tgt/ (2*sigma_x**2))
+#    print cos_array/(sigma_v**2)
+#    p = np.exp(- (utils.torus_distance2D_vec(x_predicted, tp_tgt[0] * np.ones(n_src), y_predicted, tp_tgt[1] * np.ones(n_src)))**2 / (2 * sigma_x**2)) \
+#            * np.exp( (np.dot(v_src, v_tgt) / (np.sqrt(np.dot(v_src, v_src) * np.dot(v_tgt, v_tgt)))) / sigma_v**2)
+    if scale_latency != 1.0:
+        invalid_idx = latency > scale_latency
+        invalid_idx = invalid_idx.nonzero()[0]
+        p[invalid_idx] = 0.
+    
+    return p, latency
+
+
+
 
 
 
@@ -82,7 +134,7 @@ def compute_weights_convergence_constrained(tuning_prop, params, comm=None):
         latency = np.zeros(params['n_exc'])
         for src in xrange(params['n_exc']):
             if (src != tgt):
-                p[src], latency[src] = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v)
+                p[src], latency[src] = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v, self.params['scale_latency'])
         sorted_indices = np.argsort(p)
         sources = sorted_indices[-params['n_src_cells_per_neuron']:] 
         w = params['w_tgt_in'] / p[sources].sum() * p[sources]
@@ -103,50 +155,6 @@ def compute_weights_convergence_constrained(tuning_prop, params, comm=None):
         comm.barrier()
 
 
-
-
-def compute_weights_from_tuning_prop(tuning_prop, params, comm=None):
-    """
-    Arguments:
-        tuning_prop: 2 dimensional array with shape (n_cells, 4)
-            tp[:, 0] : x-position
-            tp[:, 1] : y-position
-            tp[:, 2] : u-position (speed in x-direction)
-            tp[:, 3] : v-position (speed in y-direction)
-    """
-
-    n_cells = tuning_prop[:, 0].size
-    sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
-    (delay_min, delay_max) = params['delay_range']
-    if comm != None:
-        pc_id, n_proc = comm.rank, comm.size
-        comm.barrier()
-    else:
-        pc_id, n_proc = 0, 1
-    output_fn = params['conn_list_ee_fn_base'] + 'pid%d.dat' % (pc_id)
-    print "Proc %d computes initial weights to file %s" % (pc_id, output_fn)
-    gid_min, gid_max = utils.distribute_n(params['n_exc'], n_proc, pc_id)
-    n_cells = gid_max - gid_min
-    my_cells = range(gid_min, gid_max)
-    output = ""
-
-    i = 0
-    for src in my_cells:
-        for tgt in xrange(params['n_exc']):
-            if (src != tgt):
-                p, latency = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v)
-                delay = min(max(latency, delay_min), delay_max)  # map the delay into the valid range
-                output += '%d\t%d\t%.4e\t%.2e\n' % (src, tgt, p, delay)
-                i += 1
-
-    print 'Process %d writes connections to: %s' % (pc_id, output_fn)
-    f = file(output_fn, 'w')
-    f.write(output)
-    f.flush()
-    f.close()
-    normalize_probabilities(params, comm, params['w_thresh_connection'])
-    if (comm != None):
-        comm.barrier()
 
 
 def normalize_probabilities(params, comm, w_thresh=None):

@@ -9,9 +9,8 @@ from matplotlib import cm
 
 class ConnectionPlotter(object):
 
-    def __init__(self, params, n_plots_x, n_plots_y):
+    def __init__(self, params):
         self.params = params
-        self.n_plots_x, self.n_plots_y = n_plots_x, n_plots_y
 
         self.tp_exc = np.loadtxt(params['tuning_prop_means_fn'])
         self.tp_inh = np.loadtxt(params['tuning_prop_inh_fn'])
@@ -20,6 +19,20 @@ class ConnectionPlotter(object):
         self.delays = {}
 
 #        self.lw_max = 10 # maximum line width for connection strengths
+#        self.ax.set_xlim((0.1, 0.75))
+#        self.ax.set_ylim((0.25, 0.75))
+        self.legends = []
+        self.quivers = {}
+        self.directions = {}
+#            (x, y, u, v, c, shaft_width) = self.quivers[key]
+        self.conn_list_loaded = [False, False, False, False]
+        self.conn_mat_loaded = [False, False, False, False]
+        self.delay_colorbar_set = False
+        self.x_min, self.x_max = 1.0, .0
+        self.y_min, self.y_max = 1.0, .0
+
+    def create_fig(self, n_plots_x, n_plots_y):
+        self.n_plots_x, self.n_plots_y = n_plots_x, n_plots_y
         self.markersize_cell = 10
         self.markersize_min = 3
         self.markersize_max = 12
@@ -33,18 +46,6 @@ class ConnectionPlotter(object):
         self.ax.set_title('Outgoing connections')
         self.ax.set_xlabel('$x$-position')
         self.ax.set_ylabel('$y$-position')
-#        self.ax.set_xlim((0.1, 0.75))
-#        self.ax.set_ylim((0.25, 0.75))
-        self.legends = []
-        self.quivers = {}
-        self.directions = {}
-#            (x, y, u, v, c, shaft_width) = self.quivers[key]
-        self.conn_list_loaded = [False, False, False, False]
-        self.conn_mat_loaded = [False, False, False, False]
-        self.delay_colorbar_set = False
-        self.x_min, self.x_max = 1.0, .0
-        self.y_min, self.y_max = 1.0, .0
-
 
 
     def plot_cell(self, cell_id, exc=True, color='r', annotate=False):
@@ -65,7 +66,7 @@ class ConnectionPlotter(object):
             tp = self.tp_inh
 
         # torus dimensions
-        w, h = 1., 1. / np.sqrt(3)
+        w, h = self.params['torus_width'], self.params['torus_height']
         x0, y0, u0, v0 = tp[cell_id, 0] % w, tp[cell_id, 1] % h, tp[cell_id, 2], tp[cell_id, 3]
 #        x0, y0, u0, v0 = tp[cell_id, 0], tp[cell_id, 1], tp[cell_id, 2], tp[cell_id, 3]
         self.ax.plot(x0, y0, marker, c=color, markersize=self.markersize_cell)
@@ -103,6 +104,57 @@ class ConnectionPlotter(object):
         return plot
 
     
+    def plot_connection_histogram(self, gid, conn_type):
+
+        self.load_connection_list(conn_type)
+        targets = utils.get_targets(self.connection_lists[conn_type], gid)
+        tgt_ids, tgt_weights, tgt_delays = targets[:, 1], targets[:, 2], targets[:, 3]
+
+        sources = utils.get_sources(self.connection_lists[conn_type], gid)
+        src_ids, src_weights, src_delays = sources[:, 1], sources[:, 2], sources[:, 3]
+        
+        fig = pylab.figure(figsize=(14, 10))
+#        ax1 = fig.add_subplot(1, 1, 1) # set blank? the set title
+        pylab.subplots_adjust(hspace=.35, wspace=.25)
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax4 = fig.add_subplot(2, 2, 4)
+        
+
+        ax1.set_title('$\sigma^w_{X} = %.2f \sigma^w_{V}=%.2f$' % (self.params['w_sigma_x'], self.params['w_sigma_v']))
+        tgt_weights_sorted = tgt_weights.copy()
+        tgt_weights_sorted.sort()
+        ax1.bar(range(len(tgt_ids)), tgt_weights_sorted, width=1)
+        ax1.set_ylabel('Outgoing weights [uS]')
+        ax1.set_xlabel('sorted targets')
+        ax1.set_xlim((0, len(tgt_ids)))
+
+        n_weight_bins = 20
+        count, bins = np.histogram(tgt_weights, bins=n_weight_bins)
+        ax2.bar(bins[:-1], count, width=bins[1] - bins[0])
+        ax2.set_xlabel('Outgoing weight [uS]')
+        ax2.set_ylabel('#')
+
+
+        src_weights_sorted = src_weights.copy()
+        src_weights_sorted.sort()
+        ax3.bar(range(len(src_ids)), src_weights_sorted, width=1)
+        ax3.set_ylabel('Incoming weights [uS]')
+        ax3.set_xlabel('sorted sources')
+        ax3.set_xlim((0, len(src_ids)))
+
+        n_weight_bins = 20
+        count, bins = np.histogram(src_weights, bins=n_weight_bins)
+        ax4.bar(bins[:-1], count, width=bins[1] - bins[0])
+        ax4.set_xlabel('Incoming weight [uS]')
+        ax4.set_ylabel('#')
+
+        output_fn = self.params['figures_folder'] + 'connection_histogram_wsigmaxv_%.2f_%.2f_%d.png' % (self.params['w_sigma_x'], self.params['w_sigma_v'], gid)
+        print 'Saving fig to:', output_fn
+        pylab.savefig(output_fn, dpi=200)
+
+
 
     def plot_connection_type(self, src_gid, conn_type, marker, color, with_directions=False, plot_delays=False, annotate=False, with_histogram=False):
         self.load_connection_list(conn_type)
@@ -131,26 +183,22 @@ class ConnectionPlotter(object):
             return []
 
         if plot_delays:
-#            delay_min = self.connection_lists[conn_type][:, 3].min()
-#            delay_max = self.connection_lists[conn_type][:, 3].max()
             delay_min, delay_max = delays.min(), delays.max()
-            print 'debug delay_min, max', delay_max, delay_min
-            print 'debug 2 delay_min, max', delays
 #            delay_min, delay_max = self.params['delay_range'][0], self.params['delay_range'][1]
             norm = matplotlib.mpl.colors.Normalize(vmin=delay_min, vmax=delay_max)
             m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)#spring)
             m.set_array(np.arange(delay_min, delay_max, 0.01))
-
-            x_src, y_src = src_tp[src_gid, 0], src_tp[src_gid, 1]
-            for i_, tgt_gid in enumerate(tgt_ids):
-                x_tgt, y_tgt = tgt_tp[tgt_gid, 0], tgt_tp[tgt_gid, 1]
-                c = m.to_rgba(delays[i_])
-                self.ax.plot((x_src, x_tgt), (y_src, y_tgt), c=c, lw=2, alpha=.5)
-
             if not self.delay_colorbar_set:
                 cb = self.fig.colorbar(m)
                 cb.set_label('Connection delays [ms]', fontsize=28)
                 self.delay_colorbar_set = True
+
+            x_src, y_src = src_tp[src_gid, 0], src_tp[src_gid, 1]
+            for i_, tgt_gid in enumerate(tgt_ids):
+                x_tgt, y_tgt = tgt_tp[tgt_gid, 0] % self.params['torus_width'], tgt_tp[tgt_gid, 1] % self.params['torus_height']
+                c = m.to_rgba(delays[i_])
+                self.ax.plot((x_src, x_tgt), (y_src, y_tgt), c=c, lw=2, alpha=.5)
+
 #            s = 1. # saturation
 #            for 
 #                if activity[frame, tgt_gid] < 0:
@@ -259,7 +307,7 @@ class ConnectionPlotter(object):
         if not os.path.exists(conn_list_fn):
             print '\n%s NOT FOUND:' % conn_list_fn
             print '\n Calling python merge_connlists.py\n'
-            os.system('python merge_connlists.py')
+            os.system('python merge_connlists.py %s' % self.params['folder_name']) 
         self.connection_lists[conn_type] = np.loadtxt(conn_list_fn)
             
         if conn_type == 'ee':
@@ -345,8 +393,6 @@ if __name__ == '__main__':
 #    print 'Running merge_connlists.py...'
 #    os.system('python merge_connlists.py')
 
-    network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
-    params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
 
     with_directions = True
     with_delays = True
@@ -355,17 +401,36 @@ if __name__ == '__main__':
         n_plots_x, n_plots_y = 1, 2
     else:
         n_plots_x, n_plots_y = 1, 1
-    P = ConnectionPlotter(params, n_plots_x, n_plots_y)
 
     np.random.seed(0)
-    try:
-        gid = int(sys.argv[1])
-    except:
+#    try:
+    if len(sys.argv) > 1:
+        if sys.argv[1].isdigit():
+            gid = int(sys.argv[1])
+        else:
+            param_fn = sys.argv[1]
+            if os.path.isdir(param_fn):
+                param_fn += '/Parameters/simulation_parameters.info'
+            import NeuroTools.parameters as NTP
+            fn_as_url = utils.convert_to_url(param_fn)
+            print 'Loading parameters from', param_fn
+            params = NTP.ParameterSet(fn_as_url)
+            gid = np.loadtxt(params['gids_to_record_fn'])[0]
+            print 'debug', params['n_cells']
+    else:
+        import simulation_parameters
+        ps = simulation_parameters.parameter_storage()
+        params = ps.params
         gid = np.loadtxt(params['gids_to_record_fn'])[0]
+
+#    except:
+#        gid = np.loadtxt(params['gids_to_record_fn'])[0]
 #        gid = P.find_exc_gid_to_plot()
         
     print 'plotting gid', gid
 
+    P = ConnectionPlotter(params)
+    P.create_fig(n_plots_x, n_plots_y)
 #    exc_color = (.5, .5, .5)
     ee_targets = P.plot_connection_type(gid, 'ee', 'o', 'r', with_directions, plot_delays=with_delays, with_histogram=with_histogram)
 #    ei_targets = P.plot_connection_type(gid, 'ei', 'x', 'r', with_directions, plot_delays=with_delays)#, annotate=True)

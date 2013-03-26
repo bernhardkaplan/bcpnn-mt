@@ -172,7 +172,7 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
     n_cells = tuning_prop[:, 0].size
     if motion_params == None:
         motion_params = params['motion_params']
-    L = np.zeros(n_cells)
+#    L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
         x0, y0, u0, v0 = motion_params
@@ -191,13 +191,18 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
             
             L range between 0 and 1
         """
-        x, y = (x0 + u0*t) % 1., (y0 + v0*t) % 1. # current position of the blob at time t assuming a perfect translation
+        x, y = (x0 + u0*t) % params['torus_width'], (y0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
 
-    for cell in xrange(n_cells): # todo: vectorize
-        L[cell] = np.exp( -.5 * (torus_distance2D(tuning_prop[cell, 0], x, tuning_prop[cell, 1], y)**2 / blur_X**2)
-                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
-                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
-                          )
+#    for cell in xrange(n_cells): # todo: vectorize
+#        L[cell] = np.exp( -.5 * (torus_distance2D(tuning_prop[cell, 0], x, tuning_prop[cell, 1], y)**2 / blur_X**2)
+#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
+#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
+#                          )
+
+        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2 / blur_X**2)
+                -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2
+                )
                           
 #        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
 #                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
@@ -790,8 +795,8 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     return dist, min_spatial_dist
     
 
-def torus_distance(x0, x1):
-    return x0 - x1
+#def torus_distance(x0, x1):
+#    return x0 - x1
 
 
 def torus_distance(x0, x1):
@@ -801,10 +806,15 @@ def torus_distance2D(x1, x2, y1, y2, w=1., h=1.):
     """
     w and h are the width (x) and height (y) of the grid, respectively.
     """
-    return np.sqrt(min(abs(x1 - x2), abs(w - abs(x1 - x2)))**2 + min(abs(y1 - y2), abs(h - abs(y1-y2)))**2)
+    return np.sqrt(np.min(np.abs(x1 - x2), np.abs(w - np.abs(x1 - x2)))**2 + np.min(np.abs(y1 - y2), np.abs(h - np.abs(y1-y2)))**2)
     # if not on a torus:
 #    return np.sqrt( (x1 - x2)**2 + (y1 - y2)**2)
 
+def torus_distance2D_vec(x1, x2, y1, y2, w=1., h=1.):
+    """
+    w and h are the width (x) and height (y) of the grid, respectively.
+    """
+    return np.sqrt(np.minimum(np.abs(x1 - x2), np.abs(w - np.abs(x1 - x2)))**2 + np.minimum(np.abs(y1 - y2), np.abs(h - np.abs(y1-y2)))**2)
 
 def gather_conn_list(comm, data, n_total, output_fn):
     """
@@ -938,22 +948,7 @@ def linear_transformation(x, y_min, y_max):
     x_max = np.max(x)
     if x_min == x_max:
         x_max = x_min * 1.0001
-
     return (y_min + (y_max - y_min) / (x_max - x_min) * (x - x_min))
-
-#    print 'debug linear transformation x_min, x_max', x_min, x_max
-#    m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
-#    m = 1. / (x_min * (x_max - x_min)) * (y_min * x_max - y_min * x_min - y_min * x_max + y_max * x_min)
-#    if (x_max / x_min) == np.inf:
-#        print 'inf'
-#        exit(1)
-#    if (x_max - x_min) == np.nan:
-#        print 'nan'
-#        exit(1)
-#    m = (y_max - y_min * (1. - x_max - x_max / x_min)) / (x_max - x_min)
-#    b = (y_min * x_max - y_max * x_min) / (x_max - x_min)
-#    print 'debug m, b', m, b
-#    return (m * x + b)
 
 def merge_files(input_fn_base, output_fn):
 
@@ -961,7 +956,7 @@ def merge_files(input_fn_base, output_fn):
     os.system(cmd)
 
 
-def sort_cells_by_distance_to_stimulus(n_cells):
+def sort_cells_by_distance_to_stimulus(n_cells, verbose=True):
     import simulation_parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
@@ -970,13 +965,14 @@ def sort_cells_by_distance_to_stimulus(n_cells):
     indices, distances = sort_gids_by_distance_to_stimulus(tp , mp, params) # cells in indices should have the highest response to the stimulus
     print 'Motion parameters', mp
     print 'GID\tdist_to_stim\tx\ty\tu\tv\t\t'
-    for i in xrange(n_cells):
-        gid = indices[i]
-        print gid, '\t', distances[i], tp[gid, :]
+    if verbose:
+        for i in xrange(n_cells):
+            gid = indices[i]
+            print gid, '\t', distances[i], tp[gid, :]
     return indices, distances
 
 
-def get_pmax(p_effective, w_sigma):
+def get_pmax(p_effective, w_sigma, conn_type):
     """
     When using isotropic connectivity, the connections are drawn based upon
     this formula:
@@ -986,11 +982,23 @@ def get_pmax(p_effective, w_sigma):
 
     p_effective vs p_max has been simulated for different w_sigma values
     --> p_max is linearly dependent on p_effective, and the gradient is dependent on w_sigma (exponential decay works ok)
+    Because inh and exc have different densities, they have different parameters to achieve the same p_eff
+    
+    The data have been acquired by fitting the gradient (p_max vs p_eff) versus w_sigma_x for w_sigma_x > 0.06
     """
-#[  8.95125352e+16,   2.39952941e-02,   1.24175654e+00,   6.00227030e-02]
-    fit_wsigma = [4.99190053e+17,   2.26167398e-02,   1.37350638e+00,   5.74608862e-02]
+
+    if conn_type == 'ee':
+        fit_wsigma = [  8.69759077e+35,   1.15523952e-02,   1.68865787e+00, 5.21448789e-02]
+    elif conn_type == 'ei':
+        fit_wsigma = [  1.71248794e+32,   1.28067624e-02,   1.74747161e+00, 5.85147960e-02]
+    elif conn_type == 'ie':
+        fit_wsigma = [5.47304944e+43,   9.56954239e-03,   1.84786854e+00, 4.26839514e-02]
+    elif conn_type == 'ii':
+        fit_wsigma = [2.21668319e+46,   9.05343215e-03,   1.76483061e+00, 4.01129051e-02]
     gradient  = fit_wsigma[0] * np.exp( - w_sigma**fit_wsigma[3] / fit_wsigma[1]) + fit_wsigma[2]
+    print 'debug utils.get_pmax gradient for %s ws %.1e: %.3e' % (conn_type, w_sigma, gradient)
     p_max = gradient * p_effective
+
     return p_max
     
 

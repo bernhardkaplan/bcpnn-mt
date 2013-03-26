@@ -27,7 +27,6 @@ class PlotPrediction(object):
 
         self.spiketimes_loaded = False
         self.data_to_store = {}
-        self.tau_prediction = self.params['tau_prediction']
         # define parameters
         self.time_binsize = int(round(self.params['t_sim'] / 20))
         self.time_binsize = 25# [ms] 
@@ -62,7 +61,6 @@ class PlotPrediction(object):
         self.vx_grid = np.linspace(self.vx_min, self.vx_max, self.n_vx_bins, endpoint=True)
         #self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
 
-
         # vy
         self.vy_tuning = self.tuning_prop[:, 3].copy()
         self.vy_tuning.sort()
@@ -85,7 +83,6 @@ class PlotPrediction(object):
         self.sorted_indices_y = self.tuning_prop[:, 1].argsort()
         self.y_min, self.y_max = .0, self.params['torus_height']
         self.y_grid = np.linspace(self.y_min, self.y_max, self.n_y_bins, endpoint=True)
-
 
         self.normalize_spiketimes(data_fn)
         if self.no_spikes:
@@ -170,11 +167,11 @@ class PlotPrediction(object):
         for gid in xrange(self.n_cells):
             xyuv_predicted = self.tuning_prop[gid, index] # cell tuning properties
             if (index == 0):
-                xyuv_predicted += self.tau_prediction * self.tuning_prop[gid, 2]
+                xyuv_predicted += self.tuning_prop[gid, 2]
                 xyuv_predicted = xyuv_predicted % w
 
             elif (index == 1):
-                xyuv_predicted += self.tau_prediction * self.tuning_prop[gid, 3]
+                xyuv_predicted += self.tuning_prop[gid, 3]
                 xyuv_predicted = xyuv_predicted % h
             y_pos_grid = utils.get_grid_pos_1d(xyuv_predicted, grid_edges)
             output_data[y_pos_grid, :] += self.nspikes_binned_normalized[gid, :]
@@ -279,7 +276,7 @@ class PlotPrediction(object):
         vy_prediction_trace = np.zeros((self.n_cells, self.n_bins, 2))    # _trace: prediction based on the momentary and past activity (moving average, and std) --> trace_length
 
         # torus dimensions
-        w, h = 1., 1. / np.sqrt(3)
+        w, h = self.params['torus_width'], self.params['torus_height']
         for i in xrange(self.n_bins):
 
             # 1) momentary vote
@@ -341,7 +338,6 @@ class PlotPrediction(object):
             vx_diff = self.vx_moving_avg[i ,0] - mp[2]
             vy_diff = self.vy_moving_avg[i ,0] - mp[3]
             self.vdiff_moving_avg[i, 1] = (2. / self.vdiff_moving_avg[i, 0]) * ( vx_diff * self.vx_moving_avg[i, 1] + vy_diff * self.vy_moving_avg[i, 1])
-
 
             # 3) soft-max
             # x
@@ -550,20 +546,22 @@ class PlotPrediction(object):
         self.data_to_store['vy_grid.dat'] = {'data' : vy_grid, 'edges': v_edges}
 
 
-    def plot_x_grid_vs_time(self, fig_cnt=1):
+    def plot_x_grid_vs_time(self, fig_cnt=1, ylabel=None):
         print 'plot_x_grid_vs_time ...'
         xlabel = 'Time [ms]'
-        ylabel = '$x_{predcted}$'
+        if ylabel == None:
+            ylabel = '$x_{predicted}$'
         title = ''#$x_{predicted}$ binned vs time'
         x_grid, x_edges = self.bin_estimates(self.x_grid, index=0)
         self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt)
         self.data_to_store['xpos_grid.dat'] = {'data' : x_grid, 'edges': x_edges}
 
 
-    def plot_y_grid_vs_time(self, fig_cnt=1):
+    def plot_y_grid_vs_time(self, fig_cnt=1, ylabel=None):
         print 'plot_y_grid_vs_time ...'
         xlabel = 'Time [ms]'
-        ylabel = '$y_{predcted}$'
+        if ylabel == None:
+            ylabel = '$y_{predicted}$'
         title = ''#$y_{predicted}$ binned vs time'
         y_grid, y_edges = self.bin_estimates(self.y_grid, index=1)
         self.plot_grid_vs_time(y_grid, title, xlabel, ylabel, y_edges, fig_cnt)
@@ -598,7 +596,8 @@ class PlotPrediction(object):
 #        ax.set_xticklabels(['%d' %i for i in self.t_ticks])
 #        color_boundaries = (0., .5)
 
-        max_conf = min(data.mean() + data.std(), data.max())
+#        max_conf = min(data.mean() + data.std(), data.max())
+        max_conf = data.max()
         norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)#jet)
         m.set_array(np.arange(0., max_conf, 0.01))
@@ -1011,7 +1010,7 @@ class PlotPrediction(object):
         ax.axvline((self.params['t_before_blank'] + self.params['t_blank']) / self.time_binsize, ls='--', color=c, lw=3)
 
         if txt != '':
-            txt_pos_x = (self.params['t_stimulus'] + .25 * self.params['t_blank']) / self.time_binsize
+            txt_pos_x = (self.params['t_before_blank'] + .5 * self.params['t_blank']) / self.time_binsize
             ylim = ax.get_ylim()
             txt_pos_y = .85 * ylim[1]
             ax.annotate(txt, (txt_pos_x, txt_pos_y), fontsize=14, color='w')
