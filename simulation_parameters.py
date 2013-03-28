@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import numpy.random as rnd
 import os
@@ -30,11 +31,10 @@ class parameter_storage(object):
 
 
 #         Medium-large system
-        self.params['N_RF'] = 100# np.int(n_cells/N_V/N_theta)
-        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']/np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 8, 6# resolution in velocity norm and direction
+#        self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']))# np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+#        self.params['N_V'], self.params['N_theta'] = 8, 8# resolution in velocity norm and direction
 
 #         Medium-scale system
 #        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
@@ -43,10 +43,10 @@ class parameter_storage(object):
 #        self.params['N_V'], self.params['N_theta'] = 8, 6# resolution in velocity norm and direction
 
 #         Small-scale system
-#        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
-#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
+        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
         # Minimum sized system
 #        self.params['N_RF'] = 9# np.int(n_cells/N_V/N_theta)
@@ -160,8 +160,8 @@ class parameter_storage(object):
         self.params['w_sigma_isotropic'] = 0.2 # should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
         self.params['w_tgt_in_per_cell_ee'] = 0.4 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 0.70 # [uS] how much input should an inh cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ie'] = 0.70 # [uS] how much input should an exc cell get from its inh source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 1.00 # [uS] how much input should an inh cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ie'] = 1.00 # [uS] how much input should an exc cell get from its inh source cells?
         self.params['w_tgt_in_per_cell_ii'] = 0.05 # [uS] how much input should an inh cell get from its source cells?
 #        self.params['w_tgt_in_per_cell_ee'] *= 20. / self.params['tau_syn_exc']
 #        self.params['w_tgt_in_per_cell_ei'] *= 20. / self.params['tau_syn_exc']
@@ -170,7 +170,7 @@ class parameter_storage(object):
         self.params['conn_types'] = ['ee', 'ei', 'ie', 'ii']
 
 #        self.params['p_to_w'] = 
-        self.params['p_ee'] = 0.02# fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.03# fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_thresh_connection'] = 1e-6 # connections with a weight less then this value will be discarded
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 5e-3
@@ -193,15 +193,15 @@ class parameter_storage(object):
         self.params['w_ii_sigma'] = 0.001          
 
         # for random connections only:
-        self.params['standard_delay'] = 5           # [ms]
-        self.params['standard_delay_sigma'] = 2           # [ms]
+        self.params['standard_delay'] = 3           # [ms]
+        self.params['standard_delay_sigma'] = 1           # [ms]
 
         # ######################
         # SIMULATION PARAMETERS 
         # ###################### 
         self.params['seed'] = 12345
         self.params['np_random_seed'] = 0
-        self.params['t_sim'] = 1200.                 # [ms] total simulation time
+        self.params['t_sim'] = 1600.                 # [ms] total simulation time
         self.params['t_stimulus'] = 1000.            # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
         self.params['t_blank'] = 200.               # [ms] time for 'blanked' input
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
@@ -267,7 +267,7 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-        self.params['w_exc_noise'] = 1.6e-3          # [uS] mean value for noise ---< columns
+        self.params['w_exc_noise'] = 2e-3          # [uS] mean value for noise ---< columns
         self.params['f_exc_noise'] = 2000# [Hz] 
         self.params['w_inh_noise'] = 2e-3          # [uS] mean value for noise ---< columns
         self.params['f_inh_noise'] = 2000# [Hz]
@@ -292,9 +292,9 @@ class parameter_storage(object):
                 folder_name = 'AdEx_SmallSpikingModel_'
 #                folder_name = 'AdEx_LargeScaleModel_'
             else:
-#                folder_name = 'TuningProp_'
+                folder_name = 'Testing_'
 #                folder_name = 'SLargeScaleModel_np192_noBlank_'
-                folder_name = 'SmallScale_withNoise_'
+#                folder_name = 'SmallScale_'
 #                folder_name = 'NewP_n%d_' % self.params['n_cells']
 #                folder_name = 'Test_n%d_' % self.params['n_cells']
 #                folder_name = 'LargeScaleModel_'
@@ -339,15 +339,16 @@ class parameter_storage(object):
 
             self.params['connectivity_code'] = connectivity_code
             folder_name += connectivity_code
-            folder_name += "_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_scaleLatency%.2f/" % \
-                        (self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
+            folder_name += "_pee%.1e_wen%.1e_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_scaleLatency%.2f/" % \
+                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
                         self.params['w_tgt_in_per_cell_ei'], self.params['w_tgt_in_per_cell_ie'], self.params['w_tgt_in_per_cell_ii'], self.params['delay_scale'], self.params['scale_latency'])
 #                        self.params['w_min'], self.params['w_max'])
 
 #            folder_name = 'OnlyNoiseInput_wexc%.2e_fexc%.2e_w_inh%.2e_finh%.2e/' % \
 #                        (self.params['w_exc_noise'], self.params['f_exc_noise'], self.params['w_inh_noise'], self.params['f_inh_noise'])
     
-            self.params['folder_name'] = folder_name 
+            self.params['folder_name'] = 'Testing/'
+#            self.params['folder_name'] = folder_name 
         else:
             self.params['folder_name'] = folder_name
         print 'Folder name:', self.params['folder_name']
@@ -392,6 +393,7 @@ class parameter_storage(object):
                             self.params['input_folder']] # to be created if not yet existing
 
         self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['parameters_folder'])
+        self.params['params_fn_json'] = '%ssimulation_parameters.json' % (self.params['parameters_folder'])
 
         # input spiketrains
         self.params['merged_input_spiketrains_fn'] = "%sinput_spiketrain_merged.dat" % (self.params['input_folder'])
@@ -545,6 +547,10 @@ class parameter_storage(object):
         self.ParamSet = ntp.ParameterSet(self.params)
         fn = utils.convert_to_url(fn)
         self.ParamSet.save(fn)
+
+        output_file = file(self.params['params_fn_json'], 'w')
+        d = json.dump(self.params, output_file)
+
 #        output_f = file(fn, 'w')
 #        self.list_of_params = self.params.keys()
 #        for p in self.params.keys():

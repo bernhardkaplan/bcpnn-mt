@@ -798,8 +798,25 @@ def get_min_distance_to_stim(mp, tp_cell, params):
 #def torus_distance(x0, x1):
 #    return x0 - x1
 
+def torus(x, w=1.):
+    """
+    center x in the range [-w/2., w/2.]
+    To see what this does, try out:
+    >> x = np.linspace(-4,4,100)
+    >> pylab.plot(x, torus(x, 2.))
+    """
+    return np.mod(x + w/2., w) - w/2.
+
+def torus_distance_array(x0, x1):
+    """
+    Compute the 1-D distance on a torus for arrays
+    """
+    return np.minimum(np.abs(x0 - x1), 1. - np.abs(x0 - x1))
 
 def torus_distance(x0, x1):
+    """
+    1-D torus like distance
+    """
     return min(abs(x0 - x1), 1. - abs(x0 - x1))
 
 def torus_distance2D(x1, x2, y1, y2, w=1., h=1.):

@@ -350,22 +350,13 @@ class NetworkModel(object):
 
         if self.debug_connectivity:
             conn_list_fn = self.params['conn_list_%s_fn_base' % conn_type] + '%d.dat' % (self.pc_id)
-#            conn_file = open(conn_list_fn, 'w')
-#            output = ''
 
         n_src_cells_per_neuron = int(round(self.params['p_%s' % conn_type] * n_src))
         (delay_min, delay_max) = self.params['delay_range']
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
         for i_, tgt in enumerate(tgt_cells):
-#            p = np.zeros(n_src, dtype='float32')
-#            latency = np.zeros(n_src, dtype='float32')
             p, latency = CC.get_p_conn_vec(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['scale_latency'])
-
-#            if conn_type[0] == conn_type[1]: # no self-connection
-#                if (src != tgt):
-#                    p[src], latency[src] = CC.get_p_conn(tp_src[src, :], tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['scale_latency'])
-#                else: # different populations --> same indices mean different cells, no check for src != tgt
-#                    p[src], latency[src] = CC.get_p_conn(tp_src[src, :], tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['scale_latency'])
+            # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
 
             sorted_indices = np.argsort(p)
             if conn_type[0] == 'e':
@@ -385,24 +376,10 @@ class NetworkModel(object):
             connector = FromListConnector(conn_list.transpose())
             prj = Projection(src_pop, tgt_pop, connector)
 
-
-#            w = utils.linear_transformation(p[sources], self.params['w_min'], self.params['w_max'])
-#            for i in xrange(len(sources)):
-#                        w[i] = max(self.params['w_min'], min(w[i], self.params['w_max']))
-#                if w[i] > self.params['w_thresh_connection']:
-#                delay = min(max(latency[sources[i]] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
-#                delay = min(max(latency[sources[i]], delay_min), delay_max)  # map the delay into the valid range
-#                    print 'debug ', delay , ' latency', latency[sources[i]]
-#                connect(src_pop[sources[i]], tgt_pop[tgt], w[i], delay=delay, synapse_type=syn_type)
-#                if self.debug_connectivity:
-#                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], delay, p[sources[i]]) #                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], latency[sources[i]], p[sources[i]])
-
         if self.debug_connectivity:
             if self.pc_id == 0:
                 print 'DEBUG writing to file:', conn_list_fn
             np.savetxt(conn_list_fn, local_connlist)
-#            conn_file.write(output)
-#            conn_file.close()
 
 
     def connect_ee_random(self):
@@ -741,6 +718,8 @@ if __name__ == '__main__':
     ps.params['w_tgt_in_per_cell_ee'] = w_ee
     scale_latency = float(sys.argv[4])
     ps.params['scale_latency'] = scale_latency
+    delay_scale = float(sys.argv[5])
+    ps.params['delay_scale'] = delay_scale
     ps.set_filenames()
 
     if pc_id == 0:
@@ -755,7 +734,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = False
+        load_files = True
         record = True
         save_input_files = not load_files
 
@@ -778,3 +757,11 @@ if __name__ == '__main__':
         pp.plot_prediction(params)
 
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
+
+    if pc_id == 1:
+        for conn_type in ['ee', 'ei', 'ie', 'ii']:
+            os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
+
+    if comm != None:
+        comm.Barrier()
+

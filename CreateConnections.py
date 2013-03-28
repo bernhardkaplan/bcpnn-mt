@@ -59,33 +59,39 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     Calculates the connection probabilities for all source cells targeting one cell.
     tp_src = np.array, shape = (n_src, 4)
     tp_tgt = (x, y, u, v)
+    TODO: exp(cos(v_i, x_j - x_i) / (2*sigma_x**2))
     """
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
     latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
-    x_predicted = tp_src[:, 0] + tp_src[:, 2] * latency
-    y_predicted = tp_src[:, 1] + tp_src[:, 3] * latency
-    dist_prediction_tgt = utils.torus_distance2D_vec(x_predicted, tp_tgt[0] * np.ones(n_src), y_predicted, tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
-    sigma_x = w_sigma_x#* np.sqrt(latency)
-    sigma_v = w_sigma_v# * np.sqrt(latency)
+
     v_src = np.array((tp_src[:, 2], tp_src[:, 3]))
     v_src = v_src.transpose()
-#    v_tgt = np.array((tp_tgt[2] * np.ones(n_src), tp_tgt[3] * np.ones(n_src)))
     v_tgt = np.array([tp_tgt[2], tp_tgt[3]])
     v_tgt_norm = tp_tgt[2]**2 + tp_tgt[3]**2
-#    v_src_sq = v_src**2
     v_src_norm = v_src[:, 0]**2 + v_src[:, 1]**2
-    cos_array = np.dot(v_src, v_tgt)
-#    print 'v_src_norm', v_src_norm
-#    print 'v_tgt_norm', v_tgt_norm
-    cos_array /= np.sqrt(v_src_norm * v_tgt_norm)
-#    print 'cos_array', cos_array
-#    print 'd_ij', d_ij
-    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(cos_array/(sigma_v**2))
-#    print np.exp(-dist_prediction_tgt/ (2*sigma_x**2))
-#    print cos_array/(sigma_v**2)
-#    p = np.exp(- (utils.torus_distance2D_vec(x_predicted, tp_tgt[0] * np.ones(n_src), y_predicted, tp_tgt[1] * np.ones(n_src)))**2 / (2 * sigma_x**2)) \
-#            * np.exp( (np.dot(v_src, v_tgt) / (np.sqrt(np.dot(v_src, v_src) * np.dot(v_tgt, v_tgt)))) / sigma_v**2)
+    v_cos_array = np.dot(v_src, v_tgt)
+    v_cos_array /= np.sqrt(v_src_norm * v_tgt_norm)
+
+    x_src = np.array((tp_src[:, 0], tp_src[:, 1]))
+    x_src = x_src.transpose()
+    x_tgt = np.array([tp_tgt[0], tp_tgt[1]])
+    x_tgt_norm = tp_tgt[0]**2 + tp_tgt[1]**2
+    x_src_norm = x_src[:, 0]**2 + x_src[:, 1]**2
+    
+    x_diff = utils.torus(x_tgt[0] * np.ones(n_src) - x_src[:, 0])
+    y_diff = utils.torus(x_tgt[1] * np.ones(n_src) - x_src[:, 1])
+
+    x_diff_ = np.array((x_diff, y_diff))
+
+    x_diff_ = x_diff_.transpose()
+    x_norm = x_diff_[:, 0]**2 + x_diff_[:, 1]**2 # norm of x_tgt - x_src
+    
+    x_cos_array = np.dot(x_diff_, v_tgt)
+    x_cos_array /= np.sqrt(v_src_norm * x_norm)
+
+    p = np.exp(x_cos_array / (w_sigma_x**2)) * np.exp(v_cos_array/(w_sigma_v**2))
+
     if scale_latency != 1.0:
         invalid_idx = latency > scale_latency
         invalid_idx = invalid_idx.nonzero()[0]
@@ -93,6 +99,8 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     
     return p, latency
 
+    # old:
+#    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(v_cos_array/(sigma_v**2))
 
 
 
