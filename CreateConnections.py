@@ -63,7 +63,8 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     """
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
-    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
+#    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
+#    latency = d_ij / scale_latency
 
     v_src = np.array((tp_src[:, 2], tp_src[:, 3]))
     v_src = v_src.transpose()
@@ -79,25 +80,38 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     x_tgt_norm = tp_tgt[0]**2 + tp_tgt[1]**2
     x_src_norm = x_src[:, 0]**2 + x_src[:, 1]**2
     
-    x_diff = utils.torus(x_tgt[0] * np.ones(n_src) - x_src[:, 0])
-    y_diff = utils.torus(x_tgt[1] * np.ones(n_src) - x_src[:, 1])
+    eps = 1e-20
+    x_diff = utils.torus(x_tgt[0] * np.ones(n_src) - x_src[:, 0]) + eps
+    y_diff = utils.torus(x_tgt[1] * np.ones(n_src) - x_src[:, 1]) + eps
+#    x_diff = utils.torus_distance_array(x_tgt[0] * np.ones(n_src), x_src[:, 0]) + eps
+#    y_diff = utils.torus_distance_array(x_tgt[1] * np.ones(n_src), x_src[:, 1]) + eps
+
 
     x_diff_ = np.array((x_diff, y_diff))
 
     x_diff_ = x_diff_.transpose()
+#    print 'debug x_diff_', x_diff_
     x_norm = x_diff_[:, 0]**2 + x_diff_[:, 1]**2 # norm of x_tgt - x_src
+#    print 'debug x_norm', x_norm
     
     x_cos_array = np.dot(x_diff_, v_tgt)
     x_cos_array /= np.sqrt(v_src_norm * x_norm)
+#    print 'debug v_src_norm', v_src_norm
+#    print 'debug v_src_norm * x_norm', v_src_norm * x_norm
+#    print 'debug x_cos_array', x_cos_array
+#    print 'debug v_cos_array', v_cos_array
 
     p = np.exp(x_cos_array / (w_sigma_x**2)) * np.exp(v_cos_array/(w_sigma_v**2))
+#    print 'debug p', p 
 
     if scale_latency != 1.0:
-        invalid_idx = latency > scale_latency
+#        invalid_idx = latency > scale_latency
+        invalid_idx = d_ij > scale_latency
         invalid_idx = invalid_idx.nonzero()[0]
         p[invalid_idx] = 0.
     
-    return p, latency
+    return p, d_ij
+#    return p, latency
 
     # old:
 #    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(v_cos_array/(sigma_v**2))

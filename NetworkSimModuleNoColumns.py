@@ -179,6 +179,7 @@ class NetworkModel(object):
         else:
             print '\n\nUnknown neuron model:\n\t', self.params['neuron_model']
         self.local_idx_exc = get_local_indices(self.exc_pop, offset=0)
+        print 'Debug, pc_id %d has local %d exc indices:' % (self.pc_id, len(self.local_idx_exc)), self.local_idx_exc
 
         cell_pos_exc = np.zeros((3, self.params['n_exc']))
         cell_pos_exc[0, :] = self.tuning_prop_exc[:, 0]
@@ -197,6 +198,7 @@ class NetworkModel(object):
         self.exc_pop.initialize('v', self.v_init_dist)
 
         self.local_idx_inh = get_local_indices(self.inh_pop, offset=self.params['n_exc'])
+        print 'Debug, pc_id %d has local %d inh indices:' % (self.pc_id, len(self.local_idx_inh)), self.local_idx_inh
         self.inh_pop.initialize('v', self.v_init_dist)
 
         self.times['t_create'] = self.timer.diff()
@@ -356,6 +358,8 @@ class NetworkModel(object):
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
         for i_, tgt in enumerate(tgt_cells):
             p, latency = CC.get_p_conn_vec(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['scale_latency'])
+            if conn_type[0] == conn_type[1]:
+                p[tgt], latency[tgt] = 0., 0.
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
 
             sorted_indices = np.argsort(p)
@@ -367,19 +371,24 @@ class NetworkModel(object):
                 else:
                     sources = sorted_indices[:n_src_cells_per_neuron] 
 
-            eta = 1e-9
+#            eta = 1e-9
+            eta = 0
             w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+#            print 'debug p', i_, tgt, p[sources] 
+#            print 'debug sources', i_, tgt, sources
+#            print 'debug w', i_, tgt, w
 
             delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
             conn_list = np.array((sources, tgt * np.ones(n_src_cells_per_neuron), w, delays))
             local_connlist[i_ * n_src_cells_per_neuron : (i_ + 1) * n_src_cells_per_neuron, :] = conn_list.transpose()
             connector = FromListConnector(conn_list.transpose())
             prj = Projection(src_pop, tgt_pop, connector)
+            self.projections[conn_type].append(prj)
 
         if self.debug_connectivity:
             if self.pc_id == 0:
                 print 'DEBUG writing to file:', conn_list_fn
-            np.savetxt(conn_list_fn, local_connlist)
+            np.savetxt(conn_list_fn, local_connlist, fmt='%d\t%d\t%.4e\t%.4e')
 
 
     def connect_ee_random(self):
@@ -463,8 +472,10 @@ class NetworkModel(object):
 #            output_dist = ''
 
         w_mean = w_tgt_in / (self.params['p_%s' % conn_type] * n_max_conn / n_tgt)
+        w_sigma = self.params['w_sigma_distribution'] * w_mean
+
         w_dist = RandomDistribution('normal',
-                (w_mean, w_mean*.2),
+                (w_mean, w_sigma), 
                 rng=self.rng_conn,
                 constrain='redraw',
                 boundaries=(0, w_mean * 10.))
@@ -540,7 +551,7 @@ class NetworkModel(object):
             print 'Connect random connections %s - %s' % (conn_type[0].capitalize(), conn_type[1].capitalize())
         (n_src, n_tgt, src_pop, tgt_pop, tp_src, tp_tgt, tgt_cells, syn_type) = self.resolve_src_tgt(conn_type)
         w_mean = self.params['w_tgt_in_per_cell_%s' % conn_type] / (n_src * self.params['p_%s' % conn_type])
-        w_sigma = w_mean * .5 * (self.params['w_sigma_x'] + self.params['w_sigma_v'])
+        w_sigma = self.params['w_sigma_distribution'] * w_sigma
 
         weight_distr = RandomDistribution('normal',
                 (w_mean, w_sigma),
@@ -710,17 +721,18 @@ if __name__ == '__main__':
 
     input_created = False
 
-#    w_sigma_x = float(sys.argv[1])
-#    w_sigma_v = float(sys.argv[2])
-#    params['w_sigma_x'] = w_sigma_x
-#    params['w_sigma_v'] = w_sigma_v
+    w_sigma_x = float(sys.argv[1])
+    w_sigma_v = float(sys.argv[2])
+    params['w_sigma_x'] = w_sigma_x
+    params['w_sigma_v'] = w_sigma_v
 #    w_ee = float(sys.argv[3])
 #    ps.params['w_tgt_in_per_cell_ee'] = w_ee
 #    scale_latency = float(sys.argv[4])
 #    ps.params['scale_latency'] = scale_latency
-#    delay_scale = float(sys.argv[5])
+#    delay_scale = float(sys.argv[4])
 #    ps.params['delay_scale'] = delay_scale
-#    ps.set_filenames()
+
+    ps.set_filenames()
 
     if pc_id == 0:
         ps.create_folders()
@@ -757,10 +769,15 @@ if __name__ == '__main__':
         pp.plot_prediction(params)
 
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
+        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
 
     if pc_id == 1:
+        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         for conn_type in ['ee', 'ei', 'ie', 'ii']:
             os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
+
+    if pc_id == 2:
+        os.system('python analyse_connectivity.py %s' % ps.params['folder_name'])
 
     if comm != None:
         comm.Barrier()
