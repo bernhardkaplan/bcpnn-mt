@@ -95,7 +95,7 @@ class PlotPrediction(object):
         fig_size =  [fig_width,fig_height]
         params = {#'backend': 'png',
                   'titel.fontsize': 16,
-#                  'axes.labelsize': 10,
+                  'axes.labelsize': 14,
 #                  'text.fontsize': 10,
 #                  'legend.fontsize': 10,
 #                  'xtick.labelsize': 8,
@@ -459,11 +459,18 @@ class PlotPrediction(object):
             n_cells = self.params['n_inh']
             nspikes, self.inh_spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
             spiketimes = self.inh_spiketimes
+            np.savetxt(self.params['inh_nspikes_fn_merged'] + '.dat', nspikes)
+            idx = np.nonzero(nspikes)[0]
+            np.savetxt(self.params['inh_nspikes_nonzero_fn'], np.array((idx, nspikes[idx])).transpose())
         elif cell_type == 'exc':
             fn = self.params['exc_spiketimes_fn_merged'] + '.ras'
             n_cells = self.params['n_exc']
             nspikes, self.exc_spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
             spiketimes = self.exc_spiketimes
+            np.savetxt(self.params['exc_nspikes_fn_merged'] + '.dat', np.array((range(n_cells), nspikes)).transpose())
+
+            idx = np.nonzero(nspikes)[0]
+            np.savetxt(self.params['exc_nspikes_nonzero_fn'], np.array((idx, nspikes[idx])).transpose())
 
         self.spiketimes_loaded = True
         return spiketimes, nspikes
@@ -715,7 +722,7 @@ class PlotPrediction(object):
         ax.set_ylim((0, self.vx_confidence_binned[:, 0].size))
 #        ax.set_xlim((0, self.vx_confidence_binned[0, :].size))
         ax.set_xlabel('Time [ms]')
-        ax.set_ylabel('$v_x$')
+        ax.set_ylabel('$u$')
         ax.set_xticks(range(self.n_bins)[::2])
         ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         ny = self.vx_tuning.size
@@ -738,7 +745,7 @@ class PlotPrediction(object):
         ax.set_ylim((0, self.vy_confidence_binned[:, 0].size))
 #        ax.set_xlim((0, self.vy_confidence_binned[0, :].size))
         ax.set_xlabel('Time [ms]')
-        ax.set_ylabel('$v_y$')
+        ax.set_ylabel('$\vecv$')
         ax.set_xticks(range(self.n_bins)[::2])
         ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         ny = self.vy_tuning.size
@@ -1006,12 +1013,24 @@ class PlotPrediction(object):
 
     def plot_blank_on_cmap(self, cax, c='w', txt=''):
         ax = cax.axes
+
+        # plot lines for blank
         ax.axvline(self.params['t_before_blank'] / self.time_binsize, ls='--', color=c, lw=3)
         ax.axvline((self.params['t_before_blank'] + self.params['t_blank']) / self.time_binsize, ls='--', color=c, lw=3)
 
+        # plot lines before stimulus starts
+        ax.axvline(0, ls='--', color=c, lw=3)
+        ax.axvline(self.params['t_start'] / self.time_binsize, ls='--', color=c, lw=3)
+
         if txt != '':
-            txt_pos_x = (self.params['t_before_blank'] + .5 * self.params['t_blank']) / self.time_binsize
+            txt_pos_x = (self.params['t_before_blank'] + .15 * self.params['t_blank']) / self.time_binsize
             ylim = ax.get_ylim()
-            txt_pos_y = .85 * ylim[1]
+            txt_pos_y = .15 * ylim[1]
             ax.annotate(txt, (txt_pos_x, txt_pos_y), fontsize=14, color='w')
+
+            txt_pos_x = (.15 * self.params['t_start']) / self.time_binsize
+            ylim = ax.get_ylim()
+            txt_pos_y = .15 * ylim[1]
+            ax.annotate(txt, (txt_pos_x, txt_pos_y), fontsize=14, color='w')
+
 

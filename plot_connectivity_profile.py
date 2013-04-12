@@ -5,8 +5,12 @@ import sys
 import os
 import simulation_parameters
 import matplotlib
+matplotlib.use('Agg')
 from matplotlib import cm
 import json
+
+# --------------------------------------------------------------------------
+
 
 class ConnectionPlotter(object):
 
@@ -319,16 +323,12 @@ class ConnectionPlotter(object):
     def load_connection_list(self, conn_type):
 
         if conn_type == 'ee':
-            n_src, n_tgt = self.params['n_exc'], self.params['n_exc']
             loaded = self.conn_list_loaded[0]
         elif conn_type == 'ei':
-            n_src, n_tgt = self.params['n_exc'], self.params['n_inh']
             loaded = self.conn_list_loaded[1]
         elif conn_type == 'ie':
-            n_src, n_tgt = self.params['n_inh'], self.params['n_exc']
             loaded = self.conn_list_loaded[2]
         elif conn_type == 'ii':
-            n_src, n_tgt = self.params['n_inh'], self.params['n_inh']
             loaded = self.conn_list_loaded[3]
 
         if loaded:
@@ -402,7 +402,7 @@ class ConnectionPlotter(object):
             good_gids = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')
             idx = self.tp_exc[good_gids, 0].argsort()
             gids_to_check = good_gids[idx]
-            print 'debug x_pos', self.tp_exc[idx, 0]
+#            print 'debug x_pos', self.tp_exc[idx, 0]
 
             conn_list_ei = np.loadtxt(self.params['merged_conn_list_ei'])
 
@@ -480,9 +480,7 @@ if __name__ == '__main__':
             print 'Loading parameters from', param_fn
             f = file(param_fn, 'r')
             params = json.load(f)
-#            params = NTP.ParameterSet(fn_as_url)
             gid = np.loadtxt(params['gids_to_record_fn'])[0]
-            print 'debug', params['n_cells']
     else:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
@@ -495,8 +493,8 @@ if __name__ == '__main__':
     # here you can choose where the cell to plot should be sitting and what the preferred direction should be 
     target_vector = (.3, .5)
     direction = (.5, 0.)
-#    gid = P.find_cell_closest_to_vector(target_vector, direction)
-    gid = 2587
+    gid = P.find_cell_closest_to_vector(target_vector, direction)
+#    gid = 2587
     P.plot_connection_histogram(gid, 'ee')
     print 'plotting gid', gid
 
@@ -504,6 +502,8 @@ if __name__ == '__main__':
 #    exc_color = (.5, .5, .5)
     outgoing_conns = True
     ee_targets = P.plot_connection_type(gid, 'ee', 'o', 'k', outgoing_conns, with_directions, plot_delays=with_delays, with_histogram=with_histogram)
+    print 'ee_targets:', ee_targets
+    print 'len(ee_targets):', len(ee_targets)
     outgoing_conns = False
     ee_sources = P.plot_connection_type(gid, 'ee', '^', 'r', outgoing_conns, with_directions, plot_delays=with_delays, with_histogram=with_histogram)
 #    ei_targets = P.plot_connection_type(gid, 'ei', 'x', 'r', with_directions, plot_delays=with_delays)#, annotate=True)
@@ -543,34 +543,11 @@ if __name__ == '__main__':
 #    P.plot_cells_as_dots(range(params['n_exc']), P.tp_inh)
 
 
-    # debug #find tgt inh cells which have
-#    import CreateConnections as CC 
-#    tp_src = np.loadtxt(params['tuning_prop_means_fn'])
-#    tp_tgt = np.loadtxt(params['tuning_prop_inh_fn'])
-#    src = gid
-#    n_tgt = params['n_inh']
-#    p, latency = np.zeros(n_tgt), np.zeros(n_tgt)
-#    for tgt in xrange(n_tgt):
-#        p[tgt], latency[tgt] = CC.get_p_conn(tp_src[src, :], tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'])
-#    sorted_indices = np.argsort(p)
-#    n_tgt_cells_per_neuron = int(round(params['p_ei'] * n_tgt))
-#    targets = sorted_indices[-n_tgt_cells_per_neuron:] 
-#    for i in xrange(len(targets)):
-#        tgt = targets[i]
-#        print 'gid, tp_tgt, p', tgt, tp_tgt[tgt, :], p[tgt]
-#    print 'tp_src', tp_src[src, :]
-#    gid = targets[0]
 #    P.make_legend()
 
     output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f.png' % (gid, params['w_sigma_x'], params['w_sigma_v'])
     print 'Saving figure to', output_fig
     pylab.savefig(output_fig)
-#    output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f.eps' % (gid, params['w_sigma_x'], params['w_sigma_v'])
-#    print 'Saving figure to', output_fig
-#    pylab.savefig(output_fig, dpi=200)
-#    output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f.pdf' % (gid, params['w_sigma_x'], params['w_sigma_v'])
-#    print 'Saving figure to', output_fig
-#    pylab.savefig(output_fig, dpi=200)
 
 #    pylab.show()
 

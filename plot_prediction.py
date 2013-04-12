@@ -35,8 +35,8 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 
     # fig 1
     # neuronal level
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_delayScale%d_scaleLatency%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['delay_scale'], params['scale_latency'])
+    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_delayScale%d_connRadius%.2f_wee%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
+            params['w_sigma_x'], params['w_sigma_v'], params['delay_scale'], params['connectivity_radius'], params['w_tgt_in_per_cell_ee'])
 
 
     plotter.create_fig()  # create an empty figure
@@ -51,7 +51,15 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     plotter.plot_y_grid_vs_time(6)
     output_fn = output_fn_base + '_0.png'
     print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn)
+    pylab.savefig(output_fn, dpi=200)
+    output_fn = output_fn_base + '_0.pdf'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_0.eps'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+
+
 
     # poplation level, short time-scale
     plotter.n_fig_x = 3
@@ -67,35 +75,60 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     plotter.plot_xdiff(6)
     output_fn = output_fn_base + '_1.png'
     print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn)
+    pylab.savefig(output_fn, dpi=200)
+    output_fn = output_fn_base + '_1.pdf'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_1.eps'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+
+
 
 #    plotter.plot_theta_estimates(5)
 
 
     # fig 3
     # population level, long time-scale
-    plotter.n_fig_x = 1
-    plotter.n_fig_y = 4
-    pylab.rcParams['legend.fontsize'] = 10
-    pylab.subplots_adjust(hspace=0.5)
-    plotter.create_fig()
-    plotter.plot_fullrun_estimates_vx(1)
-    plotter.plot_fullrun_estimates_vy(2)
-    plotter.plot_fullrun_estimates_theta(3)
-    plotter.plot_nspike_histogram(4)
-    output_fn = output_fn_base + '_2.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn)
+
+#    plotter.n_fig_x = 1
+#    plotter.n_fig_y = 4
+#    pylab.rcParams['legend.fontsize'] = 10
+#    pylab.subplots_adjust(hspace=0.5)
+#    plotter.create_fig()
+#    plotter.plot_fullrun_estimates_vx(1)
+#    plotter.plot_fullrun_estimates_vy(2)
+#    plotter.plot_fullrun_estimates_theta(3)
+#    plotter.plot_nspike_histogram(4)
+#    output_fn = output_fn_base + '_2.png'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_2.pdf'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_2.eps'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+
+
 
     # fig 4
     plotter.n_fig_x = 1
     plotter.n_fig_y = 2
-    output_fn = output_fn_base + '_4.png'
     plotter.create_fig()  # create an empty figure
     plotter.plot_network_activity('exc', 1)
     plotter.plot_network_activity('inh', 2)
+    output_fn = output_fn_base + '_4.png'
     print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn)
+    pylab.savefig(output_fn, dpi=200)
+    output_fn = output_fn_base + '_4.pdf'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_4.eps'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+
+
 
     plotter.n_fig_x = 1
     plotter.n_fig_y = 1
@@ -104,7 +137,15 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     plotter.quiver_plot(weights, fig_cnt=1)
     output_fn = output_fn_base + '_quiver.png'
     print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn)
+    pylab.savefig(output_fn, dpi=200)
+    output_fn = output_fn_base + '_quiver.pdf'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_quiver.eps'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+
+
 
     plotter.save_data()
 #    plotter.n_fig_x = 1

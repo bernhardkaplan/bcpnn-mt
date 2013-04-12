@@ -5,7 +5,7 @@ from scipy.spatial import distance
 import os
 import time
 
-def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
+def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
     tp_src is a list/array with the 4 tuning property values of the source cell: x, y, u, v
         
@@ -38,7 +38,7 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
 
     d_ij = utils.torus_distance2D(tp_src[0], tp_tgt[0], tp_src[1], tp_tgt[1])
     latency = d_ij / np.sqrt(tp_src[2]**2 + tp_src[3]**2)
-#    if latency < scale_latency:
+#    if latency < connectivity_radius:
     x_predicted = tp_src[0] + tp_src[2] * latency
     y_predicted = tp_src[1] + tp_src[3] * latency
     sigma_x = w_sigma_x#* np.sqrt(latency)
@@ -50,11 +50,11 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     return p, latency
 
 #            * np.exp(- ((tp_src[2] - tp_tgt[2])**2 + (tp_src[3] - tp_tgt[3])**2) / (2 * sigma_v**2))
-#        p *= np.exp(- latency / scale_latency)
+#        p *= np.exp(- latency / connectivity_radius)
 #    else:
 #        return 0., 0.
 
-def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
+def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
     Calculates the connection probabilities for all source cells targeting one cell.
     tp_src = np.array, shape = (n_src, 4)
@@ -64,7 +64,7 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
 #    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
-#    latency = d_ij / scale_latency
+#    latency = d_ij / connectivity_radius
 
     v_src = np.array((tp_src[:, 2], tp_src[:, 3]))
     v_src = v_src.transpose()
@@ -80,35 +80,26 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, scale_latency=1.0):
     x_tgt_norm = tp_tgt[0]**2 + tp_tgt[1]**2
     x_src_norm = x_src[:, 0]**2 + x_src[:, 1]**2
     
-    eps = 1e-20
-    x_diff = utils.torus(x_tgt[0] * np.ones(n_src) - x_src[:, 0]) + eps
-    y_diff = utils.torus(x_tgt[1] * np.ones(n_src) - x_src[:, 1]) + eps
-#    x_diff = utils.torus_distance_array(x_tgt[0] * np.ones(n_src), x_src[:, 0]) + eps
-#    y_diff = utils.torus_distance_array(x_tgt[1] * np.ones(n_src), x_src[:, 1]) + eps
-
+    x_diff = utils.torus(x_tgt[0] * np.ones(n_src) - x_src[:, 0])
+    y_diff = utils.torus(x_tgt[1] * np.ones(n_src) - x_src[:, 1])
 
     x_diff_ = np.array((x_diff, y_diff))
 
     x_diff_ = x_diff_.transpose()
-#    print 'debug x_diff_', x_diff_
-    x_norm = x_diff_[:, 0]**2 + x_diff_[:, 1]**2 # norm of x_tgt - x_src
-#    print 'debug x_norm', x_norm
+    # norm of x_tgt - x_src
+    eps = 1e-20
+    x_norm = x_diff_[:, 0]**2 + x_diff_[:, 1]**2  + eps
     
     x_cos_array = np.dot(x_diff_, v_tgt)
-    x_cos_array /= np.sqrt(v_src_norm * x_norm)
-#    print 'debug v_src_norm', v_src_norm
-#    print 'debug v_src_norm * x_norm', v_src_norm * x_norm
-#    print 'debug x_cos_array', x_cos_array
-#    print 'debug v_cos_array', v_cos_array
-
+    x_cos_array /= np.sqrt(v_tgt_norm * x_norm)
     p = np.exp(x_cos_array / (w_sigma_x**2)) * np.exp(v_cos_array/(w_sigma_v**2))
-#    print 'debug p', p 
 
-    if scale_latency != 1.0:
-#        invalid_idx = latency > scale_latency
-        invalid_idx = d_ij > scale_latency
-        invalid_idx = invalid_idx.nonzero()[0]
-        p[invalid_idx] = 0.
+    if connectivity_radius < 1.0:
+#        invalid_idx = latency > connectivity_radius
+#        invalid_idx = d_ij > connectivity_radius
+#        invalid_idx = invalid_idx.nonzero()[0]
+#        p[invalid_idx] = 0.
+        p[d_ij > connectivity_radius] = 0.
     
     return p, d_ij
 #    return p, latency
@@ -156,7 +147,7 @@ def compute_weights_convergence_constrained(tuning_prop, params, comm=None):
         latency = np.zeros(params['n_exc'])
         for src in xrange(params['n_exc']):
             if (src != tgt):
-                p[src], latency[src] = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v, self.params['scale_latency'])
+                p[src], latency[src] = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v, self.params['connectivity_radius'])
         sorted_indices = np.argsort(p)
         sources = sorted_indices[-params['n_src_cells_per_neuron']:] 
         w = params['w_tgt_in'] / p[sources].sum() * p[sources]
