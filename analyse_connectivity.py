@@ -1,4 +1,7 @@
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
+
 import utils
 import pylab
 import sys
@@ -170,7 +173,7 @@ class ConnectivityAnalyser(object):
                 gids_to_plot = [gids_to_plot[0]]
             else:
                 gids_to_plot = np.random.randint(0, tp_src[:, 0].size, 1)
-        
+
         fn = self.params['merged_conn_list_%s' % conn_type]
         print 'Loading:', fn
         if not os.path.exists(fn):
@@ -234,7 +237,7 @@ class ConnectivityAnalyser(object):
 
     def plot_tuning_vs_conn_cg(self, conn_type, show=False):
         """
-        For each source cell, loop through all target connections and compute the 
+        For each source cell, loop through all target connections and compute the
         scalar (dot) product between the preferred direction of the source cell and the center of gravity of the connection vector
         (both in the spatial domain and the direction domain)
         c_x_i = sum_j w_ij * (x_i - x_j) # x_ are position vectors of the cell
@@ -259,10 +262,10 @@ class ConnectivityAnalyser(object):
 #            print 'Saving:', conn_mat_fn
 #            np.savetxt(conn_mat_fn, w)
 
-        # for all source cells store the length of the vector: 
+        # for all source cells store the length of the vector:
         # (connection centroid - preferred direction)
-        diff_conn_centroid_x_vsrc = np.zeros(n_src) 
-        diff_conn_centroid_v_vsrc = np.zeros(n_src) 
+        diff_conn_centroid_x_vsrc = np.zeros(n_src)
+        diff_conn_centroid_v_vsrc = np.zeros(n_src)
         angles_x = np.zeros(n_src)
         angles_v = np.zeros(n_src)
         # deprecated
@@ -319,7 +322,7 @@ class ConnectivityAnalyser(object):
         ax1.set_title('Length of difference vector: preferred direction $\\vec{v}_i$ and connection centroid $\\vec{c}_i^x$\n%s' % title)
         ax1.set_xlim((0, n_src))
 #        ax1.legend()
-               
+
         ax2.bar(x, diff_conn_centroid_v_vsrc)
         ax2.set_xlabel('source cell')
         ax1.set_ylabel('$|\\vec{v}_i - \\vec{c}_i^V|$')
@@ -348,7 +351,7 @@ class ConnectivityAnalyser(object):
 
         c_x = np.zeros(2)
         c_v = np.zeros(2)
-        weights /= weights.max() 
+        weights /= weights.max()
         (x_src, y_src, vx_src, vy_src) = tp_src
 
         n_tgt = tp_tgt[:, 0].size
@@ -359,10 +362,10 @@ class ConnectivityAnalyser(object):
 
         c_x /= n_tgt
         c_v /= n_tgt
-#        c_x *= self.params['scale_latency']
-#        c_v *= self.params['scale_latency']
+#        c_x *= self.params['connectivity_radius']
+#        c_v *= self.params['connectivity_radius']
         return c_x, c_v
-#        n_tgt = 
+#        n_tgt =
 
 
     def create_connectivity(self, conn_type):
@@ -386,7 +389,7 @@ class ConnectivityAnalyser(object):
 
         n_src_cells_per_neuron = int(round(self.params['p_%s' % conn_type] * n_src))
 
-        # compute all pairwise connection probabilities 
+        # compute all pairwise connection probabilities
         for i_, tgt in enumerate(range(gid_tgt_min, gid_tgt_max)):
             if (i_ % 20) == 0:
                 print '%.2f percent complete' % (i_ / float(n_my_tgts) * 100.)
@@ -395,18 +398,18 @@ class ConnectivityAnalyser(object):
             for src in xrange(n_src):
                 if conn_type[0] == conn_type[1]: # no self-connection
                     if (src != tgt):
-                        p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['scale_latency'])
+                        p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
                 else: # different populations --> same indices mean different cells, no check for src != tgt
-                    p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['scale_latency'])
+                    p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
             # sort connection probabilities and select remaining connections
             sorted_indices = np.argsort(p)
             if conn_type[0] == 'e':
-                sources = sorted_indices[-n_src_cells_per_neuron:] 
+                sources = sorted_indices[-n_src_cells_per_neuron:]
             else:
                 if conn_type == 'ii':
                     sources = sorted_indices[1:n_src_cells_per_neuron+1]  # shift indices to avoid self-connection, because p_ii = .0
                 else:
-                    sources = sorted_indices[:n_src_cells_per_neuron] 
+                    sources = sorted_indices[:n_src_cells_per_neuron]
             w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / p[sources].sum()) * p[sources]
             for i in xrange(len(sources)):
                 if w[i] > self.params['w_thresh_connection']:
@@ -414,22 +417,31 @@ class ConnectivityAnalyser(object):
                     # create adjacency list for all local cells and store connection in class container
                     self.target_adj_list[i_].append(sources[i])
 
-            
+
         # communicate the resulting target_adj_list to the root process
         self.send_list_to_root(self.target_adj_list)
 
 
     def send_list_to_root(self, list_to_be_sent):
-
         pass
-        # 
-
+        #
 
 
     def plot_src_tgt_position_scatter(self, conn_type):
         pass
 
 #        for i_
+
+    def print_well_tuned_cell_connectivity(self):
+        """
+        This function prints the sources and targets for the 'well-tuned' cells,
+        and prints additional information, like
+        cos(x_tgt - x_src, v_tgt)
+        cos(x_tgt - x_src, v_tgt) / sigma_x**2
+        etc...
+        """
+        gids = np.loadtxt(self.params['gids_to_record_fn'], dtype=int)
+
 
 
 if __name__ == '__main__':
@@ -449,7 +461,7 @@ if __name__ == '__main__':
 
 
     conn_types = ['ee', 'ei', 'ie', 'ii']
-        
+
     # CHECK IF PARAMETER FILE WAS PASSED
     conn_type = None
     if len(sys.argv) > 1:
