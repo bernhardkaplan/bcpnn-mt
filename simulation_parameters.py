@@ -35,16 +35,16 @@ class parameter_storage(object):
 #         self.params['N_V'], self.params['N_theta'] = 8, 8# resolution in velocity norm and direction
 # 
 #         Medium-scale system
-        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
-        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
- 
-#         Small-scale system
-#        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+#        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
 #        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
 #        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
+#        self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
+ 
+#         Small-scale system
+        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
+        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
         print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
         print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
@@ -72,9 +72,9 @@ class parameter_storage(object):
         # ###################
         # CELL PARAMETERS   #
         # ###################
-#        self.params['neuron_model'] = 'IF_cond_exp'
+        self.params['neuron_model'] = 'IF_cond_exp'
 #        self.params['neuron_model'] = 'IF_cond_alpha'
-        self.params['neuron_model'] = 'EIF_cond_exp_isfa_ista'
+#        self.params['neuron_model'] = 'EIF_cond_exp_isfa_ista'
         self.params['tau_syn_exc'] = 5.0 # 10.
         self.params['tau_syn_inh'] = 10.0 # 20.
         if self.params['neuron_model'] == 'IF_cond_exp':
@@ -267,11 +267,11 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-#               folder_name = 'Results_'
+               folder_name = 'Results_'
 
             folder_name += connectivity_code
             folder_name += '/'
-            # if parameters should be stored in the file name:
+            # if parameters should be stored in the folder name:
 #            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
 #                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
 #                        self.params['w_tgt_in_per_cell_ei'], self.params['w_tgt_in_per_cell_ie'], self.params['w_tgt_in_per_cell_ii'], self.params['delay_scale'], self.params['connectivity_radius'])
@@ -340,6 +340,8 @@ class parameter_storage(object):
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
+
+        self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
 
         # CONNECTION FILES
         self.params['weight_and_delay_fig'] = '%sweights_and_delays.png' % (self.params['figures_folder'])

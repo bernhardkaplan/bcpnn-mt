@@ -60,7 +60,7 @@ class NetworkModel(object):
         """
 
         self.params = params
-        self.debug_connectivity = True
+        self.debug_connectivity = True # should be true if you want to plot connectivity profiles etc
         self.comm = comm
         if self.comm != None:
             self.pc_id, self.n_proc = self.comm.rank, self.comm.size
@@ -708,8 +708,6 @@ if __name__ == '__main__':
 
     """
     The following scripts should only be called, if you are not running on a cluster...
-    """
-
     if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
         import plot_prediction as pp
         pp.plot_prediction(params)
@@ -722,9 +720,8 @@ if __name__ == '__main__':
         for conn_type in ['ee', 'ei', 'ie', 'ii']:
             os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
 
-    if pc_id == 2 or not(USE_MPI):
+    if pc_id == 1 or not(USE_MPI):
         os.system('python analyse_connectivity.py %s' % ps.params['folder_name'])
-
+    """
     if comm != None:
         comm.Barrier()
-

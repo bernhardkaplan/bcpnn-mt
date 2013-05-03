@@ -412,10 +412,9 @@ class ConnectivityAnalyser(object):
                     sources = sorted_indices[:n_src_cells_per_neuron]
             w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / p[sources].sum()) * p[sources]
             for i in xrange(len(sources)):
-                if w[i] > self.params['w_thresh_connection']:
-                    delay = min(max(latency[sources[i]] * self.params['delay_scale'], self.params['delay_range'][0]), self.params['delay_range'][1])  # map the delay into the valid range
-                    # create adjacency list for all local cells and store connection in class container
-                    self.target_adj_list[i_].append(sources[i])
+                delay = min(max(latency[sources[i]] * self.params['delay_scale'], self.params['delay_range'][0]), self.params['delay_range'][1])  # map the delay into the valid range
+                # create adjacency list for all local cells and store connection in class container
+                self.target_adj_list[i_].append(sources[i])
 
 
         # communicate the resulting target_adj_list to the root process
