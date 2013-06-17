@@ -466,19 +466,16 @@ if __name__ == '__main__':
         n_plots_x, n_plots_y = 1, 1
 
     np.random.seed(0)
-#    try:
     if len(sys.argv) > 1:
         if sys.argv[1].isdigit():
             gid = int(sys.argv[1])
         else:
             param_fn = sys.argv[1]
             if os.path.isdir(param_fn):
-#                param_fn += '/Parameters/simulation_parameters.info'
                 param_fn += '/Parameters/simulation_parameters.json'
-            import NeuroTools.parameters as NTP
-            fn_as_url = utils.convert_to_url(param_fn)
-            print 'Loading parameters from', param_fn
+            import json
             f = file(param_fn, 'r')
+            print 'Loading parameters from', param_fn
             params = json.load(f)
             gid = np.loadtxt(params['gids_to_record_fn'])[0]
     else:

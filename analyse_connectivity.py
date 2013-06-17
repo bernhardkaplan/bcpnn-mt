@@ -475,10 +475,11 @@ if __name__ == '__main__':
         else:
             param_fn = sys.argv[1]
             if os.path.isdir(param_fn):
-                param_fn += '/Parameters/simulation_parameters.info'
+                param_fn += '/Parameters/simulation_parameters.json'
             print 'Trying to load parameters from', param_fn
-            import NeuroTools.parameters as NTP
-            params = NTP.ParameterSet(utils.convert_to_url(param_fn))
+            import json
+            f = file(param_fn, 'r')
+            params = json.load(f)
     else:
         print '\nLoading the parameters currently in simulation_parameters.py\n'
         network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters

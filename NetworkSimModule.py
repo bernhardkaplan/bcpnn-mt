@@ -12,8 +12,8 @@ t0 = time.time()
 import numpy as np
 import numpy.random as nprnd
 import sys
-import NeuroTools.parameters as ntp
 import os
+import json
 import CreateConnections as CC
 import utils
 import simulation_parameters
@@ -643,8 +643,9 @@ class NetworkModel(object):
             print "Proc %d Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (self.pc_id, self.times['t_sim'], (self.times['t_sim'])/60., self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
             print "Proc %d Full pyNN run time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (self.pc_id, self.times['t_all'], (self.times['t_all'])/60., self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
             fn = utils.convert_to_url(params['folder_name'] + 'times_dict_np%d.py' % self.n_proc)
-            output = ntp.ParameterSet(output)
-            output.save(fn)
+
+            output_file = file(self.params['params_fn_json'], 'w')
+            d = json.dump(self.params, output_file)
 
 
 if __name__ == '__main__':
@@ -689,7 +690,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record = True
         save_input_files = not load_files
 

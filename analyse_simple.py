@@ -8,11 +8,11 @@ import sys
 if len(sys.argv) > 1:
     param_fn = sys.argv[1]
     if os.path.isdir(param_fn):
-        param_fn += '/Parameters/simulation_parameters.info'
-    import NeuroTools.parameters as NTP
-    fn_as_url = utils.convert_to_url(param_fn)
+        param_fn += '/Parameters/simulation_parameters.json'
+    import json
+    f = file(param_fn, 'r')
     print 'Loading parameters from', param_fn
-    params = NTP.ParameterSet(fn_as_url)
+    params = json.load(f)
 
 else:
     print '\nPlotting the default parameters given in simulation_parameters.py\n'

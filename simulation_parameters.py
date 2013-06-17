@@ -2,7 +2,6 @@ import json
 import numpy as np
 import numpy.random as rnd
 import os
-from NeuroTools import parameters as ntp
 import utils
 
 class parameter_storage(object):
@@ -312,7 +311,6 @@ class parameter_storage(object):
                             self.params['data_folder'], \
                             self.params['input_folder']] 
 
-        self.params['params_fn'] = '%ssimulation_parameters.info' % (self.params['parameters_folder']) # more easily readable, NeuroTools dependent
         self.params['params_fn_json'] = '%ssimulation_parameters.json' % (self.params['parameters_folder'])
 
         # input spiketrains
@@ -394,9 +392,9 @@ class parameter_storage(object):
         """
         return the simulation parameters in a dictionary
         """
-        self.ParamSet = ntp.ParameterSet(self.params)
-        return self.ParamSet
-#        return self.params
+#        self.ParamSet = ntp.ParameterSet(self.params)
+#        return self.ParamSet
+        return self.params
 
 
     def update_values(self, kwargs):
@@ -404,7 +402,7 @@ class parameter_storage(object):
             self.params[key] = value
         # update the dependent parameters
         self.set_filenames()
-        self.ParamSet = ntp.ParameterSet(self.params)
+#        self.ParamSet = ntp.ParameterSet(self.params)
 
     def write_parameters_to_file(self, fn=None):
         if not (os.path.isdir(self.params['folder_name'])):
@@ -412,13 +410,8 @@ class parameter_storage(object):
             self.create_folders()
 
         if fn == None:
-            fn = self.params['params_fn']
+            fn = self.params['params_fn_json']
         print 'Writing parameters to: %s' % (fn)
-
-        self.ParamSet = ntp.ParameterSet(self.params)
-        fn = utils.convert_to_url(fn)
-        self.ParamSet.save(fn)
-
         output_file = file(self.params['params_fn_json'], 'w')
         d = json.dump(self.params, output_file)
 
@@ -432,13 +425,17 @@ class ParameterContainer(parameter_storage):
         self.update_values({self.params['folder_name'] : self.root_dir})
 
     def load_params(self, fn):
-        self.params = ntp.ParameterSet(fn)
+
+        f = file(fn, 'r')
+        print 'Loading parameters from', fn
+        self.params = json.load(f)
 
     def update_values(self, kwargs):
         for key, value in kwargs.iteritems():
             self.params[key] = value
+
         # update the dependent parameters
-        self.ParamSet = ntp.ParameterSet(self.params)
+        # --> to be implemented by another function (e.g. set_filenames())
 
     def create_folders(self):
         """
@@ -454,12 +451,11 @@ class ParameterContainer(parameter_storage):
         return the simulation parameters in a dictionary
         """
         return self.ParamSet
-#        return self.params
 
 
     def write_parameters_to_file(self, fn=None):
         if fn == None:
-            fn = self.params['params_fn']
+            fn = self.params['params_fn_json']
         print 'Writing parameters to: %s' % (fn)
         self.ParamSet.save(fn)
 

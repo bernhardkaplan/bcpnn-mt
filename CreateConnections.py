@@ -17,25 +17,6 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
         \cdot exp(-\frac{(u_0-u_1)^2 + (v_0 - v_1)^2}{2 \cdot \sigma_V^2})
  
     """
-
-#    x0 = tp_src[0]
-#    y0 = tp_src[1]
-#    u0 = tp_src[2]
-#    v0 = tp_src[3]
-#    x1 = tp_tgt[0]
-#    y1 = tp_tgt[1]
-#    u1 = tp_tgt[2]
-#    v1 = tp_tgt[3]
-#    dx = utils.torus_distance(x0, x1)
-#    dy = utils.torus_distance(y0, y1)
-#    latency = np.sqrt(dx**2 + dy**2) / np.sqrt(u0**2 + v0**2)
-#    x_predicted = x0 + u0 * latency  
-#    y_predicted = y0 + v0 * latency  
-#    p = np.exp(-.5 * (utils.torus_distance(x_predicted, x1))**2 / w_sigma_x**2 \
-#               -.5 * (utils.torus_distance(y_predicted, y1))**2 / w_sigma_x**2) \
-#      * np.exp(-.5 * (u0 - u1)**2 / w_sigma_v ** 2 \
-#               -.5 * (v0 - v1)**2 / w_sigma_v ** 2)
-
     d_ij = utils.torus_distance2D(tp_src[0], tp_tgt[0], tp_src[1], tp_tgt[1])
     latency = d_ij / np.sqrt(tp_src[2]**2 + tp_src[3]**2)
 #    if latency < connectivity_radius:
@@ -56,6 +37,10 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
 
 def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
+
+    Direction-basd connectivity
+    ---------------------------
+
     Calculates the connection probabilities for all source cells targeting one cell.
     tp_src = np.array, shape = (n_src, 4)
     tp_tgt = (x, y, u, v)
@@ -111,6 +96,9 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0
 
 def get_p_conn_vec_xpred(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
+    Motion-based connectivity 
+    -------------------------
+
     Calculates the connection probabilities for all source cells targeting one cell.
     tp_src = np.array, shape = (n_src, 4)
     tp_tgt = (x, y, u, v)
