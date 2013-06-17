@@ -98,6 +98,8 @@ class parameter_storage(object):
         """
         For each connection type ('ee', 'ei', 'ie', 'ii') choose one form of connectivity
         """
+        self.params['direction_based_conn'] = True
+        self.params['with_short_term_depression'] = False
         self.params['connectivity_ee'] = 'anisotropic'
 #        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
