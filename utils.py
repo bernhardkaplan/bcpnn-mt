@@ -780,13 +780,17 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     tp_cell : same format as mp
     n_steps: steps for calculating the motion path
     """
-    time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
+    try:
+        if params['abstract'] == False:
+            time = np.arange(0, params['t_sim'], params['dt_rate'])
+        else:
+            time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
+    except:# use larger time step to numerically find minimum distance --> faster
+        time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
     spatial_dist = np.zeros(time.shape[0])
-    for i_time, time_ in enumerate(time):
-        x_pos_stim = mp[0] + mp[2] * time_ / params['t_stimulus']
-        y_pos_stim = mp[1] + mp[3] * time_ / params['t_stimulus']
-#        spatial_dist[t] = torus_distance(tp_cell[0], x_pos_stim[t])**2 + torus_distance(tp_cell[1], y_pos_stim[t])**2
-        spatial_dist[i_time] = (tp_cell[0] - x_pos_stim)** 2 + (tp_cell[1] - y_pos_stim)**2
+    x_pos_stim = mp[0] + mp[2] * time / params['t_stimulus']
+    y_pos_stim = mp[1] + mp[3] * time / params['t_stimulus']
+    spatial_dist = torus_distance_array(tp_cell[0], x_pos_stim)**2 + torus_distance_array(tp_cell[1], y_pos_stim)**2
     min_spatial_dist = np.sqrt(np.min(spatial_dist))
     velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
     dist =  min_spatial_dist + velocity_dist
@@ -971,7 +975,7 @@ def merge_files(input_fn_base, output_fn):
     os.system(cmd)
 
 
-def sort_cells_by_distance_to_stimulus(n_cells, verbose=True):
+def sort_cells_by_distance_to_stimulus(n_cells, verbose=False):
     import simulation_parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
@@ -1011,6 +1015,7 @@ def get_pmax(p_effective, w_sigma, conn_type):
     elif conn_type == 'ii':
         fit_wsigma = [2.21668319e+46,   9.05343215e-03,   1.76483061e+00, 4.01129051e-02]
     gradient  = fit_wsigma[0] * np.exp( - w_sigma**fit_wsigma[3] / fit_wsigma[1]) + fit_wsigma[2]
+    print 'debug utils.get_pmax gradient for %s ws %.1e: %.3e' % (conn_type, w_sigma, gradient)
     p_max = gradient * p_effective
 
     return p_max
@@ -1108,4 +1113,40 @@ def convert_to_url(fn):
     p = os.path.realpath('.')
     s = 'file://%s/%s' % (p, fn)
     return s
+
+
+# recording parameters for anticipatory mode
+def all_anticipatory_gids(params):
+    ex_cells = params['n_exc']
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    selected_gids = []
+    cells = np.arange(ex_cells)
+    for cell in cells:
+#        print cell
+#        i_cell = cells.tolist().index(cell)
+        if (tp[cell,1]>0.3 and tp[cell,1]<0.7):
+            selected_gids.append(cell)
+    return selected_gids       
+            
+def pop_anticipatory_gids(params):
+    ex_cells = params['n_exc']
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    selected_gids = all_anticipatory_gids(params)
+    pop1, pop2, pop3, pop4, pop5 = [],[],[],[],[]
+    for gid in selected_gids:
+        if (tp[gid,0]>0 and tp[gid,0]<0.20):
+            pop1.append(gid)
+        elif (tp[gid,0]>0.2 and tp[gid,0]<0.4):
+            pop2.append(gid)
+    
+        elif (tp[gid,0]>0.4 and tp[gid,0]<0.6):
+            pop3.append(gid)
+    
+        elif (tp[gid,0]>0.6 and tp[gid,0]<0.8):
+            pop4.append(gid)
+    
+        elif (tp[gid,0]>0.8 and tp[gid,0]<1):
+            pop5.append(gid)
+    pops = [pop1,pop2,pop3,pop4,pop5]
+    return pops 
 

@@ -12,7 +12,7 @@ t0 = time.time()
 import numpy as np
 import numpy.random as nprnd
 import sys
-import NeuroTools.parameters as ntp
+#import NeuroTools.parameters as ntp
 import os
 import CreateConnections as CC
 import utils
@@ -280,7 +280,6 @@ class NetworkModel(object):
             # create the spike trains
             print 'Creating input spiketrains for unit'
             for i_, unit in enumerate(my_units):
-                print unit,
                 rate_of_t = np.array(L_input[i_, :])
                 # each cell will get its own spike train stored in the following file + cell gid
                 n_steps = rate_of_t.size
@@ -680,7 +679,7 @@ class NetworkModel(object):
 
 
 
-    def run_sim(self, sim_cnt, record_v=True):
+    def run_sim(self, sim_cnt, record_v=False, anticipatory_mode=True):
         # # # # # # # # # # # # # # # # # # # #
         #     P R I N T    W E I G H T S      #
         # # # # # # # # # # # # # # # # # # # #
@@ -696,15 +695,28 @@ class NetworkModel(object):
     #    print "Recording spikes to file: %s" % (self.params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
     #    for cell in xrange(self.params['n_exc']):
     #        record(self.exc_pop[cell], self.params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
+
         record_exc = True
         if os.path.exists(self.params['gids_to_record_fn']):
             gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
             record_exc = True
             n_rnd_cells_to_record = 2
+        
         else:
             n_cells_to_record = 5# self.params['n_exc'] * 0.02
             gids_to_record = np.random.randint(0, self.params['n_exc'], n_cells_to_record)
+        
+        
 
+        if anticipatory_mode:
+            antcp_gids_to_record  = utils.all_anticipatory_gids(self.params)
+            self.exc_pop_view_anticipation = PopulationView(self.exc_pop, antcp_gids_to_record, label='anticipation')
+            self.exc_pop_view_anticipation.record_v()
+            self.anticipatory_record = True
+              ###################################
+              ###################################
+              
+              
         if record_v:
             self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
             self.exc_pop_view.record_v()
@@ -737,6 +749,13 @@ class NetworkModel(object):
                 print "Printing inhibitory membrane potentials"
             self.inh_pop_view.print_v("%s.v" % (self.params['inh_volt_fn_base']), compatible_output=False)
 
+        print 'DEBUG printing anticipatory cells', self.anticipatory_record
+        if self.anticipatory_record == True:   
+            self.exc_pop_view_anticipation.print_v("%s.v" % (self.params['exc_volt_anticipation']), compatible_output=False)
+
+            print 'print_v to file: %s.v' % (self.params['exc_volt_anticipation'])
+
+
         if self.pc_id == 0:
             print "Printing excitatory spikes"
         self.exc_pop.printSpikes(self.params['exc_spiketimes_fn_merged'] + '.ras')
@@ -764,8 +783,8 @@ class NetworkModel(object):
             print "Proc %d Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (self.pc_id, self.times['t_sim'], (self.times['t_sim'])/60., self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
             print "Proc %d Full pyNN run time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (self.pc_id, self.times['t_all'], (self.times['t_all'])/60., self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
             fn = utils.convert_to_url(params['folder_name'] + 'times_dict_np%d.py' % self.n_proc)
-            output = ntp.ParameterSet(output)
-            output.save(fn)
+#            output = ntp.ParameterSet(output)
+#            output.save(fn)
 
 
 if __name__ == '__main__':
@@ -795,7 +814,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = False
+        load_files = True
         record = True
         save_input_files = not load_files
     NM = NetworkModel(ps.params, comm)

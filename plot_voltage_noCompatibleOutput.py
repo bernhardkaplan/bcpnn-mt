@@ -55,7 +55,7 @@ def plot_average_volt(fn, gid=None, n=1):
 
     for i_, gid in enumerate(gids):
         time_axis, volt = utils.extract_trace(d, gid)
-        print 'gid %d v_mean, std = %.2f +- %.2f; min %.2f max %.2f, diff %.2f ' % (gid, volt.mean(), volt.std(), volt.min(), volt.max(), volt.max() - volt.min())
+        #print 'gid %d v_mean, std = %.2f +- %.2f; min %.2f max %.2f, diff %.2f ' % (gid, volt.mean(), volt.std(), volt.min(), volt.max(), volt.max() - volt.min())
         all_volt[:, i_] = volt
 
     avg_volt = np.zeros((time_axis.size, 2))
