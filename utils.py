@@ -1154,3 +1154,25 @@ def pop_anticipatory_gids(params):
     pops = [pop1,pop2,pop3,pop4,pop5]
     return pops 
 
+
+def select_well_tuned_cells(tp, params, n_cells, n_pop):
+    """
+    n_cells -- (int) number of cells to be selected
+    n_pop -- n_cells is being split up in n_pop populations sorted by x-position
+    """
+    gids, dist = sort_gids_by_distance_to_stimulus(tp, params['motion_params'], params)
+    selected_gids = gids[:n_cells]
+    x_pos = tp[selected_gids, 0]
+    x_pos_srt = np.argsort(x_pos)
+    gids_sorted = selected_gids[x_pos_srt]
+
+    pops = []
+    n_per_pop = n_cells / n_pop
+    for i in xrange(n_pop):
+        i_0 = i * n_per_pop
+        i_1 = (i + 1) * n_per_pop
+        pop = gids_sorted[i_0:i_1]
+        pops.append(pop)
+    print 'debug, pops:', pops
+
+    return gids_sorted, pops

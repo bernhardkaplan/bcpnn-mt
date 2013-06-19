@@ -17,17 +17,22 @@ else:
     network_params = sp.parameter_storage()
     params = network_params.load_params()
 
-print 'DEBUG n_exc', params['n_exc']
-
 tp = np.loadtxt(params['tuning_prop_means_fn'])
 fn = params['exc_volt_anticipation']
 print 'Loading ', fn
 d = np.loadtxt(fn)
-pops = utils.pop_anticipatory_gids(params)
 
+n_pop = 4
+selected_gids, pops = utils.select_well_tuned_cells(tp, params, params['n_gids_to_record'], n_pop)
+print 'pops', pops
 
-avg_volts = []
-selected_gids = utils.all_anticipatory_gids(params)
+time_axis, volt = utils.extract_trace(d, pops[0][0])
+
+avg_volts = np.zeros((time_axis.size, len(pops) + 1))
+
+avg_volts[:, 0] = time_axis
+#selected_gids = utils.all_anticipatory_gids(params)
+print 'selected_gids', len(selected_gids)
 for j_, pop in enumerate(pops): 
     print 'debug', pop, len(pop)
     time_axis, volt = utils.extract_trace(d, pop[0])
@@ -47,14 +52,17 @@ for j_, pop in enumerate(pops):
     print 'u_avg:', u_group.mean(), u_group.std()
     print 'v_avg:', v_group.mean(), v_group.std()
     avg_volt = volt_sum / len(pop)
-    avg_volts.append(avg_volt)
+    avg_volts[:, j_ + 1] = avg_volt
     
    
+data_fn = params['population_voltages_fn']
+print 'Saving output to:', data_fn
+np.savetxt(data_fn, avg_volts)
 
 fig = pylab.figure()
 ax = fig.add_subplot(111)
 for i in xrange(len(pops)):
-    ax.plot(time_axis, avg_volts[i], label='pop %d' % i, lw=3)
+    ax.plot(time_axis, avg_volts[:, i+1], label='pop %d' % i, lw=3)
 
 pylab.legend()
 output_fn = params['figures_folder'] + 'anticipatory_avg_volt.png'

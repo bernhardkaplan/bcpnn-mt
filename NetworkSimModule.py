@@ -679,7 +679,7 @@ class NetworkModel(object):
 
 
 
-    def run_sim(self, sim_cnt, record_v=False, anticipatory_mode=True):
+    def run_sim(self, sim_cnt, anticipatory_mode=True):
         # # # # # # # # # # # # # # # # # # # #
         #     P R I N T    W E I G H T S      #
         # # # # # # # # # # # # # # # # # # # #
@@ -697,19 +697,11 @@ class NetworkModel(object):
     #        record(self.exc_pop[cell], self.params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
 
         record_exc = True
-        if os.path.exists(self.params['gids_to_record_fn']):
-            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
-            record_exc = True
-            n_rnd_cells_to_record = 2
-        
-        else:
-            n_cells_to_record = 5# self.params['n_exc'] * 0.02
-            gids_to_record = np.random.randint(0, self.params['n_exc'], n_cells_to_record)
-        
-        
 
         if anticipatory_mode:
-            antcp_gids_to_record  = utils.all_anticipatory_gids(self.params)
+            antcp_gids_to_record, pops  = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params, self.params['n_gids_to_record'], 5)
+#            antcp_gids_to_record  = utils.all_anticipatory_gids(self.params)
+
             self.exc_pop_view_anticipation = PopulationView(self.exc_pop, antcp_gids_to_record, label='anticipation')
             self.exc_pop_view_anticipation.record_v()
             self.anticipatory_record = True
@@ -717,9 +709,8 @@ class NetworkModel(object):
               ###################################
               
               
-        if record_v:
-            self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
-            self.exc_pop_view.record_v()
+        self.record_inh = False
+        if self.record_inh:
             self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
             self.inh_pop_view.record_v()
 
@@ -735,23 +726,19 @@ class NetworkModel(object):
         run(self.params['t_sim'])
         self.times['t_sim'] = self.timer.diff()
 
-    def print_results(self, print_v=True):
+    def print_results(self):
         """
             # # # # # # # # # # # # # # # # #
             #   P R I N T    R E S U L T S  #
             # # # # # # # # # # # # # # # # #
         """
-        if print_v:
-            if self.pc_id == 0:
-                print 'print_v to file: %s.v' % (self.params['exc_volt_fn_base'])
-            self.exc_pop_view.print_v("%s.v" % (self.params['exc_volt_fn_base']), compatible_output=False)
+        if self.record_inh:
             if self.pc_id == 0:
                 print "Printing inhibitory membrane potentials"
             self.inh_pop_view.print_v("%s.v" % (self.params['inh_volt_fn_base']), compatible_output=False)
 
         if self.anticipatory_record == True:   
             self.exc_pop_view_anticipation.print_v("%s" % (self.params['exc_volt_anticipation']), compatible_output=False)
-
             print 'print_v to file: %s' % (self.params['exc_volt_anticipation'])
 
 
@@ -826,8 +813,8 @@ if __name__ == '__main__':
     else:
         NM.spike_times_container = spike_times_container
     NM.connect()
-    NM.run_sim(sim_cnt, record_v=record)
-    NM.print_results(print_v=record)
+    NM.run_sim(sim_cnt, anticipatory_mode=True)
+    NM.print_results()
 
     if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
         import plot_prediction as pp
