@@ -749,11 +749,10 @@ class NetworkModel(object):
                 print "Printing inhibitory membrane potentials"
             self.inh_pop_view.print_v("%s.v" % (self.params['inh_volt_fn_base']), compatible_output=False)
 
-        print 'DEBUG printing anticipatory cells', self.anticipatory_record
         if self.anticipatory_record == True:   
-            self.exc_pop_view_anticipation.print_v("%s.v" % (self.params['exc_volt_anticipation']), compatible_output=False)
+            self.exc_pop_view_anticipation.print_v("%s" % (self.params['exc_volt_anticipation']), compatible_output=False)
 
-            print 'print_v to file: %s.v' % (self.params['exc_volt_anticipation'])
+            print 'print_v to file: %s' % (self.params['exc_volt_anticipation'])
 
 
         if self.pc_id == 0:
@@ -814,7 +813,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record = True
         save_input_files = not load_files
     NM = NetworkModel(ps.params, comm)

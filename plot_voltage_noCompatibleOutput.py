@@ -32,6 +32,7 @@ def plot_volt(fn, gid=None, n=1):
     output_fn += 'png'
     pylab.legend()
     pylab.title(fn)
+    print 'DEBUG: plot_volt finished'
 #    print 'Saving to', output_fn
 #    pylab.savefig(output_fn)
 

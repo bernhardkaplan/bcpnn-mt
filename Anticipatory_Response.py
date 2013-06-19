@@ -142,28 +142,30 @@ fn = params['exc_volt_fn_base'] + '.v'
 #gids = np.loadtxt(params['gids_to_record_fn'])
 selected_gids = u.all_anticipatory_gids(params)
 pylab.figure()
-voltage.plot_volt(fn, gid = selected_gids, n = n_to_plot)
+#voltage.plot_volt(fn, gid = selected_gids, n = n_to_plot)
 
 pops = u.pop_anticipatory_gids(params)
 #pylab.show()
 
+d = np.loadtxt(params['exc_volt_anticipation'])
 for pop in pops: 
-#    print pop
+    print 'debug', pop
 #    print pops.index(pop)
-    volt = 0
-    d = np.loadtxt(params['exc_volt_anticipation'])
-    for gid in gids:
-        time_axis, volt = extract_trace(d,gid)
-        volt += volt
-    avearged_voltage = volt.mean()
+
+    time_axis, volt = u.extract_trace(d, selected_gids[0])
+    avg_volt = np.zeros(time_axis.size)
+    for gid in selected_gids:
+        time_axis, volt = u.extract_trace(d,gid)
+        avg_volt += volt
+    avg_volt /= len(selected_gids)
+#    avearged_voltage = volt.mean()
     pylab.figure()
-    pylab.plot(time_axis, avergaed_voltage)
+    pylab.plot(time_axis, avg_volt)
 
-    
-#pylab.xlabel('Time [ms]')
-#pylab.ylabel('Voltage [mV]')
+    pylab.xlabel('Time [ms]')
+    pylab.ylabel('Voltage [mV]')
 
-    pylab.show()
+pylab.show()
 
 #    plot_volt(fn, n=5)
 #    plot_volt(fn, 'all')
