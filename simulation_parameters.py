@@ -169,14 +169,15 @@ class parameter_storage(object):
         self.params['np_random_seed'] = 0
         self.params['t_sim'] = 1600.            # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_blank'] = 200.           # [ms] time for 'blanked' input
+        self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
         self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
-        self.params['n_gids_to_record'] = 5
+        self.params['n_gids_to_record'] = 20
+
         
         
         
@@ -199,7 +200,7 @@ class parameter_storage(object):
         self.params['motion_params'] = (0.0, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .15, .15
+        self.params['blur_X'], self.params['blur_V'] = .10, .10
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -208,16 +209,16 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-        self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 2000# [Hz] 
-        self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
-        self.params['f_inh_noise'] = 2000# [Hz]
+#        self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
+#        self.params['f_exc_noise'] = 2000# [Hz] 
+#        self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
+#        self.params['f_inh_noise'] = 2000# [Hz]
 
         # no noise:
-#        self.params['w_exc_noise'] = 1e-5          # [uS] mean value for noise ---< columns
-#        self.params['f_exc_noise'] = 1# [Hz]
-#        self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
-#        self.params['f_inh_noise'] = 1# [Hz]
+        self.params['w_exc_noise'] = 1e-6          # [uS] mean value for noise ---< columns
+        self.params['f_exc_noise'] = 1# [Hz]
+        self.params['w_inh_noise'] = 1e-6          # [uS] mean value for noise ---< columns
+        self.params['f_inh_noise'] = 1# [Hz]
 
 
     def set_folder_name(self, folder_name=None):
@@ -333,7 +334,7 @@ class parameter_storage(object):
         self.params['inh_nspikes_fn_merged'] = '%sinh_nspikes' % self.params['spiketimes_folder']
         self.params['inh_nspikes_nonzero_fn'] = '%sinh_nspikes_nonzero.dat' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
-        self.params['exc_volt_anticipation'] = '%sexc_volt_anticipation' % self.params['volt_folder']
+        self.params['exc_volt_anticipation'] = '%sexc_volt_anticipation.v' % self.params['volt_folder']
 
         self.params['inh_volt_fn_base'] = '%sinh_volt' % self.params['volt_folder']
         self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
@@ -373,6 +374,8 @@ class parameter_storage(object):
         # these files receive the output folder when they are create / processed --> more suitable for parameter sweeps
         self.params['xdiff_vs_time_fn'] = 'xdiff_vs_time.dat'
         self.params['vdiff_vs_time_fn'] = 'vdiff_vs_time.dat'
+
+        self.params['population_voltages_fn'] = '%spop_volt.v' % (self.params['data_folder'])
 
     def check_folders(self):
         """

@@ -32,6 +32,7 @@ def plot_volt(fn, gid=None, n=1):
     output_fn += 'png'
     pylab.legend()
     pylab.title(fn)
+    print 'DEBUG: plot_volt finished'
 #    print 'Saving to', output_fn
 #    pylab.savefig(output_fn)
 
@@ -69,7 +70,7 @@ def plot_average_volt(fn, gid=None, n=1):
 
 if __name__ == '__main__':
 
-    n_to_plot = 8
+    n_to_plot = 3
     if len(sys.argv) == 1:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()

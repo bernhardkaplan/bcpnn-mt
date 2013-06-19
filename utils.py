@@ -61,8 +61,8 @@ def extract_trace(d, gid):
     d : voltage trace from a saved with compatible_output=False
     gid : cell_gid
     """
-    mask = gid * np.ones(d[:, 0].size)
-    indices = mask == d[:, 0]
+#    mask = gid * np.ones(d[:, 0].size)
+    indices = gid == d[:, 0]
     time_axis, volt = d[indices, 1], d[indices, 2]
     return time_axis, volt
 
@@ -1015,7 +1015,6 @@ def get_pmax(p_effective, w_sigma, conn_type):
     elif conn_type == 'ii':
         fit_wsigma = [2.21668319e+46,   9.05343215e-03,   1.76483061e+00, 4.01129051e-02]
     gradient  = fit_wsigma[0] * np.exp( - w_sigma**fit_wsigma[3] / fit_wsigma[1]) + fit_wsigma[2]
-    print 'debug utils.get_pmax gradient for %s ws %.1e: %.3e' % (conn_type, w_sigma, gradient)
     p_max = gradient * p_effective
 
     return p_max
@@ -1121,10 +1120,15 @@ def all_anticipatory_gids(params):
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     selected_gids = []
     cells = np.arange(ex_cells)
+    motion_angle = np.arctan(params['motion_params'][3] / params['motion_params'][2])
+
     for cell in cells:
 #        print cell
 #        i_cell = cells.tolist().index(cell)
-        if (tp[cell,1]>0.3 and tp[cell,1]<0.7):
+        x, y, u, v = tp[cell, :]
+        tuning_angle = np.arctan(v / u) # angle of preferred direction
+        angle_diff = np.abs(tuning_angle - motion_angle)
+        if (tp[cell,1]>0.3 and tp[cell,1]<0.7) and (angle_diff < np.pi / 9):
             selected_gids.append(cell)
     return selected_gids       
             
@@ -1150,3 +1154,25 @@ def pop_anticipatory_gids(params):
     pops = [pop1,pop2,pop3,pop4,pop5]
     return pops 
 
+
+def select_well_tuned_cells(tp, params, n_cells, n_pop):
+    """
+    n_cells -- (int) number of cells to be selected
+    n_pop -- n_cells is being split up in n_pop populations sorted by x-position
+    """
+    gids, dist = sort_gids_by_distance_to_stimulus(tp, params['motion_params'], params)
+    selected_gids = gids[:n_cells]
+    x_pos = tp[selected_gids, 0]
+    x_pos_srt = np.argsort(x_pos)
+    gids_sorted = selected_gids[x_pos_srt]
+
+    pops = []
+    n_per_pop = n_cells / n_pop
+    for i in xrange(n_pop):
+        i_0 = i * n_per_pop
+        i_1 = (i + 1) * n_per_pop
+        pop = gids_sorted[i_0:i_1]
+        pops.append(pop)
+    print 'debug, pops:', pops
+
+    return gids_sorted, pops
