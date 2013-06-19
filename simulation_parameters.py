@@ -58,10 +58,15 @@ class parameter_storage(object):
         self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
         self.params['fraction_inh_cells'] = 0.20 # fraction of inhibitory cells in the network, only approximately!
         self.params['N_theta_inh'] = self.params['N_theta']
-        self.params['N_V_INH'] = 1
-        self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF'] * float(self.params['N_V'] * self.params['N_theta']) / (self.params['N_V_INH'] * self.params['N_theta_inh'])))
+        self.params['N_V_INH'] = self.params['N_V']
+#        self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF'] * float(self.params['N_V'] * self.params['N_theta']) / (self.params['N_V_INH'] * self.params['N_theta_inh'])))
+        self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF']))
         self.params['N_RF_X_INH'] = np.int(np.sqrt(self.params['N_RF_INH']*np.sqrt(3)))
         self.params['N_RF_Y_INH'] = np.int(np.sqrt(self.params['N_RF_INH'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        print 'debug n_rf_exc', self.params['N_RF']
+        print 'debug n_rf_inh', self.params['N_RF_INH']
+        print '\n\ndebug inh: n_rf_x', self.params['N_RF_X_INH'], self.params['N_RF_Y_INH']
+        print '\n'
 
         self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH'] * self.params['N_theta_inh'] * self.params['N_V_INH']
         self.params['n_cells'] = self.params['n_exc'] + self.params['n_inh']
@@ -299,6 +304,7 @@ class parameter_storage(object):
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
+        self.params['curr_folder'] = "%sCurrentsConductances/" % self.params['folder_name']
         self.params['parameters_folder'] = "%sParameters/" % self.params['folder_name']
         self.params['connections_folder'] = "%sConnections/" % self.params['folder_name']
         self.params['figures_folder'] = "%sFigures/" % self.params['folder_name']
@@ -309,6 +315,7 @@ class parameter_storage(object):
         self.params['folder_names'] = [self.params['folder_name'], \
                             self.params['spiketimes_folder'], \
                             self.params['volt_folder'], \
+                            self.params['curr_folder'], \
                             self.params['parameters_folder'], \
                             self.params['connections_folder'], \
                             self.params['figures_folder'], \
@@ -335,8 +342,11 @@ class parameter_storage(object):
         self.params['inh_nspikes_nonzero_fn'] = '%sinh_nspikes_nonzero.dat' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
         self.params['exc_volt_anticipation'] = '%sexc_volt_anticipation.v' % self.params['volt_folder']
+        self.params['exc_curr_anticipation'] = '%sexc_curr_anticipation.dat' % self.params['curr_folder']
+        self.params['exc_gsyn_fn_base'] = '%sexc_gsyn' % self.params['volt_folder']
 
         self.params['inh_volt_fn_base'] = '%sinh_volt' % self.params['volt_folder']
+        self.params['inh_gsyn_fn_base'] = '%sinh_gsyn' % self.params['curr_folder']
         self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
         self.params['rasterplot_inh_fig'] = '%srasterplot_inh.png' % (self.params['figures_folder'])
 

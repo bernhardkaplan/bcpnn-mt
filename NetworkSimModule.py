@@ -804,6 +804,7 @@ if __name__ == '__main__':
         record = True
         save_input_files = not load_files
     NM = NetworkModel(ps.params, comm)
+    exit(1)
     NM.setup(times=times)
     NM.create(input_created)
     if not input_created:
@@ -820,9 +821,9 @@ if __name__ == '__main__':
         import plot_prediction as pp
         pp.plot_prediction(params)
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+#        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
     if pc_id == 1 or not(USE_MPI):
-        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+#        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         for conn_type in ['ee', 'ei', 'ie', 'ii']:
             os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
     if pc_id == 1 or not(USE_MPI):
