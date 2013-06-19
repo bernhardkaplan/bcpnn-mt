@@ -61,8 +61,8 @@ def extract_trace(d, gid):
     d : voltage trace from a saved with compatible_output=False
     gid : cell_gid
     """
-#    mask = gid * np.ones(d[:, 0].size)
-    indices = gid == d[:, 0]
+    mask = gid * np.ones(d[:, 0].size)
+    indices = mask == d[:, 0]
     time_axis, volt = d[indices, 1], d[indices, 2]
     return time_axis, volt
 
@@ -155,7 +155,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
 
 
-def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='dot'):
+def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     """
     This function computes the input to each cell for one point in time t based on the given tuning properties.
 
@@ -170,8 +170,11 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
         motion: type of motion (TODO: filename to movie, ... ???)
     """
     n_cells = tuning_prop[:, 0].size
-    if motion_params == None:
+    if motion == 'dot':
         motion_params = params['motion_params']
+    else:
+         motion_params = params['bar_params']
+        
 #    L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
@@ -191,7 +194,8 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
             
             L range between 0 and 1
         """
-        x, y = (x0 + u0*t) % params['torus_width'], (y0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
+# to translate the initial static line at each time step with motion parameters
+        x, y = (x0 + u0*t) % params['torus_width'], (y_0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
 
 #    for cell in xrange(n_cells): # todo: vectorize
 #        L[cell] = np.exp( -.5 * (torus_distance2D(tuning_prop[cell, 0], x, tuning_prop[cell, 1], y)**2 / blur_X**2)
@@ -201,8 +205,7 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
 
         L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2 / blur_X**2)
                 -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
-                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2
-                )
+                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2)
                           
 #        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
 #                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
@@ -211,6 +214,41 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
 #                          )
     
 #    L = (1. - contrast) + contrast * L
+    if motion=='bar':
+        # define the parameters of the motion
+        x0, y0, u0, v0,orientation = bar_motion_params # x0 and y0 of center of bar at time=0 
+        x_init = np.round(np.linspace(0, 0.2,5), decimals=2)# to control the height of bar with x_init range
+        y_init = np.arctan(orientation) * x_init
+        # compute the motion energy input to all cells
+        """
+            Knowing the velocity one can estimate the analytical response to 
+             - motion energy detectors
+             - to a gaussian blob
+            as a function of the distance between 
+             - the center of the receptive fields,
+             - the current position of the blob.
+             
+            # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
+            
+            L range between 0 and 1
+        """
+        x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
+#thats how the center of bar moves
+
+# then for all cells we have to check if they get stimulate by any x and y on the bar
+        L = 0
+        for x_i ,y_i in zip(x, y):
+            L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2/blur_X**2)
+                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
+                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2)
+            L += L
+                          
+#        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
+#                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
+#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
+#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
+#                          )
+    
         
     return L#, (x, y, x_, y_)
 
@@ -349,23 +387,24 @@ def set_limited_tuning_properties(params, y_range=(0, 1.), x_range=(0, 1.), u_ra
     for i_RF in xrange(n_rf_x * n_rf_y):
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
-                x_pos = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
-                y_pos = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_height']
-                v_x = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
-                        * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
-                v_y = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
-                        * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
-
-                tuning_prop[index, 0] = x_pos 
-                tuning_prop[index, 1] = y_pos
-                tuning_prop[index, 2] = v_x
-                tuning_prop[index, 3] = v_y
-                if ((x_pos > x_range[0]) and (x_pos <= x_range[1]) \
-                        and (y_pos > y_range[0]) and (y_pos <= y_range[1]) \
-                        and (v_x > u_range[0]) and (v_x <= u_range[1]) \
-                        and (v_y > v_range[0]) and (v_y <= v_range[1])):
-                    neuron_in_range[index] = True
-                index += 1
+                    
+                    x_pos = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
+                    y_pos = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_height']
+                    v_x = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
+                            * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                    v_y = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
+                            * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+    
+                    tuning_prop[index, 0] = x_pos 
+                    tuning_prop[index, 1] = y_pos
+                    tuning_prop[index, 2] = v_x
+                    tuning_prop[index, 3] = v_y
+                    if ((x_pos > x_range[0]) and (x_pos <= x_range[1]) \
+                            and (y_pos > y_range[0]) and (y_pos <= y_range[1]) \
+                            and (v_x > u_range[0]) and (v_x <= u_range[1]) \
+                            and (v_y > v_range[0]) and (v_y <= v_range[1])):
+                        neuron_in_range[index] = True
+                    index += 1
 
     n_cells_in_range = neuron_in_range.nonzero()[0].size
     tp_good = np.zeros((n_cells_in_range, 4))
@@ -426,60 +465,52 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
             v_max = params['v_max_tp']
             v_min = params['v_min_tp']
 
-    tuning_prop = np.zeros((n_cells, 4))
-    if mode=='random':
-        # place the columns on a grid with the following dimensions
-        x_max = int(round(np.sqrt(n_cells)))
-        y_max = int(round(np.sqrt(n_cells)))
-        if (params['n_cells'] > x_max * y_max):
-            x_max += 1
+    tuning_prop = np.zeros((n_cells, 5))
+    print 'DEBUG cell_type', cell_type
+    if params['log_scale']==1:
+        v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+    else:
+        v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
+                        np.log(v_max)/np.log(params['log_scale']), num=n_v,
+                        endpoint=True, base=params['log_scale'])
+    v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
+    N_orientation = params['N_orientation']
+    orientations = np.linspace(0, 2*np.pi, N_orientation, endpoint=False)
 
-        for i in xrange(params['n_cells']):
-            tuning_prop[i, 0] = (i % x_max) / float(x_max)   # spatial rf centers are on a grid
-            tuning_prop[i, 1] = (i / x_max) / float(y_max)
-            tuning_prop[i, 2] = v_max * rnd.randn() + v_min
-            tuning_prop[i, 3] = v_max * rnd.randn() + v_min
-
-    elif mode=='hexgrid':
-        if params['log_scale']==1:
-            v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
-        else:
-            v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
-                            np.log(v_max)/np.log(params['log_scale']), num=n_v,
-                            endpoint=True, base=params['log_scale'])
-        v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
-        parity = np.arange(params['N_V']) % 2
+    parity = np.arange(params['N_V']) % 2
 
 
-        xlim = (0, params['torus_width'])
-        ylim = (0, np.sqrt(3) * params['torus_height'])
+    xlim = (0, params['torus_width'])
+    ylim = (0, np.sqrt(3) * params['torus_height'])
 
-        RF = np.zeros((2, n_rf_x * n_rf_y))
-        X, Y = np.mgrid[0:1:1j*(n_rf_x+1), 0:1:1j*(n_rf_y+1)]
-        X, Y = np.mgrid[xlim[0]:xlim[1]:1j*(n_rf_x+1), ylim[0]:ylim[1]:1j*(n_rf_y+1)]
-    
-        # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
-        X, Y = X[1:, 1:], Y[1:, 1:]
-        # Add to every even Y a half RF width to generate hex grid
-        Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
-        RF[0, :] = X.ravel()
-        RF[1, :] = Y.ravel() 
-        RF[1, :] /= np.sqrt(3) # scale to get a regular hexagonal grid
-    
-        # wrapping up:
-        index = 0
-        random_rotation = 2*np.pi*rnd.rand(n_rf_x * n_rf_y * n_v * n_theta) * params['sigma_RF_direction']
-            # todo do the same for v_rho?
-        for i_RF in xrange(n_rf_x * n_rf_y):
-            for i_v_rho, rho in enumerate(v_rho):
-                for i_theta, theta in enumerate(v_theta):
-                    # for plotting this looks nicer, and due to the torus property it doesn't make a difference
+    RF = np.zeros((2, n_rf_x * n_rf_y))
+    X, Y = np.mgrid[xlim[0]:xlim[1]:1j*(n_rf_x+1), ylim[0]:ylim[1]:1j*(n_rf_y+1)]
+
+    # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
+    X, Y = X[1:, 1:], Y[1:, 1:]
+    # Add to every even Y a half RF width to generate hex grid
+    Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
+    RF[0, :] = X.ravel()
+    RF[1, :] = Y.ravel() 
+    RF[1, :] /= np.sqrt(3) # scale to get a regular hexagonal grid
+
+    # wrapping up:
+    index = 0
+    random_rotation = 2*np.pi*rnd.rand(n_rf_x * n_rf_y * n_v * n_theta*N_orientation) * params['sigma_RF_direction']
+        # todo do the same for v_rho?
+    for i_RF in xrange(n_rf_x * n_rf_y):
+        for i_v_rho, rho in enumerate(v_rho):
+            for i_theta, theta in enumerate(v_theta):
+                for orientation in orientations:
+                # for plotting this looks nicer, and due to the torus property it doesn't make a difference
                     tuning_prop[index, 0] = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn())# % params['torus_width']
                     tuning_prop[index, 1] = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn())# % params['torus_height']
                     tuning_prop[index, 2] = np.cos(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
                     tuning_prop[index, 3] = np.sin(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                    tuning_prop[index, 4] = orientation * (1. + params['sigma_RF_orientation'] * rnd.randn())
+
                     index += 1
 
     return tuning_prop
@@ -742,7 +773,7 @@ def convert_hsl_to_rgb(h, s, l):
     return (r_, g_, b_)
 
 
-def sort_gids_by_distance_to_stimulus(tp, mp, params, local_gids=None):
+def sort_gids_by_distance_to_stimulus(tp, params, local_gids=None):
     """
     This function return a list of gids sorted by the distances between cells and the stimulus.
     It calculates the minimal distances between the moving stimulus and the spatial receptive fields of the cells 
@@ -758,6 +789,7 @@ def sort_gids_by_distance_to_stimulus(tp, mp, params, local_gids=None):
         mp: motion_parameters (x0, y0, u0, v0)
 
     """
+    mp = params['motion_params']
     if local_gids == None: 
         n_cells = tp[:, 0].size
     else:
@@ -1015,6 +1047,7 @@ def get_pmax(p_effective, w_sigma, conn_type):
     elif conn_type == 'ii':
         fit_wsigma = [2.21668319e+46,   9.05343215e-03,   1.76483061e+00, 4.01129051e-02]
     gradient  = fit_wsigma[0] * np.exp( - w_sigma**fit_wsigma[3] / fit_wsigma[1]) + fit_wsigma[2]
+    print 'debug utils.get_pmax gradient for %s ws %.1e: %.3e' % (conn_type, w_sigma, gradient)
     p_max = gradient * p_effective
 
     return p_max
@@ -1120,15 +1153,10 @@ def all_anticipatory_gids(params):
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     selected_gids = []
     cells = np.arange(ex_cells)
-    motion_angle = np.arctan(params['motion_params'][3] / params['motion_params'][2])
-
     for cell in cells:
 #        print cell
 #        i_cell = cells.tolist().index(cell)
-        x, y, u, v = tp[cell, :]
-        tuning_angle = np.arctan(v / u) # angle of preferred direction
-        angle_diff = np.abs(tuning_angle - motion_angle)
-        if (tp[cell,1]>0.3 and tp[cell,1]<0.7) and (angle_diff < np.pi / 9):
+        if (tp[cell,1]>0.3 and tp[cell,1]<0.7):
             selected_gids.append(cell)
     return selected_gids       
             
@@ -1154,25 +1182,3 @@ def pop_anticipatory_gids(params):
     pops = [pop1,pop2,pop3,pop4,pop5]
     return pops 
 
-
-def select_well_tuned_cells(tp, params, n_cells, n_pop):
-    """
-    n_cells -- (int) number of cells to be selected
-    n_pop -- n_cells is being split up in n_pop populations sorted by x-position
-    """
-    gids, dist = sort_gids_by_distance_to_stimulus(tp, params['motion_params'], params)
-    selected_gids = gids[:n_cells]
-    x_pos = tp[selected_gids, 0]
-    x_pos_srt = np.argsort(x_pos)
-    gids_sorted = selected_gids[x_pos_srt]
-
-    pops = []
-    n_per_pop = n_cells / n_pop
-    for i in xrange(n_pop):
-        i_0 = i * n_per_pop
-        i_1 = (i + 1) * n_per_pop
-        pop = gids_sorted[i_0:i_1]
-        pops.append(pop)
-    print 'debug, pops:', pops
-
-    return gids_sorted, pops
