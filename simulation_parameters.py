@@ -43,7 +43,7 @@ class parameter_storage(object):
         self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 3, 3# resolution in velocity norm and direction
 
         print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
         print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
@@ -51,15 +51,16 @@ class parameter_storage(object):
         self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
         self.params['sigma_RF_speed'] = .30 # some variability in the speed of RFs
         self.params['sigma_RF_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
+        self.params['sigma_RF_orientation'] = .1 * np.pi # some variability in the direction of RFs
+        self.params['N_orientation'] = 4 # some variability in the direction of RFs
 
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
+        self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta']*self.params['N_orientation'] # number of excitatory cells per minicolumn
         self.params['fraction_inh_cells'] = 0.20 # fraction of inhibitory cells in the network, only approximately!
         self.params['N_theta_inh'] = self.params['N_theta']
         self.params['N_V_INH'] = self.params['N_V']
-#        self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF'] * float(self.params['N_V'] * self.params['N_theta']) / (self.params['N_V_INH'] * self.params['N_theta_inh'])))
         self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF']))
         self.params['N_RF_X_INH'] = np.int(np.sqrt(self.params['N_RF_INH']*np.sqrt(3)))
         self.params['N_RF_Y_INH'] = np.int(np.sqrt(self.params['N_RF_INH'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
@@ -68,7 +69,7 @@ class parameter_storage(object):
         print '\n\ndebug inh: n_rf_x', self.params['N_RF_X_INH'], self.params['N_RF_Y_INH']
         print '\n'
 
-        self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH'] * self.params['N_theta_inh'] * self.params['N_V_INH']
+        self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH'] * self.params['N_theta_inh'] * self.params['N_V_INH'] * self.params['N_orientation']
         self.params['n_cells'] = self.params['n_exc'] + self.params['n_inh']
         print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
                 self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
@@ -174,15 +175,14 @@ class parameter_storage(object):
         self.params['np_random_seed'] = 0
         self.params['t_sim'] = 1600.            # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
+        self.params['t_blank'] = 200.           # [ms] time for 'blanked' input
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
         self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
-        self.params['n_gids_to_record'] = 20
-
+        self.params['n_gids_to_record'] = 5
         
         
         
@@ -203,9 +203,11 @@ class parameter_storage(object):
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
         self.params['motion_params'] = (0.0, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
+        self.params['bar_motion_params'] = (0.0, 0.0 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
+
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .10, .10
+        self.params['blur_X'], self.params['blur_V'] = .15, .15
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -214,16 +216,16 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-#        self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
-#        self.params['f_exc_noise'] = 2000# [Hz] 
-#        self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
-#        self.params['f_inh_noise'] = 2000# [Hz]
+        self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
+        self.params['f_exc_noise'] = 2000# [Hz] 
+        self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
+        self.params['f_inh_noise'] = 2000# [Hz]
 
         # no noise:
-        self.params['w_exc_noise'] = 1e-6          # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 1# [Hz]
-        self.params['w_inh_noise'] = 1e-6          # [uS] mean value for noise ---< columns
-        self.params['f_inh_noise'] = 1# [Hz]
+#        self.params['w_exc_noise'] = 1e-5          # [uS] mean value for noise ---< columns
+#        self.params['f_exc_noise'] = 1# [Hz]
+#        self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
+#        self.params['f_inh_noise'] = 1# [Hz]
 
 
     def set_folder_name(self, folder_name=None):
@@ -384,8 +386,6 @@ class parameter_storage(object):
         # these files receive the output folder when they are create / processed --> more suitable for parameter sweeps
         self.params['xdiff_vs_time_fn'] = 'xdiff_vs_time.dat'
         self.params['vdiff_vs_time_fn'] = 'vdiff_vs_time.dat'
-
-        self.params['population_voltages_fn'] = '%spop_volt.v' % (self.params['data_folder'])
 
     def check_folders(self):
         """

@@ -151,19 +151,19 @@ d = np.loadtxt(params['exc_volt_anticipation'])
 for pop in pops: 
     print 'debug', pop
 #    print pops.index(pop)
-
-    time_axis, volt = u.extract_trace(d, selected_gids[0])
-    avg_volt = np.zeros(time_axis.size)
-    for gid in selected_gids:
-        time_axis, volt = u.extract_trace(d,gid)
-        avg_volt += volt
-    avg_volt /= len(selected_gids)
-#    avearged_voltage = volt.mean()
+    volt = 0
+    d = np.loadtxt(params['exc_volt_anticipation'])
+    for gid in gids:
+        time_axis, volt = extract_trace(d,gid)
+        volt_sum += volt
+    avg_volt = volt_sum / len(pop)
+    avg_volts.append(avg_volt)
     pylab.figure()
-    pylab.plot(time_axis, avg_volt)
+    pylab.plot(time_axis, avg_voltage)
 
-    pylab.xlabel('Time [ms]')
-    pylab.ylabel('Voltage [mV]')
+    
+#pylab.xlabel('Time [ms]')
+#pylab.ylabel('Voltage [mV]')
 
 pylab.show()
 
