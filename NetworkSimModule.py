@@ -398,10 +398,16 @@ class NetworkModel(object):
         (delay_min, delay_max) = self.params['delay_range']
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
         for i_, tgt in enumerate(tgt_cells):
-            if self.params['direction_based_conn']:
+            if self.params['conn_conf'] == 'direction-based':
                 p, latency = CC.get_p_conn_direction_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
-            else: # it's motion_based connectivity
+            elif self.params['conn_conf'] == 'motion-based':
                 p, latency = CC.get_p_conn_motion_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+            elif self.params['conn_conf'] == 'orientation-direction':
+                p, latency = CC.get_p_conn_direction_and_orientation_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_theta'], self.params['connectivity_radius'])
+            else:
+                print '\n\nERROR! Wrong connection configutation conn_conf parameter provided\nShould be direction-based, motion-based or orientation-direction\n'
+                exit(1)
+
             if conn_type[0] == conn_type[1]:
                 p[tgt], latency[tgt] = 0., 0.
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
@@ -794,7 +800,8 @@ class NetworkModel(object):
 if __name__ == '__main__':
 
     input_created = False
-    ps.params['p_to_w_ee'] = float(sys.argv[1])
+
+#    ps.params['p_to_w_ee'] = float(sys.argv[1])
 
 #     w_sigma_v = float(sys.argv[2])
 #     params['w_sigma_x'] = w_sigma_x
@@ -822,7 +829,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record = True
         save_input_files = not load_files
 

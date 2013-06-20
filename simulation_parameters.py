@@ -100,7 +100,10 @@ class parameter_storage(object):
         """
         For each connection type ('ee', 'ei', 'ie', 'ii') choose one form of connectivity
         """
-        self.params['direction_based_conn'] = True
+#        self.params['direction_based_conn'] = True
+        self.params['conn_conf'] = 'orientation-direction' # for anisotropic connectivity these types are implemented: 
+                                                           #'direction-based', 'motion-based', 'orientation-direction'
+
         self.params['with_short_term_depression'] = False
         self.params['connectivity_ee'] = 'anisotropic'
 #        self.params['connectivity_ee'] = 'isotropic'
@@ -141,15 +144,17 @@ class parameter_storage(object):
 
 
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['connectivity_radius'] = 0.5      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
+        self.params['connectivity_radius'] = 1.0      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 1.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
         self.params['delay_range'] = (0.1, 5000.)
         self.params['w_sigma_x'] = 0.6 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.6 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
+                                        
+        self.params['w_sigma_theta'] = 0.6 # how sensitive connectivity is on similarity between source and target cell
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['p_to_w_ee'] = 5e-4
+        self.params['p_to_w_ee'] = 7e-5
         self.params['weight_scaling_ee'] = self.params['p_to_w_ee'] / (self.params['n_exc'] * self.params['p_ee'])
         self.params['weight_scaling_ei'] = self.params['p_to_w_ee'] / (self.params['n_exc'] * self.params['p_ei'])
         self.params['weight_scaling_ie'] = self.params['p_to_w_ee'] / (self.params['n_inh'] * self.params['p_ie'])
@@ -210,7 +215,8 @@ class parameter_storage(object):
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .15, .15
+        self.params['blur_X'], self.params['blur_V'] = .15, .45
+        self.params['blur_theta'] = 1.0
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
@@ -241,6 +247,14 @@ class parameter_storage(object):
         # order of X: 'ee', 'ei', 'ie', 'ii'
 
         connectivity_code = ''
+
+        if self.params['conn_conf'] == 'direction-based':
+            connectivity_code += 'd'
+        elif self.params['conn_conf'] == 'motion-based':
+            connectivity_code += 'm'
+        elif self.params['conn_conf'] == 'orientation-direction':
+            connectivity_code += 'od'
+
         if self.params['connectivity_ee'] == 'anisotropic':
             connectivity_code += 'A'
         elif self.params['connectivity_ee'] == 'isotropic':
@@ -276,13 +290,14 @@ class parameter_storage(object):
             connectivity_code += 'R'
         elif self.params['connectivity_ii'] == False:
             connectivity_code += '-'
+
         self.params['connectivity_code'] = connectivity_code
 
         if folder_name == None:
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'ResultsBar_ptow%.2e' % (self.params['p_to_w_ee'])
+               folder_name = 'ResultsBar_ptow%.2e_' % (self.params['p_to_w_ee'])
 
             folder_name += connectivity_code
             folder_name += '/'

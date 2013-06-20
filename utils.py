@@ -171,6 +171,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
     """
     n_cells = tuning_prop[:, 0].size
     blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
+    blur_theta = params['blur_theta']
         
 #    L = np.zeros(n_cells)
     if motion=='dot':
@@ -192,38 +193,38 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
         """
     # to translate the initial static line at each time step with motion parameters
         x, y = (x0 + u0*t) % params['torus_width'], (y_0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2 / blur_X**2)
+        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2 / blur_X**2)
                 -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2)
 
     if motion=='bar':
         # define the parameters of the motion
-        x0, y0, u0, v0,orientation = params['bar_motion_params']# x0 and y0 of center of bar at time=0 
-        x_init = np.round(np.linspace(0, 0.2,5), decimals=2)# to control the height of bar with x_init range
-        y_init = np.arctan(orientation) * x_init
-        # compute the motion energy input to all cells
-        """
-            Knowing the velocity one can estimate the analytical response to 
-             - motion energy detectors
-             - to a gaussian blob
-            as a function of the distance between 
-             - the center of the receptive fields,
-             - the current position of the blob.
-             
-            # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
-            
-            L range between 0 and 1
-        """
-        x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-#thats how the center of bar moves
+        x0, y0, u0, v0, orientation = params['bar_motion_params']# x0 and y0 of center of bar at time=0 
 
-    # then for all cells we have to check if they get stimulate by any x and y on the bar
-        L = np.zeros(n_cells)
-        for x_i ,y_i in zip(x, y):
-            L_ = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_i * np.ones(n_cells), tuning_prop[:, 1], y_i * np.ones(n_cells)))**2/blur_X**2)
-                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
-                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2)
-            L += L_
+        # compute the motion energy input to all cells
+        # thats how the center of bar moves
+        x, y = (x0 + u0 * t) % params['torus_width'], (y0 + v0 * t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
+
+
+        # then for all cells we have to check if they get stimulate by any x and y on the bar
+        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x * np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2/blur_X**2)
+            -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
+            -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
+            -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
+
+
+        # ######## if bar is composed of several dots
+
+#        x_init = np.round(np.linspace(0, 0.2, 5), decimals=2)# to control the height of bar with x_init range
+#        y_init = np.arctan(orientation) * x_init
+#        x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
+#        L = np.zeros(n_cells)
+#        for x_i ,y_i in zip(x, y):
+#            L_ = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_i * np.ones(n_cells), tuning_prop[:, 1], y_i * np.ones(n_cells)))**2/blur_X**2)
+#                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
+#                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
+#                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
+#            L += L_
                           
     return L
 
@@ -449,7 +450,8 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
                         endpoint=True, base=params['log_scale'])
     v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
     N_orientation = params['N_orientation']
-    orientations = np.linspace(0, 2*np.pi, N_orientation, endpoint=False)
+    orientations = np.linspace(0, np.pi, N_orientation, endpoint=False)
+#    orientations = np.linspace(-.5 * np.pi, .5 * np.pi, N_orientation)
 
     parity = np.arange(params['N_V']) % 2
 
@@ -471,6 +473,8 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
     # wrapping up:
     index = 0
     random_rotation = 2*np.pi*rnd.rand(n_rf_x * n_rf_y * n_v * n_theta*N_orientation) * params['sigma_RF_direction']
+    random_rotation_for_orientation = np.pi*rnd.rand(n_rf_x * n_rf_y * n_v * n_theta * N_orientation) * params['sigma_RF_orientation']
+
         # todo do the same for v_rho?
     for i_RF in xrange(n_rf_x * n_rf_y):
         for i_v_rho, rho in enumerate(v_rho):
@@ -483,7 +487,7 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
                     tuning_prop[index, 3] = np.sin(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
-                    tuning_prop[index, 4] = orientation * (1. + params['sigma_RF_orientation'] * rnd.randn())
+                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index]) % np.pi
 
                     index += 1
 
@@ -798,8 +802,14 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     y_pos_stim = mp[1] + mp[3] * time / params['t_stimulus']
     spatial_dist = torus_distance_array(tp_cell[0], x_pos_stim)**2 + torus_distance_array(tp_cell[1], y_pos_stim)**2
     min_spatial_dist = np.sqrt(np.min(spatial_dist))
+
     velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
-    dist =  min_spatial_dist + velocity_dist
+
+    if params['motion_type'] == 'bar':
+        orientation_dist = np.sqrt((tp_cell[4] - params['bar_motion_params'][4])**2)
+        dist =  min_spatial_dist + velocity_dist + orientation_dist
+    else:
+        dist =  min_spatial_dist + velocity_dist
     return dist, min_spatial_dist
     
 

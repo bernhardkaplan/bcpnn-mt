@@ -59,6 +59,33 @@ def plot_scatter_with_histograms(x, y, fig):
     axHisty.set_ylim( axScatter.get_ylim() )
 
 
+def plot_orientation_as_quiver(tp):
+    """
+    data -- tuning properties of the cells
+    """
+
+    o_min, o_max = 0, 180
+    norm = matplotlib.mpl.colors.Normalize(vmin=o_min, vmax=o_max)
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
+    m.set_array(np.arange(o_min, o_max, 0.01))
+
+    theta_x = np.cos(tp[:, 4])
+    theta_y = np.sin(tp[:, 4])
+
+    rgba_colors = []
+    for i in xrange(n_cells):
+        x, y, u, v, theta = d[i, :]
+        # calculate the color from tuning angle theta
+        angle = (theta / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
+        rgba_colors.append(m.to_rgba(angle))
+        print m.to_rgba(angle), angle, theta
+
+    fig_2 = pylab.figure()
+    ax = fig_2.add_subplot(111)
+
+    scale = 8.
+    ax.quiver(tp[:, 0], tp[:, 1], theta_x, theta_y, \
+              angles='xy', scale_units='xy', scale=scale, color=rgba_colors, headwidth=4, pivot='middle', width=0.007)
 
 
 rcParams = { 'axes.labelsize' : 18,
@@ -101,7 +128,6 @@ else:
     d = np.loadtxt(fn)
 
 
-
 n_cells = d[:, 0].size
 if cell_type == 'exc':
     n_rf = params['N_RF_X'] * params['N_RF_Y']
@@ -109,6 +135,10 @@ if cell_type == 'exc':
 else:
     n_rf = params['N_RF_X_INH'] * params['N_RF_Y_INH']
     n_units = params['N_RF_X_INH'] * params['N_RF_Y_INH'] * params['N_theta_inh'] * params['N_V_INH']
+
+
+plot_orientation_as_quiver(d)
+
 
 ms = 2 # markersize for scatterplots
 
@@ -135,7 +165,7 @@ rgba_colors = []
 
 thetas = np.zeros(n_cells)
 for i in xrange(n_cells):
-    x, y, u, v = d[i, :]
+    x, y, u, v, theta = d[i, :]
     # calculate the color from tuning angle theta
     thetas[i] = np.arctan2(v, u)
     angle = ((thetas[i] + np.pi) / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
