@@ -267,7 +267,7 @@ class NetworkModel(object):
             # get the input signal
             print 'Calculating input signal'
             for i_time, time_ in enumerate(time):
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'], motion ='bar')
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'], motion=self.params['motion_type'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
                     print "t:", time_
@@ -399,9 +399,9 @@ class NetworkModel(object):
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
         for i_, tgt in enumerate(tgt_cells):
             if self.params['direction_based_conn']:
-                p, latency = CC.get_p_conn_vec_xpred(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+                p, latency = CC.get_p_conn_direction_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
             else: # it's motion_based connectivity
-                p, latency = CC.get_p_conn_vec(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'], self.params['maximal_latency'])
+                p, latency = CC.get_p_conn_motion_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
             if conn_type[0] == conn_type[1]:
                 p[tgt], latency[tgt] = 0., 0.
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
@@ -417,7 +417,8 @@ class NetworkModel(object):
 
 #            eta = 1e-9
             eta = 0
-            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+            w = p[sources] * self.params['weight_scaling_%s' % conn_type]
 #            print 'debug p', i_, tgt, p[sources]
 #            print 'debug sources', i_, tgt, sources
 #            print 'debug w', i_, tgt, w
@@ -709,9 +710,10 @@ class NetworkModel(object):
         
 
         if anticipatory_mode:
-            antcp_gids_to_record  = utils.all_anticipatory_gids(self.params)
-            self.exc_pop_view_anticipation = PopulationView(self.exc_pop, antcp_gids_to_record, label='anticipation')
+            record_gids, pops = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params, self.params['n_gids_to_record'], 1)
+            self.exc_pop_view_anticipation = PopulationView(self.exc_pop, record_gids, label='anticipation')
             self.exc_pop_view_anticipation.record_v()
+            self.exc_pop_view_anticipation.record_gsyn()
             self.anticipatory_record = True
               ###################################
               ###################################
@@ -722,6 +724,7 @@ class NetworkModel(object):
             self.exc_pop_view.record_v()
             self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
             self.inh_pop_view.record_v()
+
 
         self.inh_pop.record()
         self.exc_pop.record()
@@ -751,9 +754,10 @@ class NetworkModel(object):
 
         print 'DEBUG printing anticipatory cells', self.anticipatory_record
         if self.anticipatory_record == True:   
-            self.exc_pop_view_anticipation.print_v("%s.v" % (self.params['exc_volt_anticipation']), compatible_output=False)
-
-            print 'print_v to file: %s.v' % (self.params['exc_volt_anticipation'])
+            print 'print_v to file: %s' % (self.params['exc_volt_anticipation'])
+            self.exc_pop_view_anticipation.print_v("%s" % (self.params['exc_volt_anticipation']), compatible_output=False)
+            print 'print_gsyn to file: %s' % (self.params['exc_gsyn_anticipation'])
+            self.exc_pop_view_anticipation.print_gsyn("%s" % (self.params['exc_gsyn_anticipation']), compatible_output=False)
 
 
         if self.pc_id == 0:
@@ -790,7 +794,8 @@ class NetworkModel(object):
 if __name__ == '__main__':
 
     input_created = False
-#     w_sigma_x = float(sys.argv[1])
+    ps.params['p_to_w_ee'] = float(sys.argv[1])
+
 #     w_sigma_v = float(sys.argv[2])
 #     params['w_sigma_x'] = w_sigma_x
 #     params['w_sigma_v'] = w_sigma_v
@@ -800,8 +805,11 @@ if __name__ == '__main__':
 #    ps.params['connectivity_radius'] = connectivity_radius
 #    delay_scale = float(sys.argv[3])
 #    ps.params['delay_scale'] = delay_scale
+    
+
 
     ps.set_filenames()
+
     if pc_id == 0:
         ps.create_folders()
         ps.write_parameters_to_file()
@@ -817,8 +825,9 @@ if __name__ == '__main__':
         load_files = True
         record = True
         save_input_files = not load_files
+
     NM = NetworkModel(ps.params, comm)
-    exit(1)
+
     NM.setup(times=times)
     NM.create(input_created)
     if not input_created:
@@ -836,12 +845,12 @@ if __name__ == '__main__':
         pp.plot_prediction(params)
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
 #        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
-    if pc_id == 1 or not(USE_MPI):
+#    if pc_id == 1 or not(USE_MPI):
 #        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
-        for conn_type in ['ee', 'ei', 'ie', 'ii']:
-            os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
-    if pc_id == 1 or not(USE_MPI):
-        os.system('python analyse_connectivity.py %s' % ps.params['folder_name'])
+#        for conn_type in ['ee', 'ei', 'ie', 'ii']:
+#            os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
+#    if pc_id == 1 or not(USE_MPI):
+#        os.system('python analyse_connectivity.py %s' % ps.params['folder_name'])
 
     if comm != None:
         comm.Barrier()

@@ -35,7 +35,7 @@ def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
 #    else:
 #        return 0., 0.
 
-def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+def get_p_conn_direction_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
 
     Direction-basd connectivity
@@ -94,7 +94,7 @@ def get_p_conn_vec(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0
 
 
 
-def get_p_conn_vec_xpred(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+def get_p_conn_motion_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
     Motion-based connectivity 
     -------------------------
@@ -105,7 +105,6 @@ def get_p_conn_vec_xpred(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radi
     TODO: exp(cos(v_i, x_j - x_i) / (2*sigma_x**2))
     """
     n_src = tp_src[:, 0].size
-
 
     d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
     latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)

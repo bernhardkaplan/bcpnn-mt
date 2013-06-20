@@ -170,17 +170,13 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
         motion: type of motion (TODO: filename to movie, ... ???)
     """
     n_cells = tuning_prop[:, 0].size
-    if motion == 'dot':
-        motion_params = params['motion_params']
-    else:
-         motion_params = params['bar_params']
+    blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
         
 #    L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
-        x0, y0, u0, v0 = motion_params
+        x0, y0, u0, v0 = params['motion_params']
 
-        blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
         # compute the motion energy input to all cells
         """
             Knowing the velocity one can estimate the analytical response to 
@@ -194,29 +190,15 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
             
             L range between 0 and 1
         """
-# to translate the initial static line at each time step with motion parameters
+    # to translate the initial static line at each time step with motion parameters
         x, y = (x0 + u0*t) % params['torus_width'], (y_0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-
-#    for cell in xrange(n_cells): # todo: vectorize
-#        L[cell] = np.exp( -.5 * (torus_distance2D(tuning_prop[cell, 0], x, tuning_prop[cell, 1], y)**2 / blur_X**2)
-#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
-#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
-#                          )
-
         L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2 / blur_X**2)
                 -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2)
-                          
-#        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
-#                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
-#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
-#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
-#                          )
-    
-#    L = (1. - contrast) + contrast * L
+
     if motion=='bar':
         # define the parameters of the motion
-        x0, y0, u0, v0,orientation = bar_motion_params # x0 and y0 of center of bar at time=0 
+        x0, y0, u0, v0,orientation = params['bar_motion_params']# x0 and y0 of center of bar at time=0 
         x_init = np.round(np.linspace(0, 0.2,5), decimals=2)# to control the height of bar with x_init range
         y_init = np.arctan(orientation) * x_init
         # compute the motion energy input to all cells
@@ -235,22 +217,15 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
         x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
 #thats how the center of bar moves
 
-# then for all cells we have to check if they get stimulate by any x and y on the bar
-        L = 0
+    # then for all cells we have to check if they get stimulate by any x and y on the bar
+        L = np.zeros(n_cells)
         for x_i ,y_i in zip(x, y):
-            L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2/blur_X**2)
+            L_ = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_i * np.ones(n_cells), tuning_prop[:, 1], y_i * np.ones(n_cells)))**2/blur_X**2)
                 -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
                 -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2)
-            L += L
+            L += L_
                           
-#        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
-#                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
-#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
-#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
-#                          )
-    
-        
-    return L#, (x, y, x_, y_)
+    return L
 
 
 
@@ -466,7 +441,6 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
             v_min = params['v_min_tp']
 
     tuning_prop = np.zeros((n_cells, 5))
-    print 'DEBUG cell_type', cell_type
     if params['log_scale']==1:
         v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
     else:
@@ -1013,7 +987,7 @@ def sort_cells_by_distance_to_stimulus(n_cells, verbose=False):
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     mp = params['motion_params']
-    indices, distances = sort_gids_by_distance_to_stimulus(tp , mp, params) # cells in indices should have the highest response to the stimulus
+    indices, distances = sort_gids_by_distance_to_stimulus(tp , params) # cells in indices should have the highest response to the stimulus
     print 'Motion parameters', mp
     print 'GID\tdist_to_stim\tx\ty\tu\tv\t\t'
     if verbose:
@@ -1047,7 +1021,6 @@ def get_pmax(p_effective, w_sigma, conn_type):
     elif conn_type == 'ii':
         fit_wsigma = [2.21668319e+46,   9.05343215e-03,   1.76483061e+00, 4.01129051e-02]
     gradient  = fit_wsigma[0] * np.exp( - w_sigma**fit_wsigma[3] / fit_wsigma[1]) + fit_wsigma[2]
-    print 'debug utils.get_pmax gradient for %s ws %.1e: %.3e' % (conn_type, w_sigma, gradient)
     p_max = gradient * p_effective
 
     return p_max
@@ -1145,6 +1118,28 @@ def convert_to_url(fn):
     p = os.path.realpath('.')
     s = 'file://%s/%s' % (p, fn)
     return s
+
+
+def select_well_tuned_cells(tp, params, n_cells, n_pop):
+    """
+    n_cells -- (int) number of cells to be selected
+    n_pop -- n_cells is being split up in n_pop populations sorted by x-position
+    """
+    gids, dist = sort_gids_by_distance_to_stimulus(tp, params)
+    selected_gids = gids[:n_cells]
+    x_pos = tp[selected_gids, 0]
+    x_pos_srt = np.argsort(x_pos)
+    gids_sorted = selected_gids[x_pos_srt]
+
+    pops = []
+    n_per_pop = int(round(n_cells / n_pop))
+    for i in xrange(n_pop):
+        sublist = distribute_list(gids_sorted, n_pop, i)
+#        i_0 = i * n_per_pop
+#        i_1 = (i + 1) * n_per_pop
+#        pop = gids_sorted[i_0:i_1]
+        pops.append(sublist)
+    return gids_sorted, pops
 
 
 # recording parameters for anticipatory mode

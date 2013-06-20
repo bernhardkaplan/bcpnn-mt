@@ -206,5 +206,5 @@ pylab.savefig(output_fn, dpi=200)
 #pylab.savefig(output_fn, dpi=200)
 
 
-pylab.show()
+#pylab.show()
 
