@@ -116,7 +116,8 @@ else:
     re_calculate = True # could be False, too, if you want
 
 
-cell_type = 'exc'
+#cell_type = 'exc'
+cell_type = 'inh'
 
 if re_calculate: # load 
     print '\nCalculating the tuning prop'

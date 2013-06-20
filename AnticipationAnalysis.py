@@ -18,6 +18,9 @@ else:
     params = network_params.load_params()
 
 
+cell_type = 'exc'
+
+
 def recompute_input(params, tp, gids):
     """
     Returns the envelope of the poisson process that is fed into the cells with gids
@@ -38,9 +41,32 @@ def recompute_input(params, tp, gids):
         L_std[i_time] = L_input[:, i_time].std()
     return L_avg, L_std, time
 
+def get_average_spikerate(spiketrains, pops, n_bins=20):
+
+    avg_rate = np.zeros((n_bins, len(pops)))
+
+    for i_, p in enumerate(pops):
+        for gid in p:
+            n, bins = np.histogram(spiketrains[gid], bins=n_bins)
+            avg_rate[:, i_] += n
+        avg_rate[:, i_] /= float(len(p))
+
+    return avg_rate, bins
+
+
 tp = np.loadtxt(params['tuning_prop_means_fn'])
-fn = params['exc_volt_anticipation']
-fn_g = params['exc_gsyn_anticipation']
+n_pop = 10
+selected_gids, pops = utils.select_well_tuned_cells(tp, params, params['n_gids_to_record'], n_pop)
+print 'pops', pops
+
+spike_fn = params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
+assert (os.path.exists(spike_fn)), 'File not found %s' % spike_fn
+spikes = np.loadtxt(spike_fn)
+spiketrains = utils.get_spiketrains(spikes, n_cells=params['n_%s' % cell_type])
+avg_rate, avg_rate_bins = get_average_spikerate(spiketrains, pops)
+
+fn = params['%s_volt_anticipation' % cell_type]
+fn_g = params['%s_gsyn_anticipation' % cell_type]
 #fn = "ResultsBar_AIII/VoltageTraces/exc_volt_anticipation_small.v"
 #fn_g = "ResultsBar_AIII/CondTraces/exc_gsyn_anticipation_small.dat"
 print 'Loading ', fn
@@ -48,9 +74,6 @@ d_volt = np.loadtxt(fn)
 print 'Loading ', fn_g
 d_gsyn = np.loadtxt(fn_g)
 
-n_pop = 4
-selected_gids, pops = utils.select_well_tuned_cells(tp, params, params['n_gids_to_record'], n_pop)
-print 'pops', pops
 
 time_axis, volt = utils.extract_trace(d_volt, pops[0][0])
 
@@ -64,7 +87,6 @@ avg_currs[:, 0] = time_axis
 #selected_gids = utils.all_anticipatory_gids(params)
 print 'selected_gids', len(selected_gids)
 for j_, pop in enumerate(pops): 
-    print 'debug', pop, len(pop)
     time_axis, volt = utils.extract_trace(d_volt, pop[0])
     volt_sum = np.zeros(time_axis.size)
     gsyn_sum = np.zeros(time_axis.size)
@@ -84,12 +106,12 @@ for j_, pop in enumerate(pops):
         gsyn_sum += gsyn
         curr_sum += (gsyn * volt)
 
-    print 'debug, population info', j_
-    print 'x_avg:', x_group.mean(), x_group.std()
-    print 'y_avg:', y_group.mean(), y_group.std()
-    print 'u_avg:', u_group.mean(), u_group.std()
-    print 'v_avg:', v_group.mean(), v_group.std()
-    print 'o_avg:', o_group.mean(), o_group.std()
+#    print 'debug, population info', j_
+#    print 'x_avg:', x_group.mean(), x_group.std()
+#    print 'y_avg:', y_group.mean(), y_group.std()
+#    print 'u_avg:', u_group.mean(), u_group.std()
+#    print 'v_avg:', v_group.mean(), v_group.std()
+#    print 'o_avg:', o_group.mean(), o_group.std()
     avg_volt = volt_sum / len(pop)
     avg_volts[:, j_ + 1] = avg_volt
     
@@ -105,26 +127,31 @@ data_fn = 'temp_output.dat'
 print 'Saving output to:', data_fn
 np.savetxt(data_fn, avg_volts)
 
+colorlist = ['k', 'b', 'g', 'r', 'y', 'c', 'm', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
 fig = pylab.figure()
-ax1 = fig.add_subplot(311)
-ax2 = fig.add_subplot(312)
-ax3 = fig.add_subplot(313)
+ax0 = fig.add_subplot(411)
+ax1 = fig.add_subplot(412)
+ax2 = fig.add_subplot(413)
+ax3 = fig.add_subplot(414)
 print 'debug', len(pops)
 for i in xrange(len(pops)):
-    ax1.plot(time_axis, avg_volts[:, i+1], label='pop %d volt' % i, lw=3)
-    ax2.plot(time_axis, avg_gsyns[:, i+1], label='pop %d gsyn' % i, lw=3)
-    ax3.plot(time_axis, avg_currs[:, i+1], label='pop %d curr' % i, lw=3)
+    ax0.plot(avg_rate_bins[:-1], avg_rate[:, i], 'o-', color=colorlist[i])
+    ax1.plot(time_axis, avg_volts[:, i+1], label='pop %d volt' % i, lw=2, color=colorlist[i])
+    ax2.plot(time_axis, avg_gsyns[:, i+1], label='pop %d gsyn' % i, lw=2, color=colorlist[i])
+    ax3.plot(time_axis, avg_currs[:, i+1], label='pop %d curr' % i, lw=2, color=colorlist[i])
 
 
+ax0.set_ylabel('Rate [Hz]')
+ax0.set_title('Output rate averaged over %d cells' % len(pops[0]))
 ax1_input = ax1.twinx()
 ax2_input = ax2.twinx()
 ax3_input = ax3.twinx()
 for i in xrange(len(pops)):
     L_avg, L_std, time_coarse = recompute_input(params, tp, pops[i])
 #    ax1_input.errorbar(time_coarse, L_avg, yerr=L_std / np.sqrt(len(pops[i])), lw=3, ls='--')
-    ax1_input.plot(time_coarse, L_avg, lw=3, ls='--')
-    ax2_input.plot(time_coarse, L_avg, lw=3, ls='--')
-    ax3_input.plot(time_coarse, L_avg, lw=3, ls='--')
+    ax1_input.plot(time_coarse, L_avg, lw=3, ls='--', color=colorlist[i])
+    ax2_input.plot(time_coarse, L_avg, lw=3, ls='--', color=colorlist[i])
+    ax3_input.plot(time_coarse, L_avg, lw=3, ls='--', color=colorlist[i])
 
 
 ax1.set_ylabel('V_m [mV]')
