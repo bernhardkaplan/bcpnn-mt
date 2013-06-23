@@ -1215,4 +1215,13 @@ def pop_anticipatory_gids(params):
     pops = [pop1,pop2,pop3,pop4,pop5]
     return pops 
 
+def CRF_anticipatory_gids(params, RF_xrange = np.arange(0.7,1,0.1)):
+    ex_cells = params['n_exc']
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    selected_gids = all_anticipatory_gids(params)
+    CRF_pop = []
+    for gid in selected_gids:
+        if (tp[gid,0] > RF_xrange[0] and tp[gid,0] < RF_xrange[-1]):
+            CRF_pop.append(gid)    
+    return CRF_pop
 
