@@ -231,7 +231,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
             if (700<t<1000):
                 x0, y0, u0, v0, orientation = 0.7, 0.0, sp.params['bar_motion_params'][:,2], sp.params['bar_motion_params'][:,3], sp.params['bar_motion_params'][:,4]# x0 and y0 of center of bar at time=0 
                 L = stimulus
-             else:
+            else:
                 L = 0
         # random predictor protocol includes an oriented moving bar         
         else: 

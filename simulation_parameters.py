@@ -211,6 +211,7 @@ class parameter_storage(object):
         self.params['motion_params'] = (0.0, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['bar_motion_params'] = (0.0, 0.0 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
+        self.params['motion_prtocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
@@ -300,6 +301,9 @@ class parameter_storage(object):
                folder_name = 'ResultsBar_ptow%.2e_' % (self.params['p_to_w_ee'])
 
             folder_name += connectivity_code
+            folder_name += '-'+ self.motion_type
+            folder_name += '-'+ self.motion_protocol
+
             folder_name += '/'
             # if parameters should be stored in the folder name:
 #            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
