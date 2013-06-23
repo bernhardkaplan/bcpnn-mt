@@ -55,7 +55,7 @@ def get_average_spikerate(spiketrains, pops, n_bins=20):
 
 
 tp = np.loadtxt(params['tuning_prop_means_fn'])
-n_pop = 10
+n_pop = 6
 selected_gids, pops = utils.select_well_tuned_cells(tp, params, params['n_gids_to_record'], n_pop)
 print 'pops', pops
 
@@ -122,41 +122,63 @@ for j_, pop in enumerate(pops):
     avg_currs[:, j_ + 1] = avg_curr * (-1) # because currents should be positive ...
 
 
-#data_fn = params['population_voltages_fn']
-data_fn = 'temp_output.dat'
-print 'Saving output to:', data_fn
-np.savetxt(data_fn, avg_volts)
+
+#volt_data_fn = params['population_volt_fn']
+#print 'Saving output to:', volt_data_fn
+#np.savetxt(volt_data_fn, avg_volts)
+
+#cond_data_fn = params['population_cond_fn']
+#print 'Saving output to:', cond_data_fn
+#np.savetxt(cond_data_fn, avg_conds)
+
+#curr_data_fn = params['population_curr_fn']
+#print 'Saving output to:', curr_data_fn
+#np.savetxt(curr_data_fn, avg_currs)
 
 colorlist = ['k', 'b', 'g', 'r', 'y', 'c', 'm', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
 fig = pylab.figure()
+# set figure parameters, figure size, font sizes etc
+fig_width_pt = 800.0  
+inches_per_pt = 1.0/72.27               # Convert pt to inch
+golden_mean = (np.sqrt(5)-1.0)/2.0      # Aesthetic ratio
+fig_width = fig_width_pt*inches_per_pt  # width in inches
+fig_height = fig_width*golden_mean      # height in inches
+fig_size =  [fig_width,fig_height]
+fig_params = {
+          'titel.fontsize': 18,
+          'axes.labelsize': 14,
+          'figure.figsize': fig_size}
+pylab.rcParams.update(fig_params)
+# ------------------------
+
 ax0 = fig.add_subplot(411)
 ax1 = fig.add_subplot(412)
 ax2 = fig.add_subplot(413)
 ax3 = fig.add_subplot(414)
-print 'debug', len(pops)
 for i in xrange(len(pops)):
     ax0.plot(avg_rate_bins[:-1], avg_rate[:, i], 'o-', color=colorlist[i])
-    ax1.plot(time_axis, avg_volts[:, i+1], label='pop %d volt' % i, lw=2, color=colorlist[i])
-    ax2.plot(time_axis, avg_gsyns[:, i+1], label='pop %d gsyn' % i, lw=2, color=colorlist[i])
-    ax3.plot(time_axis, avg_currs[:, i+1], label='pop %d curr' % i, lw=2, color=colorlist[i])
+    ax1.plot(time_axis, avg_volts[:, i+1], label='pop %d volt' % i, ls='--', lw=2, color=colorlist[i])
+    ax2.plot(time_axis, avg_gsyns[:, i+1], label='pop %d gsyn' % i, ls='--', lw=2, color=colorlist[i])
+    ax3.plot(time_axis, avg_currs[:, i+1], label='pop %d curr' % i, ls='--', lw=2, color=colorlist[i])
 
 
-ax0.set_ylabel('Rate [Hz]')
-ax0.set_title('Output rate averaged over %d cells' % len(pops[0]))
+ax0.set_ylabel('Firing rate [Hz]')
+ax0.set_title('Mean output_rate, input_signal, v_mem, \n conductances and currents \n for %d groups averaged over ~%d cells per group' % (n_pop, len(pops[0])))
 ax1_input = ax1.twinx()
 ax2_input = ax2.twinx()
 ax3_input = ax3.twinx()
 for i in xrange(len(pops)):
     L_avg, L_std, time_coarse = recompute_input(params, tp, pops[i])
 #    ax1_input.errorbar(time_coarse, L_avg, yerr=L_std / np.sqrt(len(pops[i])), lw=3, ls='--')
-    ax1_input.plot(time_coarse, L_avg, lw=3, ls='--', color=colorlist[i])
-    ax2_input.plot(time_coarse, L_avg, lw=3, ls='--', color=colorlist[i])
-    ax3_input.plot(time_coarse, L_avg, lw=3, ls='--', color=colorlist[i])
+    ax1_input.plot(time_coarse, L_avg, lw=3, color=colorlist[i])
+    ax2_input.plot(time_coarse, L_avg, lw=3, color=colorlist[i])
+    ax3_input.plot(time_coarse, L_avg, lw=3, color=colorlist[i])
 
 
 ax1.set_ylabel('V_m [mV]')
 ax2.set_ylabel('G_syn [uS]')
 ax3.set_ylabel('I [nA]')
+ax3.set_xlabel('Time [ms]')
 
 pylab.legend()
 output_fn = params['figures_folder'] + 'anticipatory_avg_traces.png'
