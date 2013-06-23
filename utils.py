@@ -93,7 +93,7 @@ def low_pass_filter(trace, tau=10, initial_value=0.001, dt=1., spike_height=1.):
         zi[i] = zi[i-1] + dzi
     return zi
 
-def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=None, seed=None):
+def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=None, seed=None, protocol = 'congruent'):
     """
     This function writes spike trains to a dedicated path specified in the params dict
     Spike trains are generated for each unit / minicolumn based on the function's arguments the following way:
@@ -109,7 +109,8 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
         params:  dictionary storing all simulation parameters
         my_units: tuple of integers (start, begin), in case of parallel execution each processor creates spike trains for its own units or columns
-
+        protocol: trajectory of stimulus is by default congruent. Protocol type is used in (motion_type = bar), congruent trajectory corresponds to 
+        trajectory type in which orientation of bar outside and inside of CRF (classical receptive field is the same)
     """
 
     if seed == None:
@@ -131,7 +132,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
     for i_time, time_ in enumerate(time):
         if (i_time % 100 == 0):
             print "t:", time_
-        L_input[:, i_time] = get_input(tuning_prop[my_units, :], params, time_/params['t_stimulus'])
+        L_input[:, i_time] = get_input(tuning_prop[my_units, :], params, time_/params['t_stimulus'], protocol = protocol)
         L_input[:, i_time] *= params['f_max_stim']
 
     for i_time in blank_idx:
@@ -155,7 +156,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
 
 
-def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
+def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'congruent'):
     """
     This function computes the input to each cell for one point in time t based on the given tuning properties.
 
@@ -205,13 +206,40 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot'):
         # thats how the center of bar moves
         x, y = (x0 + u0 * t) % params['torus_width'], (y0 + v0 * t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
 
-
         # then for all cells we have to check if they get stimulate by any x and y on the bar
-        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x * np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2/blur_X**2)
-            -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
-            -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
-            -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
-
+        stimulus = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x * np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2/blur_X**2)
+                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
+                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
+                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
+                
+        if protocol == 'congruent':
+            L = stimulus
+        # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
+        elif protocol == 'incongruent':
+            if (700<t<1000):
+                orientation = sp.params['bar_motion_params'][:,4] + np.pi/2.0
+            L = stimulus
+            
+        # Missing CRF protocol includes a moving oriented bar which approches to CRF and disppers inside CRF     
+        elif protocol == 'Missing CRF':
+            if not (700<t<100):
+                 L = stimulus
+            else:
+                 L = 0
+        # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
+        elif protocol == 'CRF only':
+            if (700<t<1000):
+                x0, y0, u0, v0, orientation = 0.7, 0.0, sp.params['bar_motion_params'][:,2], sp.params['bar_motion_params'][:,3], sp.params['bar_motion_params'][:,4]# x0 and y0 of center of bar at time=0 
+                L = stimulus
+             else:
+                L = 0
+        # random predictor protocol includes an oriented moving bar         
+        else: 
+            protocol == 'random predictor'
+            if not (700<t<100):
+                orientation = np.random.rand(1)*np.pi
+            L = stimulus
+            
 
         # ######## if bar is composed of several dots
 
@@ -1186,4 +1214,5 @@ def pop_anticipatory_gids(params):
             pop5.append(gid)
     pops = [pop1,pop2,pop3,pop4,pop5]
     return pops 
+
 
