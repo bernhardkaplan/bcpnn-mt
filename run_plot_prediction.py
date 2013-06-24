@@ -27,7 +27,6 @@ def run_by_match(folder_to_match):
             print cmd
             os.system(cmd)
 
-
 def get_filenames(fn_with_missing_data):
     f = file(fn_with_missing_data, 'r')
     list_of_dirs = json.load(f)
@@ -42,9 +41,7 @@ if len(sys.argv) > 1:
     # 'missing_data_dirs.json'
     get_filenames(fn_in)
 
-
-conn_code = 'AIII'
-#to_match = '^LargeScaleModel_(.*)'
-#to_match = '^LargeScaleModel_AIII_bx1.00e-01_bv1.00e-01_wsigmax2.50e-01_wsigmav2.50e-01_wee(.*)'
-to_match = '^LargeScaleModel_AIII_(.*)'
-run_by_match(to_match)
+else:
+    conn_code = 'AIII'
+    to_match = '^LargeScaleModel_AIII_(.*)'
+    run_by_match(to_match)
