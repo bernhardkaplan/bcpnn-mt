@@ -93,7 +93,7 @@ def low_pass_filter(trace, tau=10, initial_value=0.001, dt=1., spike_height=1.):
         zi[i] = zi[i-1] + dzi
     return zi
 
-def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=None, seed=None, protocol = 'congruent'):
+def create_spike_trains_for_motion(tuning_prop, params, my_units=None, seed=None, protocol='congruent'):
     """
     This function writes spike trains to a dedicated path specified in the params dict
     Spike trains are generated for each unit / minicolumn based on the function's arguments the following way:
@@ -156,7 +156,7 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
 
 
-def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'congruent'):
+def get_input(tuning_prop, params, predictor_params, motion='dot'):
     """
     This function computes the input to each cell for one point in time t based on the given tuning properties.
 
@@ -167,18 +167,18 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
             tuning_prop[:, 1] : y-position
             tuning_prop[:, 2] : u-position (speed in x-direction)
             tuning_prop[:, 3] : v-position (speed in y-direction)
-        t: time in the period (not restricted to 0 .. 1)
+        t: time in the period (not restricted to 0 .. 1) NOT IN MS!
+        predictor_params : x, y, y, v, theta of the current stimulus
         motion: type of motion (TODO: filename to movie, ... ???)
+
     """
     n_cells = tuning_prop[:, 0].size
     blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
     blur_theta = params['blur_theta']
+    # get the current stimulus parameters
+    x_stim, y_stim, u_stim, v_stim, orientation = predictor_params[0], predictor_params[1], predictor_params[2], predictor_params[3], predictor_params[4]
         
-#    L = np.zeros(n_cells)
     if motion=='dot':
-        # define the parameters of the motion
-        x0, y0, u0, v0 = params['motion_params'][0], params['motion_params'][1], params['motion_params'][2], params['motion_params'][3]
-
         # compute the motion energy input to all cells
         """
             Knowing the velocity one can estimate the analytical response to 
@@ -192,57 +192,20 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
             
             L range between 0 and 1
         """
-    # to translate the initial static line at each time step with motion parameters
-        x, y = (x0 + u0*t) % params['torus_width'], (y_0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2 / blur_X**2)
-                -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
-                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2)
+        # to translate the initial static line at each time step with motion parameters
+        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells)))**2 / blur_X**2)
+                -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2)
 
     if motion=='bar':
-        # define the parameters of the motion
-        x0, y0, u0, v0, orientation = params['motion_params']# x0 and y0 of center of bar at time=0 
-
         # compute the motion energy input to all cells
-        # thats how the center of bar moves
-        x, y = (x0 + u0 * t) % params['torus_width'], (y0 + v0 * t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-
         # then for all cells we have to check if they get stimulate by any x and y on the bar
-        stimulus = np.exp(-.5 * (torus_distance2D_vec(tuning_prop[:, 0], x * np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2/blur_X**2
-                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
-                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
+        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells)))**2 / blur_X**2)
+                -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
-                
-        if protocol == 'congruent':
-            L = stimulus
-        # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
-        elif protocol == 'incongruent':
-            if (700<t<1000):
-                orientation = sp.params['motion_params'][:,4] + np.pi/2.0
-            L = stimulus
-            
-        # Missing CRF protocol includes a moving oriented bar which approches to CRF and disppers inside CRF     
-        elif protocol == 'Missing CRF':
-            if not (700<t<100):
-                 L = stimulus
-            else:
-                 L = 0
-        # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
-        elif protocol == 'CRF only':
-            if (700<t<1000):
-                x0, y0, u0, v0, orientation = 0.7, 0.0, sp.params['motion_params'][:,2], sp.params['motion_params'][:,3], sp.params['motion_params'][:,4]# x0 and y0 of center of bar at time=0 
-                L = stimulus
-            else:
-                L = 0
-        # random predictor protocol includes an oriented moving bar         
-        else: 
-            protocol == 'random predictor'
-            if not (700<t<100):
-                orientation = np.random.rand(1)*np.pi
-            L = stimulus
-            
 
         # ######## if bar is composed of several dots
-
 #        x_init = np.round(np.linspace(0, 0.2, 5), decimals=2)# to control the height of bar with x_init range
 #        y_init = np.arctan(orientation) * x_init
 #        x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation

@@ -235,6 +235,49 @@ class NetworkModel(object):
         if self.comm != None:
             self.comm.Barrier()
 
+    def get_motion_params_from_protocol(self, time):
+        """
+
+        """
+
+        predictor_interval = int(time / self.params['predictor_interval_duration'])
+        # based on the motion_protocol calculate the stimulus position and direction etc --> predictor_params
+        if self.params['motion_protocol'] == 'congruent':
+            x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
+            x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
+            print 'x, y', x, y
+            predictor_params = (x, y, u0, v0, theta)
+
+        elif self.params['motion_protocol'] == 'incongruent':
+        # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
+            predictor_params = self.params['motion_params']
+#            if (t_check < time < t_stop_check):
+#                orientation = sp.params['motion_params'][:,4] + np.pi/2.0
+
+        # Missing CRF protocol includes a moving oriented bar which approches to CRF and disappears inside CRF     
+        # --> we give noise as input
+        # --> we shuffle the stimulus among all cells to get an incoherent input (the output of the CRF will be very small)
+        elif protocol == 'Missing CRF':
+            predictor_params = self.params['motion_params']
+#            if (t_check < t < t_stop_check):
+#                L = np.random.permutation(stimulus)
+
+        # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
+        elif protocol == 'CRF only':
+            predictor_params = self.params['motion_params']
+#            if (t_check < t < t_stop_check):
+#                L = stimulus
+#            else:
+#                L = np.random.permutation(stimulus)
+#                 L = 0
+
+        elif self.params['motion_protocol'] == 'random predictor':
+            predictor_params = self.params['motion_params']
+            # we create a random sequence of orientations and segment the trajectory
+#            orientation = np.random.rand(self.params['n_random_predictor_orientations']) * np.pi
+
+        return predictor_params
+
 
     def create_input(self, load_files=False, save_output=False):
 
@@ -267,15 +310,16 @@ class NetworkModel(object):
             # get the input signal
             print 'Calculating input signal'
             for i_time, time_ in enumerate(time):
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'], motion=self.params['motion_type'])
+                predictor_params = self.get_motion_params_from_protocol(time_ / self.params['t_stimulus'])
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, predictor_params, motion = self.params['motion_type'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
                     print "t:", time_
-#                    print 'L_input[:, %d].max()', L_input[:, i_time].max()
+
             # blanking
             for i_time in blank_idx:
-#                L_input[:, i_time] = 0.
                 L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+#                L_input[:, i_time] = 0.
 
             # create the spike trains
             print 'Creating input spiketrains for unit'
@@ -686,7 +730,7 @@ class NetworkModel(object):
 
 
 
-    def run_sim(self, sim_cnt, record_v=False, anticipatory_mode=True):
+    def run_sim(self, sim_cnt, record_v=False):
         # # # # # # # # # # # # # # # # # # # #
         #     P R I N T    W E I G H T S      #
         # # # # # # # # # # # # # # # # # # # #
@@ -715,8 +759,9 @@ class NetworkModel(object):
         
         
 
-        if anticipatory_mode:
+        if ps.params['anticipatory_mode']:
             record_gids, pops = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params, self.params['n_gids_to_record'], 1)
+            np.savetxt(self.params['gids_to_record_fn'], record_gids)
             self.exc_pop_view_anticipation = PopulationView(self.exc_pop, record_gids, label='anticipation')
             self.exc_pop_view_anticipation.record_v()
             self.exc_pop_view_anticipation.record_gsyn()
@@ -801,14 +846,14 @@ if __name__ == '__main__':
 
     input_created = False
 
-    sweep_parameter = float(sys.argv[1])
-    ps.params['blur_X'] = sweep_parameter
+#    sweep_parameter = float(sys.argv[1])
+#    ps.params['blur_X'] = sweep_parameter
 
     # always call set_filenames to update the folder name and all depending filenames!
-    folder_name = 'Sweep_bx' + str(sweep_parameter) + '/'
+#    folder_name = 'Sweep_bx' + str(sweep_parameter) + '/'
 
 
-    ps.set_filenames(folder_name)
+    ps.set_filenames()
     if pc_id == 0:
         ps.create_folders()
         ps.write_parameters_to_file()

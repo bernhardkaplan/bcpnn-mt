@@ -206,17 +206,20 @@ class parameter_storage(object):
         x0 (y0) : start position on x-axis (y-axis)
         u0 (v0) : velocity in x-direction (y-direction)
         """
-        self.params['torus_width'] = 1.
-        self.params['torus_height'] = 1.
+        self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
         self.params['motion_params'] = (0.0, .5 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
         self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
+        self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['blur_X'], self.params['blur_V'] = .15, .45
         self.params['blur_theta'] = 1.0
+        self.params['torus_width'] = 1.
+        self.params['torus_height'] = 1.
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
