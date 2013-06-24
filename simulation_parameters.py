@@ -105,22 +105,22 @@ class parameter_storage(object):
                                                            #'direction-based', 'motion-based', 'orientation-direction'
 
         self.params['with_short_term_depression'] = False
-#        self.params['connectivity_ee'] = 'anisotropic'
+        self.params['connectivity_ee'] = 'anisotropic'
 #        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
-        self.params['connectivity_ee'] = False
-#        self.params['connectivity_ei'] = 'anisotropic'
+#        self.params['connectivity_ee'] = False
+        self.params['connectivity_ei'] = 'anisotropic'
 #        self.params['connectivity_ei'] = 'isotropic'
 #        self.params['connectivity_ei'] = 'random'
-        self.params['connectivity_ei'] = False
-#        self.params['connectivity_ie'] = 'anisotropic'
+#        self.params['connectivity_ei'] = False
+        self.params['connectivity_ie'] = 'anisotropic'
 #        self.params['connectivity_ie'] = 'isotropic'
 #        self.params['connectivity_ie'] = 'random'
-        self.params['connectivity_ie'] = False
-#        self.params['connectivity_ii'] = 'anisotropic'
+#        self.params['connectivity_ie'] = False
+        self.params['connectivity_ii'] = 'anisotropic'
 #        self.params['connectivity_ii'] = 'isotropic'
 #        self.params['connectivity_ii'] = 'random'
-        self.params['connectivity_ii'] = False
+#        self.params['connectivity_ii'] = False
 
         self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
