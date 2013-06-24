@@ -177,7 +177,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
 #    L = np.zeros(n_cells)
     if motion=='dot':
         # define the parameters of the motion
-        x0, y0, u0, v0 = params['motion_params']
+        x0, y0, u0, v0 = params['motion_params'][0], params['motion_params'][1], params['motion_params'][2], params['motion_params'][3]
 
         # compute the motion energy input to all cells
         """
@@ -200,14 +200,14 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
 
     if motion=='bar':
         # define the parameters of the motion
-        x0, y0, u0, v0, orientation = params['bar_motion_params']# x0 and y0 of center of bar at time=0 
+        x0, y0, u0, v0, orientation = params['motion_params']# x0 and y0 of center of bar at time=0 
 
         # compute the motion energy input to all cells
         # thats how the center of bar moves
         x, y = (x0 + u0 * t) % params['torus_width'], (y0 + v0 * t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
 
         # then for all cells we have to check if they get stimulate by any x and y on the bar
-        stimulus = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x * np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2/blur_X**2)
+        stimulus = np.exp(-.5 * (torus_distance2D_vec(tuning_prop[:, 0], x * np.ones(n_cells), tuning_prop[:, 1], y * np.ones(n_cells)))**2/blur_X**2
                 -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
                 -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
                 -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
@@ -217,7 +217,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
         # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
         elif protocol == 'incongruent':
             if (700<t<1000):
-                orientation = sp.params['bar_motion_params'][:,4] + np.pi/2.0
+                orientation = sp.params['motion_params'][:,4] + np.pi/2.0
             L = stimulus
             
         # Missing CRF protocol includes a moving oriented bar which approches to CRF and disppers inside CRF     
@@ -229,7 +229,7 @@ def get_input(tuning_prop, params, t, contrast=.9, motion='dot', protocol = 'con
         # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
         elif protocol == 'CRF only':
             if (700<t<1000):
-                x0, y0, u0, v0, orientation = 0.7, 0.0, sp.params['bar_motion_params'][:,2], sp.params['bar_motion_params'][:,3], sp.params['bar_motion_params'][:,4]# x0 and y0 of center of bar at time=0 
+                x0, y0, u0, v0, orientation = 0.7, 0.0, sp.params['motion_params'][:,2], sp.params['motion_params'][:,3], sp.params['motion_params'][:,4]# x0 and y0 of center of bar at time=0 
                 L = stimulus
             else:
                 L = 0
@@ -509,8 +509,8 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
             for i_theta, theta in enumerate(v_theta):
                 for orientation in orientations:
                 # for plotting this looks nicer, and due to the torus property it doesn't make a difference
-                    tuning_prop[index, 0] = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn())# % params['torus_width']
-                    tuning_prop[index, 1] = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn())# % params['torus_height']
+                    tuning_prop[index, 0] = (RF[0, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
+                    tuning_prop[index, 1] = (RF[1, i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_height']
                     tuning_prop[index, 2] = np.cos(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
                     tuning_prop[index, 3] = np.sin(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
@@ -834,7 +834,7 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
 
     if params['motion_type'] == 'bar':
-        orientation_dist = np.sqrt((tp_cell[4] - params['bar_motion_params'][4])**2)
+        orientation_dist = np.sqrt((tp_cell[4] - params['motion_params'][4])**2)
         dist =  min_spatial_dist + velocity_dist + orientation_dist
     else:
         dist =  min_spatial_dist + velocity_dist

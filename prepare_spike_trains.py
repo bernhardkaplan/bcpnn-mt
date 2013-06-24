@@ -8,10 +8,12 @@ params = PS.load_params()                       # params stores cell numbers, et
 # either:
 #params['blur_X'], params['blur_V'] = float(sys.argv[1]), float(sys.argv[2])
 # or:
-try: # try to get motion params from command line
+
+if params['motion_type'] == 'dot':
     params['motion_params'] = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])
     seed = int(sys.argv[5])
-except: # take the standard ones
+else:
+    print 'Taking the default parameters'
     mp = params['motion_params']
     seed = params['input_spikes_seed']
 

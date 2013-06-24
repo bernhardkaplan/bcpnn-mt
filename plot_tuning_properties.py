@@ -10,7 +10,7 @@ import plot_hexgrid
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
-def plot_scatter_with_histograms(x, y, fig):
+def plot_scatter_with_histograms(x, y, fig, title=''):
 #    from matplotlib.ticker import NullFormatter
 
 #    nullfmt   = NullFormatter()         # no labels
@@ -54,9 +54,10 @@ def plot_scatter_with_histograms(x, y, fig):
     axHisty.hist(y, bins=bins, orientation='horizontal')
 
 #    print 'xlim', axScatter.get_xlim(), axScatter.get_ylim()
-    print 'xymax', xymax, np.max(np.fabs(x)), np.max(np.fabs(y))
+#    print 'xymax', xymax, np.max(np.fabs(x)), np.max(np.fabs(y))
     axHistx.set_xlim( axScatter.get_xlim() )
     axHisty.set_ylim( axScatter.get_ylim() )
+    axScatter.set_title(title)
 
 
 def plot_orientation_as_quiver(tp):
@@ -78,7 +79,6 @@ def plot_orientation_as_quiver(tp):
         # calculate the color from tuning angle theta
         angle = (theta / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
         rgba_colors.append(m.to_rgba(angle))
-        print m.to_rgba(angle), angle, theta
 
     fig_2 = pylab.figure()
     ax = fig_2.add_subplot(111)
@@ -116,8 +116,8 @@ else:
     re_calculate = True # could be False, too, if you want
 
 
-#cell_type = 'exc'
-cell_type = 'inh'
+cell_type = 'exc'
+#cell_type = 'inh'
 
 if re_calculate: # load 
     print '\nCalculating the tuning prop'
@@ -263,9 +263,13 @@ fig2 = pylab.figure(figsize=(width, width))
 #ax2 = fig.add_subplot(122, aspect='equal')
 #ax2 = pylab.axes()
 #plot_scatter_with_histograms(d[:, 0], d[:, 1])
-plot_scatter_with_histograms(d[:, 2], d[:, 3], fig2)
+plot_scatter_with_histograms(d[:, 2], d[:, 3], fig2, 'Distribution of preferred directions')
 output_fn = params['figures_folder'] + 'v_tuning_histogram_vmin%.2e_vmax%.2e.png' % (params['v_min_tp'], params['v_max_tp'])
 print 'Saving to', output_fn
 fig2.savefig(output_fn, dpi=200)
+
+
+fig3 = pylab.figure(figsize=(width, width))
+plot_scatter_with_histograms(d[:, 0], d[:, 1], fig3, 'Distribution of spatial receptive fields')
 
 pylab.show()

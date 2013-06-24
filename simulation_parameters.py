@@ -48,8 +48,8 @@ class parameter_storage(object):
         print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
         print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .30 # some variability in the speed of RFs
+        self.params['sigma_RF_pos'] = .10 # some variability in the position of RFs
+        self.params['sigma_RF_speed'] = .40 # some variability in the speed of RFs
         self.params['sigma_RF_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
         self.params['sigma_RF_orientation'] = .1 * np.pi # some variability in the direction of RFs
         self.params['N_orientation'] = 3 # some variability in the direction of RFs
@@ -57,7 +57,7 @@ class parameter_storage(object):
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta']*self.params['N_orientation'] # number of excitatory cells per minicolumn
+        self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] * self.params['N_orientation'] # number of excitatory cells per minicolumn
         self.params['fraction_inh_cells'] = 0.30 # fraction of inhibitory cells in the network, only approximately!
         self.params['N_theta_inh'] = self.params['N_theta']
         self.params['N_V_INH'] = self.params['N_V']
@@ -105,22 +105,22 @@ class parameter_storage(object):
                                                            #'direction-based', 'motion-based', 'orientation-direction'
 
         self.params['with_short_term_depression'] = False
-        self.params['connectivity_ee'] = 'anisotropic'
+#        self.params['connectivity_ee'] = 'anisotropic'
 #        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
-#        self.params['connectivity_ee'] = False
+        self.params['connectivity_ee'] = False
 #        self.params['connectivity_ei'] = 'anisotropic'
-        self.params['connectivity_ei'] = 'isotropic'
+#        self.params['connectivity_ei'] = 'isotropic'
 #        self.params['connectivity_ei'] = 'random'
-#        self.params['connectivity_ei'] = False
+        self.params['connectivity_ei'] = False
 #        self.params['connectivity_ie'] = 'anisotropic'
-        self.params['connectivity_ie'] = 'isotropic'
+#        self.params['connectivity_ie'] = 'isotropic'
 #        self.params['connectivity_ie'] = 'random'
-#        self.params['connectivity_ie'] = False
+        self.params['connectivity_ie'] = False
 #        self.params['connectivity_ii'] = 'anisotropic'
-        self.params['connectivity_ii'] = 'isotropic'
+#        self.params['connectivity_ii'] = 'isotropic'
 #        self.params['connectivity_ii'] = 'random'
-#        self.params['connectivity_ii'] = False
+        self.params['connectivity_ii'] = False
 
         self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
@@ -208,8 +208,7 @@ class parameter_storage(object):
         """
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
-        self.params['motion_params'] = (0.0, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
-        self.params['bar_motion_params'] = (0.0, 0.0 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
+        self.params['motion_params'] = (0.0, .5 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
         self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
@@ -301,8 +300,8 @@ class parameter_storage(object):
                folder_name = 'ResultsBar_ptow%.2e_' % (self.params['p_to_w_ee'])
 
             folder_name += connectivity_code
-            folder_name += '-'+ self.motion_type
-            folder_name += '-'+ self.motion_protocol
+            folder_name += '-'+ self.params['motion_type']
+            folder_name += '-'+ self.params['motion_protocol']
 
             folder_name += '/'
             # if parameters should be stored in the folder name:
