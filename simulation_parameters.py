@@ -366,7 +366,9 @@ class parameter_storage(object):
         self.params['exc_volt_anticipation'] = '%sexc_volt_anticipation.v' % self.params['volt_folder']
         self.params['exc_gsyn_anticipation'] = '%sexc_gsyn_anticipation.dat' % self.params['gsyn_folder']
         self.params['exc_curr_anticipation'] = '%sexc_curr_anticipation.dat' % self.params['curr_folder']
-        self.params['population_volt_fn'] = '%spopulation_voltages.dat' % (self.params['data_folder'])
+        self.params['population_volt_fn'] = '%spopulation_volt.dat' % (self.params['data_folder'])
+        self.params['population_cond_fn'] = '%spopulation_cond.dat' % (self.params['data_folder'])
+        self.params['population_volt_fn'] = '%spopulation_curr.dat' % (self.params['data_folder'])
 
         self.params['inh_volt_fn_base'] = '%sinh_volt' % self.params['volt_folder']
         self.params['inh_gsyn_fn_base'] = '%sinh_gsyn' % self.params['curr_folder']
