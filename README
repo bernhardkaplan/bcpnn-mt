@@ -7,11 +7,11 @@ Requirements:
     Brian, NEST or another pyNN supported simulator
 
 Run:
-    python main_noColumns.py
+    python NetworkSimModule.pyy
 
     or 
 
-    mpirun -np [number_of_processes] python main_noColumns.py
+    mpirun -np [number_of_processes] NetworkSimModule.py
 
 
 installation on (neuro)debian(virtual machine on MacOsX)
