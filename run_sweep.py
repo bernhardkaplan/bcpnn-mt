@@ -1,8 +1,8 @@
 import os
 import numpy as np
-sn = "NetworkSimModule.py"
 
-
-for ws in [5e-5, 1e-4, 5e-4, 1e-3]:
-    os.system('mpirun -np 8 python  %s %f'  % (sn, ws))
+for sweep_parameter in [0.05, 0.10, 0.15]:
+    os.system('mpirun -np 8 python NetworkSimModule.py %f'  % (sweep_parameter))
+    # on 1 core
+#    os.system('python NetworkSimModule.py %f'  % (sweep_parameter))
 

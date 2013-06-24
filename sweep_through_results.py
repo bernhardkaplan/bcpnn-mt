@@ -24,48 +24,15 @@ are to be processed here (that appear in dir_names).
 --> you can use run_plot_prediction.py to automatically do this
 """
 
-try:
-    from mpi4py import MPI
-    USE_MPI = True
-    comm = MPI.COMM_WORLD
-    pc_id, n_proc = comm.rank, comm.size
-
-except:
-    USE_MPI = False
-    comm = None
-    pc_id, n_proc = 0, 1
-
-network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
-params = network_params.params
-
-RC = ResultsCollector.ResultsCollector(params)
-
-#w_ee = 0.030
-#t_blank = 200
-conn_code = 'AIII'
-# the parameter to sweep for
-#param_name = 'blur_X'
-param_name = 'w_tgt_in_per_cell_ee'
-#param_name = 't_blank'
-#t_range=(0, 1000)
-#param_name = 'delay_scale'
-t_range=(0, 1600)
-fmaxstim = 1000.
+data_fn = '/Data/something_new.dat'
+# Define the pattern of folder names where to look for the data_fn
 
 blur_v = 0.05
 tbb = 400
-to_match = '^LS_(.*)'
-#to_match = '^LS_xpred_(.*)'
-#to_match = '^LargeScaleModel_AIII_pee1(.*)delay250_scaleLatency0.50'
-#to_match = '^LargeScaleModel_%s_fmaxstim1\.50e\+03_scaleLatency0\.15_tbb400_(.*)' % (conn_code)
-#to_match = '^LargeScaleModel_%s_fmaxstim(.*)' % (conn_code)
-#to_match = '^LargeScaleModel_%s_fmaxstim%.2e(.*)' % (conn_code,fmaxstim)
-print 'to_match', to_match
-#to_match = '^LargeScaleModel_%s_fmaxstim%.2e_(.*)' % (conn_code, fmaxstim)
-#to_match = '^LargeScaleModel_%s_fmaxstim(.*)_tbb%d$' % (conn_code, tbb)
-#output_fn = 'xvdiff_%s_tbb%d_fmaxstim%.1e_weeSweep_t%d-%d.dat' % (conn_code, tbb, fmaxstim, t_range[0], t_range[1])
-output_fn = 'dummy.dat'
-print 'output_fn', output_fn
+to_match = '^Sweep_bx(.*)'
+print 'Folder to_match:', to_match
+final_sweep_output_fn = 'dummy.dat'
+print 'final_sweep_output_fn', final_sweep_output_fn
 
 dir_names = []
 if len(sys.argv) == 1:
@@ -81,9 +48,10 @@ else:
             if m:
                 dir_names.append(thing)
 
+
 missing_dirs = []
 for name in dir_names:
-    if not os.path.exists(name + '/Data/vx_grid.dat'):
+    if not os.path.exists(name + data_fn):
         missing_dirs.append(name)
 
 print 'dirnames', dir_names
@@ -98,10 +66,18 @@ if len(missing_dirs) > 0:
     exit(1)
 
 
+network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
+params = network_params.params
+
+RC = ResultsCollector.ResultsCollector(params)
+
 RC.set_dirs_to_process(dir_names)
+RC.get_parameter(param_name)
+
 #print "RC.dirs_to_process", RC.dirs_to_process
 RC.get_xvdiff_integral()#t_range=t_range)
-RC.get_parameter(param_name)
+param_name = 'blur_X'
+
 #RC.get_parameter('w_sigma_x')
 #RC.get_parameter('w_sigma_v')
 print 'RC param_space', RC.param_space
@@ -110,7 +86,7 @@ RC.n_fig_y = 2
 RC.create_fig()
 RC.plot_param_vs_xvdiff_integral(param_name, xv='x', fig_cnt=1)#, t_integral=t_range)
 RC.plot_param_vs_xvdiff_integral(param_name, xv='v', fig_cnt=2)#, t_integral=t_range)
-RC.save_output_data(output_fn)
+RC.save_output_data(final_sweep_output_fn)
 #pylab.show()
 #RC.get_cgxv()
 #RC.plot_cgxv_vs_xvdiff()

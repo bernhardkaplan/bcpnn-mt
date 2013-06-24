@@ -801,22 +801,14 @@ if __name__ == '__main__':
 
     input_created = False
 
-#    ps.params['p_to_w_ee'] = float(sys.argv[1])
+    sweep_parameter = float(sys.argv[1])
+    ps.params['blur_X'] = sweep_parameter
 
-#     w_sigma_v = float(sys.argv[2])
-#     params['w_sigma_x'] = w_sigma_x
-#     params['w_sigma_v'] = w_sigma_v
-#    w_ee = float(sys.argv[1])
-#    ps.params['w_tgt_in_per_cell_ee'] = w_ee
-#    connectivity_radius = float(sys.argv[2])
-#    ps.params['connectivity_radius'] = connectivity_radius
-#    delay_scale = float(sys.argv[3])
-#    ps.params['delay_scale'] = delay_scale
-    
+    # always call set_filenames to update the folder name and all depending filenames!
+    folder_name = 'Sweep_bx' + str(sweep_parameter) + '/'
 
 
-    ps.set_filenames()
-
+    ps.set_filenames(folder_name)
     if pc_id == 0:
         ps.create_folders()
         ps.write_parameters_to_file()
