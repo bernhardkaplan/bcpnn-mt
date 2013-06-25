@@ -46,9 +46,13 @@ def get_average_spikerate(spiketrains, pops, n_bins=20):
     avg_rate = np.zeros((n_bins, len(pops)))
 
     for i_, p in enumerate(pops):
+        print i_
+        print p
         for gid in p:
-            n, bins = np.histogram(spiketrains[gid], bins=n_bins)
-            avg_rate[:, i_] += n
+            print spiketrains[gid]
+            if not (spiketrains[gid] == []):
+                n, bins = np.histogram(spiketrains[gid], bins=n_bins)
+                avg_rate[:, i_] += n
         avg_rate[:, i_] /= float(len(p))
 
     return avg_rate, bins
