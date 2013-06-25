@@ -48,7 +48,7 @@ class ConnectivityAnalyser(object):
         print 'Loading:', fn
         if not os.path.exists(fn):
             print 'Merging connlists ...'
-            cmd = 'python merge_connlists.py %s' % self.params['params_fn']
+            cmd = 'python merge_connlists.py %s' % self.params['params_fn_json']
             os.system(cmd)
 
         self.conn_lists[conn_type] = np.loadtxt(fn)
@@ -71,7 +71,7 @@ class ConnectivityAnalyser(object):
         print 'Loading:', fn
         if not os.path.exists(fn):
             print 'Merging connlists ...'
-            cmd = 'python merge_connlists.py %s' % self.params['params_fn']
+            cmd = 'python merge_connlists.py %s' % self.params['params_fn_json']
             os.system(cmd)
 
         if not self.conn_lists.has_key(conn_type):
@@ -178,7 +178,7 @@ class ConnectivityAnalyser(object):
         print 'Loading:', fn
         if not os.path.exists(fn):
             print 'Merging connlists ...'
-            cmd = 'python merge_connlists.py %s' % self.params['params_fn']
+            cmd = 'python merge_connlists.py %s' % self.params['params_fn_json']
             os.system(cmd)
 
         if not self.conn_lists.has_key(conn_type):
@@ -248,7 +248,7 @@ class ConnectivityAnalyser(object):
         print 'Loading:', fn
         if not os.path.exists(fn):
             print 'Merging connlists ...'
-            cmd = 'python merge_connlists.py %s' % self.params['params_fn']
+            cmd = 'python merge_connlists.py %s' % self.params['params_fn_json']
             os.system(cmd)
 
         conn_list = np.loadtxt(fn)
