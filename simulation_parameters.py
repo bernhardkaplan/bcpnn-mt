@@ -123,8 +123,8 @@ class parameter_storage(object):
 #        self.params['connectivity_ii'] = False
 
         self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
-        self.params['w_thresh_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
-        self.params['w_thresh_max'] = 2.5e-2
+        self.params['w_thresh_min'] = 5e-4    # When probabilities are transformed to weights, they are scaled so that the weights are within this range
+        self.params['w_thresh_max'] = 2.0e-2
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
 
         # exc - inh
@@ -154,9 +154,9 @@ class parameter_storage(object):
         self.params['w_sigma_theta'] = 0.6 # how sensitive connectivity is on similarity between source and target cell
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.25 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1.50 # [uS] how much input should an inh cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ie'] = 0.80 # [uS] how much input should an exc cell get from its inh source cells?
+        self.params['w_tgt_in_per_cell_ie'] = 1.80 # [uS] how much input should an exc cell get from its inh source cells?
         self.params['w_tgt_in_per_cell_ii'] = 0.05 # [uS] how much input should an inh cell get from its source cells?
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
@@ -202,7 +202,9 @@ class parameter_storage(object):
         u0 (v0) : velocity in x-direction (y-direction)
         """
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
-        self.params['motion_params'] = (0.0, .5 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
+        self.params['motion_params'] = [0.0, .5 , 0.5, 0, np.pi/6.0] # (x, y, v_x, v_y, orientation of bar)
+        # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
+        self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
         self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
 	self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
@@ -299,16 +301,18 @@ class parameter_storage(object):
         self.params['connectivity_code'] = connectivity_code
 
         if folder_name == None:
-            if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-                folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
-            else:
-               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
+#            if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
+#                folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
+#            else:
+#               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
 
+            folder_name = 'OrientationTuning_%.2e' % self.params['motion_params'][4]
             folder_name += connectivity_code
             folder_name += '-'+ self.params['motion_type']
             folder_name += '-'+ self.params['motion_protocol']
 
             folder_name += '/'
+
             # if parameters should be stored in the folder name:
 #            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
 #                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \

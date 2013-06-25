@@ -94,17 +94,6 @@ class NetworkModel(object):
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
             self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
-        indices, distances = utils.sort_gids_by_distance_to_stimulus(self.tuning_prop_exc, self.params) # cells in indices should have the highest response to the stimulus
-        if self.pc_id == 0:
-            print "Saving tuning_prop to file:", self.params['tuning_prop_means_fn']
-            np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop_exc)
-            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
-            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
-            print 'Saving gids to record to: ', self.params['gids_to_record_fn']
-            np.savetxt(self.params['gids_to_record_fn'], indices[:self.params['n_gids_to_record']], fmt='%d')
-
-#        np.savetxt(params['gids_to_record_fn'], indices[:params['n_gids_to_record']], fmt='%d')
-
         if self.comm != None:
             self.comm.Barrier()
         from pyNN.utility import Timer
@@ -823,8 +812,8 @@ class NetworkModel(object):
         
 
         if ps.params['anticipatory_mode']:
-            record_gids, pops = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params, self.params['n_gids_to_record'], 1)
-            np.savetxt(self.params['gids_to_record_fn'], record_gids)
+            record_gids, pops = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params['mp_select_cells'], self.params, self.params['n_gids_to_record'], 1)
+            np.savetxt(self.params['gids_to_record_fn'], record_gids, fmt='%d')
             self.exc_pop_view_anticipation = PopulationView(self.exc_pop, record_gids, label='anticipation')
             self.exc_pop_view_anticipation.record_v()
             self.exc_pop_view_anticipation.record_gsyn()
@@ -909,14 +898,12 @@ if __name__ == '__main__':
 
     input_created = False
 
-#    sweep_parameter = float(sys.argv[1])
-#    ps.params['blur_X'] = sweep_parameter
+    orientation = float(sys.argv[1])
+    ps.params['motion_params'][4] = orientation
 
     # always call set_filenames to update the folder name and all depending filenames!
-#    folder_name = 'Sweep_bx' + str(sweep_parameter) + '/'
-
-
     ps.set_filenames()
+
     if pc_id == 0:
         ps.create_folders()
         ps.write_parameters_to_file()
@@ -946,6 +933,9 @@ if __name__ == '__main__':
     NM.connect()
     NM.run_sim(sim_cnt, record_v=record)
     NM.print_results(print_v=record)
+
+    if comm != None:
+        comm.Barrier()
 
     if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
         import plot_prediction as pp

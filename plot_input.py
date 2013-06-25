@@ -54,14 +54,19 @@ if len(sys.argv) == 2:
 
 
 elif len(sys.argv) == 3:
-    gid = int(sys.argv[1])
+    gid = int(sys.argv[2])
     import json
-    param_fn = sys.argv[2]
+    param_fn = sys.argv[1]
     if os.path.isdir(param_fn):
         param_fn += '/Parameters/simulation_parameters.json'
     print '\nLoading parameters from %s\n' % (param_fn)
     f = file(param_fn, 'r')
     params = json.load(f)
+
+
+else:
+    print '\nUsage:'
+    print 'python plot_input.py GID [OPTIONAL:FOLDER_NAME]'
 
 rate_fn = params['input_rate_fn_base'] + str(gid) + '.npy'
 spike_fn = params['input_st_fn_base'] + str(gid) + '.npy'

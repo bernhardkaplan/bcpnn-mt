@@ -742,7 +742,7 @@ def convert_hsl_to_rgb(h, s, l):
     return (r_, g_, b_)
 
 
-def sort_gids_by_distance_to_stimulus(tp, params, local_gids=None):
+def sort_gids_by_distance_to_stimulus(tp, mp, params, local_gids=None):
     """
     This function return a list of gids sorted by the distances between cells and the stimulus.
     It calculates the minimal distances between the moving stimulus and the spatial receptive fields of the cells 
@@ -755,15 +755,15 @@ def sort_gids_by_distance_to_stimulus(tp, params, local_gids=None):
         tp[:, 2] : x-velocity
         tp[:, 3] : y-velocity
 
-        mp: motion_parameters (x0, y0, u0, v0)
+        mp: motion_parameters (x0, y0, u0, v0, orientation)
 
     """
-    mp = params['motion_params']
     if local_gids == None: 
         n_cells = tp[:, 0].size
     else:
         n_cells = len(local_gids)
-    x_dist = np.zeros(n_cells) # stores minimal distance in space between stimulus and cells
+    x_dist = np.zeros(n_cells) # stores minimal distance between stimulus and cells
+    # it's a linear sum of spatial distance, direction-tuning distance and orientation tuning distance
     for i in xrange(n_cells):
         x_dist[i], spatial_dist = get_min_distance_to_stim(mp, tp[i, :], params)
 
@@ -777,17 +777,11 @@ def sort_gids_by_distance_to_stimulus(tp, params, local_gids=None):
 
 def get_min_distance_to_stim(mp, tp_cell, params):
     """
-    mp : motion_parameters (x,y,u,v)
+    mp : motion_parameters (x, y, u, v, orientation)
     tp_cell : same format as mp
     n_steps: steps for calculating the motion path
     """
-    try:
-        if params['abstract'] == False:
-            time = np.arange(0, params['t_sim'], params['dt_rate'])
-        else:
-            time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
-    except:# use larger time step to numerically find minimum distance --> faster
-        time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
+    time = np.arange(0, params['t_sim'], 50 * params['dt_rate'])
     spatial_dist = np.zeros(time.shape[0])
     x_pos_stim = mp[0] + mp[2] * time / params['t_stimulus']
     y_pos_stim = mp[1] + mp[3] * time / params['t_stimulus']
@@ -797,7 +791,7 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     velocity_dist = np.sqrt((tp_cell[2] - mp[2])**2 + (tp_cell[3] - mp[3])**2)
 
     if params['motion_type'] == 'bar':
-        orientation_dist = np.sqrt((tp_cell[4] - params['motion_params'][4])**2)
+        orientation_dist = np.sqrt((tp_cell[4] - mp[4])**2)
         dist =  min_spatial_dist + velocity_dist + orientation_dist
     else:
         dist =  min_spatial_dist + velocity_dist
@@ -987,8 +981,8 @@ def sort_cells_by_distance_to_stimulus(n_cells, verbose=False):
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
     tp = np.loadtxt(params['tuning_prop_means_fn'])
-    mp = params['motion_params']
-    indices, distances = sort_gids_by_distance_to_stimulus(tp , params) # cells in indices should have the highest response to the stimulus
+    mp = params['mp_select_cells']
+    indices, distances = sort_gids_by_distance_to_stimulus(tp, mp, params) # cells in indices should have the highest response to the stimulus
     print 'Motion parameters', mp
     print 'GID\tdist_to_stim\tx\ty\tu\tv\t\t'
     if verbose:
@@ -1121,12 +1115,15 @@ def convert_to_url(fn):
     return s
 
 
-def select_well_tuned_cells(tp, params, n_cells, n_pop):
+def select_well_tuned_cells(tp, mp, params, n_cells, n_pop):
     """
+    tp -- array storing the tuning properties of the cells
+    mp -- the motion parameters for the cells should be 'optimally' tuned
+    params
     n_cells -- (int) number of cells to be selected
     n_pop -- n_cells is being split up in n_pop populations sorted by x-position
     """
-    gids, dist = sort_gids_by_distance_to_stimulus(tp, params)
+    gids, dist = sort_gids_by_distance_to_stimulus(tp, mp, params)
     selected_gids = gids[:n_cells]
     x_pos = tp[selected_gids, 0]
     x_pos_srt = np.argsort(x_pos)
