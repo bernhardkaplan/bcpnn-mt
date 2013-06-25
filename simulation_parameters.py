@@ -391,7 +391,7 @@ class parameter_storage(object):
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
-        self.params['all_predictor_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
+        self.params['all_predictor_params_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
 
 
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
