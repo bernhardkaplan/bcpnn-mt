@@ -204,12 +204,12 @@ class parameter_storage(object):
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
         self.params['motion_params'] = (0.0, .5 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
-        self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
-	self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
+        self.params['motion_protocol'] = 'random_predictor' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
         
         self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
         self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
-        self.params['t_start_CRF'] = (self.params['n_predictor_interval']-2.0) * self.params['predictor_interval_duration']
+        self.params['t_start_CRF'] = (self.params['n_predictor_interval']-3.0) * self.params['predictor_interval_duration']
         self.params['t_stop_CRF'] = (self.params['n_predictor_interval']-1.0) * self.params['predictor_interval_duration']
 
         self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
