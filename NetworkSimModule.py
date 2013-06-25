@@ -240,25 +240,36 @@ class NetworkModel(object):
 
         """
 
+        predictor_params = self.params['motion_params']
+        n_predictor_interval = self.params['n_predictor_interval']
         predictor_interval = int(time / self.params['predictor_interval_duration'])
+
+        t_start_CRF = self.params['t_start_CRF']
+        t_stop_CRF = self.params['t_stop_CRF']
+        
+        x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
+        x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
         # based on the motion_protocol calculate the stimulus position and direction etc --> predictor_params
         if self.params['motion_protocol'] == 'congruent':
-            x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
-            x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
             predictor_params = (x, y, u0, v0, theta)
 
         elif self.params['motion_protocol'] == 'incongruent':
         # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
-            predictor_params = self.params['motion_params']
-#            if (t_check < time < t_stop_check):
-#                orientation = sp.params['motion_params'][:,4] + np.pi/2.0
+            if (t_start_CRF < time < t_stop_CRF):
+                theta = sp.params['motion_params'][:,4] + np.pi/2.0
+            predictor_params = (x, y, u0, v0, theta)
 
         # Missing CRF protocol includes a moving oriented bar which approches to CRF and disappears inside CRF     
         # --> we give noise as input
         # --> we shuffle the stimulus among all cells to get an incoherent input (the output of the CRF will be very small)
-        elif protocol == 'Missing CRF':
-            predictor_params = self.params['motion_params']
-#            if (t_check < t < t_stop_check):
+        elif self.params['motion_protocol'] == 'Missing_CRF':
+
+            x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
+            x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
+            
+            predictor_params = (x, y, u0, v0, theta)
+                
+                
 #                L = np.random.permutation(stimulus)
 
         # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
@@ -280,6 +291,7 @@ class NetworkModel(object):
 
     def create_input(self, load_files=False, save_output=False):
 
+        t_start_CRF, t_stop_CRF = self.params['t_start_CRF'], self.params['t_stop_CRF']
 
         if load_files:
             if self.pc_id == 0:
@@ -304,7 +316,7 @@ class NetworkModel(object):
 
             my_units = self.local_idx_exc
             n_cells = len(my_units)
-            L_input = np.zeros((n_cells, time.shape[0]))
+            L_input, final_L_input = np.zeros((n_cells, time.shape[0])), np.zeros((n_cells, time.shape[0]))
 
             # get the input signal
             print 'Calculating input signal'
@@ -312,9 +324,32 @@ class NetworkModel(object):
                 predictor_params = self.get_motion_params_from_protocol(time_ / self.params['t_stimulus'])
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, predictor_params, motion = self.params['motion_type'])
                 L_input[:, i_time] *= self.params['f_max_stim']
-                if (i_time % 500 == 0):
-                    print "t:", time_
+#                if (i_time % 500 == 0):
+#                    print "t:", time_
+#                L = L_input[:, i_time]
+                if self.params['motion_protocol'] == 'Missing_CRF':
 
+#                    print 'DEBUG the protocol is detected'
+                    if (t_start_CRF < time_ < t_stop_CRF) :
+                        print time_
+                        print 'shuffling input'
+#                        final_L_input[:, i_time] = self.shuffle(L_input[:,i_time])                
+                        final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+                    else:
+                        print time_
+                        print 'input is generated outside the CRF'
+                        final_L_input[:, i_time] = L_input[:,i_time]
+
+                elif self.params['motion_protocol'] == 'CRF_only':
+                   
+                   if not (t_start_CRF < time_ < t_stop_CRF) :
+                        print time_
+#                        final_L_input[:, i_time] = self.shuffle(L_input[:,i_time])                
+                        final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+                   else:
+                        final_L_input[:, i_time] = L_input[:,i_time]
+                else:
+                    final_L_input[:, i_time] = L_input[:,i_time]
             # blanking
             for i_time in blank_idx:
                 L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
@@ -323,7 +358,7 @@ class NetworkModel(object):
             # create the spike trains
             print 'Creating input spiketrains for unit'
             for i_, unit in enumerate(my_units):
-                rate_of_t = np.array(L_input[i_, :])
+                rate_of_t = np.array(final_L_input[i_, :])
                 # each cell will get its own spike train stored in the following file + cell gid
                 n_steps = rate_of_t.size
                 spike_times = []
@@ -340,6 +375,11 @@ class NetworkModel(object):
 
         self.times['create_input'] = self.timer.diff()
         return self.spike_times_container
+
+    def shuffle(L):
+        L_input_shuffled= np.random.permutation(L)
+        return L_input_shuffled
+            
 
 
 
