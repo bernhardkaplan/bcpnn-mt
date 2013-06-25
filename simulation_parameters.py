@@ -109,22 +109,22 @@ class parameter_storage(object):
 #        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
 #        self.params['connectivity_ee'] = False
-        self.params['connectivity_ei'] = 'anisotropic'
-#        self.params['connectivity_ei'] = 'isotropic'
+#        self.params['connectivity_ei'] = 'anisotropic'
+        self.params['connectivity_ei'] = 'isotropic'
 #        self.params['connectivity_ei'] = 'random'
 #        self.params['connectivity_ei'] = False
-        self.params['connectivity_ie'] = 'anisotropic'
-#        self.params['connectivity_ie'] = 'isotropic'
+#        self.params['connectivity_ie'] = 'anisotropic'
+        self.params['connectivity_ie'] = 'isotropic'
 #        self.params['connectivity_ie'] = 'random'
 #        self.params['connectivity_ie'] = False
-        self.params['connectivity_ii'] = 'anisotropic'
-#        self.params['connectivity_ii'] = 'isotropic'
+#        self.params['connectivity_ii'] = 'anisotropic'
+        self.params['connectivity_ii'] = 'isotropic'
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
 
         self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
-        self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
-        self.params['w_max'] = 5e-3
+        self.params['w_thresh_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
+        self.params['w_thresh_max'] = 2.5e-2
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
 
         # exc - inh
@@ -154,11 +154,6 @@ class parameter_storage(object):
         self.params['w_sigma_theta'] = 0.6 # how sensitive connectivity is on similarity between source and target cell
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['p_to_w_ee'] = 7e-5
-        self.params['weight_scaling_ee'] = self.params['p_to_w_ee'] / (self.params['n_exc'] * self.params['p_ee'])
-        self.params['weight_scaling_ei'] = self.params['p_to_w_ee'] / (self.params['n_exc'] * self.params['p_ei'])
-        self.params['weight_scaling_ie'] = self.params['p_to_w_ee'] / (self.params['n_inh'] * self.params['p_ie'])
-        self.params['weight_scaling_ii'] = self.params['p_to_w_ee'] / (self.params['n_inh'] * self.params['p_ii'])
         self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1.50 # [uS] how much input should an inh cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ie'] = 0.80 # [uS] how much input should an exc cell get from its inh source cells?
@@ -300,7 +295,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'ResultsBar_ptow%.2e_bx%.2e' % (self.params['p_to_w_ee'], self.params['blur_X'])
+               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
 
             folder_name += connectivity_code
             folder_name += '-'+ self.params['motion_type']
