@@ -186,7 +186,6 @@ class parameter_storage(object):
         self.params['n_gids_to_record'] = 20
         
         
-        
 
         # ######
         # INPUT
@@ -202,20 +201,19 @@ class parameter_storage(object):
         u0 (v0) : velocity in x-direction (y-direction)
         """
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
-        self.params['motion_params'] = [0.0, .5 , 0.5, 0, np.pi/6.0] # (x, y, v_x, v_y, orientation of bar)
+        self.params['motion_params'] = [.0, .5 , .5, 0, np.pi/6.0] # (x, y, v_x, v_y, orientation of bar)
         # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
         self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
-        self.params['motion_protocol'] = 'random_predictor' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
-        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
-        
+        allowed_protocols = ['congruent', 'incongruent', 'crf_only', 'missing_crf', 'random_predictor']
+        self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        assert (self.params['motion_protocol'] in allowed_protocols), 'Spelling error? Wrong protocol given: %s!\n Should be in %s' % (self.params['motion_protocol'], str(allowed_protocols))
         self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
         self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
-        self.params['t_start_CRF'] = (self.params['n_predictor_interval']-3.0) * self.params['predictor_interval_duration']
-        self.params['t_stop_CRF'] = (self.params['n_predictor_interval']-1.0) * self.params['predictor_interval_duration']
+        self.params['t_start_CRF'] = (self.params['n_predictor_interval'] - 3.0) * self.params['predictor_interval_duration']
+        self.params['t_stop_CRF'] = (self.params['n_predictor_interval'] - 1.0) * self.params['predictor_interval_duration']
 
-        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
-        self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
+#        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
@@ -393,6 +391,8 @@ class parameter_storage(object):
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
+        self.params['all_predictor_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
+
 
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
 

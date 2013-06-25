@@ -10,6 +10,15 @@ import plot_hexgrid
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
+
+#def plot_well_tuned_cells(params):
+#    """
+#    plot the cells that should respond well to params['mp_select_cells']
+#    and are recorded in params['gids_to_record_fn']
+#    """
+
+
+
 def plot_scatter_with_histograms(x, y, fig, title=''):
 #    from matplotlib.ticker import NullFormatter
 
@@ -75,9 +84,9 @@ def plot_orientation_as_quiver(tp):
 
     rgba_colors = []
     for i in xrange(n_cells):
-        x, y, u, v, theta = d[i, :]
-        # calculate the color from tuning angle theta
-        angle = (theta / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
+        x, y, u, v, orientation = d[i, :]
+        # calculate the color from tuning angle orientation
+        angle = (orientation / (2 * np.pi)) * 360. # orientation determines h, h must be [0, 360)
         rgba_colors.append(m.to_rgba(angle))
 
     fig_2 = pylab.figure()
@@ -86,6 +95,8 @@ def plot_orientation_as_quiver(tp):
     scale = 8.
     ax.quiver(tp[:, 0], tp[:, 1], theta_x, theta_y, \
               angles='xy', scale_units='xy', scale=scale, color=rgba_colors, headwidth=4, pivot='middle', width=0.007)
+    ax.scatter(tp[:, 0], tp[:, 1])
+    return ax 
 
 
 rcParams = { 'axes.labelsize' : 18,
@@ -138,7 +149,15 @@ else:
     n_units = params['N_RF_X_INH'] * params['N_RF_Y_INH'] * params['N_theta_inh'] * params['N_V_INH']
 
 
-plot_orientation_as_quiver(d)
+
+record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params, params['n_gids_to_record'])
+ax = plot_orientation_as_quiver(d[record_gids, :])
+
+random_predictor_mp = np.loadtxt(params['random_predictor_fn'])
+ax.quiver(random_predictor_mp[:, 0], random_predictor_mp[:, 1], random_predictor_mp[:, 2], random_predictor_mp[:, 3])
+ax.set_xlim((-.1, 1.))
+ax.set_ylim((-.1, 1.))
+
 
 
 ms = 2 # markersize for scatterplots

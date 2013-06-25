@@ -68,9 +68,10 @@ else:
     print '\nUsage:'
     print 'python plot_input.py GID [OPTIONAL:FOLDER_NAME]'
 
+
 rate_fn = params['input_rate_fn_base'] + str(gid) + '.npy'
 spike_fn = params['input_st_fn_base'] + str(gid) + '.npy'
-print 'Loading data from'
+print 'Loading data from', params['folder_name']
 print rate_fn
 print spike_fn
 print 'debug', params['figures_folder']

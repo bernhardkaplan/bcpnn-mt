@@ -93,6 +93,11 @@ class NetworkModel(object):
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
             self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
+        if self.pc_id == 0:
+            print "Saving tuning_prop to file:", self.params['tuning_prop_means_fn']
+            np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop_exc)
+            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
+            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
         if self.comm != None:
             self.comm.Barrier()
@@ -251,34 +256,44 @@ class NetworkModel(object):
         # Missing CRF protocol includes a moving oriented bar which approches to CRF and disappears inside CRF     
         # --> we give noise as input
         # --> we shuffle the stimulus among all cells to get an incoherent input (the output of the CRF will be very small)
-        elif self.params['motion_protocol'] == 'Missing_CRF':
-
-            x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
-            
+        elif self.params['motion_protocol'] == 'missing_crf':
             predictor_params = (x, y, u0, v0, theta)
                 
 
         # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
-        elif self.params['motion_protocol'] == 'CRF_only':
+        elif self.params['motion_protocol'] == 'crf_only':
 #            x0_default, y0_default, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
 #            x0, y0 = (x0_default + u0 * time) % self.params['torus_width'], (y0_default + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
             predictor_params = x,y,u0,v0,theta
 
-        else: 
+        elif self.params['motion_protocol'] == 'random_predictor':
             interval_time = (time * self.params['t_stimulus']) % (self.params['predictor_interval_duration'])
-            if not (interval_time):
-                print interval_time
-                x0, y0, u0, v0 = np.random.rand(1.0)*0.4,np.random.rand(1.0), np.random.rand(1.0)*0.3,np.random.rand(1.0)*0.3
+            if (t_start_CRF < time * self.params['t_stimulus'] < t_stop_CRF) : # stimulus appears near the CRF = params['mp_select_cells']
+                predictor_params = (x, y, u0, v0, theta)
+
+            elif not (interval_time):
+                # start with a random orientation
+                orientation = np.random.rand() * 2 * np.pi
                 # orientation is perpendicular to the direction of motion
-                theta = np.arctan(v0/u0) + np.pi/2.0
-                predictor_params = [x0, y0, u0, v0, theta]
-#            if (t_start_CRF < time < t_stop_CRF) :
-#                predictor_params =  x,y,u0,v0,theta   
-#   
+                theta = orientation + np.pi / 2.
+
+                # take the standard stimulus speed as reference for the random speed
+                velocity = np.sqrt(self.params['motion_params'][2]**2 + self.params['motion_params'][3]**2)
+                u0 = velocity * np.cos(theta) 
+                v0 = velocity * np.sin(theta) 
+                print 'u0, v0', u0, v0
+                # move the starting point away by some random distance, in the direction 
+                step_away = velocity * 2. #np.random.rand() * 2.
+                x0 = (self.params['mp_select_cells'][0] - step_away * u0) % (self.params['torus_width'])
+                y0 = (self.params['mp_select_cells'][1] - step_away * v0) % (self.params['torus_height'])
+                self.prev_pp = [x0, y0, u0, v0, orientation]
             else:
+#                print 'NO new interval interval time', interval_time
                 x0, y0, u0, v0, theta = self.prev_pp
-                x, y = (x0 + u0 * interval_time) % self.params['torus_width'], (y0 + v0 * interval_time) % self.params['torus_height'] # current position of t
+                x, y = (x0 + u0 * interval_time / self.params['t_stimulus']) % self.params['torus_width'], (y0 + v0 * interval_time / self.params['t_stimulus']) % self.params['torus_height'] # current position of t
                 predictor_params = [x, y, u0, v0, theta]
+
+
 
         return predictor_params
     
@@ -292,6 +307,7 @@ class NetworkModel(object):
     def create_input(self, load_files=False, save_output=False):
 
         t_start_CRF, t_stop_CRF = self.params['t_start_CRF'], self.params['t_stop_CRF']
+        all_predictor_params = np.zeros((self.params['n_predictor_interval'], 5))
 
         if load_files:
             if self.pc_id == 0:
@@ -323,36 +339,28 @@ class NetworkModel(object):
             self.prev_pp = self.params['motion_params']
             for i_time, time_ in enumerate(time):
                 
+                predictor_interval = int(time_ / self.params['predictor_interval_duration'])
                 predictor_params = self.get_motion_params_from_protocol(time_ / self.params['t_stimulus'])
+                all_predictor_params[predictor_interval] = predictor_params
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, predictor_params, motion = self.params['motion_type'])
                 L_input[:, i_time] *= self.params['f_max_stim']
             
-                self.prev_pp = predictor_params    
-                print 'Motion protocol:', self.params['motion_protocol']
-                if self.params['motion_protocol'] == 'Missing_CRF':
-#                    print 'DEBUG the protocol is detected'
+                if self.params['motion_protocol'] == 'missing_crf':
                     if (t_start_CRF < time_ < t_stop_CRF) :
-#                        final_L_input[:, i_time] = self.shuffle(L_input[:,i_time])                
                         final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                     else:
                         final_L_input[:, i_time] = L_input[:,i_time]
 
-                elif self.params['motion_protocol'] == 'CRF_only':
-                   
+                elif self.params['motion_protocol'] == 'crf_only':
                    if not (t_start_CRF < time_ < t_stop_CRF) :
-#                        final_L_input[:, i_time] = self.shuffle(L_input[:,i_time])                
                         final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                    else:
                         final_L_input[:, i_time] = L_input[:,i_time]
-                        
-                elif self.params['motion_protocol'] == 'random_predictor':
-                # generated input is ranomized allover trajectory, now it has to include correct motion spesification inside the CRF
-                   
+                elif self.params['motion_protocol'] == 'random_predictor': # generated input is randomized allover trajectory, now it has to include correct motion spesification inside the CRF
                    final_L_input[:, i_time] = L_input[:,i_time]
-                   
-               
                 else:
                     final_L_input[:, i_time] = L_input[:,i_time]
+
             # blanking
             for i_time in blank_idx:
                 L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
@@ -376,8 +384,14 @@ class NetworkModel(object):
                     output_fn = self.params['input_st_fn_base'] + str(unit) + '.npy'
                     np.save(output_fn, np.array(spike_times))
 
+
+        output_fn = self.params['all_predictor_params_fn']
+        np.savetxt(output_fn, all_predictor_params)
+
         self.times['create_input'] = self.timer.diff()
+
         return self.spike_times_container
+
 
     def shuffle(L):
         L_input_shuffled= np.random.permutation(L)
@@ -910,8 +924,8 @@ if __name__ == '__main__':
 
     input_created = False
 
-    orientation = float(sys.argv[1])
-    ps.params['motion_params'][4] = orientation
+#    orientation = float(sys.argv[1])
+#    ps.params['motion_params'][4] = orientation
 
     # always call set_filenames to update the folder name and all depending filenames!
     ps.set_filenames()
@@ -950,9 +964,9 @@ if __name__ == '__main__':
         comm.Barrier()
 
     if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
+        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
         import plot_prediction as pp
         pp.plot_prediction(params)
-        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
 #        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
 #    if pc_id == 1 or not(USE_MPI):
 #        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])

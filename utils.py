@@ -792,7 +792,7 @@ def get_min_distance_to_stim(mp, tp_cell, params):
 
     if params['motion_type'] == 'bar':
         orientation_dist = np.sqrt((tp_cell[4] - mp[4])**2)
-        dist =  min_spatial_dist + velocity_dist + orientation_dist
+        dist =  min_spatial_dist + (velocity_dist + orientation_dist) * .1
     else:
         dist =  min_spatial_dist + velocity_dist
     return dist, min_spatial_dist
@@ -1115,7 +1115,14 @@ def convert_to_url(fn):
     return s
 
 
-def select_well_tuned_cells(tp, mp, params, n_cells, n_pop):
+def select_well_tuned_cells(tp, mp, params, n_cells):
+
+    x_diff = (tp[:, 0] - mp[0])**2 + (tp[:, 1] - mp[1])**2 + (tp[:, 2] - mp[2])**2 + (tp[:, 3] - mp[3])**2 + (tp[:, 4] - mp[4])**2
+    idx_sorted = np.argsort(x_diff)
+    return idx_sorted[:n_cells]
+    
+
+def select_well_tuned_cells_trajectory(tp, mp, params, n_cells, n_pop):
     """
     tp -- array storing the tuning properties of the cells
     mp -- the motion parameters for the cells should be 'optimally' tuned
@@ -1133,9 +1140,6 @@ def select_well_tuned_cells(tp, mp, params, n_cells, n_pop):
     n_per_pop = int(round(n_cells / n_pop))
     for i in xrange(n_pop):
         sublist = distribute_list(gids_sorted, n_pop, i)
-#        i_0 = i * n_per_pop
-#        i_1 = (i + 1) * n_per_pop
-#        pop = gids_sorted[i_0:i_1]
         pops.append(sublist)
     return gids_sorted, pops
 

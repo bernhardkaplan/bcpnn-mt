@@ -60,7 +60,7 @@ def get_average_spikerate(spiketrains, pops, n_bins=20):
 
 tp = np.loadtxt(params['tuning_prop_means_fn'])
 n_pop = 6
-selected_gids, pops = utils.select_well_tuned_cells(tp, params, params['n_gids_to_record'], n_pop)
+selected_gids, pops = utils.select_well_tuned_cells_trajectory(tp, params, params['n_gids_to_record'], n_pop)
 print 'pops', pops
 
 spike_fn = params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
