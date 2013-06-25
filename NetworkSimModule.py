@@ -273,8 +273,10 @@ class NetworkModel(object):
 #                L = np.random.permutation(stimulus)
 
         # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
-        elif protocol == 'CRF only':
-            predictor_params = self.params['motion_params']
+        elif self.params['motion_protocol'] == 'CRF_only':
+            x0_default, y0_default, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
+            x0, y0 = (x0_default + u0 * time) % self.params['torus_width'], (y0_default + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
+            predictor_params = x0,y0,u0,v0,theta
 #            if (t_check < t < t_stop_check):
 #                L = stimulus
 #            else:
