@@ -253,32 +253,41 @@ class NetworkModel(object):
         # --> we shuffle the stimulus among all cells to get an incoherent input (the output of the CRF will be very small)
         elif self.params['motion_protocol'] == 'Missing_CRF':
 
-            x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
             x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
             
             predictor_params = (x, y, u0, v0, theta)
                 
-                
-#                L = np.random.permutation(stimulus)
 
         # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
         elif self.params['motion_protocol'] == 'CRF_only':
-            x0_default, y0_default, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
-            x0, y0 = (x0_default + u0 * time) % self.params['torus_width'], (y0_default + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
-            predictor_params = x0,y0,u0,v0,theta
-#            if (t_check < t < t_stop_check):
-#                L = stimulus
-#            else:
-#                L = np.random.permutation(stimulus)
-#                 L = 0
+#            x0_default, y0_default, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
+#            x0, y0 = (x0_default + u0 * time) % self.params['torus_width'], (y0_default + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
+            predictor_params = x,y,u0,v0,theta
 
-        elif self.params['motion_protocol'] == 'random predictor':
-            predictor_params = self.params['motion_params']
-            # we create a random sequence of orientations and segment the trajectory
-#            orientation = np.random.rand(self.params['n_random_predictor_orientations']) * np.pi
+        else: 
+            interval_time = (time * self.params['t_stimulus']) % (self.params['predictor_interval_duration'])
+            if not (interval_time):
+                print interval_time
+                x0, y0, u0, v0 = np.random.rand(1.0)*0.4,np.random.rand(1.0), np.random.rand(1.0)*0.3,np.random.rand(1.0)*0.3
+                # orientation is perpendicular to the direction of motion
+                theta = np.arctan(v0/u0) + np.pi/2.0
+                predictor_params = [x0, y0, u0, v0, theta]
+#            if (t_start_CRF < time < t_stop_CRF) :
+#                predictor_params =  x,y,u0,v0,theta   
+#   
+            else:
+                x0, y0, u0, v0, theta = self.prev_pp
+                x, y = (x0 + u0 * interval_time) % self.params['torus_width'], (y0 + v0 * interval_time) % self.params['torus_height'] # current position of t
+                predictor_params = [x, y, u0, v0, theta]
 
         return predictor_params
-
+    
+    def congruent_motion(self):
+        x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
+        x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
+        return x,y , u0,v0. theta    
+    
+    
 
     def create_input(self, load_files=False, save_output=False):
 
@@ -311,34 +320,37 @@ class NetworkModel(object):
 
             # get the input signal
             print 'Calculating input signal'
+            self.prev_pp = self.params['motion_params']
             for i_time, time_ in enumerate(time):
+                
                 predictor_params = self.get_motion_params_from_protocol(time_ / self.params['t_stimulus'])
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, predictor_params, motion = self.params['motion_type'])
                 L_input[:, i_time] *= self.params['f_max_stim']
-#                if (i_time % 500 == 0):
-#                    print "t:", time_
-#                L = L_input[:, i_time]
+            
+                self.prev_pp = predictor_params    
+                print 'Motion protocol:', self.params['motion_protocol']
                 if self.params['motion_protocol'] == 'Missing_CRF':
-
 #                    print 'DEBUG the protocol is detected'
                     if (t_start_CRF < time_ < t_stop_CRF) :
-                        print time_
-                        print 'shuffling input'
 #                        final_L_input[:, i_time] = self.shuffle(L_input[:,i_time])                
                         final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                     else:
-                        print time_
-                        print 'input is generated outside the CRF'
                         final_L_input[:, i_time] = L_input[:,i_time]
 
                 elif self.params['motion_protocol'] == 'CRF_only':
                    
                    if not (t_start_CRF < time_ < t_stop_CRF) :
-                        print time_
 #                        final_L_input[:, i_time] = self.shuffle(L_input[:,i_time])                
                         final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                    else:
                         final_L_input[:, i_time] = L_input[:,i_time]
+                        
+                elif self.params['motion_protocol'] == 'random_predictor':
+                # generated input is ranomized allover trajectory, now it has to include correct motion spesification inside the CRF
+                   
+                   final_L_input[:, i_time] = L_input[:,i_time]
+                   
+               
                 else:
                     final_L_input[:, i_time] = L_input[:,i_time]
             # blanking

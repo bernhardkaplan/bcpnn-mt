@@ -206,12 +206,12 @@ class parameter_storage(object):
         # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
         self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
-        self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
-	self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
+        self.params['motion_protocol'] = 'random_predictor' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
         
         self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
         self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
-        self.params['t_start_CRF'] = (self.params['n_predictor_interval']-2.0) * self.params['predictor_interval_duration']
+        self.params['t_start_CRF'] = (self.params['n_predictor_interval']-3.0) * self.params['predictor_interval_duration']
         self.params['t_stop_CRF'] = (self.params['n_predictor_interval']-1.0) * self.params['predictor_interval_duration']
 
         self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
