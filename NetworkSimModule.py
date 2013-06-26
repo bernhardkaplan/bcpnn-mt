@@ -249,8 +249,8 @@ class NetworkModel(object):
 
         elif self.params['motion_protocol'] == 'incongruent':
         # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
-            if (t_start_CRF < time < t_stop_CRF):
-                theta = sp.params['motion_params'][:,4] + np.pi/2.0
+            if (t_start_CRF < time * self.params['t_stimulus'] < t_stop_CRF):
+                theta = self.params['motion_params'][4] + np.pi/2.0
             predictor_params = (x, y, u0, v0, theta)
 
         # Missing CRF protocol includes a moving oriented bar which approches to CRF and disappears inside CRF     
@@ -281,7 +281,7 @@ class NetworkModel(object):
                 velocity = np.sqrt(self.params['motion_params'][2]**2 + self.params['motion_params'][3]**2)
                 u0 = velocity * np.cos(theta) 
                 v0 = velocity * np.sin(theta) 
-                print 'u0, v0', u0, v0
+#                print 'u0, v0', u0, v0
                 # move the starting point away by some random distance, in the direction 
                 step_away = velocity * 2. #np.random.rand() * 2.
                 x0 = (self.params['mp_select_cells'][0] - step_away * u0) % (self.params['torus_width'])
@@ -568,7 +568,7 @@ class NetworkModel(object):
             p_ = p[sources][non_zero_idx]
             l_ = latency[sources][non_zero_idx] * self.params['delay_scale']
 
-            w = utils.linear_transformation(p_, self.params['w_min'], self.params['w_max'])
+            w = utils.linear_transformation(p_, self.params['w_thresh_min'], self.params['w_thresh_max'])
             for i in xrange(len(p_)):
 #                        w[i] = max(self.params['w_min'], min(w[i], self.params['w_max']))
                 delay = min(max(l_[i], delay_min), delay_max)  # map the delay into the valid range
@@ -596,22 +596,18 @@ class NetworkModel(object):
 
         (n_src, n_tgt, src_pop, tgt_pop, tp_src, tp_tgt, tgt_cells, syn_type) = self.resolve_src_tgt(conn_type)
         if conn_type == 'ee':
-            w_ = self.params['w_max']
             w_tgt_in = params['w_tgt_in_per_cell_%s' % conn_type]
             n_max_conn = n_src * n_tgt - n_tgt
 
         elif conn_type == 'ei':
-            w_ = self.params['w_ei_mean']
             w_tgt_in = params['w_tgt_in_per_cell_%s' % conn_type]
             n_max_conn = n_src * n_tgt
 
         elif conn_type == 'ie':
-            w_ = self.params['w_ie_mean']
             w_tgt_in = params['w_tgt_in_per_cell_%s' % conn_type]
             n_max_conn = n_src * n_tgt
 
         elif conn_type == 'ii':
-            w_ = self.params['w_ii_mean']
             w_tgt_in = params['w_tgt_in_per_cell_%s' % conn_type]
             n_max_conn = n_src * n_tgt - n_tgt
 
@@ -825,20 +821,9 @@ class NetworkModel(object):
     #    for cell in xrange(self.params['n_exc']):
     #        record(self.exc_pop[cell], self.params['exc_spiketimes_fn_merged'] + '%d.ras' % sim_cnt)
 
-        record_exc = True
-        if os.path.exists(self.params['gids_to_record_fn']):
-            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
-            record_exc = True
-            n_rnd_cells_to_record = 2
-        
-        else:
-            n_cells_to_record = 5# self.params['n_exc'] * 0.02
-            gids_to_record = np.random.randint(0, self.params['n_exc'], n_cells_to_record)
-        
-        
-
         if ps.params['anticipatory_mode']:
             record_gids = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params['mp_select_cells'], self.params, self.params['n_gids_to_record'])
+            print 'DEBUG', record_gids
             np.savetxt(self.params['gids_to_record_fn'], record_gids, fmt='%d')
             self.exc_pop_view_anticipation = PopulationView(self.exc_pop, record_gids, label='anticipation')
             self.exc_pop_view_anticipation.record_v()
@@ -849,6 +834,12 @@ class NetworkModel(object):
               
               
         if record_v:
+            if os.path.exists(self.params['gids_to_record_fn']):
+                gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
+            else:
+                gids_to_record = np.random.randint(0, self.params['n_exc'], self.params['n_gids_to_record'])
+            
+
             self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
             self.exc_pop_view.record_v()
             self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
@@ -924,8 +915,8 @@ if __name__ == '__main__':
 
     input_created = False
 
-    orientation = float(sys.argv[1])
-    ps.params['motion_params'][4] = orientation
+#    orientation = float(sys.argv[1])
+#    ps.params['motion_params'][4] = orientation
 
     # always call set_filenames to update the folder name and all depending filenames!
     ps.set_filenames()

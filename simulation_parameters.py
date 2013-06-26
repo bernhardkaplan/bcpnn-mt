@@ -105,8 +105,8 @@ class parameter_storage(object):
                                                            #'direction-based', 'motion-based', 'orientation-direction'
 
         self.params['with_short_term_depression'] = False
-        self.params['connectivity_ee'] = 'anisotropic'
-#        self.params['connectivity_ee'] = 'isotropic'
+#        self.params['connectivity_ee'] = 'anisotropic'
+        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
 #        self.params['connectivity_ee'] = False
 #        self.params['connectivity_ei'] = 'anisotropic'
@@ -206,7 +206,7 @@ class parameter_storage(object):
         self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
         allowed_protocols = ['congruent', 'incongruent', 'crf_only', 'missing_crf', 'random_predictor']
-        self.params['motion_protocol'] = allowed_protocols[0] # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        self.params['motion_protocol'] = allowed_protocols[2] # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
         assert (self.params['motion_protocol'] in allowed_protocols), 'Spelling error? Wrong protocol given: %s!\n Should be in %s' % (self.params['motion_protocol'], str(allowed_protocols))
         self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
         self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
@@ -304,7 +304,7 @@ class parameter_storage(object):
 #            else:
 #               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
 
-            folder_name = 'OrientationTuning_%.2e' % self.params['motion_params'][4]
+            folder_name = 'Debug_%.2e' % self.params['motion_params'][4]
             folder_name += connectivity_code
             folder_name += '-'+ self.params['motion_type']
             folder_name += '-'+ self.params['motion_protocol']

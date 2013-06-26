@@ -68,6 +68,14 @@ def plot_scatter_with_histograms(x, y, fig, title=''):
     axHisty.set_ylim( axScatter.get_ylim() )
     axScatter.set_title(title)
 
+def transform_orientation_to_color(orientation):
+    o_min, o_max = 0, 180
+    norm = matplotlib.mpl.colors.Normalize(vmin=o_min, vmax=o_max)
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
+    m.set_array(np.arange(o_min, o_max, 0.01))
+    angle = (orientation / (2 * np.pi)) * 360. # orientation determines h, h must be [0, 360)
+    color = m.to_rgba(angle)
+    return color
 
 def plot_orientation_as_quiver(tp):
     """
@@ -150,15 +158,29 @@ else:
 
 
 
-record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params, params['n_gids_to_record'])
-ax = plot_orientation_as_quiver(d[record_gids, :])
 
-random_predictor_mp = np.loadtxt(params['all_predictor_params_fn'])
-ax.quiver(random_predictor_mp[:, 0], random_predictor_mp[:, 1], random_predictor_mp[:, 2], random_predictor_mp[:, 3])
-ax.set_xlim((-.1, 1.))
-ax.set_ylim((-.1, 1.))
+def plot_predictor_sequence():
+    # PLOT PREDICTOR SEQUENCE
+    protocol = params['motion_protocol']
+    record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params, params['n_gids_to_record'])
+    ax = plot_orientation_as_quiver(d[record_gids, :])
+
+    random_predictor_mp = np.loadtxt(params['all_predictor_params_fn'])
+    scale = 8.
+    ax.quiver(random_predictor_mp[:, 0], random_predictor_mp[:, 1], random_predictor_mp[:, 2], random_predictor_mp[:, 3], \
+                  angles='xy', scale_units='xy', scale=scale, color=transform_orientation_to_color(random_predictor_mp[:, 4]), \
+                  linewidths=(1,), edgecolors=('k'), zorder=100000, headwidth=4, pivot='middle', width=0.007)
+    ax.set_xlim((-.1, 1.))
+    ax.set_ylim((-.1, 1.))
+    ax.set_xlabel('x-position')
+    ax.set_ylabel('y-position')
+    ax.set_title('Recorded cells and predictor sequence for %s' % protocol)
 
 
+plot_predictor_sequence()
+output_fn = params['figures_folder'] + 'predictor_sequence_%s.png' % (params['motion_protocol'])
+print 'Saving to:', output_fn
+pylab.savefig(output_fn)
 
 ms = 2 # markersize for scatterplots
 
