@@ -838,7 +838,7 @@ class NetworkModel(object):
         
 
         if ps.params['anticipatory_mode']:
-            record_gids, pops = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params['mp_select_cells'], self.params, self.params['n_gids_to_record'], 1)
+            record_gids = utils.select_well_tuned_cells(self.tuning_prop_exc, self.params['mp_select_cells'], self.params, self.params['n_gids_to_record'])
             np.savetxt(self.params['gids_to_record_fn'], record_gids, fmt='%d')
             self.exc_pop_view_anticipation = PopulationView(self.exc_pop, record_gids, label='anticipation')
             self.exc_pop_view_anticipation.record_v()
@@ -924,8 +924,8 @@ if __name__ == '__main__':
 
     input_created = False
 
-#    orientation = float(sys.argv[1])
-#    ps.params['motion_params'][4] = orientation
+    orientation = float(sys.argv[1])
+    ps.params['motion_params'][4] = orientation
 
     # always call set_filenames to update the folder name and all depending filenames!
     ps.set_filenames()

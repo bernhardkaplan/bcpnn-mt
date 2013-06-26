@@ -60,8 +60,8 @@ def get_average_spikerate(spiketrains, pops, n_bins=20):
 
 tp = np.loadtxt(params['tuning_prop_means_fn'])
 n_pop = 6
-selected_gids, pops = utils.select_well_tuned_cells_trajectory(tp, params, params['n_gids_to_record'], n_pop)
-print 'pops', pops
+selected_gids, pops = utils.select_well_tuned_cells_trajectory(tp, params['motion_params'], params, params['n_gids_to_record'], n_pop)
+#print 'pops', pops
 
 spike_fn = params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
 assert (os.path.exists(spike_fn)), 'File not found %s' % spike_fn
@@ -89,8 +89,9 @@ avg_volts[:, 0] = time_axis
 avg_gsyns[:, 0] = time_axis
 avg_currs[:, 0] = time_axis
 #selected_gids = utils.all_anticipatory_gids(params)
-print 'selected_gids', len(selected_gids)
+#print 'selected_gids', len(selected_gids)
 for j_, pop in enumerate(pops): 
+    print 'debug pop[0]', pop[0]
     time_axis, volt = utils.extract_trace(d_volt, pop[0])
     volt_sum = np.zeros(time_axis.size)
     gsyn_sum = np.zeros(time_axis.size)

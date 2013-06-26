@@ -153,7 +153,7 @@ else:
 record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params, params['n_gids_to_record'])
 ax = plot_orientation_as_quiver(d[record_gids, :])
 
-random_predictor_mp = np.loadtxt(params['random_predictor_fn'])
+random_predictor_mp = np.loadtxt(params['all_predictor_params_fn'])
 ax.quiver(random_predictor_mp[:, 0], random_predictor_mp[:, 1], random_predictor_mp[:, 2], random_predictor_mp[:, 3])
 ax.set_xlim((-.1, 1.))
 ax.set_ylim((-.1, 1.))

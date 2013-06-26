@@ -1117,7 +1117,8 @@ def convert_to_url(fn):
 
 def select_well_tuned_cells(tp, mp, params, n_cells):
 
-    x_diff = (tp[:, 0] - mp[0])**2 + (tp[:, 1] - mp[1])**2 + (tp[:, 2] - mp[2])**2 + (tp[:, 3] - mp[3])**2 + (tp[:, 4] - mp[4])**2
+    w_pos = 10.
+    x_diff = (tp[:, 0] - mp[0])**2 * w_pos + (tp[:, 1] - mp[1])**2 * w_pos + (tp[:, 2] - mp[2])**2 + (tp[:, 3] - mp[3])**2 + (tp[:, 4] - mp[4])**2
     idx_sorted = np.argsort(x_diff)
     return idx_sorted[:n_cells]
     
