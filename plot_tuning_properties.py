@@ -10,11 +10,59 @@ import plot_hexgrid
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
-def plot_scatter_with_histograms(x, y, fig):
-#    from matplotlib.ticker import NullFormatter
 
-#    nullfmt   = NullFormatter()         # no labels
 
+if len(sys.argv) > 1:
+    param_fn = sys.argv[1]
+    if os.path.isdir(param_fn):
+        param_fn += '/Parameters/simulation_parameters.json'
+    print 'Trying to load parameters from', param_fn
+    import json
+    f = file(param_fn, 'r')
+    params = json.load(f)
+    re_calculate = False
+
+else:
+    print '\nPlotting the default parameters give in simulation_parameters.py\n'
+    # load simulation parameters
+    ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
+    params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
+    re_calculate = True # could be False, too, if you want
+
+rcParams = { 'axes.labelsize' : 18,
+            'label.fontsize': 20,
+            'xtick.labelsize' : 16, 
+            'ytick.labelsize' : 16, 
+            'axes.titlesize'  : 16,
+            'legend.fontsize': 9, 
+            'lines.markeredgewidth' : 0}
+pylab.rcParams.update(rcParams)
+
+
+cell_type = 'exc'
+#cell_type = 'inh'
+
+if re_calculate: # load 
+    print '\nCalculating the tuning prop'
+    ps.create_folders()
+    d = utils.set_tuning_prop(params, mode='hexgrid', cell_type=cell_type)        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+else:
+    fn = params['tuning_prop_means_fn']
+    print '\nLoading from', fn
+    d = np.loadtxt(fn)
+
+
+n_cells = d[:, 0].size
+if cell_type == 'exc':
+    n_rf = params['N_RF_X'] * params['N_RF_Y']
+    n_units = params['N_RF_X'] * params['N_RF_Y'] * params['N_theta'] * params['N_V']
+else:
+    n_rf = params['N_RF_X_INH'] * params['N_RF_Y_INH']
+    n_units = params['N_RF_X_INH'] * params['N_RF_Y_INH'] * params['N_theta_inh'] * params['N_V_INH']
+
+
+
+def plot_scatter_with_histograms(x, y, fig, title=''):
     # definitions for the axes
     left, width = 0.1, 0.65
     bottom, height = 0.1, 0.65
@@ -23,20 +71,11 @@ def plot_scatter_with_histograms(x, y, fig):
     rect_scatter = [left, bottom, width, height]
     rect_histx = [left, bottom_h, width, 0.2]
     rect_histy = [left_h, bottom, 0.2, height]
-
-    # start with a rectangular Figure
-#    fig2 = pylab.figure(figsize=(8,8))
-#    ax = fig.add_subplot(111)
-    
     axScatter = fig.add_axes(rect_scatter)
     axScatter.set_xlabel('v_x')
     axScatter.set_ylabel('v_y')
     axHistx = fig.add_axes(rect_histx)
     axHisty = fig.add_axes(rect_histy)
-
-    # no labels
-#    axHistx.xaxis.set_major_formatter(nullfmt)
-#    axHisty.yaxis.set_major_formatter(nullfmt)
 
     # the scatter plot:
     axScatter.scatter(x, y)
@@ -53,63 +92,75 @@ def plot_scatter_with_histograms(x, y, fig):
     axHistx.hist(x, bins=bins)
     axHisty.hist(y, bins=bins, orientation='horizontal')
 
-#    print 'xlim', axScatter.get_xlim(), axScatter.get_ylim()
-    print 'xymax', xymax, np.max(np.fabs(x)), np.max(np.fabs(y))
     axHistx.set_xlim( axScatter.get_xlim() )
     axHisty.set_ylim( axScatter.get_ylim() )
+    axScatter.set_title(title)
+    return axScatter, axHistx, axHisty
+
+
+def transform_orientation_to_color(orientation):
+    o_min, o_max = 0, 180
+    norm = matplotlib.mpl.colors.Normalize(vmin=o_min, vmax=o_max)
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
+    m.set_array(np.arange(o_min, o_max, 0.01))
+    angle = (orientation / (2 * np.pi)) * 360. # orientation determines h, h must be [0, 360)
+    color = m.to_rgba(angle)
+    return color
+
+def plot_orientation_as_quiver(tp):
+    """
+    data -- tuning properties of the cells
+    """
+
+    o_min, o_max = 0, 180
+    norm = matplotlib.mpl.colors.Normalize(vmin=o_min, vmax=o_max)
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
+    m.set_array(np.arange(o_min, o_max, 0.01))
+
+    theta_x = np.cos(tp[:, 4])
+    theta_y = np.sin(tp[:, 4])
+
+    rgba_colors = []
+    for i in xrange(n_cells):
+        x, y, u, v, orientation = d[i, :]
+        # calculate the color from tuning angle orientation
+        angle = (orientation / (2 * np.pi)) * 360. # orientation determines h, h must be [0, 360)
+        rgba_colors.append(m.to_rgba(angle))
+
+    fig_2 = pylab.figure()
+    ax = fig_2.add_subplot(111)
+
+    scale = 8.
+    ax.quiver(tp[:, 0], tp[:, 1], theta_x, theta_y, \
+              angles='xy', scale_units='xy', scale=scale, color=rgba_colors, headwidth=4, pivot='middle', width=0.007)
+    ax.scatter(tp[:, 0], tp[:, 1])
+    return ax 
 
 
 
+def plot_predictor_sequence():
+    # PLOT PREDICTOR SEQUENCE
+    protocol = params['motion_protocol']
+    record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params, params['n_gids_to_record'])
+    ax = plot_orientation_as_quiver(d[record_gids, :])
 
-rcParams = { 'axes.labelsize' : 18,
-            'label.fontsize': 20,
-            'xtick.labelsize' : 16, 
-            'ytick.labelsize' : 16, 
-            'axes.titlesize'  : 16,
-            'legend.fontsize': 9, 
-            'lines.markeredgewidth' : 0}
-pylab.rcParams.update(rcParams)
-
-
-if len(sys.argv) > 1:
-    param_fn = sys.argv[1]
-    if os.path.isdir(param_fn):
-        param_fn += '/Parameters/simulation_parameters.info'
-    import NeuroTools.parameters as NTP
-    fn_as_url = utils.convert_to_url(param_fn)
-    params = NTP.ParameterSet(fn_as_url)
-    print 'Loading parameters from', param_fn
-    re_calculate = False
-
-else:
-    print '\nPlotting the default parameters give in simulation_parameters.py\n'
-    # load simulation parameters
-    ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
-    params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
-    re_calculate = True # could be False, too, if you want
-
-
-cell_type = 'exc'
-
-if re_calculate: # load 
-    print '\nCalculating the tuning prop'
-    ps.create_folders()
-    d = utils.set_tuning_prop(params, mode='hexgrid', cell_type=cell_type)        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
-else:
-    fn = params['tuning_prop_means_fn']
-    print '\nLoading from', fn
-    d = np.loadtxt(fn)
+    random_predictor_mp = np.loadtxt(params['all_predictor_params_fn'])
+    scale = 8.
+    ax.quiver(random_predictor_mp[:, 0], random_predictor_mp[:, 1], random_predictor_mp[:, 2], random_predictor_mp[:, 3], \
+                  angles='xy', scale_units='xy', scale=scale, color=transform_orientation_to_color(random_predictor_mp[:, 4]), \
+                  linewidths=(1,), edgecolors=('k'), zorder=100000, headwidth=4, pivot='middle', width=0.007)
+    ax.set_xlim((-.1, 1.))
+    ax.set_ylim((-.1, 1.))
+    ax.set_xlabel('x-position')
+    ax.set_ylabel('y-position')
+    ax.set_title('Recorded cells and predictor sequence for %s' % protocol)
+    output_fn = params['figures_folder'] + 'predictor_sequence_%s.png' % (params['motion_protocol'])
+    print 'Saving to:', output_fn
+    pylab.savefig(output_fn)
 
 
 
-n_cells = d[:, 0].size
-if cell_type == 'exc':
-    n_rf = params['N_RF_X'] * params['N_RF_Y']
-    n_units = params['N_RF_X'] * params['N_RF_Y'] * params['N_theta'] * params['N_V']
-else:
-    n_rf = params['N_RF_X_INH'] * params['N_RF_Y_INH']
-    n_units = params['N_RF_X_INH'] * params['N_RF_Y_INH'] * params['N_theta_inh'] * params['N_V_INH']
-
+#plot_predictor_sequence()
 ms = 2 # markersize for scatterplots
 
 width = 8
@@ -135,7 +186,7 @@ rgba_colors = []
 
 thetas = np.zeros(n_cells)
 for i in xrange(n_cells):
-    x, y, u, v = d[i, :]
+    x, y, u, v, theta = d[i, :]
     # calculate the color from tuning angle theta
     thetas[i] = np.arctan2(v, u)
     angle = ((thetas[i] + np.pi) / (2 * np.pi)) * 360. # theta determines h, h must be [0, 360)
@@ -232,9 +283,17 @@ fig2 = pylab.figure(figsize=(width, width))
 #ax2 = fig.add_subplot(122, aspect='equal')
 #ax2 = pylab.axes()
 #plot_scatter_with_histograms(d[:, 0], d[:, 1])
-plot_scatter_with_histograms(d[:, 2], d[:, 3], fig2)
+axScatter, axHistx, axHisty = plot_scatter_with_histograms(d[:, 2], d[:, 3], fig2, 'Distribution of preferred directions')
 output_fn = params['figures_folder'] + 'v_tuning_histogram_vmin%.2e_vmax%.2e.png' % (params['v_min_tp'], params['v_max_tp'])
 print 'Saving to', output_fn
 fig2.savefig(output_fn, dpi=200)
+
+
+fig3 = pylab.figure(figsize=(width, width))
+axScatter, axHistx, axHisty = plot_scatter_with_histograms(d[:, 0], d[:, 1], fig3, 'Distribution of spatial receptive fields')
+axScatter.set_xlim((0, 1))
+axScatter.set_ylim((0, 1))
+axHistx.set_xlim((0, 1))
+axHisty.set_ylim((0, 1))
 
 pylab.show()
