@@ -915,9 +915,10 @@ if __name__ == '__main__':
 
     input_created = False
 
-#    orientation = float(sys.argv[1])
-#    ps.params['motion_params'][4] = orientation
-
+    orientation = float(sys.argv[1])
+    protocol = str(sys.argv[2])
+    ps.params['motion_params'][4] = orientation
+    ps.params['motion_protocol'] = protocol
     # always call set_filenames to update the folder name and all depending filenames!
     ps.set_filenames()
 

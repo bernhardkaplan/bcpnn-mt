@@ -205,9 +205,10 @@ class parameter_storage(object):
         # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
         self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
-        allowed_protocols = ['congruent', 'incongruent', 'crf_only', 'missing_crf', 'random_predictor']
-        self.params['motion_protocol'] = allowed_protocols[0] # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
-        assert (self.params['motion_protocol'] in allowed_protocols), 'Spelling error? Wrong protocol given: %s!\n Should be in %s' % (self.params['motion_protocol'], str(allowed_protocols))
+        
+        self.allowed_protocols = ['congruent', 'incongruent', 'crf_only', 'missing_crf', 'random_predictor']
+        self.params['motion_protocol'] = self.allowed_protocols[2] # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        assert (self.params['motion_protocol'] in self.allowed_protocols), 'Spelling error? Wrong protocol given: %s!\n Should be in %s' % (self.params['motion_protocol'], str(allowed_protocols))
         self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
         self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
         self.params['t_start_CRF'] = (self.params['n_predictor_interval'] - 3.0) * self.params['predictor_interval_duration']

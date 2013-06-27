@@ -30,11 +30,18 @@
 """
 import os
 import numpy as np
+import simulation_parameters as sp
+
+ps = sp.parameter_storage()
+params = ps.load_params()
 
 orientations = np.linspace(0, np.pi, 5, endpoint=False)
-
-for sweep_parameter in orientations:
-    os.system('mpirun -np 8 python NetworkSimModule.py %f'  % (sweep_parameter))
+protocols = ps.allowed_protocols
+for protocol in protocols:
+    for sweep_parameter in orientations:
+    #    os.system('mpirun -np 8 python NetworkSimModule.py %f'  % (sweep_parameter))
+        os.system('python NetworkSimModule.py %f %s'  % (sweep_parameter, protocol))
+    
 
     # on 1 core
 #    os.system('python NetworkSimModule.py %f'  % (sweep_parameter))
