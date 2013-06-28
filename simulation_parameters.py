@@ -21,90 +21,83 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        # Large-scale system
-#        self.params['N_RF'] = 100# np.int(n_cells/N_V/N_theta)
-#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 2, 50# resolution in velocity norm and direction
+        self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-#         Medium-large system
-#         self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
-#         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']))# np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#         self.params['N_V'], self.params['N_theta'] = 8, 8# resolution in velocity norm and direction
-# 
-#         Medium-scale system
-#        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
-#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
- 
-#         Small-scale system
-        self.params['N_RF'] = 30# np.int(n_cells/N_V/N_theta)
-        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 3, 3# resolution in velocity norm and direction
+        self.params['n_rf'] = 30
+        if self.params['n_grid_dimensions'] == 2:
+            self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
+            self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
+            # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
+            self.params['n_theta'] = 3# resolution in velocity norm and direction
+        else:
+            self.params['n_rf_x'] = 20
+            self.params['n_rf_y'] = 1
+            self.params['n_theta'] = 1
+        self.params['n_v'] = 5
+        self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
+        self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
+        self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']
+        self.params['n_exc_per_mc'] = 10
+        self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
-        print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
-        print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .10 # some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .40 # some variability in the speed of RFs
-        self.params['sigma_RF_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-        self.params['sigma_RF_orientation'] = .1 * np.pi # some variability in the direction of RFs
-        self.params['N_orientation'] = 3 # some variability in the direction of RFs
+        self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+        self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
+        self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
+        self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
+        self.params['n_orientation'] = 1 # number of preferred orientations
 
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] * self.params['N_orientation'] # number of excitatory cells per minicolumn
-        self.params['fraction_inh_cells'] = 0.30 # fraction of inhibitory cells in the network, only approximately!
-        self.params['N_theta_inh'] = self.params['N_theta']
-        self.params['N_V_INH'] = self.params['N_V']
-        self.params['N_RF_INH'] = int(round(self.params['fraction_inh_cells'] * self.params['N_RF']))
-        self.params['N_RF_X_INH'] = np.int(np.sqrt(self.params['N_RF_INH']*np.sqrt(3)))
-        self.params['N_RF_Y_INH'] = np.int(np.sqrt(self.params['N_RF_INH'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-
-        self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH'] * self.params['N_theta_inh'] * self.params['N_V_INH'] * self.params['N_orientation']
+        self.params['fraction_inh_cells'] = 0.20 # fraction of inhibitory cells in the network, only approximately!
+        self.params['n_theta_inh'] = self.params['n_theta']
+        self.params['n_v_inh'] = self.params['n_v']
+        self.params['n_rf_inh'] = int(round(self.params['fraction_inh_cells'] * self.params['n_rf']))
+        self.params['n_rf_x_inh'] = np.int(np.sqrt(self.params['n_rf_inh'] * np.sqrt(3)))
+        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rf dots?"
+        self.params['n_rf_y_inh'] = np.int(np.sqrt(self.params['n_rf_inh'])) 
+        self.params['n_inh' ] = self.params['n_rf_x_inh'] * self.params['n_rf_y_inh'] * self.params['n_theta_inh'] * self.params['n_v_inh'] * self.params['n_orientation'] * self.params['n_exc_per_mc']
         self.params['n_cells'] = self.params['n_exc'] + self.params['n_inh']
-        print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
+        print 'n_hc: %d\tn_mc_per_hc: %d\tn_mc: %d\tn_exc_per_mc: %d' % (self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_mc'], self.params['n_exc_per_mc'])
+        print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' \
+                % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
                 self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
 
         # ###################
         # CELL PARAMETERS   #
         # ###################
-        self.params['neuron_model'] = 'IF_cond_exp'
-#        self.params['neuron_model'] = 'IF_cond_alpha'
-#        self.params['neuron_model'] = 'EIF_cond_exp_isfa_ista'
         self.params['tau_syn_exc'] = 5.0 # 10.
         self.params['tau_syn_inh'] = 10.0 # 20.
-        if self.params['neuron_model'] == 'IF_cond_exp':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-        elif self.params['neuron_model'] == 'IF_cond_alpha':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-        elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
-                    'b' : 0.5, 'a':4.}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
-                    'b' : 0.5, 'a':4.}
-        # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
-        self.params['v_init'] = -65.                 # [mV]
-        self.params['v_init_sigma'] = 10.             # [mV]
-
-
+        self.params['use_pynest'] = True
+        if self.params['use_pynest']:
+            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
+            self.params['cell_params_exc'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
+                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, 't_spike': -1.0, 'tau_m': 10.0, \
+                    'tau_minus': 20.0, 'tau_minus_triplet': 110.0}
+            self.params['v_init'] = self.params['cell_params_exc']['V_m'] + .5 * (self.params['cell_params_exc']['V_th'] - self.params['cell_params_exc']['V_m'])
+            self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['V_th'] - self.params['cell_params_exc']['V_m'])
+        else:
+            if self.params['neuron_model'] == 'IF_cond_exp':
+                self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+                self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            elif self.params['neuron_model'] == 'IF_cond_alpha':
+                self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+                self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
+                self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
+                        'b' : 0.5, 'a':4.}
+                self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
+                        'b' : 0.5, 'a':4.}
+            self.params['v_init'] = self.params['cell_params_exc']['v_rest'] + .5 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
+            self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
+            
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
         """
         For each connection type ('ee', 'ei', 'ie', 'ii') choose one form of connectivity
         """
-#        self.params['direction_based_conn'] = True
-        self.params['conn_conf'] = 'orientation-direction' # for anisotropic connectivity these types are implemented: 
-                                                           #'direction-based', 'motion-based', 'orientation-direction'
-
-        self.params['with_short_term_depression'] = False
         self.params['connectivity_ee'] = 'anisotropic'
 #        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
@@ -172,7 +165,9 @@ class parameter_storage(object):
         # ######################
         # SIMULATION PARAMETERS
         # ######################
-        self.params['seed'] = 12345
+        self.params['seed'] = 12345 # the master seed
+        # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
+        # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
         self.params['t_sim'] = 1600.            # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
@@ -218,7 +213,7 @@ class parameter_storage(object):
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['blur_X'], self.params['blur_V'] = .15, .45
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
@@ -253,13 +248,6 @@ class parameter_storage(object):
         # order of X: 'ee', 'ei', 'ie', 'ii'
 
         connectivity_code = ''
-
-        if self.params['conn_conf'] == 'direction-based':
-            connectivity_code += 'd'
-        elif self.params['conn_conf'] == 'motion-based':
-            connectivity_code += 'm'
-        elif self.params['conn_conf'] == 'orientation-direction':
-            connectivity_code += 'od'
 
         if self.params['connectivity_ee'] == 'anisotropic':
             connectivity_code += 'A'
