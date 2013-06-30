@@ -9,11 +9,14 @@ class parameter_storage(object):
     This class contains the simulation parameters in a dictionary called params.
     """
 
-    def __init__(self):
+    def __init__(self, fn=None):
 
-        self.params = {}
-        self.set_default_params()
-        self.set_filenames()
+        if fn == None:
+            self.params = {}
+            self.set_default_params()
+            self.set_filenames()
+        else:
+            self.params = self.load_params_from_file(fn)
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
@@ -266,14 +269,14 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'Results_'
+               folder_name = 'PaperRevisisted_'
 
-            folder_name += connectivity_code
-            folder_name += '/'
+#            folder_name += connectivity_code
+#            folder_name += '/'
             # if parameters should be stored in the folder name:
-#            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
-#                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
-#                        self.params['w_tgt_in_per_cell_ei'], self.params['w_tgt_in_per_cell_ie'], self.params['w_tgt_in_per_cell_ii'], self.params['delay_scale'], self.params['connectivity_radius'])
+            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
+                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
+                        self.params['w_tgt_in_per_cell_ei'], self.params['w_tgt_in_per_cell_ie'], self.params['w_tgt_in_per_cell_ii'], self.params['delay_scale'], self.params['connectivity_radius'])
 
             self.params['folder_name'] = folder_name
         else:
@@ -378,12 +381,14 @@ class parameter_storage(object):
 
         return all_folders_exist
 
-    def create_folders(self):
+    def create_folders(self, p=None):
         """
         Must be called from 'outside' this class before the simulation
         """
+        if p == None:
+            p = self.params
 
-        for f in self.params['folder_names']:
+        for f in p['folder_names']:
             if not os.path.exists(f):
                 print 'Creating folder:\t%s' % f
                 os.system("mkdir %s" % (f))
@@ -397,6 +402,14 @@ class parameter_storage(object):
         return self.params
 
 
+    def load_params_from_file(self, fn):
+
+        f = file(fn, 'r')
+        print 'Loading parameters from', fn
+        self.params = json.load(f)
+        return self.params
+
+
     def update_values(self, kwargs):
         for key, value in kwargs.iteritems():
             self.params[key] = value
@@ -404,16 +417,23 @@ class parameter_storage(object):
         self.set_filenames()
 #        self.ParamSet = ntp.ParameterSet(self.params)
 
-    def write_parameters_to_file(self, fn=None):
-        if not (os.path.isdir(self.params['folder_name'])):
-            print 'Creating folder:\n\t%s' % self.params['folder_name']
-            self.create_folders()
+    def write_parameters_to_file(self, fn=None, params=None):
+        """
+        Keyword arguments:
+        fn -- (optional) target output filename for json dictionary
+        params -- (optional) the modified parameter dictionary that is to write
+        """
 
         if fn == None:
             fn = self.params['params_fn_json']
+        if params == None:
+            params_to_write = self.params
+        if not (os.path.isdir(params_to_write['folder_name'])):
+            print 'Creating folder:\n\t%s' % params_to_write['folder_name']
+            self.create_folders(params_to_write)
         print 'Writing parameters to: %s' % (fn)
-        output_file = file(self.params['params_fn_json'], 'w')
-        d = json.dump(self.params, output_file)
+        output_file = file(fn, 'w')
+        d = json.dump(params_to_write, output_file)
 
 
 class ParameterContainer(parameter_storage):

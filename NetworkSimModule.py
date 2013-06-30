@@ -17,9 +17,8 @@ import json
 import CreateConnections as CC
 import utils
 import simulation_parameters
-ps = simulation_parameters.parameter_storage()
-params = ps.params
-exec("from pyNN.%s import *" % params['simulator'])
+
+exec("from pyNN.nest import *")
 import pyNN
 import pyNN.space as space
 from pyNN.utility import Timer # for measuring the times to connect etc.
@@ -330,7 +329,16 @@ class NetworkModel(object):
         (delay_min, delay_max) = self.params['delay_range']
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
         for i_, tgt in enumerate(tgt_cells):
-            p, latency = CC.get_p_conn_vec(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+            if self.params['conn_conf'] == 'direction-based':
+                p, latency = CC.get_p_conn_direction_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+            elif self.params['conn_conf'] == 'motion-based':
+                p, latency = CC.get_p_conn_motion_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+            elif self.params['conn_conf'] == 'orientation-direction':
+                p, latency = CC.get_p_conn_direction_and_orientation_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_theta'], self.params['connectivity_radius'])
+            else:
+                print '\n\nERROR! Wrong connection configutation conn_conf parameter provided\nShould be direction-based, motion-based or orientation-direction\n'
+                exit(1)
+
             if conn_type[0] == conn_type[1]:
                 p[tgt], latency[tgt] = 0., 0.
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
@@ -671,11 +679,17 @@ if __name__ == '__main__':
         ps.params['folder_name'] = None # sys.argv[1] + '=' + sys.argv[2] + '/' #'Sweep_%.3e' % self.params['w_tgt_in_per_cell_ee']
         ps.set_filenames(folder_name=ps.params['folder_name'])
     """
+
+
 #    w_sigma_x = float(sys.argv[1])
 #    w_sigma_v = float(sys.argv[2])
 #    params['w_sigma_x'] = w_sigma_x
 #    params['w_sigma_v'] = w_sigma_v
-    ps.set_filenames()
+#    ps.set_filenames()
+
+    fn = str(sys.argv[1])
+    ps = simulation_parameters.parameter_storage(fn)
+    params = ps.params
 
     if pc_id == 0:
         ps.create_folders()
