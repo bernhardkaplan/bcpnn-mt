@@ -3,15 +3,9 @@ import matplotlib
 import pylab
 import numpy as np
 import sys
-# --------------------------------------------------------------------------
-def get_figsize(fig_width_pt):
-    inches_per_pt = 1.0/72.0                # Convert pt to inch
-    golden_mean = (np.sqrt(5)-1.0)/2.0    # Aesthetic ratio
-    fig_width = fig_width_pt*inches_per_pt  # width in inches
-    fig_height = fig_width*golden_mean      # height in inches
-    fig_size =  [fig_width,fig_height]      # exact figsize
-    return fig_size
+import utils 
 
+# --------------------------------------------------------------------------
 params2 = {'backend': 'png',
           'axes.labelsize': 12,
           'text.fontsize': 12,
@@ -22,10 +16,10 @@ params2 = {'backend': 'png',
           'lines.markersize' : 0.1,
           'font.size': 12,
           'path.simplify': False,
-          'figure.figsize': get_figsize(800)}
+          'figure.figsize': utils.get_figsize(800)}
 
 def set_figsize(fig_width_pt):
-    pylab.rcParams['figure.figsize'] = get_figsize(fig_width_pt)
+    pylab.rcParams['figure.figsize'] = utils.get_figsize(fig_width_pt)
 
 pylab.rcParams.update(params2)
 
@@ -58,8 +52,8 @@ for fn in fns:
     except:
         d = np.load(fn)
 
-    gid = 5444
-    time_range = (0, 3000)
+    gid = None# 5444
+    time_range = (0, 1600)
 
     if gid != None:
         spikes = d[d[:, 1] == gid, 0]

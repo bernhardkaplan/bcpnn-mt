@@ -193,14 +193,23 @@ def get_input(tuning_prop, params, predictor_params, motion='dot'):
             L range between 0 and 1
         """
         # to translate the initial static line at each time step with motion parameters
-        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells)))**2 / blur_X**2)
+        if params['n_grid_dimensions'] == 2:
+            d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
+        else:
+            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
+
+        L = np.exp(-.5 * (d_ij)**2 / blur_X**2 
                 -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2)
 
     if motion=='bar':
+        if params['n_grid_dimensions'] == 2:
+            d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
+        else:
+            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
         # compute the motion energy input to all cells
         # then for all cells we have to check if they get stimulate by any x and y on the bar
-        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells)))**2 / blur_X**2)
+        L = np.exp(-.5 * (d_ij)**2 / blur_X**2
                 -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
@@ -354,14 +363,12 @@ def set_limited_tuning_properties(params, y_range=(0, 1.), x_range=(0, 1.), u_ra
     for i_RF in xrange(n_rf_x * n_rf_y):
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
-                    
                     x_pos = (RF[0, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
                     y_pos = (RF[1, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_height']
                     v_x = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
                     v_y = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
                             * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-    
                     tuning_prop[index, 0] = x_pos 
                     tuning_prop[index, 1] = y_pos
                     tuning_prop[index, 2] = v_x
@@ -427,18 +434,16 @@ def set_tuning_prop_1D(params, cell_type='exc'):
     index = 0
     random_rotation_for_orientation = np.pi*rnd.rand(n_rf_x * n_v * n_orientation) * params['sigma_rf_orientation']
 
-        # todo do the same for v_rho?
     for i_RF in xrange(n_rf_x):
         for i_v_rho, rho in enumerate(v_rho):
             for orientation in orientations:
-            # for plotting this looks nicer, and due to the torus property it doesn't make a difference
-                tuning_prop[index, 0] = (RF[i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
-                tuning_prop[index, 1] = 0.5 # i_RF / float(n_rf_x) # y-pos 
-                tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-                tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-                tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index]) % np.pi
-
-                index += 1
+                for i_cell in xrange(params['n_exc_per_mc']):
+                    tuning_prop[index, 0] = (RF[i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
+                    tuning_prop[index, 1] = 0.5 # i_RF / float(n_rf_x) # y-pos 
+                    tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * rnd.randn())
+                    tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
+                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
+                    index += 1
 
     return tuning_prop
 
@@ -472,12 +477,14 @@ def set_tuning_prop_2D(params, mode='hexgrid', cell_type='exc'):
         n_rf_y = params['n_rf_y']
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
+        n_per_mc = params['n_exc_per_mc']
     else:
         n_cells = params['n_inh']
         n_theta = params['n_theta_inh']
         n_v = params['n_v_inh']
         n_rf_x = params['n_rf_x_inh']
         n_rf_y = params['n_rf_y_inh']
+        n_per_mc = 1
         if n_v == 1:
             v_min = params['v_min_tp'] + .5 * (params['v_max_tp'] - params['v_min_tp'])
             v_max = v_min
@@ -524,16 +531,16 @@ def set_tuning_prop_2D(params, mode='hexgrid', cell_type='exc'):
         for i_v_rho, rho in enumerate(v_rho):
             for i_theta, theta in enumerate(v_theta):
                 for orientation in orientations:
-                # for plotting this looks nicer, and due to the torus property it doesn't make a difference
-                    tuning_prop[index, 0] = (RF[0, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
-                    tuning_prop[index, 1] = (RF[1, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_height']
-                    tuning_prop[index, 2] = np.cos(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
-                            * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-                    tuning_prop[index, 3] = np.sin(theta + random_rotation[index] + parity[i_v_rho] * np.pi / n_theta) \
-                            * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index]) % np.pi
-
-                    index += 1
+                    for i_cell in xrange(params['n_exc_per_mc']):
+                    # for plotting this looks nicer, and due to the torus property it doesn't make a difference
+                        tuning_prop[index, 0] = (RF[0, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
+                        tuning_prop[index, 1] = (RF[1, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_height']
+                        tuning_prop[index, 2] = np.cos(theta + random_rotation[index / n_per_mc] + parity[i_v_rho] * np.pi / n_theta) \
+                                * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
+                        tuning_prop[index, 3] = np.sin(theta + random_rotation[index / n_per_mc] + parity[i_v_rho] * np.pi / n_theta) \
+                                * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
+                        tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / n_per_mc]) % np.pi
+                        index += 1
 
     return tuning_prop
 
@@ -850,9 +857,6 @@ def get_min_distance_to_stim(mp, tp_cell, params):
         dist =  min_spatial_dist + velocity_dist
     return dist, min_spatial_dist
     
-
-#def torus_distance(x0, x1):
-#    return x0 - x1
 
 def torus(x, w=1.):
     """
@@ -1233,6 +1237,7 @@ def pop_anticipatory_gids(params):
     pops = [pop1,pop2,pop3,pop4,pop5]
     return pops 
 
+
 def CRF_anticipatory_gids(params, RF_xrange = np.arange(0.7,1,0.1)):
     ex_cells = params['n_exc']
     tp = np.loadtxt(params['tuning_prop_means_fn'])
@@ -1242,4 +1247,21 @@ def CRF_anticipatory_gids(params, RF_xrange = np.arange(0.7,1,0.1)):
         if (tp[gid,0] > RF_xrange[0] and tp[gid,0] < RF_xrange[-1]):
             CRF_pop.append(gid)    
     return CRF_pop
+
+
+
+def get_figsize(fig_width_pt, portrait=True):
+    """
+    For getting a figure with an 'aesthetic' ratio
+    """
+    inches_per_pt = 1.0 / 72.0                # Convert pt to inch
+    golden_mean = (np.sqrt(5) - 1.0) / 2.0    # Aesthetic ratio
+    fig_width = fig_width_pt * inches_per_pt  # width in inches
+    fig_height = fig_width * golden_mean      # height in inches
+    if portrait:
+        fig_size =  (fig_width, fig_height)      # exact figsize
+    else:
+        fig_size =  (fig_height, fig_width)      # exact figsize
+    return fig_size
+
 

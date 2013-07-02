@@ -37,7 +37,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']
-        self.params['n_exc_per_mc'] = 10
+        self.params['n_exc_per_mc'] = 4
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
@@ -73,8 +73,13 @@ class parameter_storage(object):
         if self.params['use_pynest']:
             self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
             self.params['cell_params_exc'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
-                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, 't_spike': -1.0, 'tau_m': 10.0, \
-                    'tau_minus': 20.0, 'tau_minus_triplet': 110.0}
+                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, 'tau_m': 10.0, \
+                    'tau_minus': 20.0, 'tau_minus_triplet': 110.0, \
+                    'n_synapses': 3, 'tau_syn': [5., 100., 20.], 'receptor_types': [0, 1, 2]}
+            self.params['cell_params_inh'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
+                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, 'tau_m': 10.0, \
+                    'tau_minus': 20.0, 'tau_minus_triplet': 110.0, \
+                    'n_synapses': 3, 'tau_syn': [5., 100., 20.], 'receptor_types': [0, 1, 2]}
             self.params['v_init'] = self.params['cell_params_exc']['V_m'] + .5 * (self.params['cell_params_exc']['V_th'] - self.params['cell_params_exc']['V_m'])
             self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['V_th'] - self.params['cell_params_exc']['V_m'])
         else:
@@ -92,6 +97,7 @@ class parameter_storage(object):
             self.params['v_init'] = self.params['cell_params_exc']['v_rest'] + .5 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
             self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
             
+
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
@@ -187,6 +193,8 @@ class parameter_storage(object):
         # ######
         self.params['f_max_stim'] = 5000.       # [Hz]
         self.params['w_input_exc'] = 5.0e-3     # [uS] mean value for input stimulus ---< exc_units (columns
+        if self.params['use_pynest']:
+            self.params['w_input_exc'] *= 1000.
 
         # ###############
         # MOTION STIMULUS
@@ -293,7 +301,8 @@ class parameter_storage(object):
 #            else:
 #               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
 
-            folder_name = 'Plasticity/Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
+#            folder_name = 'Plasticity/Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
+            folder_name = 'Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
             folder_name += connectivity_code
             folder_name += '-'+ self.params['motion_type']
             folder_name += '-'+ self.params['motion_protocol']

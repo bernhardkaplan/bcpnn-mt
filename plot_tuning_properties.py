@@ -53,6 +53,16 @@ else:
 
 n_cells = d[:, 0].size
 
+def plot_histogram(data, fig, xlabel='', ylabel='count', title='', n_bins=20):
+    count, bins = np.histogram(data, bins=n_bins)
+    binwidth = bins[1] - bins[0]
+    ax = fig.add_subplot(111)
+    ax.bar(bins[:-1], count, width=binwidth)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+
 
 def plot_scatter_with_histograms(x, y, fig, title='', xv='x'):
     # definitions for the axes
@@ -248,6 +258,10 @@ axScatter.set_ylim((0, 1))
 axHistx.set_xlim((0, 1))
 axHisty.set_ylim((0, 1))
 
+fig4 = pylab.figure(figsize=utils.get_figsize(600))
+plot_histogram(d[:, 0], fig4, xlabel='x-position', title='Distribution of x-positions')
+fig5 = pylab.figure(figsize=utils.get_figsize(600))
+plot_histogram(d[:, 2], fig5, xlabel='$v_x$', title='Distribution of preferred x-directions')
 
 pylab.show()
 
