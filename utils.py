@@ -662,10 +662,10 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
     Returns an list of spikes fired by each cell
     if n_cells is not given, the length of the array will be the highest gid (not recommended!)
     """
-    if type(spiketimes_fn_or_array) == type(''):
-        d = np.loadtxt(spiketimes_fn_or_array)
-    elif type(spiketimes_fn_or_array) == type(np.array([])):
+    if type(spiketimes_fn_or_array) == type(np.array([])):
         d = spiketimes_fn_or_array
+    else:
+        d = np.loadtxt(spiketimes_fn_or_array)
     if (n_cells == 0):
         n_cells = 1 + np.max(d[:, 1])# highest gid
     spiketrains = [[] for i in xrange(n_cells)]

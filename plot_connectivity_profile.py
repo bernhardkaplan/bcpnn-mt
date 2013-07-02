@@ -35,21 +35,32 @@ class ConnectionPlotter(object):
         self.delay_colorbar_set = False
         self.x_min, self.x_max = 1.0, .0
         self.y_min, self.y_max = 1.0, .0
-        self.quiver_scale = 2.
+        self.quiver_scale = 1.
 
     def create_fig(self, n_plots_x, n_plots_y):
         self.n_plots_x, self.n_plots_y = n_plots_x, n_plots_y
-        self.markersize_cell = 10
-        self.markersize_min = 3
-        self.markersize_max = 12
-        self.shaft_width = 0.005
+        self.markersize_cell = 12
+        self.markersize_min = 5
+        self.markersize_max = 15
+        self.shaft_width = 0.01
+#        self.shaft_width = 0.005
         pylab.rcParams['axes.labelsize'] = 28
         pylab.rcParams['axes.titlesize'] = 32
         pylab.rcParams['xtick.labelsize'] = 24
         pylab.rcParams['ytick.labelsize'] = 24
         self.fig = pylab.figure(figsize=(14, 10))
         self.ax = self.fig.add_subplot(n_plots_y, n_plots_x, 1, aspect='equal')
-        self.ax.set_title('Connectivity profile')
+
+        # set title according to connectivity configuration
+        if self.params['conn_conf'] == 'motion-based':
+            title = 'Motion-based anisotropic'
+        elif self.params['conn_conf'] == 'direction-based':
+            title = 'Direction-based anisotropic'
+        elif self.params['conn_conf'] == None:
+            title = 'Isotropic' 
+        else:
+            print 'Unknown connectivity profile:', self.params['conn_conf']
+        self.ax.set_title(title)
         self.ax.set_xlabel('$x$-position')
         self.ax.set_ylabel('$y$-position')
 
@@ -93,13 +104,16 @@ class ConnectionPlotter(object):
         """
         """
         markersizes = utils.linear_transformation(weights, self.markersize_min, self.markersize_max)
-        direction_color = (.4, .4, .4)
 
         if is_target:
             quiver_style = '-'
+            direction_color = (.4, .4, .4)
             direction_dict = self.directions['tgt']
         else:
-            quiver_style = ':'
+#            quiver_style = ':'
+            quiver_style = '-'
+            direction_color = (.4, .4, .4)
+#            direction_color = (.0, .0, .0)
             direction_dict = self.directions['src']
 
         for i_, tgt in enumerate(tgt_ids):
@@ -211,15 +225,16 @@ class ConnectionPlotter(object):
             return []
 
         if plot_delays:
-            delay_min, delay_max = delays.min(), delays.max()
+            delay_min, delay_max = 0, 1500
+#            delay_min, delay_max = delays.min(), delays.max()
 #            delay_min, delay_max = self.params['delay_range'][0], self.params['delay_range'][1]
             norm = matplotlib.mpl.colors.Normalize(vmin=delay_min, vmax=delay_max)
             m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)#spring)
             m.set_array(np.arange(delay_min, delay_max, 0.01))
-            if not self.delay_colorbar_set:
-                cb = self.fig.colorbar(m)
-                cb.set_label('Connection delays [ms]', fontsize=28)
-                self.delay_colorbar_set = True
+#            if not self.delay_colorbar_set:
+#                cb = self.fig.colorbar(m)
+#                cb.set_label('Connection delays [ms]', fontsize=28)
+#                self.delay_colorbar_set = True
 
             x_src, y_src = src_tp[src_gid, 0], src_tp[src_gid, 1]
             for i_, tgt_gid in enumerate(tgt_ids):
@@ -300,20 +315,21 @@ class ConnectionPlotter(object):
         for i_, key in enumerate(self.directions['tgt'].keys()):
             (x, y, u, v, c, shaft_width, ls) = self.directions['tgt'][key]
             data_tgt[i_, :] = np.array([x, y, u, v])
-            a = self.ax.quiver(data_tgt[i_, 0], data_tgt[i_, 1], data_tgt[i_, 2], data_tgt[i_, 3], angles='xy', scale_units='xy', scale=self.quiver_scale, linewidth=0, headwidth=3, width=shaft_width, alpha=alpha, linestyles=ls)#, zorder=1)
+            a = self.ax.quiver(data_tgt[i_, 0], data_tgt[i_, 1], data_tgt[i_, 2], data_tgt[i_, 3], angles='xy', scale_units='xy', scale=self.quiver_scale, linewidth=0, headwidth=5, width=shaft_width, alpha=alpha, linestyles=ls)#, zorder=1)
 
         data_src= np.zeros((len(self.directions['src'].keys()), 4))
         for i_, key in enumerate(self.directions['src'].keys()):
             (x, y, u, v, c, shaft_width, ls) = self.directions['src'][key]
             data_src[i_, :] = np.array([x, y, u, v])
-            a = self.ax.quiver(data_src[i_, 0], data_src[i_, 1], data_src[i_, 2], data_src[i_, 3], angles='xy', scale_units='xy', scale=self.quiver_scale, facecolor='none', linewidth=2, headwidth=3, width=shaft_width, alpha=alpha, linestyles=ls)#, zorder=1)
+            a = self.ax.quiver(data_src[i_, 0], data_src[i_, 1], data_src[i_, 2], data_src[i_, 3], angles='xy', scale_units='xy', scale=self.quiver_scale, linewidth=0, headwidth=5, width=shaft_width, alpha=alpha, linestyles=ls)#, zorder=1)
+#            a = self.ax.quiver(data_src[i_, 0], data_src[i_, 1], data_src[i_, 2], data_src[i_, 3], angles='xy', scale_units='xy', scale=self.quiver_scale, facecolor='none', linewidth=2, headwidth=3, width=shaft_width, alpha=alpha, linestyles=ls)#, zorder=1)
 
         xlim = self.ax.get_xlim()
         ylim = self.ax.get_ylim()
         self.ax.set_xlim((xlim[0] - 0.02, xlim[1] + 0.25))
-        self.ax.set_ylim((ylim[0] - 0.10, ylim[1] + 0.10))
-#        self.ax.set_xlim((0, 1.3))
-#        self.ax.set_ylim((0, 1.3))
+        self.ax.set_ylim((ylim[0] - 0.05, ylim[1] + 0.05))
+#        self.ax.set_xlim((-.1, 1.1))
+#        self.ax.set_ylim((-.1, 1.1))
 #        print 'x_min, x_max', self.x_min, self.x_max
 #        print 'y_min, y_max', self.y_min, self.y_max
 #        self.ax.set_xlim((self.x_min - 0.05, self.x_max + 0.05))
@@ -469,6 +485,13 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1].isdigit():
             gid = int(sys.argv[1])
+            param_fn = sys.argv[2]
+            if os.path.isdir(param_fn):
+                param_fn += '/Parameters/simulation_parameters.json'
+            import json
+            f = file(param_fn, 'r')
+            print 'Loading parameters from', param_fn
+            params = json.load(f)
         else:
             param_fn = sys.argv[1]
             if os.path.isdir(param_fn):
@@ -477,23 +500,24 @@ if __name__ == '__main__':
             f = file(param_fn, 'r')
             print 'Loading parameters from', param_fn
             params = json.load(f)
-            gid = np.loadtxt(params['gids_to_record_fn'])[0]
+            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
     else:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
         params = ps.params
-        gid = np.loadtxt(params['gids_to_record_fn'])[0]
+        gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
 
     P = ConnectionPlotter(params)
 
+#    gid = 5339
 
     # here you can choose where the cell to plot should be sitting and what the preferred direction should be 
-    target_vector = (.3, .5)
-    direction = (.5, 0.)
-    gid = P.find_cell_closest_to_vector(target_vector, direction)
-#    gid = 2587
-    P.plot_connection_histogram(gid, 'ee')
+#    target_vector = (.3, .5)
+#    direction = (.5, 0.)
+#    gid = P.find_cell_closest_to_vector(target_vector, direction)
+
     print 'plotting gid', gid
+    P.plot_connection_histogram(gid, 'ee')
 
     P.create_fig(n_plots_x, n_plots_y)
 #    exc_color = (.5, .5, .5)
@@ -542,7 +566,7 @@ if __name__ == '__main__':
 
 #    P.make_legend()
 
-    output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f.png' % (gid, params['w_sigma_x'], params['w_sigma_v'])
+    output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f_%s_varying_xylim.png' % (gid, params['w_sigma_x'], params['w_sigma_v'], str(params['conn_conf']))
     print 'Saving figure to', output_fig
     pylab.savefig(output_fig)
 

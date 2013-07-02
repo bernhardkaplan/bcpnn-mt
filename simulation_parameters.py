@@ -433,7 +433,7 @@ class parameter_storage(object):
             self.create_folders(params_to_write)
         print 'Writing parameters to: %s' % (fn)
         output_file = file(fn, 'w')
-        d = json.dump(params_to_write, output_file)
+        d = json.dump(params_to_write, output_file, sort_keys=True, indent=4)
 
 
 class ParameterContainer(parameter_storage):

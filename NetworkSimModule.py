@@ -653,7 +653,7 @@ class NetworkModel(object):
             fn = utils.convert_to_url(params['folder_name'] + 'times_dict_np%d.py' % self.n_proc)
 
             output_file = file(self.params['params_fn_json'], 'w')
-            d = json.dump(self.params, output_file)
+            d = json.dump(self.params, output_file, sort_keys=True, indent=4)
 
 
 if __name__ == '__main__':

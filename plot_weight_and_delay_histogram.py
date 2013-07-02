@@ -75,7 +75,7 @@ d_mean, d_std = delays.mean(), delays.std()
 n_weights = weights.size
 n_possible = params['n_exc']**2
 
-n_bins = 50
+n_bins = 100
 n_w, bins_w = np.histogram(weights, bins=n_bins, normed=False)
 #fig = pylab.figure()
 #ax1 = fig.add_subplot(111)
