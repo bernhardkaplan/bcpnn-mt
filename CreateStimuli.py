@@ -19,8 +19,8 @@ class CreateStimuli(object):
         n_cycles = params['n_cycles']
         n_stim_per_speed = params['n_stim_per_direction']  # direction = speed in 1-D
         n_stim_total = params['n_training_stim']  # = n_cycles * n_speeds * n_stim_per_direction
-        speed_sequence = np.zeros(n_stim_total)
-        pos_sequence = np.zeros(n_stim_total)
+        pos_speed_sequence = np.zeros((n_stim_total, 2))
+        
 
         import numpy.random as rnd
         rnd.seed(params['stimuli_seed'])
@@ -40,11 +40,11 @@ class CreateStimuli(object):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
                     x0 = np.random.rand() # select a random start point
-                    pos_sequence[stim_cnt] = x0
-                    speed_sequence[stim_cnt] = v0
+                    pos_speed_sequence[stim_cnt, 0] = x0
+                    pos_speed_sequence[stim_cnt, 1] = v0
                     stim_cnt += 1
 
-        return pos_sequence, speed_sequence
+        return pos_speed_sequence
 
 
 

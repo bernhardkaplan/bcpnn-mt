@@ -196,6 +196,7 @@ def get_input(tuning_prop, params, predictor_params, motion='dot'):
         if params['n_grid_dimensions'] == 2:
             d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
         else:
+#            print 'Debug', tuning_prop[:, 0].shape, x_stim, x_stim.shape, n_cells
             d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
 
         L = np.exp(-.5 * (d_ij)**2 / blur_X**2 

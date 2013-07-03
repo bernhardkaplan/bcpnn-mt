@@ -192,10 +192,10 @@ class NetworkModel(object):
             CS = CreateStimuli.CreateStimuli()
             random_order = self.params['random_training_order']
             motion_params = CS.create_motion_sequence_1D(self.params, random_order)
-            n_stim_total = motion_params[0].size
+            n_stim_total = self.params['n_training_stim']
             for i_stim in xrange(n_stim_total):
                 print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-                x0, v0 = motion_params[0], motion_params[1]
+                x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 1]
 
 
                 # get the input signal
