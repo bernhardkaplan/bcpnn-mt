@@ -168,6 +168,49 @@ class parameter_storage(object):
         self.params['standard_delay'] = 3           # [ms]
         self.params['standard_delay_sigma'] = 1           # [ms]
 
+
+        # ###############
+        # MOTION STIMULUS
+        # ###############
+        """
+        x0 (y0) : start position on x-axis (y-axis)
+        u0 (v0) : velocity in x-direction (y-direction)
+        """
+        self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
+        self.params['motion_params'] = [.0, .5 , .5, 0, np.pi/6.0] # (x, y, v_x, v_y, orientation of bar)
+        # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
+        self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
+        self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
+        
+        assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
+
+        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['blur_X'], self.params['blur_V'] = .15, .15
+        self.params['blur_theta'] = 1.0
+        self.params['torus_width'] = 1.
+        self.params['torus_height'] = 1.
+        # the blur parameter represents the input selectivity:
+        # high blur means many cells respond to the stimulus
+        # low blur means high input selectivity, few cells respond
+        # the maximum number of spikes as response to the input alone is not much affected by the blur parameter
+
+
+        # #####################
+        # TRAINING PARAMETERS
+        # #####################
+        self.params['stimuli_seed'] = 4321
+        self.params['v_max_training'] = self.params['v_max_tp']
+        self.params['v_min_training'] = self.params['v_min_tp']
+        self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
+        self.params['n_cycles'] = 1   # one cycle comprises training of all n_speeds
+        self.params['n_speeds'] = 1   # how many different speeds are trained per cycle
+        # is one speed is trained, it is presented starting from on this number of different locations
+        self.params['n_stim_per_direction'] = 1  
+        self.params['n_training_stim'] = self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
+        self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
+
+
         # ######################
         # SIMULATION PARAMETERS
         # ######################
@@ -175,10 +218,11 @@ class parameter_storage(object):
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
-        self.params['t_sim'] = 1600.            # [ms] total simulation time
+        self.params['t_training_stim'] = 2000.  # [ms] time each stimulus is presented
+        self.params['t_sim'] = self.params['n_training_stim'] * self.params['t_training_stim']  # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
         self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
-        self.params['t_start'] = 0.           # [ms] Time before stimulus starts
+        self.params['t_start'] = 0.           # [ms] blank time before stimulus appears
         self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
@@ -195,41 +239,6 @@ class parameter_storage(object):
         self.params['w_input_exc'] = 5.0e-3     # [uS] mean value for input stimulus ---< exc_units (columns
         if self.params['use_pynest']:
             self.params['w_input_exc'] *= 1000.
-
-        # ###############
-        # MOTION STIMULUS
-        # ###############
-        """
-        x0 (y0) : start position on x-axis (y-axis)
-        u0 (v0) : velocity in x-direction (y-direction)
-        """
-        self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
-        self.params['motion_params'] = [.0, .5 , .5, 0, np.pi/6.0] # (x, y, v_x, v_y, orientation of bar)
-        # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
-        self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
-        self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
-        
-        self.allowed_protocols = ['congruent', 'incongruent', 'crf_only', 'missing_crf', 'random_predictor']
-        self.params['motion_protocol'] = self.allowed_protocols[0] # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
-        assert (self.params['motion_protocol'] in self.allowed_protocols), 'Spelling error? Wrong protocol given: %s!\n Should be in %s' % (self.params['motion_protocol'], str(allowed_protocols))
-        self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
-        self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
-        self.params['t_start_CRF'] = (self.params['n_predictor_interval'] - 3.0) * self.params['predictor_interval_duration']
-        self.params['t_stop_CRF'] = (self.params['n_predictor_interval'] - 1.0) * self.params['predictor_interval_duration']
-
-#        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
-        assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
-
-        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .15, .45
-        self.params['blur_theta'] = 1.0
-        self.params['torus_width'] = 1.
-        self.params['torus_height'] = 1.
-        # the blur parameter represents the input selectivity:
-        # high blur means many cells respond to the stimulus
-        # low blur means high input selectivity, few cells respond
-        # the maximum number of spikes as response to the input alone is not much affected by the blur parameter
 
         # ######
         # NOISE
@@ -305,7 +314,6 @@ class parameter_storage(object):
             folder_name = 'Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
             folder_name += connectivity_code
             folder_name += '-'+ self.params['motion_type']
-            folder_name += '-'+ self.params['motion_protocol']
 
             folder_name += '/'
 

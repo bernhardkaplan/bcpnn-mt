@@ -19,6 +19,7 @@ import simulation_parameters
 ps = simulation_parameters.parameter_storage()
 params = ps.params
 import nest
+import CreateStimuli
 times['time_to_import'] = time.time() - t0
 
 
@@ -158,82 +159,9 @@ class NetworkModel(object):
 
 #        self.times['t_calc_conns'] = self.timer.diff()
 
-    def get_motion_params_from_protocol(self, time):
-        """
-
-        """
-
-        predictor_params = self.params['motion_params']
-        n_predictor_interval = self.params['n_predictor_interval']
-        predictor_interval = int(time / self.params['predictor_interval_duration'])
-
-        t_start_CRF = self.params['t_start_CRF']
-        t_stop_CRF = self.params['t_stop_CRF']
-        
-        x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
-        x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
-        # based on the motion_protocol calculate the stimulus position and direction etc --> predictor_params
-        if self.params['motion_protocol'] == 'congruent':
-            predictor_params = (x, y, u0, v0, theta)
-
-        elif self.params['motion_protocol'] == 'incongruent':
-        # incongruent protocol means having oriented bar as stimulus that its orientation is flipped inside the CRF        
-            if (t_start_CRF < time * self.params['t_stimulus'] < t_stop_CRF):
-                theta = self.params['motion_params'][4] + np.pi/2.0
-            predictor_params = (x, y, u0, v0, theta)
-
-        # Missing CRF protocol includes a moving oriented bar which approches to CRF and disappears inside CRF     
-        # --> we give noise as input
-        # --> we shuffle the stimulus among all cells to get an incoherent input (the output of the CRF will be very small)
-        elif self.params['motion_protocol'] == 'missing_crf':
-            predictor_params = (x, y, u0, v0, theta)
-                
-
-        # CRF only protocol includes an oriented bar which moves for a short period only inside CRF        
-        elif self.params['motion_protocol'] == 'crf_only':
-#            x0_default, y0_default, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
-#            x0, y0 = (x0_default + u0 * time) % self.params['torus_width'], (y0_default + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
-            predictor_params = x,y,u0,v0,theta
-
-        elif self.params['motion_protocol'] == 'random_predictor':
-            interval_time = (time * self.params['t_stimulus']) % (self.params['predictor_interval_duration'])
-            if (t_start_CRF < time * self.params['t_stimulus'] < t_stop_CRF) : # stimulus appears near the CRF = params['mp_select_cells']
-                predictor_params = (x, y, u0, v0, theta)
-
-            elif not (interval_time):
-                # start with a random orientation
-                orientation = np.random.rand() * 2 * np.pi
-                # orientation is perpendicular to the direction of motion
-                theta = orientation + np.pi / 2.
-
-                # take the standard stimulus speed as reference for the random speed
-                velocity = np.sqrt(self.params['motion_params'][2]**2 + self.params['motion_params'][3]**2)
-                u0 = velocity * np.cos(theta) 
-                v0 = velocity * np.sin(theta) 
-#                print 'u0, v0', u0, v0
-                # move the starting point away by some random distance, in the direction 
-                step_away = velocity * 2. #np.random.rand() * 2.
-                x0 = (self.params['mp_select_cells'][0] - step_away * u0) % (self.params['torus_width'])
-                y0 = (self.params['mp_select_cells'][1] - step_away * v0) % (self.params['torus_height'])
-                self.prev_pp = [x0, y0, u0, v0, orientation]
-            else:
-#                print 'NO new interval interval time', interval_time
-                x0, y0, u0, v0, theta = self.prev_pp
-                x, y = (x0 + u0 * interval_time / self.params['t_stimulus']) % self.params['torus_width'], (y0 + v0 * interval_time / self.params['t_stimulus']) % self.params['torus_height'] # current position of t
-                predictor_params = [x, y, u0, v0, theta]
 
 
-
-        return predictor_params
-    
-    def congruent_motion(self):
-        x0, y0, u0, v0, theta = self.params['motion_params'][0], self.params['motion_params'][1],  self.params['motion_params'][2],  self.params['motion_params'][3], self.params['motion_params'][4]
-        x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
-        return x,y , u0,v0. theta    
-    
-
-
-    def create_input(self, load_files=False, save_output=False):
+    def create_training_input(self, load_files=False, save_output=False, with_blank=False):
 
 
         if load_files:
@@ -250,31 +178,54 @@ class NetworkModel(object):
         else:
             if self.pc_id == 0:
                 print "Computing input spiketrains..."
-            nprnd.seed(self.params['input_spikes_seed'])
+
+
+
+            my_units = np.array(self.local_idx_exc)[:, 0] - 1
+            print 'debug  my_units', my_units
+            n_cells = len(my_units)
             dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
             time = np.arange(0, self.params['t_sim'], dt)
-            blank_idx = np.arange(1./dt * self.params['t_before_blank'], 1. / dt * (self.params['t_before_blank'] + self.params['t_blank']))
-            before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt)
-            blank_idx = np.concatenate((blank_idx, before_stim_idx))
+            L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
 
-            my_units = self.local_idx_exc
-            n_cells = len(my_units)
-            L_input = np.zeros((n_cells, time.shape[0]))
+            # get the order of training stimuli
+            CS = CreateStimuli.CreateStimuli()
+            random_order = self.params['random_training_order']
+            motion_params = CS.create_motion_sequence_1D(self.params, random_order)
+            n_stim_total = motion_params[0].size
+            for i_stim in xrange(n_stim_total):
+                print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
+                x0, v0 = motion_params[0], motion_params[1]
 
-            # get the input signal
-            print 'Calculating input signal'
-            for i_time, time_ in enumerate(time):
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
-                L_input[:, i_time] *= self.params['f_max_stim']
-                if (i_time % 500 == 0):
-                    print "t:", time_
-            # blanking
-            for i_time in blank_idx:
-                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
+                # get the input signal
+                idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
+                idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt)
+                idx_within_stim = 0
+                for i_time in xrange(idx_t_start, idx_t_stop):
+                    time_ = (idx_within_stim * dt) / self.params['t_stimulus']
+                    x_stim = x0 + time_ * v0
+                    L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
+                    L_input[:, i_time] *= self.params['f_max_stim']
+                    if (i_time % 500 == 0):
+                        print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
+                    idx_within_stim += 1
+
+            
+                if with_blank:
+                    blank_idx = np.arange(1./dt * self.params['t_before_blank'] + idx_t_start, 1. / dt * (self.params['t_before_blank'] + self.params['t_blank']) + idx_t_start)
+                    before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt + idx_t_start)
+                    blank_idx = np.concatenate((blank_idx, before_stim_idx))
+                    # blanking
+                    for i_time in blank_idx:
+                        L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+
+
+            nprnd.seed(self.params['input_spikes_seed'])
             # create the spike trains
             print 'Creating input spiketrains for unit'
             for i_, unit in enumerate(my_units):
+                print 'Creating input spiketrain for unit %d / %d (%.1f percent)' % (i_, len(my_units), float(i_) / len(my_units)* 100.)
                 print unit,
                 rate_of_t = np.array(L_input[i_, :])
                 # each cell will get its own spike train stored in the following file + cell gid
@@ -291,7 +242,7 @@ class NetworkModel(object):
                     output_fn = self.params['input_st_fn_base'] + str(unit) + '.npy'
                     np.save(output_fn, np.array(spike_times))
 
-        self.times['create_input'] = self.timer.diff()
+#        self.times['create_input'] = self.timer.diff()
         return self.spike_times_container
     
 
@@ -853,7 +804,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record = True
         save_input_files = not load_files
 
@@ -863,7 +814,7 @@ if __name__ == '__main__':
 
     NM.create(input_created)
     if not input_created:
-        spike_times_container = NM.create_input(load_files=load_files, save_output=save_input_files)
+        spike_times_container = NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=False)
         input_created = True # this can be set True ONLY if the parameter does not affect the input i.e. set this to false when sweeping f_max_stim, or blur_X/V!
     else:
         NM.spike_times_container = spike_times_container
