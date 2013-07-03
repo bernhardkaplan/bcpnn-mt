@@ -231,17 +231,15 @@ class NetworkModel(object):
         x, y = (x0 + u0 * time) % self.params['torus_width'], (y0 + v0 * time) % self.params['torus_height'] # current position of the blob at time t assuming a perfect translation
         return x,y , u0,v0. theta    
     
-    
+
 
     def create_input(self, load_files=False, save_output=False):
 
-        t_start_CRF, t_stop_CRF = self.params['t_start_CRF'], self.params['t_stop_CRF']
-        all_predictor_params = np.zeros((self.params['n_predictor_interval'], 5))
 
         if load_files:
             if self.pc_id == 0:
                 print "Loading input spiketrains..."
-            for i_, (tgt, vp) in enumerate(self.local_idx_exc):
+            for i_, tgt in enumerate(self.local_idx_exc):
                 try:
                     fn = self.params['input_st_fn_base'] + str(tgt) + '.npy'
                     spike_times = np.load(fn)
@@ -259,50 +257,26 @@ class NetworkModel(object):
             before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt)
             blank_idx = np.concatenate((blank_idx, before_stim_idx))
 
-            my_units = np.array(self.local_idx_exc)[:, 0] - 1 # convert from list of tuples and align with 0
+            my_units = self.local_idx_exc
             n_cells = len(my_units)
-            L_input, final_L_input = np.zeros((n_cells, time.shape[0])), np.zeros((n_cells, time.shape[0]))
+            L_input = np.zeros((n_cells, time.shape[0]))
 
             # get the input signal
             print 'Calculating input signal'
-            self.prev_pp = self.params['motion_params']
             for i_time, time_ in enumerate(time):
-                
-                if not (i_time % (np.int(time.size / 10.))):
-                    print 'Node %d\tTime: %.1f\tpercent: %.1f' % (self.pc_id, time_, time_ / self.params['t_sim'] * 100.)
-                predictor_interval = int(time_ / self.params['predictor_interval_duration'])
-                predictor_params = self.get_motion_params_from_protocol(time_ / self.params['t_stimulus'])
-                all_predictor_params[predictor_interval] = predictor_params
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, predictor_params, motion = self.params['motion_type'])
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
                 L_input[:, i_time] *= self.params['f_max_stim']
-            
-                if self.params['motion_protocol'] == 'missing_crf':
-                    if (t_start_CRF < time_ < t_stop_CRF) :
-                        final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-                    else:
-                        final_L_input[:, i_time] = L_input[:,i_time]
-
-                elif self.params['motion_protocol'] == 'crf_only':
-                   if not (t_start_CRF < time_ < t_stop_CRF) :
-                        final_L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-                   else:
-                        final_L_input[:, i_time] = L_input[:,i_time]
-                elif self.params['motion_protocol'] == 'random_predictor': # generated input is randomized allover trajectory, now it has to include correct motion spesification inside the CRF
-                   final_L_input[:, i_time] = L_input[:,i_time]
-                else:
-                    final_L_input[:, i_time] = L_input[:,i_time]
-
+                if (i_time % 500 == 0):
+                    print "t:", time_
             # blanking
             for i_time in blank_idx:
                 L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-#                L_input[:, i_time] = 0.
 
             # create the spike trains
-            print 'Creating input spiketrains for units'
+            print 'Creating input spiketrains for unit'
             for i_, unit in enumerate(my_units):
-                if not (i_ % np.int(my_units.size / 10.)):
-                    print 'progress: %.1f percent' % ((i_ / float(my_units.size)) * 100.)
-                rate_of_t = np.array(final_L_input[i_, :])
+                print unit,
+                rate_of_t = np.array(L_input[i_, :])
                 # each cell will get its own spike train stored in the following file + cell gid
                 n_steps = rate_of_t.size
                 spike_times = []
@@ -317,12 +291,9 @@ class NetworkModel(object):
                     output_fn = self.params['input_st_fn_base'] + str(unit) + '.npy'
                     np.save(output_fn, np.array(spike_times))
 
-
-        output_fn = self.params['all_predictor_params_fn']
-        np.savetxt(output_fn, all_predictor_params)
-
-#        self.times['create_input'] = self.timer.diff()
+        self.times['create_input'] = self.timer.diff()
         return self.spike_times_container
+    
 
 
 
