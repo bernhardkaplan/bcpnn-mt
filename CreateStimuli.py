@@ -39,12 +39,16 @@ class CreateStimuli(object):
                 for i_ in xrange(n_stim_per_speed):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
+                    v0 *= 2. * (-.5 + np.random.randint(0, 2) % 2) # random flip of pos / neg x-direction
                     x0 = np.random.rand() # select a random start point
                     pos_speed_sequence[stim_cnt, 0] = x0
                     pos_speed_sequence[stim_cnt, 1] = v0
                     stim_cnt += 1
 
-        return pos_speed_sequence
+        stim_order = range(n_stim_total)
+        if random_order:
+            random.shuffle(stim_order)
+        return pos_speed_sequence[stim_order, :]
 
 
 

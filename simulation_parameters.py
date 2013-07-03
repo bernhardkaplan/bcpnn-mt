@@ -202,11 +202,11 @@ class parameter_storage(object):
         self.params['stimuli_seed'] = 4321
         self.params['v_max_training'] = self.params['v_max_tp']
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 2   # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 3   # how many different speeds are trained per cycle
+        self.params['v_noise_training'] = 0.10 # percentage of noise for each individual training speed
+        self.params['n_cycles'] = 1   # one cycle comprises training of all n_speeds
+        self.params['n_speeds'] = 5   # how many different speeds are trained per cycle
         # is one speed is trained, it is presented starting from on this number of different locations
-        self.params['n_stim_per_direction'] = 2
+        self.params['n_stim_per_direction'] = 1
         self.params['n_training_stim'] = self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
 
@@ -398,7 +398,7 @@ class parameter_storage(object):
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
         self.params['all_predictor_params_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
-
+        self.params['training_sequence_fn'] = '%straining_sequence_mp.dat' % (self.params['parameters_folder'])
 
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
 

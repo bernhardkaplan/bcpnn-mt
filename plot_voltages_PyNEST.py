@@ -12,6 +12,8 @@ def plot_volt(fn, gid=None, n=1):
     if not d.size > 0:
         print 'No data found in:', fn
         return
+    else:
+        print 'Plotting data from:', fn
 
     if gid == None:
         recorded_gids = np.unique(d[:, 0])

@@ -440,7 +440,7 @@ def set_tuning_prop_1D(params, cell_type='exc'):
             for orientation in orientations:
                 for i_cell in xrange(params['n_exc_per_mc']):
                     tuning_prop[index, 0] = (RF[i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
-                    tuning_prop[index, 1] = 0.5 # i_RF / float(n_rf_x) # y-pos 
+                    tuning_prop[index, 1] = 0. # i_RF / float(n_rf_x) # y-pos 
                     tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * rnd.randn())
                     tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
                     tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
