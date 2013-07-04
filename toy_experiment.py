@@ -111,12 +111,17 @@ class ToyExperiment(object):
 
         
         # Connect cells in a chain:
-        w_ee = np.zeros(n_cells - 1)
+        initial_weight = np.log(nest.GetDefaults('bcpnn_synapse')['p_ij']/(nest.GetDefaults('bcpnn_synapse')['p_i']*nest.GetDefaults('bcpnn_synapse')['p_j']))
+        initial_bias = np.log(nest.GetDefaults('bcpnn_synapse')['p_j'])
+        self.bcpnn_params = {'tau_i': 10., 'tau_j':10.0, 'tau_e': 100., 'tau_p': 1000.}
+        self.syn_params = {'weight': initial_weight, 'bias': initial_bias, 'K': 1.0, 'delay': 1.0,\
+                'tau_i': self.bcpnn_params['tau_i'], 'tau_j': self.bcpnn_params['tau_j'], 'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p']}
         for i_ in xrange(n_cells - 1):
             nest.Connect([cells[i_]], [cells[i_ + 1]], model='bcpnn_synapse')
 
             # modify the parameters
-            nest.SetStatus(nest.GetConnections([cells[i_]], [cells[i_ + 1]]), {'weight': w_ee[i_]})
+            nest.SetStatus(nest.GetConnections([cells[i_]], [cells[i_ + 1]]), self.syn_params)
+
 
         # Simulate
         nest.Simulate(self.t_sim)
@@ -160,6 +165,16 @@ class ToyExperiment(object):
             p, = ax.plot(time_axis, volt, label='%d' % gid, lw=2)
             plots.append(p)
         ax.legend(plots, self.selected_gids)
+
+
+    def get_bcpnn_traces(self, spike_train):
+
+        # convert the spike train into an array of 0s and 1s
+        n_bins = self.t_sim / self.params['dt_rate']
+        s = utils.convert_spiketrain_to_trace(spike_train, n_bins)
+
+        z = utils.low_pass_filter(s, tau=10, initial_value=0.001, dt=1., spike_height=1.)
+        pass
 
 
 
