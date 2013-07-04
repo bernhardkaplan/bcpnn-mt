@@ -20,16 +20,18 @@ ps = simulation_parameters.parameter_storage()
 params = ps.params
 import nest
 import CreateStimuli
+import json
 times['time_to_import'] = time.time() - t0
 
 
 class NetworkModel(object):
 
-    def __init__(self, params):
+    def __init__(self, params, iteration=0):
 
         self.params = params
         self.debug_connectivity = True
         self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
+        self.iteration = 0  # the learning iteration (cycle)
 
 
     def setup(self, load_tuning_prop=False, times={}):
@@ -155,7 +157,7 @@ class NetworkModel(object):
                 print "Loading input spiketrains..."
             for i_, tgt in enumerate(self.local_idx_exc):
                 try:
-                    fn = self.params['input_st_fn_base'] + str(tgt) + '.npy'
+                    fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
                     spike_times = np.load(fn)
                 except: # this cell does not get any input
                     print "Missing file: ", fn
@@ -168,7 +170,7 @@ class NetworkModel(object):
 
 
             my_units = np.array(self.local_idx_exc)[:, 0] - 1
-            print 'debug  my_units', my_units
+#            print 'debug  my_units', my_units
             n_cells = len(my_units)
             dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
             time = np.arange(0, self.params['t_sim'], dt)
@@ -318,14 +320,8 @@ class NetworkModel(object):
 #        self.times['t_calc_conns'] = self.timer.diff()
 
 
+
     def connect_ee(self, load_weights=False):
-        if load_weights:
-            pass
-        else:
-            self.initialize_conn_ee()
-
-
-    def initialize_conn_ee(self):
 
 #        initial_weight = np.log(nest.GetDefaults('bcpnn_synapse')['p_ij']/(nest.GetDefaults('bcpnn_synapse')['p_i']*nest.GetDefaults('bcpnn_synapse')['p_j']))
         initial_weight = 0.
@@ -333,21 +329,61 @@ class NetworkModel(object):
         syn_param = {'weight': initial_weight, 'bias': initial_bias,'gain': 0.0, 'delay': 1.0,\
                 'tau_i': 10.0, 'tau_j': 10.0, 'tau_e': 100.0, 'tau_p': 1000.0}
 
+        if load_weights:
+            conn_mat_ee = np.load(self.params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.npy')
+        else:
+            conn_mat_ee = initial_weight * np.ones((self.params['n_mc'], self.params['n_mc']))
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 src_pop = self.list_of_populations[src_hc][src_mc]
+                src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
                 for tgt_hc in xrange(self.params['n_hc']):
                     for tgt_mc in xrange(self.params['n_mc_per_hc']):
                         tgt_pop = self.list_of_populations[tgt_hc][tgt_mc]
                         nest.ConvergentConnect(src_pop, tgt_pop, model='bcpnn_synapse')
+                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
 
-                # modify the parameters
-                nest.SetStatus(nest.FindConnections(src_pop), {'weight': initial_weight} )
-#                        params = nest.GetStatus(nest.FindConnections(neuron1))
+                        # modify the parameters
+                        nest.SetStatus(nest.GetConnections(src_pop, tgt_pop), {'weight': conn_mat_ee[src_pop_idx, tgt_pop_idx]})
+
 #                        print 'modified params:', params
 
 
+    def get_weights_after_learning_cycle(self):
 
+        print 'NetworkModel.get_weights_after_learning_cycle ...'
+        n_my_conns = 0
+        my_units = np.array(self.local_idx_exc)[:, 0] # !GIDs are 1-aligned!
+        my_adj_list = {}
+        for nrn in my_units:
+            my_adj_list[nrn] = []
+        for src_hc in xrange(self.params['n_hc']):
+            print 'Proc %d src_hc' % (self.pc_id, src_hc)
+            for src_mc in xrange(self.params['n_mc_per_hc']):
+                src_pop = self.list_of_populations[src_hc][src_mc]
+                src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
+                for tgt_hc in xrange(self.params['n_hc']):
+                    for tgt_mc in xrange(self.params['n_mc_per_hc']):
+                        tgt_pop = self.list_of_populations[tgt_hc][tgt_mc]
+                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
+
+                        # get the list of connections stored on the current MPI node
+                        conns = nest.GetConnections(src_pop, tgt_pop)
+                        for c in conns:
+                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                            w = cp[0]['weight'] 
+                            if w != 0:
+                                my_adj_list[c[1]].append((c[0], cp[0]['weight']))
+                        n_my_conns += len(conns)
+
+
+
+#        print 'Proc %d holds connections' % self.pc_id, my_adj_list
+        print 'Proc %d holds %d connections' % (self.pc_id, n_my_conns)
+        output_fn = self.params['conn_mat_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
+        print 'Saving connection list to: ', output_fn
+        f = file(output_fn, 'w')
+        json.dump(my_adj_list, f)
 
 
 
@@ -773,11 +809,11 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = False
+        load_files = True
         record = True
         save_input_files = not load_files
 
-    NM = NetworkModel(ps.params)
+    NM = NetworkModel(ps.params, iteration=0)
 
     NM.setup(times=times)
 
@@ -789,6 +825,7 @@ if __name__ == '__main__':
         NM.spike_times_container = spike_times_container
     NM.connect()
     NM.run_sim(sim_cnt, record_v=record)
+    NM.get_weights_after_learning_cycle()
 #    NM.print_results(print_v=record)
 
 #    if comm != None:

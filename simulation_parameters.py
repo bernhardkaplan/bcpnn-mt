@@ -199,14 +199,14 @@ class parameter_storage(object):
         # #####################
         # TRAINING PARAMETERS
         # #####################
-        self.params['stimuli_seed'] = 4321
+        self.params['stimuli_seed'] = 1234
         self.params['v_max_training'] = self.params['v_max_tp']
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.10 # percentage of noise for each individual training speed
         self.params['n_cycles'] = 1   # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 5   # how many different speeds are trained per cycle
+        self.params['n_speeds'] = 5 # how many different speeds are trained per cycle
         # is one speed is trained, it is presented starting from on this number of different locations
-        self.params['n_stim_per_direction'] = 1
+        self.params['n_stim_per_direction'] = 3
         self.params['n_training_stim'] = self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
 
@@ -238,7 +238,8 @@ class parameter_storage(object):
         self.params['f_max_stim'] = 5000.       # [Hz]
         self.params['w_input_exc'] = 5.0e-3     # [uS] mean value for input stimulus ---< exc_units (columns
         if self.params['use_pynest']:
-            self.params['w_input_exc'] *= 1000.
+            self.params['w_input_exc'] *= 1000. # [uS] --> [mS]
+
 
         # ######
         # NOISE
@@ -334,7 +335,7 @@ class parameter_storage(object):
         print 'Folder name:', self.params['folder_name']
 
         # in order to NOT re-compute the input spike trains when the stimulus parameters have not changed, do NOT store them in a subfolder of self.params['folder_name']
-        self.params['input_folder'] = "InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
+        self.params['input_folder'] = "Debug_InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
                 (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus

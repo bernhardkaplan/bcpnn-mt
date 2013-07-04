@@ -48,6 +48,7 @@ class TrainingInputPlotter(object):
         ax.set_xlim((xmin, xmax))
         ax.set_ylim((-.5, n_stim + .5))
 
+        return fig
 
     def plot_training_input(self, gids_to_plot):
 
@@ -102,6 +103,7 @@ class TrainingInputPlotter(object):
 
         ax2.legend(rate_curves, gids_to_plot)
         self.plot_stimulus_borders_vertically(ax2, ymax=rate_max)
+        return fig
 
 
 
@@ -150,13 +152,17 @@ if __name__ == '__main__':
     pylab.rcParams.update(rcParams)
 
     TIP = TrainingInputPlotter(params)
-    TIP.plot_training_sequence()
+    fig1 = TIP.plot_training_sequence()
 
     random.seed(1)
     n_gids_to_plot = 10
     gids_to_plot = random.sample(np.loadtxt(params['gids_to_record_fn'], dtype=np.int), n_gids_to_plot)
     print 'gids_to_plot: ', gids_to_plot
-    TIP.plot_training_input(gids_to_plot)
+    fig2 = TIP.plot_training_input(gids_to_plot)
+
+    output_fn1 = params['figures_folder'] + 'training_sequence_1D.png'
+    fig1.savefig(output_fn1)
+
     pylab.show()
 
 
