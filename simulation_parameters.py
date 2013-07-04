@@ -71,7 +71,8 @@ class parameter_storage(object):
         self.params['tau_syn_inh'] = 10.0 # 20.
         self.params['use_pynest'] = True
         if self.params['use_pynest']:
-            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
+            self.params['neuron_model'] = 'iaf_psc_exp_multisynapse'
+#            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
             self.params['cell_params_exc'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
                     'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, 'tau_m': 10.0, \
                     'tau_minus': 20.0, 'tau_minus_triplet': 110.0, \
@@ -238,7 +239,7 @@ class parameter_storage(object):
         self.params['f_max_stim'] = 5000.       # [Hz]
         self.params['w_input_exc'] = 5.0e-3     # [uS] mean value for input stimulus ---< exc_units (columns
         if self.params['use_pynest']:
-            self.params['w_input_exc'] *= 1000. # [uS] --> [mS]
+            self.params['w_input_exc'] *= 1000. # [uS] --> [nS] Nest expects nS
 
 
         # ######
