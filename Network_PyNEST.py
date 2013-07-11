@@ -358,7 +358,7 @@ class NetworkModel(object):
         for nrn in my_units:
             my_adj_list[nrn] = []
         for src_hc in xrange(self.params['n_hc']):
-            print 'Proc %d src_hc' % (self.pc_id, src_hc)
+            print 'get_weights_after_learning_cycle: Proc %d src_hc %d' % (self.pc_id, src_hc)
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 src_pop = self.list_of_populations[src_hc][src_mc]
                 src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc

@@ -9,6 +9,7 @@ import CreateStimuli
 import json
 import pylab
 import re
+import Bcpnn
 
 
 class ToyExperiment(object):
@@ -27,8 +28,15 @@ class ToyExperiment(object):
 #        tp = np.loadtxt(self.params['tuning_prop_means_fn'])
 #        tp_s = tp[self.selected_gids, :]
 #        print 'tp_s', tp_s
-        tp_s = np.array([[.3, .0, .5, .0, .0], \
-                [.7, .0, .5, .0, .0]])
+        
+        # create two cells with matching ot not matching tuning properties
+        x0, y0, u0, v0 = .3, .0, .5, .5
+
+        tp_matching = np.array([[x0, y0, u0, v0, .0], \
+                    [x0 + u0, y0, u0, v0, .0]])
+        tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
+                    [x0 + u0, y0, -u0, v0, .0]])
+        tp_s = tp_matching
 
 
         # choose the motion - parameters for the test stimulus
@@ -100,8 +108,8 @@ class ToyExperiment(object):
             nest.SetStatus([stimulus[i_]], {'spike_times' : spike_times})
             nest.Connect([stimulus[i_]], [cells[i_]], model='input_exc_0')
             nest.Connect([stimulus[i_]], [cells[i_]], model='input_exc_1')
-
         
+
         # Record
         voltmeter = nest.Create('voltmeter')
         nest.SetStatus(voltmeter,[{"to_file": True, "withtime": True, 'label' : 'volt'}])
@@ -113,9 +121,10 @@ class ToyExperiment(object):
         # Connect cells in a chain:
         initial_weight = np.log(nest.GetDefaults('bcpnn_synapse')['p_ij']/(nest.GetDefaults('bcpnn_synapse')['p_i']*nest.GetDefaults('bcpnn_synapse')['p_j']))
         initial_bias = np.log(nest.GetDefaults('bcpnn_synapse')['p_j'])
-        self.bcpnn_params = {'tau_i': 10., 'tau_j':10.0, 'tau_e': 100., 'tau_p': 1000.}
+        self.bcpnn_params = {'tau_i': 10.0, 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
         self.syn_params = {'weight': initial_weight, 'bias': initial_bias, 'K': 1.0, 'delay': 1.0,\
                 'tau_i': self.bcpnn_params['tau_i'], 'tau_j': self.bcpnn_params['tau_j'], 'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p']}
+
         for i_ in xrange(n_cells - 1):
             nest.Connect([cells[i_]], [cells[i_ + 1]], model='bcpnn_synapse')
 
@@ -149,7 +158,6 @@ class ToyExperiment(object):
     def plot_voltages(self, ax):
         to_match = 'volt-'
         for fn in os.listdir(self.output_folder):
-            print 'fn:', fn
             m = re.match(to_match, fn)
             if m:
                 volt_path = self.output_folder + fn
@@ -167,14 +175,105 @@ class ToyExperiment(object):
         ax.legend(plots, self.selected_gids)
 
 
-    def get_bcpnn_traces(self, spike_train):
 
-        # convert the spike train into an array of 0s and 1s
-        n_bins = self.t_sim / self.params['dt_rate']
-        s = utils.convert_spiketrain_to_trace(spike_train, n_bins)
 
-        z = utils.low_pass_filter(s, tau=10, initial_value=0.001, dt=1., spike_height=1.)
-        pass
+    def get_bcpnn_traces_from_spiketrain(self, spike_fn=None):
+
+        if spike_fn == None:
+            fns = utils.get_spike_fns(output_folder, spike_fn_pattern='exc_spikes')
+            spike_fn = fns[0]
+
+        spike_train = np.loadtxt(self.output_folder + spike_fn)
+        spike_trains = utils.get_spiketrains(spike_train)
+        # spike_trains[0] is for gid == 0
+
+        # convert the spike trains to a binary trace
+        dt = 0.1
+        pre_trace = utils.convert_spiketrain_to_trace(spike_trains[1], t_max=self.t_sim, dt=dt, spike_width=10)
+        post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=10)
+
+        tau_dict = {'tau_zi' : self.bcpnn_params['tau_i'],    'tau_zj' : self.bcpnn_params['tau_j'], 
+                    'tau_ei' : self.bcpnn_params['tau_e'],   'tau_ej' : self.bcpnn_params['tau_e'], 'tau_eij' : self.bcpnn_params['tau_e'],
+                    'tau_pi' : self.bcpnn_params['tau_p'],  'tau_pj' : self.bcpnn_params['tau_p'], 'tau_pij' : self.bcpnn_params['tau_p'],
+                    }
+        fmax = self.bcpnn_params['fmax']
+
+        # compute
+        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, tau_dict=tau_dict, fmax=fmax, dt=0.1)
+
+        print 'BCPNN offline computation:'
+        print '\tw_ij :', wij[-1]
+        print '\tp_i  :', pi[-1]
+        print '\tp_j  :', pj[-1]
+        print '\tp_ij :', pij[-1]
+
+        plots = []
+
+        fig = pylab.figure(figsize=utils.get_figsize(1200, portrait=False))
+
+        ax1 = fig.add_subplot(321)
+        ax2 = fig.add_subplot(322)
+        ax3 = fig.add_subplot(323)
+        ax4 = fig.add_subplot(324)
+        ax5 = fig.add_subplot(325)
+        ax6 = fig.add_subplot(326)
+
+        t_axis = dt * np.arange(zi.size)
+        ax1.plot(t_axis, pre_trace, c='k', lw=2)
+        ax1.plot(t_axis, post_trace, c='k', lw=2)
+        p1, = ax1.plot(t_axis, zi, c='b', label='$z_i$', lw=2)
+        p2, = ax1.plot(t_axis, zj, c='g', label='$z_j$', lw=2)
+        plots += [p1, p2]
+        labels_z = ['$z_i$', '$z_j$']
+        ax1.legend(plots, labels_z)
+        ax1.set_xlabel('Time [ms]')
+        ax1.set_ylabel('z-traces')
+
+        plots = []
+        p1, = ax2.plot(t_axis, pi, c='b', lw=2)
+        p2, = ax2.plot(t_axis, pj, c='g', lw=2)
+        p3, = ax2.plot(t_axis, pij, c='r', lw=2)
+        plots += [p1, p2, p3]
+        labels_p = ['$p_i$', '$p_j$', '$p_{ij}$']
+        ax2.legend(plots, labels_p)
+        ax2.set_xlabel('Time [ms]')
+        ax2.set_ylabel('p-traces')
+
+        plots = []
+        p1, = ax3.plot(t_axis, ej, c='b', lw=2)
+        p2, = ax3.plot(t_axis, ej, c='g', lw=2)
+        p3, = ax3.plot(t_axis, eij, c='r', lw=2)
+        plots += [p1, p2, p3]
+        labels_p = ['$e_i$', '$e_j$', '$e_{ij}$']
+        ax3.legend(plots, labels_p)
+        ax3.set_xlabel('Time [ms]')
+        ax3.set_ylabel('e-traces')
+
+
+        plots = []
+        p1, = ax4.plot(t_axis, wij, c='b', lw=2)
+        plots += [p1]
+        labels_w = ['$w_{ij}$']
+        ax4.legend(plots, labels_w)
+        ax4.set_xlabel('Time [ms]')
+        ax4.set_ylabel('Weight')
+
+        plots = []
+        p1, = ax6.plot(t_axis, bias, c='b', lw=2)
+        plots += [p1]
+        labels_ = ['bias']
+        ax6.legend(plots, labels_)
+        ax6.set_xlabel('Time [ms]')
+        ax6.set_ylabel('Weight')
+
+
+
+#        for gid in gids:
+#            time_axis, volt = utils.extract_trace(d, gid)
+#            p, = ax.plot(time_axis, volt, label='%d' % gid, lw=2)
+#            plots.append(p)
+#        ax.legend(plots, self.selected_gids)
+
 
 
 
@@ -194,17 +293,17 @@ if __name__ == '__main__':
 
     print 'Selected gids:', selected_gids
     output_folder = 'ToyExperiment/'
-    t_sim = 1500 
+    t_sim = 3000
     TE = ToyExperiment(params, output_folder, selected_gids)
 
     TE.run_sim(t_sim)
-
 
     fig1 = pylab.figure()
     ax1 = fig1.add_subplot(211)
     ax2 = fig1.add_subplot(212)
     TE.plot_input(ax1)
     TE.plot_voltages(ax2)
+    TE.get_bcpnn_traces_from_spiketrain()
 
 
     pylab.show()

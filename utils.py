@@ -26,6 +26,15 @@ def convert_connlist_to_matrix(fn, n_src, n_tgt):
     return m, delays
 
 
+def get_spike_fns(folder, spike_fn_pattern='exc_spikes'):
+    fns = []
+    for fn in os.listdir(folder):
+        if fn.find(spike_fn_pattern) != -1:
+            fns.append(fn)
+    return fns
+
+
+
 def convert_connlist_to_adjlist_srcidx(fn, n_src):
     """
     Convert the connlist which is in format (src, tgt, weight, delay) to an
@@ -66,16 +75,21 @@ def extract_trace(d, gid):
     time_axis, volt = d[indices, 1], d[indices, 2]
     return time_axis, volt
 
-def convert_spiketrain_to_trace(st, n):
-    """
-    st: spike train in the format [time, id]
-    n : size of the trace to be returned
-    To be used with spike train inputs.
+
+def convert_spiketrain_to_trace(st, t_max, dt=0.1, spike_width=1):
+    """Converts a single spike train into a binary trace
+    Keyword arguments: 
+    st --  spike train in the format [time, id]
+    n  --  size of the trace to be returned
+    spike_width -- number of time steps (=dt) for which the trace is set to 1
     Returns a np.array with st[i] = 1 if i in st[:, 0], st[i] = 0 else.
     """
+    n = np.int(t_max / dt)
     trace = np.zeros(n)
-    for i in st:
-        trace[int(i)] = 1
+    for t in st:
+        idx_0 = np.int(t / dt)
+        idx_1 = np.int(t / dt) + spike_width
+        trace[idx_0:idx_1] = 1
     return trace
 
 
@@ -723,15 +737,21 @@ def get_cond_in(nspikes, conn_list, target_gid):
 def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
     """
     Returns a list of spikes fired by each cell
+
+    This function should be used for the format 
+        time    GID
     if n_cells is not given, the length of the array will be the highest gid (not recommended!)
+
+
     """
     if type(spiketimes_fn_or_array) == type(np.array([])):
         d = spiketimes_fn_or_array
     else:
         d = np.loadtxt(spiketimes_fn_or_array)
     if (n_cells == 0):
-        n_cells = 1 + np.max(d[:, 1])# highest gid
+        n_cells = 1 + np.int(np.max(d[:, 1]))# highest gid
     spiketrains = [[] for i in xrange(n_cells)]
+
     # seperate spike trains for all the cells
     if d.size == 0:
         return spiketrains
@@ -741,6 +761,34 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
         for i in xrange(d[:, 0].size):
             spiketrains[int(d[i, 1])].append(d[i, 0])
     return spiketrains
+
+
+
+def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
+    """
+    Returns a list of spikes fired by each cell
+    This function should be used for the format 
+        GID     time
+    if n_cells is not given, the length of the array will be the highest gid (not recommended!)
+    """
+    if type(spiketimes_fn_or_array) == type(np.array([])):
+        d = spiketimes_fn_or_array
+    else:
+        d = np.loadtxt(spiketimes_fn_or_array)
+    if (n_cells == 0):
+        n_cells = 1 + np.int(np.max(d[:, 0]))# highest gid
+    spiketrains = [[] for i in xrange(n_cells)]
+
+    # seperate spike trains for all the cells
+    if d.size == 0:
+        return spiketrains
+    elif d.shape == (2,):
+        spiketrains[int(d[0])] = [d[1]]
+    else:
+        for i in xrange(d[:, 0].size):
+            spiketrains[int(d[i, 0])].append(d[i, 1])
+    return spiketrains
+
 
 
 def get_grid_pos(x0, y0, xedges, yedges):
@@ -1262,9 +1310,9 @@ def get_figsize(fig_width_pt, portrait=True):
     fig_width = fig_width_pt * inches_per_pt  # width in inches
     fig_height = fig_width * golden_mean      # height in inches
     if portrait:
-        fig_size =  (fig_width, fig_height)      # exact figsize
-    else:
         fig_size =  (fig_height, fig_width)      # exact figsize
+    else:
+        fig_size =  (fig_width, fig_height)      # exact figsize
     return fig_size
 
 
