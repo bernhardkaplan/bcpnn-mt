@@ -218,11 +218,12 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
     """
     assert (len(pre_trace) == len(post_trace)), "Bcpnn.get_spiking_weight_and_bias: pre and post activity have different lengths!"
     if tau_dict == None:
-        tau_dict = {'tau_zi' : 10,    'tau_zj' : 10, 
-                    'tau_ei' : 100,   'tau_ej' : 100, 'tau_eij' : 100,
-                    'tau_pi' : 1000,  'tau_pj' : 1000, 'tau_pij' : 1000,
+        tau_dict = {'tau_zi' : 10.,    'tau_zj' : 10., 
+                    'tau_ei' : 100.,   'tau_ej' : 100., 'tau_eij' : 100.,
+                    'tau_pi' : 1000.,  'tau_pj' : 1000., 'tau_pij' : 1000.,
                     }
         print 'WARNING: No bcpnn parameters given, taking defaults. tau_dict=', tau_dict
+
 
 #    if bin_size != 1:
 #   TODO:
@@ -233,17 +234,28 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
     n = len(pre_trace)
     si = pre_trace      # spiking activity (spikes have a width and a height)
     sj = post_trace
+#    zi = np.ones(n) * 0.01
+#    zj = np.ones(n) * 0.01
+#    ei = np.ones(n) * 0.01
+#    ej = np.ones(n) * 0.01
+#    eij = np.ones(n) * 0.001
+#    pi = np.ones(n) * 0.01
+#    pj = np.ones(n) * 0.01
+#    pij = np.ones(n) * 0.001
     zi = np.ones(n) * initial_value
     zj = np.ones(n) * initial_value
+    eij = np.ones(n) * initial_value**2
     ei = np.ones(n) * initial_value
     ej = np.ones(n) * initial_value
     eij = np.ones(n) * initial_value**2
     pi = np.ones(n) * initial_value
     pj = np.ones(n) * initial_value
     pij = np.ones(n) * initial_value**2
-    wij = np.zeros(n)
+    wij = np.ones(n)  *  np.log(pij[0] / (pi[0] * pj[0]))
+#    wij = np.zeros(n) 
     bias = np.ones(n) * np.log(initial_value)
     spike_height = 1000. / fmax
+#    spike_height = fmax
 
     for i in xrange(1, n):
         # pre-synaptic trace zi follows si

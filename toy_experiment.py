@@ -14,7 +14,7 @@ import Bcpnn
 
 class ToyExperiment(object):
 
-    def __init__(self, params, output_folder, selected_gids):
+    def __init__(self, params, output_folder, selected_gids, tau_zi=None):
 
         self.output_folder = output_folder
         if not os.path.exists(output_folder):
@@ -22,6 +22,12 @@ class ToyExperiment(object):
         nest.SetKernelStatus({'data_path': output_folder, 'resolution': .1, 'overwrite_files': True})
         self.selected_gids = selected_gids
         self.params = params
+        nprnd.seed(0)
+        if tau_zi == None:
+            self.tau_zi = 1000
+        else:
+            self.tau_zi = tau_zi
+        print 'DEBUG tau_zi', self.tau_zi, tau_zi
 
     def run_sim(self, t_sim):
         self.t_sim = t_sim
@@ -61,7 +67,7 @@ class ToyExperiment(object):
                 x_stim = mp[0] + time_ * mp[1]
                 self.L_input[:, i_time] = utils.get_input(tp_s, self.params, (x_stim, 0, mp[1], 0, 0))
                 self.L_input[:, i_time] *= self.params['f_max_stim']
-                if (i_time % 1000 == 0):
+                if (i_time % 10000 == 0):
                     print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
 
             for i_ in xrange(n_cells):
@@ -120,10 +126,14 @@ class ToyExperiment(object):
         
         # Connect cells in a chain:
         initial_weight = np.log(nest.GetDefaults('bcpnn_synapse')['p_ij']/(nest.GetDefaults('bcpnn_synapse')['p_i']*nest.GetDefaults('bcpnn_synapse')['p_j']))
+        print '\n\nDebug initial weight NEST BCPNN: \t', initial_weight
         initial_bias = np.log(nest.GetDefaults('bcpnn_synapse')['p_j'])
-        self.bcpnn_params = {'tau_i': 10.0, 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
+
+        self.bcpnn_params = {'tau_i': self.tau_zi, 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
         self.syn_params = {'weight': initial_weight, 'bias': initial_bias, 'K': 1.0, 'delay': 1.0,\
-                'tau_i': self.bcpnn_params['tau_i'], 'tau_j': self.bcpnn_params['tau_j'], 'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p']}
+                'tau_i': self.bcpnn_params['tau_i'], 'tau_j': self.bcpnn_params['tau_j'], \
+                'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p'], \
+                'p_i': 0.01, 'p_j': 0.01, 'p_ij': 0.0001}
 
         for i_ in xrange(n_cells - 1):
             nest.Connect([cells[i_]], [cells[i_ + 1]], model='bcpnn_synapse')
@@ -187,19 +197,39 @@ class ToyExperiment(object):
         spike_trains = utils.get_spiketrains(spike_train)
         # spike_trains[0] is for gid == 0
 
+        # add delay for test reasons
+#        spike_trains[1] = np.array(spike_trains[1])
+#        spike_trains[2] = np.array(spike_trains[2])
+#        spike_trains[1] += 1
+#        spike_trains[2] += 1
+
         # convert the spike trains to a binary trace
         dt = 0.1
-        pre_trace = utils.convert_spiketrain_to_trace(spike_trains[1], t_max=self.t_sim, dt=dt, spike_width=10)
-        post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=10)
+        pre_trace = utils.convert_spiketrain_to_trace(spike_trains[1], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
+        post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
 
-        tau_dict = {'tau_zi' : self.bcpnn_params['tau_i'],    'tau_zj' : self.bcpnn_params['tau_j'], 
-                    'tau_ei' : self.bcpnn_params['tau_e'],   'tau_ej' : self.bcpnn_params['tau_e'], 'tau_eij' : self.bcpnn_params['tau_e'],
-                    'tau_pi' : self.bcpnn_params['tau_p'],  'tau_pj' : self.bcpnn_params['tau_p'], 'tau_pij' : self.bcpnn_params['tau_p'],
+        tau_dict = {'tau_zi' : self.bcpnn_params['tau_i'], 'tau_zj' : self.bcpnn_params['tau_j'], 
+                    'tau_ei' : self.bcpnn_params['tau_e'], 'tau_ej' : self.bcpnn_params['tau_e'], 'tau_eij' : self.bcpnn_params['tau_e'],
+                    'tau_pi' : self.bcpnn_params['tau_p'], 'tau_pj' : self.bcpnn_params['tau_p'], 'tau_pij' : self.bcpnn_params['tau_p'],
                     }
         fmax = self.bcpnn_params['fmax']
 
         # compute
-        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, tau_dict=tau_dict, fmax=fmax, dt=0.1)
+        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, tau_dict=tau_dict, fmax=fmax, dt=dt)
+
+        
+        t_axis = dt * np.arange(zi.size)
+        # save
+        np.savetxt(self.output_folder + 'w_ij.txt', np.array((t_axis, wij)).transpose() )
+        np.savetxt(self.output_folder + 'bias.txt', np.array((t_axis, bias)).transpose() )
+        np.savetxt(self.output_folder + 'pi.txt', np.array((t_axis, pi)).transpose() )
+        np.savetxt(self.output_folder + 'pj.txt', np.array((t_axis, pj)).transpose() )
+        np.savetxt(self.output_folder + 'pij.txt', np.array((t_axis, pij)).transpose() )
+        np.savetxt(self.output_folder + 'ei.txt', np.array((t_axis, ei)).transpose() )
+        np.savetxt(self.output_folder + 'ej.txt', np.array((t_axis, ej)).transpose() )
+        np.savetxt(self.output_folder + 'eij.txt', np.array((t_axis, eij)).transpose() )
+        np.savetxt(self.output_folder + 'zi.txt', np.array((t_axis, zi)).transpose() )
+        np.savetxt(self.output_folder + 'zj.txt', np.array((t_axis, zj)).transpose() )
 
         print 'BCPNN offline computation:'
         print '\tw_ij :', wij[-1]
@@ -209,6 +239,7 @@ class ToyExperiment(object):
 
         plots = []
 
+        pylab.rcParams.update({'figure.subplot.hspace': 0.30})
         fig = pylab.figure(figsize=utils.get_figsize(1200, portrait=False))
 
         ax1 = fig.add_subplot(321)
@@ -218,7 +249,8 @@ class ToyExperiment(object):
         ax5 = fig.add_subplot(325)
         ax6 = fig.add_subplot(326)
 
-        t_axis = dt * np.arange(zi.size)
+        self.title_fontsize = 24
+        ax1.set_title('$\\tau_{z_i} = %d$ ms' % (self.tau_zi), fontsize=self.title_fontsize)
         ax1.plot(t_axis, pre_trace, c='k', lw=2)
         ax1.plot(t_axis, post_trace, c='k', lw=2)
         p1, = ax1.plot(t_axis, zi, c='b', label='$z_i$', lw=2)
@@ -240,7 +272,7 @@ class ToyExperiment(object):
         ax2.set_ylabel('p-traces')
 
         plots = []
-        p1, = ax3.plot(t_axis, ej, c='b', lw=2)
+        p1, = ax3.plot(t_axis, ei, c='b', lw=2)
         p2, = ax3.plot(t_axis, ej, c='g', lw=2)
         p3, = ax3.plot(t_axis, eij, c='r', lw=2)
         plots += [p1, p2, p3]
@@ -267,6 +299,16 @@ class ToyExperiment(object):
         ax6.set_ylabel('Weight')
 
 
+        ax5.set_yticks([])
+        ax5.set_xticks([])
+        ax5.annotate('Weight max: %.3e\nWeight end: %.3e' % (wij.max(), wij[-1]), (.1, .5), fontsize=20)
+#        ax5.set_xticks([])
+
+
+        output_fn = self.output_folder + 'traces_tauzi_%04d.png' % self.bcpnn_params['tau_i']
+        print 'Saving traces to:', output_fn
+        pylab.savefig(output_fn)
+
 
 #        for gid in gids:
 #            time_axis, volt = utils.extract_trace(d, gid)
@@ -285,16 +327,18 @@ if __name__ == '__main__':
     params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
 
 
-    if len(sys.argv) > 1:
-        selected_gids = [int(sys.argv[i]) for i in xrange(1, 1 + len(sys.argv[1:]))]
+#    if len(sys.argv) > 1:
+#        selected_gids = [int(sys.argv[i]) for i in xrange(1, 1 + len(sys.argv[1:]))]
 
-    else:
-        selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
+#    else:
+#        selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
+    selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
+    tau_zi = float(sys.argv[1])
 
     print 'Selected gids:', selected_gids
     output_folder = 'ToyExperiment/'
     t_sim = 3000
-    TE = ToyExperiment(params, output_folder, selected_gids)
+    TE = ToyExperiment(params, output_folder, selected_gids, tau_zi)
 
     TE.run_sim(t_sim)
 
@@ -306,4 +350,4 @@ if __name__ == '__main__':
     TE.get_bcpnn_traces_from_spiketrain()
 
 
-    pylab.show()
+#    pylab.show()
