@@ -50,6 +50,7 @@ class ToyExperiment(object):
 #        mp = np.loadtxt(self.params['training_sequence_fn'])[stim_id, :]  # (x, v)
         mp = [.2, .5]
 
+
         n_cells = len(self.selected_gids)
         time = np.arange(0, self.t_sim, self.params['dt_rate'])
         self.L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
@@ -205,8 +206,16 @@ class ToyExperiment(object):
 
         # convert the spike trains to a binary trace
         dt = 0.1
-        pre_trace = utils.convert_spiketrain_to_trace(spike_trains[1], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
-        post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
+        if (spike_train[:, 0] == 2).nonzero()[0].size == 0:
+            post_trace = np.zeros(self.t_sim / dt)
+        else:
+            post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
+
+        if (spike_train[:, 0] == 1).nonzero()[0].size == 0:
+            pre_trace = np.zeros(self.t_sim / dt)
+        else:
+            pre_trace = utils.convert_spiketrain_to_trace(spike_trains[1], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
+
 
         tau_dict = {'tau_zi' : self.bcpnn_params['tau_i'], 'tau_zj' : self.bcpnn_params['tau_j'], 
                     'tau_ei' : self.bcpnn_params['tau_e'], 'tau_ej' : self.bcpnn_params['tau_e'], 'tau_eij' : self.bcpnn_params['tau_e'],
@@ -350,4 +359,4 @@ if __name__ == '__main__':
     TE.get_bcpnn_traces_from_spiketrain()
 
 
-#    pylab.show()
+    pylab.show()
