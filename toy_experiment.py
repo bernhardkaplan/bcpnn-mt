@@ -27,23 +27,24 @@ class ToyExperiment(object):
             self.bcpnn_params = {'tau_i': 10., 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
         else:
             self.bcpnn_params = bcpnn_params
+        self.dx = None
+
 
     def run_sim(self, t_sim):
         self.t_sim = t_sim
-#        tp = np.loadtxt(self.params['tuning_prop_means_fn'])
-#        tp_s = tp[self.selected_gids, :]
-#        print 'tp_s', tp_s
         
         # create two cells with matching ot not matching tuning properties
         x0, y0, u0, v0 = .3, .0, .5, .5
 
-#        tp_matching = np.array([[x0, y0, u0, v0, .0], \
-#                    [x0 + u0, y0, u0, v0, .0]])
+        if self.dx == None:
+            self.dx = u0
+
         tp_matching = np.array([[x0, y0, u0, v0, .0], \
-                    [x0 + .5 * u0, y0, u0, v0, .0]])
+                    [x0 + self.dx, y0, u0, v0, .0]])
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
-                    [x0 + u0, y0, -u0, v0, .0]])
+                    [x0 + self.dx, y0, -u0, v0, .0]])
         tp_s = tp_matching
+
         print 'Cells\' tuning properties:', tp_s
 
 
@@ -241,8 +242,11 @@ class ToyExperiment(object):
         np.savetxt(self.output_folder + 'zi.txt', np.array((t_axis, zi)).transpose() )
         np.savetxt(self.output_folder + 'zj.txt', np.array((t_axis, zj)).transpose() )
 
+        self.w_end = wij[-1]
+        self.w_max = wij.max()
+        self.t_max = wij.argmax() * dt
         print 'BCPNN offline computation:'
-        print '\tw_ij : %.4e\tt_wmax: %d' % (wij[-1], wij.argmax() * dt)
+        print '\tw_ij : %.4e\tt_wmax: %d' % (self.w_end, self.t_max)
         print '\tp_i  :', pi[-1]
         print '\tp_j  :', pj[-1]
         print '\tp_ij :', pij[-1]
@@ -311,7 +315,7 @@ class ToyExperiment(object):
 
         ax5.set_yticks([])
         ax5.set_xticks([])
-        ax5.annotate('Weight max: %.3e\nWeight end: %.3e\nt(w_max): %.1f [ms]' % (wij.max(), wij[-1], wij.argmax() * dt), (.1, .2), fontsize=20)
+        ax5.annotate('Weight max: %.3e\nWeight end: %.3e\nt(w_max): %.1f [ms]' % (self.w_max, self.w_end, self.t_max * dt), (.1, .2), fontsize=20)
 
 #        ax5.set_xticks([])
 
@@ -337,7 +341,6 @@ if __name__ == '__main__':
     ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
 
-
 #    if len(sys.argv) > 1:
 #        selected_gids = [int(sys.argv[i]) for i in xrange(1, 1 + len(sys.argv[1:]))]
 
@@ -351,8 +354,10 @@ if __name__ == '__main__':
 
     print 'Selected gids:', selected_gids
     output_folder = 'ToyExperiment/'
-    t_sim = 2000
+    t_sim = 3000
     TE = ToyExperiment(params, output_folder, selected_gids, bcpnn_params)
+    dx = float(sys.argv[2])
+    TE.dx = dx
 
     TE.run_sim(t_sim)
 
@@ -363,5 +368,9 @@ if __name__ == '__main__':
     TE.plot_voltages(ax2)
     TE.get_bcpnn_traces_from_spiketrain()
 
-    pylab.show()
+    output_fn = 'sweep_data_tsim%d_tauzj%d.dat' % (t_sim, bcpnn_params['tau_j'])
+    f = file(output_fn, 'a')
+    str_to_write = '%.4e\t%.4e\t%.4e\t%.4e\t%.1f\n' % (dx, bcpnn_params['tau_i'], TE.w_max, TE.w_end,TE.t_max)
+    f.write(str_to_write)
+#    pylab.show()
 
