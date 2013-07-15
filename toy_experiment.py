@@ -14,7 +14,7 @@ import Bcpnn
 
 class ToyExperiment(object):
 
-    def __init__(self, params, output_folder, selected_gids, tau_zi=None):
+    def __init__(self, params, output_folder, selected_gids, bcpnn_params=None):
 
         self.output_folder = output_folder
         if not os.path.exists(output_folder):
@@ -23,11 +23,10 @@ class ToyExperiment(object):
         self.selected_gids = selected_gids
         self.params = params
         nprnd.seed(0)
-        if tau_zi == None:
-            self.tau_zi = 1000
+        if bcpnn_params == None:
+            self.bcpnn_params = {'tau_i': 10., 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
         else:
-            self.tau_zi = tau_zi
-        print 'DEBUG tau_zi', self.tau_zi, tau_zi
+            self.bcpnn_params = bcpnn_params
 
     def run_sim(self, t_sim):
         self.t_sim = t_sim
@@ -38,11 +37,14 @@ class ToyExperiment(object):
         # create two cells with matching ot not matching tuning properties
         x0, y0, u0, v0 = .3, .0, .5, .5
 
+#        tp_matching = np.array([[x0, y0, u0, v0, .0], \
+#                    [x0 + u0, y0, u0, v0, .0]])
         tp_matching = np.array([[x0, y0, u0, v0, .0], \
-                    [x0 + u0, y0, u0, v0, .0]])
+                    [x0 + .5 * u0, y0, u0, v0, .0]])
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + u0, y0, -u0, v0, .0]])
         tp_s = tp_matching
+        print 'Cells\' tuning properties:', tp_s
 
 
         # choose the motion - parameters for the test stimulus
@@ -130,7 +132,6 @@ class ToyExperiment(object):
         print '\n\nDebug initial weight NEST BCPNN: \t', initial_weight
         initial_bias = np.log(nest.GetDefaults('bcpnn_synapse')['p_j'])
 
-        self.bcpnn_params = {'tau_i': self.tau_zi, 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
         self.syn_params = {'weight': initial_weight, 'bias': initial_bias, 'K': 1.0, 'delay': 1.0,\
                 'tau_i': self.bcpnn_params['tau_i'], 'tau_j': self.bcpnn_params['tau_j'], \
                 'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p'], \
@@ -241,7 +242,7 @@ class ToyExperiment(object):
         np.savetxt(self.output_folder + 'zj.txt', np.array((t_axis, zj)).transpose() )
 
         print 'BCPNN offline computation:'
-        print '\tw_ij :', wij[-1]
+        print '\tw_ij : %.4e\tt_wmax: %d' % (wij[-1], wij.argmax() * dt)
         print '\tp_i  :', pi[-1]
         print '\tp_j  :', pj[-1]
         print '\tp_ij :', pij[-1]
@@ -259,7 +260,7 @@ class ToyExperiment(object):
         ax6 = fig.add_subplot(326)
 
         self.title_fontsize = 24
-        ax1.set_title('$\\tau_{z_i} = %d$ ms' % (self.tau_zi), fontsize=self.title_fontsize)
+        ax1.set_title('$\\tau_{z_i} = %d$ ms' % (self.bcpnn_params['tau_i']), fontsize=self.title_fontsize)
         ax1.plot(t_axis, pre_trace, c='k', lw=2)
         ax1.plot(t_axis, post_trace, c='k', lw=2)
         p1, = ax1.plot(t_axis, zi, c='b', label='$z_i$', lw=2)
@@ -310,11 +311,12 @@ class ToyExperiment(object):
 
         ax5.set_yticks([])
         ax5.set_xticks([])
-        ax5.annotate('Weight max: %.3e\nWeight end: %.3e' % (wij.max(), wij[-1]), (.1, .5), fontsize=20)
+        ax5.annotate('Weight max: %.3e\nWeight end: %.3e\nt(w_max): %.1f [ms]' % (wij.max(), wij[-1], wij.argmax() * dt), (.1, .2), fontsize=20)
+
 #        ax5.set_xticks([])
 
 
-        output_fn = self.output_folder + 'traces_tauzi_%04d.png' % self.bcpnn_params['tau_i']
+        output_fn = self.output_folder + 'traces_tauzi_%04d_tauzj_%04d.png' % (self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j'])
         print 'Saving traces to:', output_fn
         pylab.savefig(output_fn)
 
@@ -343,11 +345,14 @@ if __name__ == '__main__':
 #        selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
     selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
     tau_zi = float(sys.argv[1])
+#    tau_zj = float(sys.argv[2])
+    tau_zj = 10.
+    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
 
     print 'Selected gids:', selected_gids
     output_folder = 'ToyExperiment/'
-    t_sim = 3000
-    TE = ToyExperiment(params, output_folder, selected_gids, tau_zi)
+    t_sim = 2000
+    TE = ToyExperiment(params, output_folder, selected_gids, bcpnn_params)
 
     TE.run_sim(t_sim)
 
@@ -358,5 +363,5 @@ if __name__ == '__main__':
     TE.plot_voltages(ax2)
     TE.get_bcpnn_traces_from_spiketrain()
 
-
     pylab.show()
+
