@@ -27,20 +27,28 @@ class ToyExperiment(object):
             self.bcpnn_params = {'tau_i': 10., 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
         else:
             self.bcpnn_params = bcpnn_params
+
         self.dx = None
+        self.v_stim = None
+        self.dv = None
 
 
     def run_sim(self, t_sim):
         self.t_sim = t_sim
         
-        # create two cells with matching ot not matching tuning properties
-        x0, y0, u0, v0 = .3, .0, .5, .5
 
         if self.dx == None:
             self.dx = u0
+        if self.dv == None:
+            self.dv = 0
+        if self.v_stim == None:
+            self.v_stim = .5
+
+        # create two cells with matching ot not matching tuning properties
+        x0, y0, u0, v0 = .3, .0, self.v_stim, .0
 
         tp_matching = np.array([[x0, y0, u0, v0, .0], \
-                    [x0 + self.dx, y0, u0, v0, .0]])
+                    [x0 + self.dx, y0, u0 + self.dv, v0, .0]])
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, -u0, v0, .0]])
         tp_s = tp_matching
@@ -51,7 +59,7 @@ class ToyExperiment(object):
         # choose the motion - parameters for the test stimulus
         stim_id = 0
 #        mp = np.loadtxt(self.params['training_sequence_fn'])[stim_id, :]  # (x, v)
-        mp = [.2, .5]
+        mp = [.2, self.v_stim]
 
 
         n_cells = len(self.selected_gids)
@@ -320,7 +328,7 @@ class ToyExperiment(object):
 #        ax5.set_xticks([])
 
 
-        output_fn = self.output_folder + 'traces_tauzi_%04d_tauzj_%04d.png' % (self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j'])
+        output_fn = self.output_folder + 'traces_tauzi_%04d_dx%.1e_dv%.1e_vstim%.1e.png' % (self.bcpnn_params['tau_i'], self.dx, self.dv, self.v_stim)
         print 'Saving traces to:', output_fn
         pylab.savefig(output_fn)
 
@@ -348,17 +356,20 @@ if __name__ == '__main__':
 #        selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
     selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
     tau_zi = float(sys.argv[1])
-#    tau_zj = float(sys.argv[2])
+    dv = float(sys.argv[2])
+    v_stim = float(sys.argv[3])
     tau_zj = 10.
     bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
 
     print 'Selected gids:', selected_gids
     output_folder = 'ToyExperiment/'
-    t_sim = 3000
     TE = ToyExperiment(params, output_folder, selected_gids, bcpnn_params)
-    dx = float(sys.argv[2])
-    TE.dx = dx
+    TE.dx = dv
+    TE.dv = dv
+    TE.v_stim = v_stim
 
+    t_sim = (.1 + TE.dx) / v_stim * 1000. * 4.
+    print 'Simulating:', t_sim
     TE.run_sim(t_sim)
 
     fig1 = pylab.figure()
@@ -368,9 +379,9 @@ if __name__ == '__main__':
     TE.plot_voltages(ax2)
     TE.get_bcpnn_traces_from_spiketrain()
 
-    output_fn = 'sweep_data_tsim%d_tauzj%d.dat' % (t_sim, bcpnn_params['tau_j'])
+    output_fn = 'sweep_dv_vstim_tauzj%d_preCellWellTuned.dat' % (bcpnn_params['tau_j'])
     f = file(output_fn, 'a')
-    str_to_write = '%.4e\t%.4e\t%.4e\t%.4e\t%.1f\n' % (dx, bcpnn_params['tau_i'], TE.w_max, TE.w_end,TE.t_max)
+    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.1f\n' % (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end,TE.t_max)
     f.write(str_to_write)
 #    pylab.show()
 
