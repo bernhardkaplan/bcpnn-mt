@@ -775,16 +775,25 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
         d = spiketimes_fn_or_array
     else:
         d = np.loadtxt(spiketimes_fn_or_array)
-    if (n_cells == 0):
-        n_cells = 1 + np.int(np.max(d[:, 0]))# highest gid
-    spiketrains = [[] for i in xrange(n_cells)]
+    
 
     # seperate spike trains for all the cells
     if d.size == 0:
-        return spiketrains
+        if n_cells == 0:
+            return []
+        else:
+            spiketrains = [[] for i in xrange(n_cells)]
+            return spiketrains
     elif d.shape == (2,):
-        spiketrains[int(d[0])] = [d[1]]
+        if (n_cells == 0):
+            spiketrains = [d[1]]
+        else:
+            spiketrains = [[] for i in xrange(n_cells)]
+            spiketrains[int(d[0])] = [d[1]]
     else:
+        if (n_cells == 0):
+            n_cells = 1 + np.int(np.max(d[:, 0]))# highest gid
+        spiketrains = [[] for i in xrange(n_cells)]
         for i in xrange(d[:, 0].size):
             spiketrains[int(d[i, 0])].append(d[i, 1])
     return spiketrains

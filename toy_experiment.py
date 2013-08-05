@@ -289,6 +289,7 @@ class ToyExperiment(object):
         p3, = ax2.plot(t_axis, pij, c='r', lw=2)
         plots += [p1, p2, p3]
         labels_p = ['$p_i$', '$p_j$', '$p_{ij}$']
+        ax2.set_title('$v_{stim} = %.1f, dv=%.1f$' % (self.v_stim, self.dv))
         ax2.legend(plots, labels_p)
         ax2.set_xlabel('Time [ms]')
         ax2.set_ylabel('p-traces')
@@ -318,12 +319,12 @@ class ToyExperiment(object):
         labels_ = ['bias']
         ax6.legend(plots, labels_)
         ax6.set_xlabel('Time [ms]')
-        ax6.set_ylabel('Weight')
+        ax6.set_ylabel('Bias')
 
 
         ax5.set_yticks([])
         ax5.set_xticks([])
-        ax5.annotate('Weight max: %.3e\nWeight end: %.3e\nt(w_max): %.1f [ms]' % (self.w_max, self.w_end, self.t_max * dt), (.1, .2), fontsize=20)
+        ax5.annotate('dx: %.1f\nWeight max: %.3e\nWeight end: %.3e\nt(w_max): %.1f [ms]' % (self.dx, self.w_max, self.w_end, self.t_max * dt), (.1, .2), fontsize=20)
 
 #        ax5.set_xticks([])
 
@@ -364,11 +365,11 @@ if __name__ == '__main__':
     print 'Selected gids:', selected_gids
     output_folder = 'ToyExperiment/'
     TE = ToyExperiment(params, output_folder, selected_gids, bcpnn_params)
-    TE.dx = dv
+    TE.dx = .5
     TE.dv = dv
     TE.v_stim = v_stim
 
-    t_sim = (.1 + TE.dx) / v_stim * 1000. * 4.
+    t_sim = (.1 + TE.dx) / v_stim * 1000. * 2.
     print 'Simulating:', t_sim
     TE.run_sim(t_sim)
 
@@ -381,7 +382,7 @@ if __name__ == '__main__':
 
     output_fn = 'sweep_dv_vstim_tauzj%d_preCellWellTuned.dat' % (bcpnn_params['tau_j'])
     f = file(output_fn, 'a')
-    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.1f\n' % (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end,TE.t_max)
+    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.1f\n' % (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.t_max)
     f.write(str_to_write)
 #    pylab.show()
 
