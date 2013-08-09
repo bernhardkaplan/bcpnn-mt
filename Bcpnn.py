@@ -210,7 +210,8 @@ def compute_pij_new(zi, zj, pi, pj, eij, pij, wij, bias, tau_eij, tau_pij, get_t
 
 
 def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
-        tau_dict=None, dt=1., fmax=1000., initial_value=0.01):#, eps=1e-6):
+        tau_dict=None, dt=1., fmax=1000.):
+#        tau_dict=None, dt=1., fmax=1000., initial_value=0.01):#, eps=1e-6):
     """
     Arguments:
         pre_trace, post_trace: pre-synaptic activity (0 means no spike, 1 means spike) (not spike trains!)
@@ -229,8 +230,9 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
 #   TODO:
 #        return get_spiking_weight_and_bias_binned(pre_spikes, post_spikes, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, eps=1e-2)
 
-#    eps = dt / tau_dict['tau_pi']
-    eps = 0.001
+    eps = dt / tau_dict['tau_pi']
+    initial_value = eps
+
     n = len(pre_trace)
     si = pre_trace      # spiking activity (spikes have a width and a height)
     sj = post_trace
@@ -247,7 +249,6 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
     eij = np.ones(n) * initial_value**2
     ei = np.ones(n) * initial_value
     ej = np.ones(n) * initial_value
-    eij = np.ones(n) * initial_value**2
     pi = np.ones(n) * initial_value
     pj = np.ones(n) * initial_value
     pij = np.ones(n) * initial_value**2

@@ -21,6 +21,7 @@ class ToyExperiment(object):
             os.system('mkdir %s' % output_folder)
         nest.SetKernelStatus({'data_path': output_folder, 'resolution': .1, 'overwrite_files': True})
         self.selected_gids = selected_gids
+        self.n_cells = len(self.selected_gids)
         self.params = params
         nprnd.seed(0)
         if bcpnn_params == None:
@@ -33,56 +34,66 @@ class ToyExperiment(object):
         self.dv = None
 
 
-    def run_sim(self, t_sim):
-        self.t_sim = t_sim
-        
 
+    def run_sim(self, t_sim=None):
+
+        # set parameters
         if self.dx == None:
             self.dx = u0
         if self.dv == None:
             self.dv = 0
         if self.v_stim == None:
             self.v_stim = .5
-
-        # create two cells with matching ot not matching tuning properties
-        x0, y0, u0, v0 = .3, .0, self.v_stim, .0
-
+        # create two cells with matching or not matching tuning properties
+        x0, y0, u0, v0 = .4, .0, self.v_stim, .0
         tp_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, u0 + self.dv, v0, .0]])
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, -u0, v0, .0]])
-        tp_s = tp_matching
+        self.tp_s = np.array(tp_matching)
+        self.mp = [.2, self.v_stim] # choose the motion - parameters for the test stimulus
 
-        print 'Cells\' tuning properties:', tp_s
-
-
-        # choose the motion - parameters for the test stimulus
-        stim_id = 0
-#        mp = np.loadtxt(self.params['training_sequence_fn'])[stim_id, :]  # (x, v)
-        mp = [.2, self.v_stim]
-
-
-        n_cells = len(self.selected_gids)
+        # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
+        n_stim = 5
+        dt_stim = self.dx / self.v_stim * 1000.# time between cells see the stimulus
+        t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
+        # t_z_decay is the time for the z_traces to decay between stimuli
+        if t_sim == None:
+            if (t_z_decay < dt_stim):
+                stim_duration = 5 * dt_stim 
+            elif (t_z_decay > dt_stim):
+                stim_duration = t_z_decay
+            t_sim = n_stim * stim_duration + 1 # +1 to allow odd stim_durations and indexing errors due to rounding
+        print 'Simulating:', t_sim
+        self.t_sim = t_sim
         time = np.arange(0, self.t_sim, self.params['dt_rate'])
-        self.L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
-        input_spiketrains = []
+        self.L_input = np.zeros((self.n_cells, time.size))  # the envelope of the Poisson process
+        self.input_spiketrains = []
         
-        load_input = False
+        save_input = True
+        load_input = self.check_input_files_exist()
         # get the input signal
         if not load_input:
-            # create the input
-            time = np.arange(0, self.t_sim, self.params['dt_rate'])
-            idx_t_stop = int(self.t_sim / self.params['dt_rate'])
-#            idx_t_stop = int(self.params['t_training_stim'] / self.params['dt_rate'])
-            for i_time in xrange(0, idx_t_stop):
-                time_ = (i_time * self.params['dt_rate']) / self.params['t_stimulus']
-                x_stim = mp[0] + time_ * mp[1]
-                self.L_input[:, i_time] = utils.get_input(tp_s, self.params, (x_stim, 0, mp[1], 0, 0))
-                self.L_input[:, i_time] *= self.params['f_max_stim']
-                if (i_time % 10000 == 0):
-                    print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
+#            stim_duration = int(10. * self.bcpnn_params['tau_i']) # how many time steps within one stimulus
+            print 'stim_duration:', stim_duration
+            print 't_sim:', self.t_sim
+            print 'n_stim:', n_stim
 
-            for i_ in xrange(n_cells):
+            global_time = 0.
+            global_time_idx = 0
+            for stim_cnt in xrange(n_stim):
+                stim_time_axis = np.arange(0, stim_duration, self.params['dt_rate'])
+                for t_ in stim_time_axis:
+                    x_stim = self.mp[0] + t_ / self.params['t_stimulus'] * self.mp[1]
+                    assert global_time_idx < self.L_input[0, :].size, 'invalid global_time_idx\ntime.size=%d' % time.size
+                    self.L_input[:, global_time_idx] = utils.get_input(self.tp_s, self.params, (x_stim, 0, self.mp[1], 0, 0))
+                    self.L_input[:, global_time_idx] *= self.params['f_max_stim']
+                    if (global_time_idx % 10000 == 0):
+                        print "t: %.2f [ms]" % (global_time)
+                    global_time += self.params['dt_rate']
+                    global_time_idx += 1
+
+            for i_ in xrange(self.n_cells):
                 rate_of_t = np.array(self.L_input[i_, :])
                 n_steps = rate_of_t.size
                 spike_times = []
@@ -90,21 +101,25 @@ class ToyExperiment(object):
                     r = nprnd.rand()
                     if (r <= ((rate_of_t[i]/1000.) * self.params['dt_rate'])): # rate is given in Hz -> 1/1000.
                         spike_times.append(i * self.params['dt_rate'])
-                input_spiketrains.append(spike_times)
+                self.input_spiketrains.append(spike_times)
             
-
         else: 
             for i_, gid in enumerate(self.selected_gids):
-                input_fn = self.params['input_st_fn_base'] + str(gid) + '.npy'
-                input_spiketrains.append(np.load(input_fn))
-                input_fn = self.params['input_rate_fn_base'] + str(gid) + '.npy'
-                self.L_input[i_, :] = np.load(input_fn)
+                input_fn = self.params['input_st_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                self.input_spiketrains.append(np.loadtxt(input_fn))
+                input_fn = self.params['input_rate_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                self.L_input[i_, :] = np.loadtxt(input_fn)
 
-
+        if save_input:
+            for i_, gid in enumerate(self.selected_gids):
+                input_fn = self.params['input_st_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                np.savetxt(input_fn, self.input_spiketrains[i_])
+                input_fn = self.params['input_rate_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                np.savetxt(input_fn, self.L_input[i_, :])
         
         # NEST - code 
         # Setup 
-        self.params['w_input_exc'] = 1.  # [nS]
+        self.params['w_input_exc'] = 2.0  # [nS]
         nest.CopyModel('static_synapse', 'input_exc_0', \
                 {'weight': self.params['w_input_exc'], 'receptor_type': 0})  # numbers must be consistent with cell_params_exc
         nest.CopyModel('static_synapse', 'input_exc_1', \
@@ -116,13 +131,13 @@ class ToyExperiment(object):
 
         # Create cells
         cell_params = self.params['cell_params_exc'].copy()
-        cells = nest.Create(self.params['neuron_model'], n_cells, params=cell_params)
+        cells = nest.Create(self.params['neuron_model'], self.n_cells, params=cell_params)
 
 
         # Create stimulus
-        stimulus = nest.Create('spike_generator', n_cells)
-        for i_ in xrange(n_cells):
-            spike_times = input_spiketrains[i_]
+        stimulus = nest.Create('spike_generator', self.n_cells)
+        for i_ in xrange(self.n_cells):
+            spike_times = self.input_spiketrains[i_]
             nest.SetStatus([stimulus[i_]], {'spike_times' : spike_times})
             nest.Connect([stimulus[i_]], [cells[i_]], model='input_exc_0')
             nest.Connect([stimulus[i_]], [cells[i_]], model='input_exc_1')
@@ -146,7 +161,7 @@ class ToyExperiment(object):
                 'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p'], \
                 'p_i': 0.01, 'p_j': 0.01, 'p_ij': 0.0001}
 
-        for i_ in xrange(n_cells - 1):
+        for i_ in xrange(self.n_cells - 1):
             nest.Connect([cells[i_]], [cells[i_ + 1]], model='bcpnn_synapse')
 
             # modify the parameters
@@ -157,7 +172,7 @@ class ToyExperiment(object):
         nest.Simulate(self.t_sim)
 
         # Get weights
-        for i_ in xrange(n_cells - 1):
+        for i_ in xrange(self.n_cells - 1):
             cp = nest.GetStatus(nest.GetConnections([cells[i_]], [cells[i_ + 1]]))[0]
             print 'cp:', cp
             w_ij = cp['weight']
@@ -165,13 +180,47 @@ class ToyExperiment(object):
 
 
 
+    def check_input_files_exist(self):
+        """
+        Returns true if all files exist and can be loaded.
+        """
+        all_files_exist = np.zeros((self.n_cells, 2))
+        for i_, gid in enumerate(self.selected_gids):
+            input_fn = self.params['input_st_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+            all_files_exist[i_, 0] = os.path.exists(input_fn)
+            input_fn = self.params['input_rate_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+            all_files_exist[i_, 1] = os.path.exists(input_fn)
+
+        n_existing = (all_files_exist == 1).nonzero()[0].size
+#        print 'All_files_exist:', all_files_exist
+#        print 'Files existing:', n_existing
+        if n_existing == 2 * self.n_cells: # 2 because checking for rate and spiketrain files
+            print 'All input files exist\t Loading input...'
+            return True
+        else:
+            print 'Not all input files exist\t Computing input...'
+            return False
+        
+
+
+
     def plot_input(self, ax):
 
         time_axis = np.arange(0, self.t_sim, self.params['dt_rate'])
         plots = []
+        color_list = ['b', 'g', 'r', 'y', 'c', 'm', 'k', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
         for i_, gid in enumerate(self.selected_gids):
-            p, = ax.plot(time_axis, self.L_input[i_, :], label='%d', lw=2)
+            p, = ax.plot(time_axis, self.L_input[i_, :], label='%d', lw=2, c=color_list[i_ % len(color_list)])
             plots.append(p)
+
+        ylim = ax.get_ylim()
+#        for i_, gid in enumerate(self.selected_gids):
+#            print 'Input spikes:', self.input_spiketrains[i_]
+#            y_ = (np.ones(len(self.input_spiketrains[i_])) * ylim[0], np.ones(len(self.input_spiketrains[i_])) * ylim[1])
+#            ax.plot((self.input_spiketrains[i_], self.input_spiketrains[i_]), (y_[0], y_[1]), c=color_list[i_ % len(color_list)])
+
+#            ax.plot((self.input_spiketrains[i_], y_[0]), (self.input_spiketrains[i_], y_[1]), c=color_list[i_ % len(color_list)])
+
         ax.legend(plots, self.selected_gids)
 
 
@@ -203,41 +252,38 @@ class ToyExperiment(object):
         if spike_fn == None:
             fns = utils.get_spike_fns(output_folder, spike_fn_pattern='exc_spikes')
             spike_fn = fns[0]
-
+        print 'Loading spiketrain from:', self.output_folder + spike_fn
         spike_train = np.loadtxt(self.output_folder + spike_fn)
-        spike_trains = utils.get_spiketrains(spike_train)
+        if spike_train.size == 0:
+            spike_trains = [[], [], []]
+        else:
+#            print 'DEBUG spike_train:', spike_train
+            spike_trains = utils.get_spiketrains(spike_train, n_cells=self.n_cells + 1) # +1 because NEST GIDs are 1-aligned
         # spike_trains[0] is for gid == 0
-
-        # add delay for test reasons
-#        spike_trains[1] = np.array(spike_trains[1])
-#        spike_trains[2] = np.array(spike_trains[2])
-#        spike_trains[1] += 1
-#        spike_trains[2] += 1
+#        print 'Debug: spike_trains:', spike_trains
 
         # convert the spike trains to a binary trace
         dt = 0.1
-        if (spike_train[:, 0] == 2).nonzero()[0].size == 0:
-            post_trace = np.zeros(self.t_sim / dt)
-        else:
-            post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
-
-        if (spike_train[:, 0] == 1).nonzero()[0].size == 0:
-            pre_trace = np.zeros(self.t_sim / dt)
-        else:
+        if len(spike_trains[1]) > 0:
             pre_trace = utils.convert_spiketrain_to_trace(spike_trains[1], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
+        else:
+            pre_trace = np.zeros(self.t_sim / dt)
 
-
+        if len(spike_trains[2]) > 0:
+            post_trace = utils.convert_spiketrain_to_trace(spike_trains[2], t_max=self.t_sim, dt=dt, spike_width=1. / dt)
+        else:
+            post_trace = np.zeros(self.t_sim / dt)
         tau_dict = {'tau_zi' : self.bcpnn_params['tau_i'], 'tau_zj' : self.bcpnn_params['tau_j'], 
                     'tau_ei' : self.bcpnn_params['tau_e'], 'tau_ej' : self.bcpnn_params['tau_e'], 'tau_eij' : self.bcpnn_params['tau_e'],
                     'tau_pi' : self.bcpnn_params['tau_p'], 'tau_pj' : self.bcpnn_params['tau_p'], 'tau_pij' : self.bcpnn_params['tau_p'],
                     }
         fmax = self.bcpnn_params['fmax']
 
-        # compute
-        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, tau_dict=tau_dict, fmax=fmax, dt=dt)
-
-        
+        # compute the traces 
+        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, \
+                tau_dict=tau_dict, fmax=fmax, dt=dt)#, initial_value=.1)
         t_axis = dt * np.arange(zi.size)
+
         # save
         np.savetxt(self.output_folder + 'w_ij.txt', np.array((t_axis, wij)).transpose() )
         np.savetxt(self.output_folder + 'bias.txt', np.array((t_axis, bias)).transpose() )
@@ -249,9 +295,9 @@ class ToyExperiment(object):
         np.savetxt(self.output_folder + 'eij.txt', np.array((t_axis, eij)).transpose() )
         np.savetxt(self.output_folder + 'zi.txt', np.array((t_axis, zi)).transpose() )
         np.savetxt(self.output_folder + 'zj.txt', np.array((t_axis, zj)).transpose() )
-
         self.w_end = wij[-1]
         self.w_max = wij.max()
+        self.w_avg = wij[-2000:].mean()
         self.t_max = wij.argmax() * dt
         print 'BCPNN offline computation:'
         print '\tw_ij : %.4e\tt_wmax: %d' % (self.w_end, self.t_max)
@@ -260,19 +306,17 @@ class ToyExperiment(object):
         print '\tp_ij :', pij[-1]
 
         plots = []
-
         pylab.rcParams.update({'figure.subplot.hspace': 0.30})
         fig = pylab.figure(figsize=utils.get_figsize(1200, portrait=False))
-
         ax1 = fig.add_subplot(321)
         ax2 = fig.add_subplot(322)
         ax3 = fig.add_subplot(323)
         ax4 = fig.add_subplot(324)
         ax5 = fig.add_subplot(325)
         ax6 = fig.add_subplot(326)
-
-        self.title_fontsize = 24
-        ax1.set_title('$\\tau_{z_i} = %d$ ms' % (self.bcpnn_params['tau_i']), fontsize=self.title_fontsize)
+        self.title_fontsize = 18
+        ax1.set_title('$\\tau_{z_i} = %d$ ms, $\\tau_{z_j} = %d$ ms' % \
+                (self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']), fontsize=self.title_fontsize)
         ax1.plot(t_axis, pre_trace, c='k', lw=2)
         ax1.plot(t_axis, post_trace, c='k', lw=2)
         p1, = ax1.plot(t_axis, zi, c='b', label='$z_i$', lw=2)
@@ -289,7 +333,8 @@ class ToyExperiment(object):
         p3, = ax2.plot(t_axis, pij, c='r', lw=2)
         plots += [p1, p2, p3]
         labels_p = ['$p_i$', '$p_j$', '$p_{ij}$']
-        ax2.set_title('$v_{stim} = %.1f, dv=%.1f$' % (self.v_stim, self.dv))
+        ax2.set_title('$\\tau_{p} = %d$ ms' % \
+                (self.bcpnn_params['tau_p']), fontsize=self.title_fontsize)
         ax2.legend(plots, labels_p)
         ax2.set_xlabel('Time [ms]')
         ax2.set_ylabel('p-traces')
@@ -300,10 +345,11 @@ class ToyExperiment(object):
         p3, = ax3.plot(t_axis, eij, c='r', lw=2)
         plots += [p1, p2, p3]
         labels_p = ['$e_i$', '$e_j$', '$e_{ij}$']
+        ax3.set_title('$\\tau_{e} = %d$ ms' % \
+                (self.bcpnn_params['tau_e']), fontsize=self.title_fontsize)
         ax3.legend(plots, labels_p)
         ax3.set_xlabel('Time [ms]')
         ax3.set_ylabel('e-traces')
-
 
         plots = []
         p1, = ax4.plot(t_axis, wij, c='b', lw=2)
@@ -321,15 +367,18 @@ class ToyExperiment(object):
         ax6.set_xlabel('Time [ms]')
         ax6.set_ylabel('Bias')
 
-
         ax5.set_yticks([])
         ax5.set_xticks([])
-        ax5.annotate('dx: %.1f\nWeight max: %.3e\nWeight end: %.3e\nt(w_max): %.1f [ms]' % (self.dx, self.w_max, self.w_end, self.t_max * dt), (.1, .2), fontsize=20)
+        ax5.annotate('$v_{stim} = %.1f, v_{0}=%.1f, v_{1}=%.1f$\ndx: %.1f\
+                \nWeight max: %.3e\nWeight end: %.3e\nWeight avg: %.3e\nt(w_max): %.1f [ms]' % \
+                (self.v_stim, self.tp_s[0][2], self.tp_s[1][2], self.dx, self.w_max, self.w_end, self.w_avg, \
+                self.t_max * dt), (.1, .1), fontsize=20)
 
 #        ax5.set_xticks([])
 
 
-        output_fn = self.output_folder + 'traces_tauzi_%04d_dx%.1e_dv%.1e_vstim%.1e.png' % (self.bcpnn_params['tau_i'], self.dx, self.dv, self.v_stim)
+        output_fn = self.params['figures_folder'] + 'traces_tauzi_%04d_dx%.1e_dv%.1e_vstim%.1e.png' % \
+                (self.bcpnn_params['tau_i'], self.dx, self.dv, self.v_stim)
         print 'Saving traces to:', output_fn
         pylab.savefig(output_fn)
 
@@ -348,30 +397,36 @@ if __name__ == '__main__':
     print '\nPlotting the default parameters give in simulation_parameters.py\n'
     import simulation_parameters
     ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
+    output_folder = 'TwoCellSweep/'
+    ps.set_filenames(output_folder)
     params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
 
-#    if len(sys.argv) > 1:
-#        selected_gids = [int(sys.argv[i]) for i in xrange(1, 1 + len(sys.argv[1:]))]
+    selected_gids = [0, 1]
 
-#    else:
-#        selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
-    selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
+#    v_stim = 1.0
+#    tau_zi = 1000.
+
     tau_zi = float(sys.argv[1])
-    dv = float(sys.argv[2])
-    v_stim = float(sys.argv[3])
+    v_stim = float(sys.argv[2])
+#    dx = float(sys.argv[2])
+
+    dv = 0.
+
     tau_zj = 10.
-    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
+    tau_p = 10000.
+    tau_e = 100.
+    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
 
     print 'Selected gids:', selected_gids
-    output_folder = 'ToyExperiment/'
     TE = ToyExperiment(params, output_folder, selected_gids, bcpnn_params)
     TE.dx = .5
     TE.dv = dv
     TE.v_stim = v_stim
 
-    t_sim = (.1 + TE.dx) / v_stim * 1000. * 2.
-    print 'Simulating:', t_sim
-    TE.run_sim(t_sim)
+#    t_sim = TE.dx / v_stim * 1000. * 20.
+#    t_sim = 2000.
+#    t_sim = 1. * bcpnn_params['tau_p']
+    TE.run_sim()#t_sim)
 
     fig1 = pylab.figure()
     ax1 = fig1.add_subplot(211)
@@ -380,9 +435,17 @@ if __name__ == '__main__':
     TE.plot_voltages(ax2)
     TE.get_bcpnn_traces_from_spiketrain()
 
-    output_fn = 'sweep_dv_vstim_tauzj%d_preCellWellTuned.dat' % (bcpnn_params['tau_j'])
+#    output_fn = 'sweep_test.dat'
+#    output_fn = 'delme.dat'
+#    output_fn =
+    output_fn = 'sweep_dv_vstim_tauzj%d_dx%.1f_preCellWellTuned.dat' % (bcpnn_params['tau_j'], TE.dx)
     f = file(output_fn, 'a')
-    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.1f\n' % (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.t_max)
+    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.4e\t%.1f\n' % (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.w_avg, TE.t_max)
     f.write(str_to_write)
 #    pylab.show()
+
+#    if len(sys.argv) > 1:
+#        selected_gids = [int(sys.argv[i]) for i in xrange(1, 1 + len(sys.argv[1:]))]
+#    else:
+#        selected_gids = np.loadtxt(params['gids_to_record_fn'], dtype=int)[:2]
 

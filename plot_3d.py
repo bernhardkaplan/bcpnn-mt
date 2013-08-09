@@ -7,41 +7,49 @@ import matplotlib
 fn = sys.argv[1]
 d = np.loadtxt(fn)
 
+x_axis_idx = 2
+y_axis_idx = 3
+z_axis_idx = 4
+
+x_data = d[:, x_axis_idx]
+y_data = d[:, y_axis_idx]
+#y_data = .5 / d[:, y_axis_idx]
+z_data = d[:, z_axis_idx]
+
+x_label = '$\\tau_{z_i}$'
+y_label = '$v_{stim}$'
+#y_label = 'dt between cells'
+z_label = '$w_{max}$'
 
 fig = pylab.figure()
 ax = Axes3D(fig)
 
 #colored = False
 colored = True
-# map centroid numbers to different colors
+
 if (colored):
-    color_code_axis = 4
-#    color_code_axis = 3
+    color_code_axis = z_axis_idx
+    colorbar_label = '$w_{max}$'
     code = d[:, color_code_axis]
-    colors = []
-    h_values = []
     min_4d = np.min(code)
     max_4d = np.max(code)
     range_4d = float(max_4d - min_4d)
     norm = matplotlib.mpl.colors.Normalize(vmin=min_4d, vmax=max_4d)
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet)
     m.set_array(np.arange(min_4d, max_4d, 0.01))
-    for i in xrange(len(code)):
-        h = (code[i] - min_4d) / range_4d
-        h_values.append(h)
-        rgb = matplotlib.colors.hsv_to_rgb(np.array([[[h, 1.0, 1.0]]]))[0, 0,:]
-        colors.append([rgb[0], rgb[1], rgb[2], 1.])
+    colors = m.to_rgba(code)
+    cax = ax.scatter(x_data, y_data, z_data, c=colors, marker='o', linewidth='5', edgecolor=colors)
 
-    cax = ax.scatter(d[:,0], d[:,1], d[:,2], c=np.array(colors), marker='o', linewidth='5', edgecolor=colors)
 else:
-    ax.scatter(d[:,0], d[:,1], d[:,2], marker='o')
+    cax = ax.scatter(x_data, y_data, z_data, marker='o')
 
-ax.set_xlabel('dx between cells', fontsize=24)
-ax.set_ylabel('$\\tau_{z_i}$', fontsize=24)
-ax.set_zlabel('$w_{max}$', fontsize=24)
+ax.set_xlabel(x_label, fontsize=24)
+ax.set_ylabel(y_label, fontsize=24)
+ax.set_zlabel(z_label, fontsize=24)
+
 if colored: 
     cb = fig.colorbar(m, ax=ax, shrink=0.8)
-    cb.set_label('$t_{max}$ [ms]', fontsize=24)
-#    cb.set_label('$w_{end}$', fontsize=24)
+#    cb.set_label('$t_{max}$ [ms]', fontsize=24)
+    cb.set_label(colorbar_label, fontsize=24)
 
 pylab.show()

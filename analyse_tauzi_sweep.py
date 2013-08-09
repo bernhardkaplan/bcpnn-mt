@@ -1,4 +1,8 @@
-
+"""
+    toy_experiment appends its output to an output file:
+    sth like
+    output_fn = 'sweep_dv_vstim_tauzj%d_preCellWellTuned.dat' % (bcpnn_params['tau_j'])
+"""
 import sys
 import numpy as np
 import pylab
@@ -7,14 +11,19 @@ import matplotlib
 fn = sys.argv[1]
 
 d = np.loadtxt(fn)
+x_axis_idx = 2
+y_axis_idx = 2
+z_axis_idx = 2
+c_axis_idx = 
 
 x_axis = np.around(np.arange(0.05, 0.75, 0.05), decimals=2)
 y_axis = np.zeros(x_axis.size)
 
 for i_, dx in enumerate(x_axis):
     idx_dx = d[:, 0] == dx
+    print 'idx_dx', idx_dx
     d_dx = d[idx_dx, :]
-#    print dx, d_dx.size#, idx_dx
+    print dx, d_dx.size#, idx_dx
     idx_wmax = d_dx[:, 2].argmax()
     tau_zi_wmax = d_dx[idx_wmax, 1]
     print dx, 'tau_zi_wmax:', tau_zi_wmax

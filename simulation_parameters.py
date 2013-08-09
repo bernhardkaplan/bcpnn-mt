@@ -187,7 +187,7 @@ class parameter_storage(object):
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .15, .15
+        self.params['blur_X'], self.params['blur_V'] = .1, 0.1
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -336,10 +336,10 @@ class parameter_storage(object):
         print 'Folder name:', self.params['folder_name']
 
         # in order to NOT re-compute the input spike trains when the stimulus parameters have not changed, do NOT store them in a subfolder of self.params['folder_name']
-        self.params['input_folder'] = "Debug_InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
-                (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
+#        self.params['input_folder'] = "Debug_InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
+#                (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
-#        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
+        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
         self.params['volt_folder'] = "%sVoltageTraces/" % self.params['folder_name']
         self.params['gsyn_folder'] = "%sCondTraces/" % self.params['folder_name']
@@ -429,6 +429,8 @@ class parameter_storage(object):
         # these files receive the output folder when they are create / processed --> more suitable for parameter sweeps
         self.params['xdiff_vs_time_fn'] = 'xdiff_vs_time.dat'
         self.params['vdiff_vs_time_fn'] = 'vdiff_vs_time.dat'
+
+        self.create_folders()
 
     def check_folders(self):
         """
