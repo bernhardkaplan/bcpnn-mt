@@ -1,28 +1,34 @@
+import sys
+import time
 import numpy as np
 import os
-
-#tau_zis = [10, 50, 100, 200, 300, 400, 500, 750]
-#tau_zis += range(1000, 7500, 500)
-
-tau_zis = [10, 100, 250, 500, 1000, 2000, 5000]
+t1 = time.time()
 
 script_name = 'toy_experiment.py'
 
-# sweep dx and tau_zi
-#for dx in np.arange(0.05, 0.75, 0.05):
-#    for tau_zi in tau_zis:
-#        command = 'python %s %d %f' % (script_name, tau_zi, dx)
-#        os.system(command)
-#dvs = np.arange(.0, 1., 0.2)
-dvs = np.array([1])
-
+#tau_zis = [10, 100, 1000, 5000]
+tau_zis = [10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000]
+tau_zjs = [10, 100, 1000]
+tau_es = [10]#, 100, 1000]
+tau_ps = [10000]
+dxs = np.around(np.arange(-.4, .6, .1), decimals=2)
+#dv = 0.3
+dv = float(sys.argv[1])
+v_stims = np.around(np.arange(0.1, 2.2, 0.2), decimals=2)
+#v_stims = [0.1]
+n_runs = len(tau_ps) * len(tau_es) * len(dxs) * len(v_stims) * len(tau_zis) * len(tau_zjs)
 it_cnt = 0 
-#v_stims = np.arange(0.2, 2.0, 0.2)
-v_stims = np.arange(0.1, 2.0, 0.3)
-for v_stim in v_stims:
-    for tau_zi in tau_zis:
-        command = 'python %s %d %f' % (script_name, tau_zi, v_stim)
-        os.system(command)
-        print '\n\nIteration: %d / %d\n' % (it_cnt, len(tau_zis) * dvs.size * v_stims.size)
-#        print '\n\nIteration: %d / %d\n' % (it_cnt, len(tau_zis) * dvs.size * v_stims.size)
-        it_cnt += 1
+for tau_p in tau_ps:
+    for tau_e in tau_es:
+        for tau_zj in tau_zjs:
+            for dx in dxs:
+                for v_stim in v_stims:
+                    for tau_zi in tau_zis:
+                        output_folder = 'TwoCellSweep_tauzj%d_taue%d_taup%d_dv%.1e_dx%.1e/' % (tau_zj, tau_e, tau_p, dv, dx)
+                        command = 'python %s %d %f %f %f %d %d %d %s' % (script_name, tau_zi, v_stim, dx, dv, tau_zj, tau_e, tau_p, output_folder)
+                        print '\n-------------------\n\tIteration: %d / %d\tdv = %.1f\n----------------------\n' % (it_cnt, n_runs, dv)
+                        os.system(command)
+                        it_cnt += 1
+
+t2 = time.time() - t1
+print "Sweep with %d runs took %.2f seconds or %.2f minutes" % (n_runs, t2, t2/60.)

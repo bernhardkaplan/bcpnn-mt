@@ -34,7 +34,6 @@ class ToyExperiment(object):
         self.dv = None
 
 
-
     def run_sim(self, t_sim=None):
 
         # set parameters
@@ -45,17 +44,17 @@ class ToyExperiment(object):
         if self.v_stim == None:
             self.v_stim = .5
         # create two cells with matching or not matching tuning properties
-        x0, y0, u0, v0 = .4, .0, self.v_stim, .0
+        x0, y0, u0, v0 = .5, .0, self.v_stim, .0
         tp_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, u0 + self.dv, v0, .0]])
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, -u0, v0, .0]])
         self.tp_s = np.array(tp_matching)
-        self.mp = [.2, self.v_stim] # choose the motion - parameters for the test stimulus
+        self.mp = [.0, self.v_stim] # choose the motion - parameters for the test stimulus
 
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
         n_stim = 5
-        dt_stim = self.dx / self.v_stim * 1000.# time between cells see the stimulus
+        dt_stim = abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
         t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         # t_z_decay is the time for the z_traces to decay between stimuli
         if t_sim == None:
@@ -71,6 +70,7 @@ class ToyExperiment(object):
         self.input_spiketrains = []
         
         save_input = True
+        self.build_input_filenames()
         load_input = self.check_input_files_exist()
         # get the input signal
         if not load_input:
@@ -78,6 +78,7 @@ class ToyExperiment(object):
             print 'stim_duration:', stim_duration
             print 't_sim:', self.t_sim
             print 'n_stim:', n_stim
+            print 'v_stim:', v_stim
 
             global_time = 0.
             global_time_idx = 0
@@ -105,16 +106,16 @@ class ToyExperiment(object):
             
         else: 
             for i_, gid in enumerate(self.selected_gids):
-                input_fn = self.params['input_st_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                input_fn = self.input_st_fns[i_]
                 self.input_spiketrains.append(np.loadtxt(input_fn))
-                input_fn = self.params['input_rate_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                input_fn = self.input_rate_fns[i_]
                 self.L_input[i_, :] = np.loadtxt(input_fn)
 
         if save_input:
             for i_, gid in enumerate(self.selected_gids):
-                input_fn = self.params['input_st_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                input_fn = self.input_st_fns[i_]
                 np.savetxt(input_fn, self.input_spiketrains[i_])
-                input_fn = self.params['input_rate_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+                input_fn = self.input_rate_fns[i_]
                 np.savetxt(input_fn, self.L_input[i_, :])
         
         # NEST - code 
@@ -180,15 +181,29 @@ class ToyExperiment(object):
 
 
 
+    def build_input_filenames(self):
+        """
+        Build the filenames which should contain the input spiketrains for the cells
+        based on their tuning properties.
+        """
+        self.input_st_fns = []
+        self.input_rate_fns = []
+        for i_, gid in enumerate(self.selected_gids):
+            self.input_st_fns.append('%svstim%.1f_tsim%d_tp%.1f_%.1f.dat' % \
+                (self.params['input_st_fn_base'], self.v_stim, self.t_sim, self.tp_s[i_][0], self.tp_s[i_][2]))
+            self.input_rate_fns.append('%svstim%.1f_tsim%d_tp%.1f_%.1f.dat' % \
+                (self.params['input_rate_fn_base'], self.v_stim, self.t_sim, self.tp_s[i_][0], self.tp_s[i_][2]))
+
+
     def check_input_files_exist(self):
         """
         Returns true if all files exist and can be loaded.
         """
         all_files_exist = np.zeros((self.n_cells, 2))
         for i_, gid in enumerate(self.selected_gids):
-            input_fn = self.params['input_st_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+            input_fn = self.input_st_fns[i_]
             all_files_exist[i_, 0] = os.path.exists(input_fn)
-            input_fn = self.params['input_rate_fn_base'] + '%d_%.1f_tsim%d.dat' % (gid, self.v_stim, self.t_sim)
+            input_fn = self.input_rate_fns[i_]
             all_files_exist[i_, 1] = os.path.exists(input_fn)
 
         n_existing = (all_files_exist == 1).nonzero()[0].size
@@ -252,6 +267,8 @@ class ToyExperiment(object):
         if spike_fn == None:
             fns = utils.get_spike_fns(output_folder, spike_fn_pattern='exc_spikes')
             spike_fn = fns[0]
+
+        print 'DEBUG fns', self.output_folder, spike_fn
         print 'Loading spiketrain from:', self.output_folder + spike_fn
         spike_train = np.loadtxt(self.output_folder + spike_fn)
         if spike_train.size == 0:
@@ -376,7 +393,6 @@ class ToyExperiment(object):
 
 #        ax5.set_xticks([])
 
-
         output_fn = self.params['figures_folder'] + 'traces_tauzi_%04d_dx%.1e_dv%.1e_vstim%.1e.png' % \
                 (self.bcpnn_params['tau_i'], self.dx, self.dv, self.v_stim)
         print 'Saving traces to:', output_fn
@@ -394,37 +410,35 @@ class ToyExperiment(object):
 
 if __name__ == '__main__':
 
-    print '\nPlotting the default parameters give in simulation_parameters.py\n'
+
+
+    tau_zi = float(sys.argv[1])
+    v_stim = float(sys.argv[2])
+    dx = float(sys.argv[3])
+    dv = float(sys.argv[4])
+    tau_zj = float(sys.argv[5])
+    tau_e = float(sys.argv[6])
+    tau_p = float(sys.argv[7])
+    output_folder = os.path.abspath(sys.argv[8]) + '/'
+
+    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
+
+
     import simulation_parameters
     ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
-    output_folder = 'TwoCellSweep/'
     ps.set_filenames(output_folder)
     params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
 
     selected_gids = [0, 1]
 
-#    v_stim = 1.0
-#    tau_zi = 1000.
-
-    tau_zi = float(sys.argv[1])
-    v_stim = float(sys.argv[2])
-#    dx = float(sys.argv[2])
-
-    dv = 0.
-
-    tau_zj = 10.
-    tau_p = 10000.
-    tau_e = 100.
-    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
-
     print 'Selected gids:', selected_gids
     TE = ToyExperiment(params, output_folder, selected_gids, bcpnn_params)
-    TE.dx = .5
+    TE.dx = dx
     TE.dv = dv
     TE.v_stim = v_stim
 
 #    t_sim = TE.dx / v_stim * 1000. * 20.
-#    t_sim = 2000.
+#    t_sim = 1000.
 #    t_sim = 1. * bcpnn_params['tau_p']
     TE.run_sim()#t_sim)
 
@@ -435,12 +449,11 @@ if __name__ == '__main__':
     TE.plot_voltages(ax2)
     TE.get_bcpnn_traces_from_spiketrain()
 
-#    output_fn = 'sweep_test.dat'
-#    output_fn = 'delme.dat'
-#    output_fn =
-    output_fn = 'sweep_dv_vstim_tauzj%d_dx%.1f_preCellWellTuned.dat' % (bcpnn_params['tau_j'], TE.dx)
+    output_fn = '%s/sweep_vstim_tauzj%d_taue%d_dv%.1f.dat' % \
+            (output_folder, bcpnn_params['tau_j'], bcpnn_params['tau_e'], TE.dv)
     f = file(output_fn, 'a')
-    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.4e\t%.1f\n' % (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.w_avg, TE.t_max)
+    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.4e\t%.1f\n' % \
+            (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.w_avg, TE.t_max)
     f.write(str_to_write)
 #    pylab.show()
 
