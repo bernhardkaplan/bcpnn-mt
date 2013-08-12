@@ -34,7 +34,7 @@ colored = True
 
 if (colored):
     color_code_axis = z_axis_idx
-    colorbar_label = '$w_{max}$'
+    colorbar_label = '$w_{avg, end}$'
     code = d[:, color_code_axis]
     min_4d = np.min(code)
     max_4d = np.max(code)
@@ -48,6 +48,7 @@ if (colored):
 else:
     cax = ax.scatter(x_data, y_data, z_data, marker='o')
 
+ax.set_title(fn)
 ax.set_xlabel(x_label, fontsize=24)
 ax.set_ylabel(y_label, fontsize=24)
 ax.set_zlabel(z_label, fontsize=24)
