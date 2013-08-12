@@ -53,8 +53,8 @@ class ToyExperiment(object):
         self.mp = [.0, self.v_stim] # choose the motion - parameters for the test stimulus
 
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
-        n_stim = 5
-        dt_stim = abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
+        n_stim = 8
+        dt_stim = 2 * abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
         t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         # t_z_decay is the time for the z_traces to decay between stimuli
         if t_sim == None:
