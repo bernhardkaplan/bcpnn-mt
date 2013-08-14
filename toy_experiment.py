@@ -34,7 +34,7 @@ class ToyExperiment(object):
         self.dv = None
 
 
-    def run_sim(self, t_sim=None):
+    def run_sim(self, t_sim=None, tp_0=None):
 
         # set parameters
         if self.dx == None:
@@ -43,8 +43,11 @@ class ToyExperiment(object):
             self.dv = 0
         if self.v_stim == None:
             self.v_stim = .5
+        if tp_0 == None:
+            x0, y0, u0, v0 = .5, .0, self.v_stim, .0
+        else:
+            x0, y0, u0, v0 = tp_0[0], .0, tp_0[1], .0
         # create two cells with matching or not matching tuning properties
-        x0, y0, u0, v0 = .5, .0, self.v_stim, .0
         tp_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, u0 + self.dv, v0, .0]])
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
@@ -53,7 +56,7 @@ class ToyExperiment(object):
         self.mp = [.0, self.v_stim] # choose the motion - parameters for the test stimulus
 
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
-        n_stim = 8
+        n_stim = 10
         dt_stim = 2 * abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
         t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         # t_z_decay is the time for the z_traces to decay between stimuli
@@ -63,7 +66,9 @@ class ToyExperiment(object):
             elif (t_z_decay > dt_stim):
                 stim_duration = t_z_decay
             t_sim = n_stim * stim_duration + 1 # +1 to allow odd stim_durations and indexing errors due to rounding
+        self.steps_for_wavg = int(stim_duration / .1)
         print 'Simulating:', t_sim
+        print 'steps fo weight averaging:', self.steps_for_wavg
         self.t_sim = t_sim
         time = np.arange(0, self.t_sim, self.params['dt_rate'])
         self.L_input = np.zeros((self.n_cells, time.size))  # the envelope of the Poisson process
@@ -189,9 +194,9 @@ class ToyExperiment(object):
         self.input_st_fns = []
         self.input_rate_fns = []
         for i_, gid in enumerate(self.selected_gids):
-            self.input_st_fns.append('%svstim%.1f_tsim%d_tp%.1f_%.1f.dat' % \
+            self.input_st_fns.append('%svstim%.2f_tsim%d_tp%.2f_%.2f.dat' % \
                 (self.params['input_st_fn_base'], self.v_stim, self.t_sim, self.tp_s[i_][0], self.tp_s[i_][2]))
-            self.input_rate_fns.append('%svstim%.1f_tsim%d_tp%.1f_%.1f.dat' % \
+            self.input_rate_fns.append('%svstim%.2f_tsim%d_tp%.2f_%.2f.dat' % \
                 (self.params['input_rate_fn_base'], self.v_stim, self.t_sim, self.tp_s[i_][0], self.tp_s[i_][2]))
 
 
@@ -302,19 +307,19 @@ class ToyExperiment(object):
         t_axis = dt * np.arange(zi.size)
 
         # save
-        np.savetxt(self.output_folder + 'w_ij.txt', np.array((t_axis, wij)).transpose() )
-        np.savetxt(self.output_folder + 'bias.txt', np.array((t_axis, bias)).transpose() )
-        np.savetxt(self.output_folder + 'pi.txt', np.array((t_axis, pi)).transpose() )
-        np.savetxt(self.output_folder + 'pj.txt', np.array((t_axis, pj)).transpose() )
-        np.savetxt(self.output_folder + 'pij.txt', np.array((t_axis, pij)).transpose() )
-        np.savetxt(self.output_folder + 'ei.txt', np.array((t_axis, ei)).transpose() )
-        np.savetxt(self.output_folder + 'ej.txt', np.array((t_axis, ej)).transpose() )
-        np.savetxt(self.output_folder + 'eij.txt', np.array((t_axis, eij)).transpose() )
-        np.savetxt(self.output_folder + 'zi.txt', np.array((t_axis, zi)).transpose() )
-        np.savetxt(self.output_folder + 'zj.txt', np.array((t_axis, zj)).transpose() )
+#        np.savetxt(self.output_folder + 'w_ij.txt', np.array((t_axis, wij)).transpose() )
+#        np.savetxt(self.output_folder + 'bias.txt', np.array((t_axis, bias)).transpose() )
+#        np.savetxt(self.output_folder + 'pi.txt', np.array((t_axis, pi)).transpose() )
+#        np.savetxt(self.output_folder + 'pj.txt', np.array((t_axis, pj)).transpose() )
+#        np.savetxt(self.output_folder + 'pij.txt', np.array((t_axis, pij)).transpose() )
+#        np.savetxt(self.output_folder + 'ei.txt', np.array((t_axis, ei)).transpose() )
+#        np.savetxt(self.output_folder + 'ej.txt', np.array((t_axis, ej)).transpose() )
+#        np.savetxt(self.output_folder + 'eij.txt', np.array((t_axis, eij)).transpose() )
+#        np.savetxt(self.output_folder + 'zi.txt', np.array((t_axis, zi)).transpose() )
+#        np.savetxt(self.output_folder + 'zj.txt', np.array((t_axis, zj)).transpose() )
         self.w_end = wij[-1]
         self.w_max = wij.max()
-        self.w_avg = wij[-2000:].mean()
+        self.w_avg = wij[-self.steps_for_wavg:].mean()
         self.t_max = wij.argmax() * dt
         print 'BCPNN offline computation:'
         print '\tw_ij : %.4e\tt_wmax: %d' % (self.w_end, self.t_max)
@@ -419,10 +424,15 @@ if __name__ == '__main__':
     tau_zj = float(sys.argv[5])
     tau_e = float(sys.argv[6])
     tau_p = float(sys.argv[7])
-    output_folder = os.path.abspath(sys.argv[8]) + '/'
+    x0 = float(sys.argv[8])
+    u0 = float(sys.argv[9])
+
+    output_folder = os.path.abspath(sys.argv[10]) + '/'
 
     bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
 
+    output_fn = '%ssweep_tauiz%d_tauzj%d_taue%d_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
+            (output_folder, tau_zi, tau_zj, tau_e, tau_p, x0, u0, v_stim)
 
     import simulation_parameters
     ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
@@ -440,7 +450,7 @@ if __name__ == '__main__':
 #    t_sim = TE.dx / v_stim * 1000. * 20.
 #    t_sim = 1000.
 #    t_sim = 1. * bcpnn_params['tau_p']
-    TE.run_sim()#t_sim)
+    TE.run_sim(tp_0=(x0, u0))#t_sim)
 
     fig1 = pylab.figure()
     ax1 = fig1.add_subplot(211)
@@ -449,10 +459,10 @@ if __name__ == '__main__':
     TE.plot_voltages(ax2)
     TE.get_bcpnn_traces_from_spiketrain()
 
-    output_fn = '%s/sweep_vstim_tauzj%d_taue%d_dv%.1f.dat' % \
-            (output_folder, bcpnn_params['tau_j'], bcpnn_params['tau_e'], TE.dv)
+#    output_fn = '%s/sweep_vstim_tauzj%d_taue%d.dat' % \
+#            (output_folder, bcpnn_params['tau_j'], bcpnn_params['tau_e'], TE.dv)
     f = file(output_fn, 'a')
-    str_to_write = '%.1f\t%.1f\t%.4e\t%.2f\t%.4e\t%.4e\t%.4e\t%.1f\n' % \
+    str_to_write = '%.2f\t%.2f\t%.4e\t%.2f\t%.4e\t%.4e\t%.4e\t%.1f\n' % \
             (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.w_avg, TE.t_max)
     f.write(str_to_write)
 #    pylab.show()
