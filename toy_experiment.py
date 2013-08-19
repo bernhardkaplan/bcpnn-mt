@@ -431,7 +431,7 @@ if __name__ == '__main__':
 
     bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
 
-    output_fn = '%ssweep_tauiz%d_tauzj%d_taue%d_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
+    output_fn = '%sdetailed_sweep_tauiz%d_tauzj%d_taue%d_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
             (output_folder, tau_zi, tau_zj, tau_e, tau_p, x0, u0, v_stim)
 
     import simulation_parameters

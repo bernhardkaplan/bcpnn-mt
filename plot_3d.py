@@ -7,20 +7,22 @@ import matplotlib
 fn = sys.argv[1]
 d = np.loadtxt(fn)
 
-x_axis_idx = 2
-y_axis_idx = 3
+#x_axis_idx = 2
+#y_axis_idx = 3
+#x_label = '$\\tau_{z_i}$'
+#y_label = '$v_{stim}$'
+x_axis_idx = 0
+y_axis_idx = 1
+x_label = '$dx$'
+y_label = '$dv$'
 
 #z_axis_idx = 4 # w_max
 z_axis_idx = 6 # w_avg at the end
 
 x_data = d[:, x_axis_idx]
 y_data = d[:, y_axis_idx]
-#y_data = .5 / d[:, y_axis_idx]
 z_data = d[:, z_axis_idx]
 
-x_label = '$\\tau_{z_i}$'
-y_label = '$v_{stim}$'
-#y_label = 'dt between cells'
 if z_axis_idx == 4:
     z_label = '$w_{max}$'
 elif z_axis_idx == 6:
