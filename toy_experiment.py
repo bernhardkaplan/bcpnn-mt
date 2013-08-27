@@ -305,6 +305,7 @@ class ToyExperiment(object):
         wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, \
                 tau_dict=tau_dict, fmax=fmax, dt=dt)#, initial_value=.1)
         t_axis = dt * np.arange(zi.size)
+        w_avg, bias_avg = Bcpnn.comput
 
         # save
 #        np.savetxt(self.output_folder + 'w_ij.txt', np.array((t_axis, wij)).transpose() )
@@ -391,7 +392,7 @@ class ToyExperiment(object):
 
         ax5.set_yticks([])
         ax5.set_xticks([])
-        ax5.annotate('$v_{stim} = %.1f, v_{0}=%.1f, v_{1}=%.1f$\ndx: %.1f\
+        ax5.annotate('$v_{stim} = %.2f, v_{0}=%.2f, v_{1}=%.1f$\ndx: %.2f\
                 \nWeight max: %.3e\nWeight end: %.3e\nWeight avg: %.3e\nt(w_max): %.1f [ms]' % \
                 (self.v_stim, self.tp_s[0][2], self.tp_s[1][2], self.dx, self.w_max, self.w_end, self.w_avg, \
                 self.t_max * dt), (.1, .1), fontsize=20)
@@ -431,8 +432,10 @@ if __name__ == '__main__':
 
     bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
 
-    output_fn = '%sdetailed_sweep_tauiz%d_tauzj%d_taue%d_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
-            (output_folder, tau_zi, tau_zj, tau_e, tau_p, x0, u0, v_stim)
+#    output_fn = '%sdetailed_sweep_tauiz%d_tauzj%d_taue%d_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
+#            (output_folder, tau_zi, tau_zj, tau_e, tau_p, x0, u0, v_stim)
+    output_fn = '%stauzizje_sweep_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
+            (output_folder, tau_p, x0, u0, v_stim)
 
     import simulation_parameters
     ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
@@ -462,8 +465,10 @@ if __name__ == '__main__':
 #    output_fn = '%s/sweep_vstim_tauzj%d_taue%d.dat' % \
 #            (output_folder, bcpnn_params['tau_j'], bcpnn_params['tau_e'], TE.dv)
     f = file(output_fn, 'a')
-    str_to_write = '%.2f\t%.2f\t%.4e\t%.2f\t%.4e\t%.4e\t%.4e\t%.1f\n' % \
-            (TE.dx, TE.dv, bcpnn_params['tau_i'], v_stim, TE.w_max, TE.w_end, TE.w_avg, TE.t_max)
+                     # 0    1     2    3      4    5      6     7    8     9     10    11
+    str_to_write = '%.2e\t%.2e\t%.2e\t%.1e\t%.1e\t%.1e\t%.1e\t%.1e\t%.4e\t%.4e\t%.4e\t%.1f\n' % \
+            (TE.dx, TE.dv, v_stim, bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'], v_stim, TE.w_max, TE.w_end, TE.w_avg, TE.t_max)
+            # 0        1       2        3                   4                       5                       6                   7           8       9       10          11
     f.write(str_to_write)
 #    pylab.show()
 

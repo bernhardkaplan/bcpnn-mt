@@ -4,21 +4,18 @@ import pylab
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 
-fn = sys.argv[1]
+#fn = sys.argv[1]
+fn = 'TwoCellTauZiZjESweep_taup10000_vstim0.50_prex0.00_u0.50_dx0.50_0.00/tauzizje_sweep_taup10000_x00.00_u00.50_vstim0.50.dat'
 d = np.loadtxt(fn)
 
-x_axis_idx = 2
-y_axis_idx = 3
+ # 0    1     2    3      4         5      6     7          8     9     10    11
+#(dx, dv, v_stim, tau_zi, tau_zj, tau_e, tau_p, v_stim, w_max, w_end, w_avg, t_max)
+x_axis_idx = 3
+y_axis_idx = 4
+z_axis_idx = 5 # w_avg at the end
 x_label = '$\\tau_{z_i}$'
-y_label = '$v_{stim}$'
-#x_axis_idx = 0
-#y_axis_idx = 1
-#x_label = '$dx$'
-#y_label = '$dv$'
-
-#z_axis_idx = 4 # w_max
-z_axis_idx = 6 # w_avg at the end
-
+y_label = '$\\tau_{z_j}$'
+z_label = '$\\tau_{e}$'
 x_data = d[:, x_axis_idx]
 y_data = d[:, y_axis_idx]
 z_data = d[:, z_axis_idx]
@@ -31,11 +28,10 @@ elif z_axis_idx == 6:
 fig = pylab.figure()
 ax = Axes3D(fig)
 
-#colored = False
 colored = True
 
 if (colored):
-    color_code_axis = z_axis_idx
+    color_code_axis = 10
     colorbar_label = '$w_{avg, end}$'
     code = d[:, color_code_axis]
     min_4d = np.min(code)

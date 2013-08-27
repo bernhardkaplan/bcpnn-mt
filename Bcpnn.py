@@ -1,7 +1,6 @@
 import numpy as np
 import utils
 import time
-from NeuroTools import signals as nts
 
 
 def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=None):
@@ -32,6 +31,8 @@ def bcpnn_offline_noColumns(params, conn_list, sim_cnt=0, save_all=False, comm=N
     my_conns = [(conn_list[i, 0], conn_list[i, 1], conn_list[i, 2], conn_list[i, 3]) for i in xrange(min_id, max_id)]
 
     fn = params['exc_spiketimes_fn_merged'] + str(sim_cnt) + '.ras'
+    nts = None
+    # TODO: write the code for loading the spike list
     spklist = nts.load_spikelist(fn)#, range(params['n_exc_per_mc']), t_start=0, t_stop=params['t_sim'])
     spiketrains = spklist.spiketrains
 
@@ -209,6 +210,123 @@ def compute_pij_new(zi, zj, pi, pj, eij, pij, wij, bias, tau_eij, tau_pij, get_t
         return pij[-1], wij[-1], bias[-1]
 
 
+def compute_bcpnn_in_place(st_pre, st_post, tau_dict, dt, fmax, tmax, save_interval):
+    """
+    Instead of operating on possibly long initially empty traces,
+    filling them with values and returning them to store them to disk,
+    this function computes the bcpnn traces iteratively and stores 
+    values only periodically at a certain interval.
+    Keyword arguments:
+    st_pre -- array or list storing the presynaptic spikes
+    st_post -- array or list storing the postsynaptic spikes
+    tau_dict -- dictionary containing the time constants for the bcpnn learning rule
+    dt -- time step for computing the traces
+    fmax -- assumed maximimum rate for bcpnn spike trace, determines height of the z-traces
+    save_interval -- time step interval in ms at which the values are stored
+    """
+
+    if type(st_pre) != type(np.array(1)):
+        st_pre = np.array(st_pre)
+    if type(st_post) != type(np.array(1)):
+        st_post = np.array(st_post)
+    n_intervals = tmax / save_interval
+    n_steps_per_interval = int(save_interval / dt)
+
+    spike_width = 1. / dt
+    eps = dt / tau_dict['tau_pi']
+    initial_value = eps
+    # trace buffers for saving
+    zi = np.ones(n_intervals) * initial_value
+    zj = np.ones(n_intervals) * initial_value
+    eij = np.ones(n_intervals) * initial_value**2
+    ei = np.ones(n_intervals) * initial_value
+    ej = np.ones(n_intervals) * initial_value
+    pi = np.ones(n_intervals) * initial_value
+    pj = np.ones(n_intervals) * initial_value
+    pij = np.ones(n_intervals) * initial_value**2
+    wij = np.ones(n_intervals)  *  np.log(pij[0] / (pi[0] * pj[0]))
+    bias = np.ones(n_intervals) * np.log(initial_value)
+    spike_height = 1000. / fmax
+    
+    # trace buffers for computation
+    interval_si = np.zeros(n_steps_per_interval) # the spike traces created from the spike train, pre
+    interval_sj = np.zeros(n_steps_per_interval) # post
+    interval_zi = np.ones(n_steps_per_interval) * initial_value
+    interval_zj = np.ones(n_steps_per_interval) * initial_value
+    interval_eij = np.ones(n_steps_per_interval) * initial_value**2
+    interval_ei = np.ones(n_steps_per_interval) * initial_value
+    interval_ej = np.ones(n_steps_per_interval) * initial_value
+    interval_pi = np.ones(n_steps_per_interval) * initial_value
+    interval_pj = np.ones(n_steps_per_interval) * initial_value
+    interval_pij = np.ones(n_steps_per_interval) * initial_value**2
+    interval_wij = np.ones(n_steps_per_interval)  *  np.log(pij[0] / (pi[0] * pj[0]))
+    interval_bias = np.ones(n_steps_per_interval) * np.log(initial_value)
+
+    # Spike train:
+    #  |         |   |
+    #  t1       t2  t3
+    # Spike traces (the z-traces converge to these):
+    #  ||||      |||||||||
+    # Intervals for storing the traces
+    # +     +     +     + 
+    for i_interval in xrange(0, n_intervals):
+        # create the spike trace from the spike train
+        # the spike trace is a binary trace (either 0 or spike_height)
+        # the spike trace has for spike_width / dt steps the value 1000. / fmax
+
+        t_interval_start = n_steps_per_interval * dt
+        t_interval_stop = (n_steps_per_interval + 1) * dt
+        pre_spikes_in_interval = st_pre[(st_pre > t_interval_start) == (st_pre < t_interval_stop)]
+        post_spikes_in_interval = st_post[(st_post > t_interval_start) == (st_post < t_interval_stop)]
+        if pre_spikes_in_intervals.size == 0:
+            # Since nothinh happens on the pre-synaptic side, 
+            # compute exact solution for the traces
+        for i_ in xrange(1, n_steps_per_interval):
+
+    for i in xrange(1, n):
+        # pre-synaptic trace zi follows si
+        dzi = dt * (si[i] * spike_height - zi[i-1] + eps) / tau_dict['tau_zi']
+        zi[i] = zi[i-1] + dzi
+
+        # post-synaptic trace zj follows sj
+        dzj = dt * (sj[i] * spike_height - zj[i-1] + eps) / tau_dict['tau_zj']
+        zj[i] = zj[i-1] + dzj
+
+        # pre-synaptic trace zi follows zi
+        dei = dt * (zi[i] - ei[i-1]) / tau_dict['tau_ei']
+        ei[i] = ei[i-1] + dei
+
+        # post-synaptic trace ej follows zj
+        dej = dt * (zj[i] - ej[i-1]) / tau_dict['tau_ej']
+        ej[i] = ej[i-1] + dej
+
+        # joint eij follows zi * zj
+        deij = dt * (zi[i] * zj[i] - eij[i-1]) / tau_dict['tau_eij']
+        eij[i] = eij[i-1] + deij
+
+        # pre-synaptic probability pi follows zi
+        dpi = dt * (ei[i] - pi[i-1]) / tau_dict['tau_pi']
+        pi[i] = pi[i-1] + dpi
+
+        # post-synaptic probability pj follows ej
+        dpj = dt * (ej[i] - pj[i-1]) / tau_dict['tau_pj']
+        pj[i] = pj[i-1] + dpj
+
+        # joint probability pij follows e_ij
+        dpij = dt * (eij[i] - pij[i-1]) / tau_dict['tau_pij']
+        pij[i] = pij[i-1] + dpij
+
+        # weights
+        wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
+
+        # bias
+        bias[i] = np.log(pj[i])
+
+    return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
+
+
+
+
 def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
         tau_dict=None, dt=1., fmax=1000.):
 #        tau_dict=None, dt=1., fmax=1000., initial_value=0.01):#, eps=1e-6):
@@ -230,8 +348,6 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
 #   TODO:
 #        return get_spiking_weight_and_bias_binned(pre_spikes, post_spikes, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, eps=1e-2)
 
-    eps = dt / tau_dict['tau_pi']
-    initial_value = eps
 
     n = len(pre_trace)
     si = pre_trace      # spiking activity (spikes have a width and a height)
