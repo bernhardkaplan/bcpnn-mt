@@ -305,7 +305,7 @@ class ToyExperiment(object):
         wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, \
                 tau_dict=tau_dict, fmax=fmax, dt=dt)#, initial_value=.1)
         t_axis = dt * np.arange(zi.size)
-        w_avg, bias_avg = Bcpnn.comput
+#        w_avg, bias_avg = Bcpnn.comput
 
         # save
 #        np.savetxt(self.output_folder + 'w_ij.txt', np.array((t_axis, wij)).transpose() )

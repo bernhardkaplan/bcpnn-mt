@@ -14,13 +14,14 @@ tau_zis = [10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000]
 tau_zjs = [10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000]
 #tau_zjs = [1000]
 tau_es = [10, 100, 500, 1000, 2500, 5000]
-tau_ps = [10000]
+#tau_ps = [10000]
+tau_ps = [50000, 100000]
 dxs = [.5]
 #dxs = np.around(np.arange(.5, -.2, -.05), decimals=2)
 dvs = [.0]
 #dvs = np.around(np.arange(.0, .16, .02), decimals=2)
 #v_stims = np.around(np.arange(0.1, 2.00, 0.05), decimals=2)
-v_stims = [1.5]
+v_stims = [0.5]
 #v_stims = [0.1]
 n_runs = len(tau_ps) * len(tau_es) * len(dxs) * len(v_stims) * len(tau_zis) * len(tau_zjs) * len(dvs)
 it_cnt = 0 

@@ -281,7 +281,8 @@ def compute_bcpnn_in_place(st_pre, st_post, tau_dict, dt, fmax, tmax, save_inter
         if pre_spikes_in_intervals.size == 0:
             # Since nothinh happens on the pre-synaptic side, 
             # compute exact solution for the traces
-        for i_ in xrange(1, n_steps_per_interval):
+            pass
+#        for i_ in xrange(1, n_steps_per_interval):
 
     for i in xrange(1, n):
         # pre-synaptic trace zi follows si
@@ -328,8 +329,8 @@ def compute_bcpnn_in_place(st_pre, st_post, tau_dict, dt, fmax, tmax, save_inter
 
 
 def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
-        tau_dict=None, dt=1., fmax=1000.):
-#        tau_dict=None, dt=1., fmax=1000., initial_value=0.01):#, eps=1e-6):
+        tau_dict=None, dt=1., fmax=1000., initial_value=0.01, eps=1e-6):
+#        tau_dict=None, dt=1., fmax=1000.):
     """
     Arguments:
         pre_trace, post_trace: pre-synaptic activity (0 means no spike, 1 means spike) (not spike trains!)
