@@ -1,12 +1,12 @@
-
 import numpy as np
 import numpy.random as nprnd
 import sys
 import os
 import utils
 import nest
-import CreateStimuli
 import json
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 import re
 import Bcpnn
@@ -58,7 +58,8 @@ class ToyExperiment(object):
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
         n_stim = 10
         dt_stim = 2 * abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
-        t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
+#        t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
+        t_z_decay = 8 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         # t_z_decay is the time for the z_traces to decay between stimuli
         if t_sim == None:
             if (t_z_decay < dt_stim):
@@ -392,15 +393,15 @@ class ToyExperiment(object):
 
         ax5.set_yticks([])
         ax5.set_xticks([])
-        ax5.annotate('$v_{stim} = %.2f, v_{0}=%.2f, v_{1}=%.1f$\ndx: %.2f\
+        ax5.annotate('$v_{stim} = %.2f, v_{0}=%.2f, v_{1}=%.2f$\ndx: %.2f\
                 \nWeight max: %.3e\nWeight end: %.3e\nWeight avg: %.3e\nt(w_max): %.1f [ms]' % \
                 (self.v_stim, self.tp_s[0][2], self.tp_s[1][2], self.dx, self.w_max, self.w_end, self.w_avg, \
                 self.t_max * dt), (.1, .1), fontsize=20)
 
 #        ax5.set_xticks([])
 
-        output_fn = self.params['figures_folder'] + 'traces_tauzi_%04d_dx%.1e_dv%.1e_vstim%.1e.png' % \
-                (self.bcpnn_params['tau_i'], self.dx, self.dv, self.v_stim)
+        output_fn = self.params['figures_folder'] + 'traces_tauzi_%04d_tauzj%04d_taue%d_taup%d_dx%.2e_dv%.2e_vstim%.1e.png' % \
+                (self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j'], self.bcpnn_params['tau_e'], self.bcpnn_params['tau_p'], self.dx, self.dv, self.v_stim)
         print 'Saving traces to:', output_fn
         pylab.savefig(output_fn)
 

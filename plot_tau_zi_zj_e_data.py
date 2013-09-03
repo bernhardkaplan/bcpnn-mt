@@ -5,7 +5,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 
 #fn = sys.argv[1]
-fn = 'TwoCellTauZiZjESweep_taup10000_vstim0.50_prex0.00_u0.50_dx0.50_0.00/tauzizje_sweep_taup10000_x00.00_u00.50_vstim0.50.dat'
+#fn = 'TwoCellTauZiZjESweep_taup10000_vstim0.50_prex0.00_u0.50_dx0.50_0.00/tauzizje_sweep_taup10000_x00.00_u00.50_vstim0.50.dat'
+fn = 'TwoCellTauZiZjESweep_taup50000_vstim0.50_prex0.00_u0.50_dx0.50_0.00/tauzizje_sweep_taup50000_x00.00_u00.50_vstim0.50.dat'
 d = np.loadtxt(fn)
 
  # 0    1     2    3      4         5      6     7          8     9     10    11
@@ -46,7 +47,7 @@ if (colored):
 else:
     cax = ax.scatter(x_data, y_data, z_data, marker='o')
 
-ax.set_title(fn)
+#ax.set_title(fn)
 ax.set_xlabel(x_label, fontsize=24)
 ax.set_ylabel(y_label, fontsize=24)
 ax.set_zlabel(z_label, fontsize=24)

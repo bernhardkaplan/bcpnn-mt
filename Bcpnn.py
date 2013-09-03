@@ -279,9 +279,9 @@ def compute_bcpnn_in_place(st_pre, st_post, tau_dict, dt, fmax, tmax, save_inter
         pre_spikes_in_interval = st_pre[(st_pre > t_interval_start) == (st_pre < t_interval_stop)]
         post_spikes_in_interval = st_post[(st_post > t_interval_start) == (st_post < t_interval_stop)]
         if pre_spikes_in_intervals.size == 0:
+            pass
             # Since nothinh happens on the pre-synaptic side, 
             # compute exact solution for the traces
-            pass
 #        for i_ in xrange(1, n_steps_per_interval):
 
     for i in xrange(1, n):

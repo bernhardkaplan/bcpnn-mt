@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import pylab
-from matplotlib import animation
+#matplotlib.use('Agg')
 
 
 class CreateStimuli(object):
