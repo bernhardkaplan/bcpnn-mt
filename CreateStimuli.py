@@ -74,10 +74,10 @@ class CreateStimuli(object):
 
         # create stimulus ranges
         if params['log_scale']==1:
-            speeds = np.linspace(params['v_min_training'], params['v_max_training'], num=params['N_V'], endpoint=True)
+            speeds = np.linspace(params['v_min_training'], params['v_max_training'], num=params['n_v'], endpoint=True)
         else:
             speeds = np.logspace(np.log(params['v_min_training'])/np.log(params['log_scale']),
-                            np.log(params['v_max_training'])/np.log(params['log_scale']), num=params['N_V'],
+                            np.log(params['v_max_training'])/np.log(params['log_scale']), num=params['n_v'],
                             endpoint=True, base=params['log_scale'])
         thetas = np.linspace(0, 2 * np.pi, n_theta, endpoint=False)
 
@@ -197,8 +197,10 @@ if __name__ == '__main__':
     ax.plot([0, 0], [1, 0], 'k--', lw=3)
 
     all_speeds, all_starting_pos, all_thetas = CS.get_motion_params(random_order)
-    stim_start = CS.n_stim_per_direction * 8
-    stim_stop = CS.n_stim_per_direction * (9 + 1)
+    stim_start = 0
+    stim_stop = params['n_training_stim']
+#    stim_start = CS.n_stim_per_direction * 8
+#    stim_stop = CS.n_stim_per_direction * (9 + 1)
     for stim_id in xrange(stim_start, stim_stop):
         theta = all_thetas[stim_id]
         v = 5 * all_speeds[stim_id]
