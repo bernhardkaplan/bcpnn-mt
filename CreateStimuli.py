@@ -6,6 +6,7 @@ import pylab
 
 class CreateStimuli(object):
     def __init__(self):
+        self.stimuli_created = False
         pass
 
 
@@ -15,12 +16,13 @@ class CreateStimuli(object):
         Keyword arguments:
         random_order -- (bool) if True the sequence is shuffled
         """
-        n_speeds = params['n_speeds']
-        n_cycles = params['n_cycles']
-        n_stim_per_speed = params['n_stim_per_direction']  # direction = speed in 1-D
-        n_stim_total = params['n_training_stim']  # = n_cycles * n_speeds * n_stim_per_direction
-        pos_speed_sequence = np.zeros((n_stim_total, 2))
+        self.n_stim_per_direction = params['n_stim_per_direction']  # direction = speed in 1-D
+        self.n_stim_total = params['n_training_stim']  # = n_cycles * n_speeds * n_stim_per_direction
         
+        # arrays to be filled by the stimulus creation loops below
+        self.all_speeds = np.zeros(self.n_stim_total)
+        self.all_thetas = np.zeros(self.n_stim_total)
+        self.all_starting_pos = np.zeros((self.n_stim_total, 2))
 
         import numpy.random as rnd
         rnd.seed(params['stimuli_seed'])
@@ -35,21 +37,24 @@ class CreateStimuli(object):
                             endpoint=True, base=params['log_scale'])
 
         stim_cnt = 0
-        for cycle in xrange(n_cycles):
+        for cycle in xrange(params['n_cycles']):
             for i_speed, speed in enumerate(speeds):
-                for i_ in xrange(n_stim_per_speed):
+                for i_ in xrange(self.n_stim_per_direction):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
 #                    v0 *= 2. * (-.5 + np.random.randint(0, 2) % 2) # random flip of pos / neg x-direction
                     x0 = np.random.rand() # select a random start point
-                    pos_speed_sequence[stim_cnt, 0] = x0
-                    pos_speed_sequence[stim_cnt, 1] = v0
+                    self.all_starting_pos[stim_cnt, 0] = x0
+                    self.all_starting_pos[stim_cnt, 1] = float(stim_cnt ) / self.n_stim_total
+                    self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
 
-        stim_order = range(n_stim_total)
+        stim_order = range(self.n_stim_total)
         if random_order:
             random.shuffle(stim_order)
-        return pos_speed_sequence[stim_order, :]
+        self.stimuli_created = True
+        return np.array((self.all_starting_pos[stim_order], self.all_starting_pos[stim_order]))
+#        return pos_speed_sequence[stim_order, :]
 
 
 
@@ -61,7 +66,7 @@ class CreateStimuli(object):
         random_order -- (bool) if True the sequence is shuffled
         """
 
-        n_theta = params['n_theta']
+        n_theta = params['n_theta_training']
         n_speeds = params['n_speeds']
         n_cycles = params['n_cycles']
         self.n_stim_per_direction = params['n_stim_per_direction']
@@ -166,6 +171,8 @@ class CreateStimuli(object):
                         rnd_rotation = params['sigma_theta_training'] * (np.random.rand() - .5)
                         self.all_thetas[stim_cnt] = theta + rnd_rotation
                         stim_cnt += 1
+        self.stimuli_created = True
+
 
     def get_motion_params(self, random_order=False):
 
@@ -182,12 +189,15 @@ if __name__ == '__main__':
 
     random_order = False
     CS = CreateStimuli()
-    CS.create_motion_sequence_2D(params, random_order)
+
+    if params['n_grid_dimensions'] == 1:
+        CS.create_motion_sequence_1D(params, random_order)
+    else:
+        CS.create_motion_sequence_2D(params, random_order)
+
 
     fig = pylab.figure()
     ax = fig.add_subplot(111)
-    ax.set_xlim((-0.2, 1.2))
-    ax.set_ylim((-0.2, 1.2))
     color_list = ['k', 'b', 'g', 'r', 'y', 'c', 'm', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
 
     #init_rect
@@ -196,6 +206,8 @@ if __name__ == '__main__':
     ax.plot([1, 0], [1, 1], 'k--', lw=3)
     ax.plot([0, 0], [1, 0], 'k--', lw=3)
 
+    x_max, y_max = 0, 0
+    x_min, y_min = 0, 0
     all_speeds, all_starting_pos, all_thetas = CS.get_motion_params(random_order)
     stim_start = 0
     stim_stop = params['n_training_stim']
@@ -206,10 +218,25 @@ if __name__ == '__main__':
         v = 5 * all_speeds[stim_id]
         vx, vy = v * np.cos(theta), - v * np.sin(theta)
         x0, y0 = all_starting_pos[stim_id, :]
-        print 'debug stim_id %d' % stim_id, x0, y0
+        print 'debug stim_id %d x0=%.3f  y0=%.3f  vx=%.3f  vy=%.3f' % (stim_id, x0, y0, vx, vy)
         x_pos = x0 + vx
         y_pos = y0 + vy
-        color_idx = stim_id / CS.n_stim_per_direction
-        ax.plot([x0, x_pos], [y0, y_pos], color=color_list[color_idx], lw=2)
+        color_idx = (stim_id / CS.n_stim_per_direction) % len(color_list)
+        x_max = max(x_pos, x_max)
+        y_max = max(y_pos, y_max)
+        x_min = min(x_pos, x_min)
+        y_min = min(y_pos, y_min)
 
+#        ax.plot([x0, x_pos], [y0, y_pos], color=color_list[color_idx], lw=2)
+#        ax.plot([x0, x_pos], [y0, y_pos], color=color_list[color_idx], lw=2)
+        scale = 1.
+        ax.quiver(x0, y0, vx, vy, \
+              angles='xy', scale_units='xy', scale=scale, color=color_list[color_idx], headwidth=4, pivot='middle', width=0.007)
+#        ax.plot([x0, x_pos], [y0, y_pos], color=color_list[color_idx], lw=2)
+
+    
+    ax.set_xlim((x_min, x_max))
+    ax.set_ylim((y_min, y_max))
+#    ax.set_xlim((-0.2, 1.2))
+#    ax.set_ylim((-0.2, 1.2))
     pylab.show()

@@ -206,9 +206,11 @@ class parameter_storage(object):
         self.params['v_noise_training'] = 0.10 # percentage of noise for each individual training speed
         self.params['n_cycles'] = 1   # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = 5 # how many different speeds are trained per cycle
+        self.params['n_theta_training'] = self.params['n_theta']
+
         # is one speed is trained, it is presented starting from on this number of different locations
         self.params['n_stim_per_direction'] = 3
-        self.params['n_training_stim'] = self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
+        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
