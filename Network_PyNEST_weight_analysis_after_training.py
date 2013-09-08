@@ -30,14 +30,40 @@ class WeightAnalyser(object):
         return fns
                 
         
-    def plot_weights(self):
+    def load_weights(self):
 
         fns = self.get_filenames()
 
+        self.adj_list = {}
         for fn in fns:
             f = file(fn, 'r')
             d = json.load(f)
-            tgt_gids = d.keys()
+            self.adj_list.update(d)
+
+
+    def get_weights_to_cell(self, tgt_gid):
+
+        print 'Cells projecting to tgt:', tgt_gid
+        d = np.array(self.adj_list[str(tgt_gid)])
+        src_gids = d[:, 0] # source gids projecting to the gid
+
+
+    def get_weight(self, src_gid, tgt_gid):
+
+        if self.adj_list.has_key(str(tgt_gid)):
+            d = np.array(self.adj_list[str(tgt_gid)])
+        else:
+            print 'Could not find tgt_gid %d in the connection files' % (tgt_gid)
+            return False
+        src_gids = d[:, 0] # source gids projecting to the gid
+        idx = (src_gid == src_gids).nonzero()[0]
+        if len(idx) > 0:
+            w = d[(src_gid == src_gids).nonzero()[0], 1]
+            print 'w (%d - %d) = %f' % (src_gid, tgt_gid, w)
+            return w
+        else:
+            print 'Could not find a projection from %d to %d in the connection files' % (src_gid, tgt_gid)
+            return False
 #            for tgt in tgt_gids:
 
 
@@ -62,4 +88,9 @@ if __name__ == '__main__':
         params = param_tool.params
 
     WA = WeightAnalyser(params)
-    WA.plot_weights()
+    WA.load_weights()
+#    WA.get_weights_to_cell(201)
+    WA.get_weight(201, 203)
+    WA.get_weight(201, 13201928)
+    WA.get_weight(13201928, 201)
+

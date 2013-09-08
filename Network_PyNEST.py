@@ -7,7 +7,6 @@ on the cluster:
 
 """
 import time
-times = {}
 t0 = time.time()
 import numpy as np
 import numpy.random as nprnd
@@ -21,7 +20,6 @@ params = ps.params
 import nest
 import CreateStimuli
 import json
-times['time_to_import'] = time.time() - t0
 
 
 class NetworkModel(object):
@@ -32,9 +30,10 @@ class NetworkModel(object):
         self.debug_connectivity = True
         self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
         self.iteration = 0  # the learning iteration (cycle)
+        self.times = {}
 
 
-    def setup(self, load_tuning_prop=False, times={}):
+    def setup(self, load_tuning_prop=False):
 
         self.projections = {}
         self.projections['ee'] = []
@@ -53,11 +52,6 @@ class NetworkModel(object):
             print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
             np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
-#        from pyNN.utility import Timer
-#        self.timer = Timer()
-#        self.timer.start()
-#        self.times = times
-#        self.times['t_all'] = 0
         # # # # # # # # # # # #
         #     S E T U P       #
         # # # # # # # # # # # #
@@ -353,6 +347,7 @@ class NetworkModel(object):
         Saves the weights as adjacency lists (TARGET = Key) as dictionaries to file.
         """
 
+        t_start = time.time()
         print 'NetworkModel.get_weights_after_learning_cycle ...'
         n_my_conns = 0
         my_units = np.array(self.local_idx_exc)[:, 0] # !GIDs are 1-aligned!
@@ -378,14 +373,14 @@ class NetworkModel(object):
                                 my_adj_list[c[1]].append((c[0], cp[0]['weight']))
                         n_my_conns += len(conns)
 
-
-
-#        print 'Proc %d holds connections' % self.pc_id, my_adj_list
         print 'Proc %d holds %d connections' % (self.pc_id, n_my_conns)
         output_fn = self.params['conn_mat_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
         print 'Saving connection list to: ', output_fn
         f = file(output_fn, 'w')
-        json.dump(my_adj_list, f, indent=0)
+        json.dump(my_adj_list, f, indent=0, ensure_ascii=False)
+
+        t_stop = time.time()
+        self.times['t_get_weights'] = t_stop - t_start
 
 
 
@@ -699,6 +694,7 @@ class NetworkModel(object):
     #    inh_inh_prj.saveConnections(self.params['conn_list_ii_fn'])
     #    self.times['t_save_conns'] = self.timer.diff()
 
+        t_start = time.time()
               
         if record_v:
             mp_r = np.array(self.params['motion_params'])
@@ -734,7 +730,8 @@ class NetworkModel(object):
         if self.pc_id == 0:
             print "Running simulation ... "
         nest.Simulate(self.params['t_sim'])
-#        self.times['t_sim'] = self.timer.diff()
+        t_stop = time.time()
+        self.times['t_sim'] = t_stop - t_start
 
 
     def print_v(self, fn, multimeter):
@@ -762,14 +759,17 @@ class NetworkModel(object):
             d[:, 0] = time[idx]
         np.savetxt(fn, d)
 
+    def print_times(self):
+        fn_out = self.params['tmp_folder'] + 'times.json'
+        f = file(fn_out, 'w')
+        json.dump(self.times, f, indent=0, ensure_ascii=True)
+
+         
+
 
 if __name__ == '__main__':
 
     t_0 = time.time()
-#    orientation = float(sys.argv[1])
-#    protocol = str(sys.argv[2])
-#    ps.params['motion_params'][4] = orientation
-#    ps.params['motion_protocol'] = protocol
 
     # always call set_filenames to update the folder name and all depending filenames!
     ps.set_filenames()
@@ -778,38 +778,26 @@ if __name__ == '__main__':
     ps.write_parameters_to_file()
 
     sim_cnt = 0
-    max_neurons_to_record = 15800
-    input_created = True
-    load_files = input_created
+    load_files = True
     record = True
     save_input_files = not load_files
 
     NM = NetworkModel(ps.params, iteration=0)
 
-    NM.setup(times=times)
+    NM.setup()
 
-    NM.create(input_created)
+    NM.create(load_files)
 
-    if not input_created:
+    if not load_files:
         spike_times_container = NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=False)
-        input_created = True # this can be set True ONLY if the parameter does not affect the input i.e. set this to false when sweeping f_max_stim, or blur_X/V!
     else:
         NM.load_input()
     NM.connect()
     NM.run_sim(sim_cnt, record_v=record)
     NM.get_weights_after_learning_cycle()
+    NM.print_times()
 
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
-
-#    if comm != None:
-#        comm.Barrier()
-
-#    if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
-#        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-#        import plot_prediction as pp
-#        pp.plot_prediction(params)
-#    if comm != None:
-#        comm.Barrier()
 
