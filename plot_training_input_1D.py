@@ -34,16 +34,18 @@ class TrainingInputPlotter(object):
         n_stim = self.motion_params[:, 0].size
         mp = np.zeros((n_stim, 4))
         for i in xrange(n_stim):
-            mp[i, 0], mp[i, 2] = self.motion_params[i, :]
+#            mp[i, 0], mp[i, 1], mp[i, 2] = self.motion_params[i, :]
+            mp[i, :] = self.motion_params[i, :]
             mp[i, 1] = i
             print 'debug', i, mp[i, :]
-            ax.annotate('(%.2f, %.2f)' % (mp[i, 0], mp[i, 2]), (mp[i, 0] - .1, mp[i, 1] + .2))
+            ax.annotate('(%.2f, %.2f)' % (mp[i, 0], mp[i, 2]), (max(0, mp[i, 0] - .1), mp[i, 1] + .2))
         
         ax.quiver(mp[:, 0], mp[:, 1], mp[:, 2], mp[:, 3], \
                   angles='xy', scale_units='xy', scale=1, headwidth=4, pivot='tail')#, width=0.007)
 
         xmax = mp[np.argmax(mp[:, 0] + mp[:, 2]), 0] + mp[np.argmax(mp[:, 0] + mp[:, 2]), 2] 
-        xmin = mp[np.argmin(mp[:, 0] + mp[:, 2]), 0] + mp[np.argmin(mp[:, 0] + mp[:, 2]), 2] 
+        xmin = min(np.min(mp[:, 0]), 0)
+#        xmin = mp[np.argmin(mp[:, 0] + mp[:, 2]), 0] + mp[np.argmin(mp[:, 0] + mp[:, 2]), 2] 
 #        ax.set_xlim((mp[:, 0].min() + mp[mp[:, 0].argmin(), 2] * 1.1, mp[:, 0].max() + mp[mp[:, 0].argmax(), 2] * 1.1))
         ax.set_xlim((xmin, xmax))
         ax.set_ylim((-.5, n_stim + .5))
@@ -61,10 +63,11 @@ class TrainingInputPlotter(object):
         ax1 = fig.add_subplot(2, 1, 1)
         ax2 = fig.add_subplot(2, 1, 2)
 
-        ax1.set_title('Tuning and input into example cells')
+        ax1.set_title('Tuning properties of example cells')
         ax1.set_xlabel('Cell x-pos')
         ax1.set_ylabel('GID')
 
+        ax2.set_title('Input into example cells')
         ax2.set_xlabel('Time [ms]')
         ax2.set_ylabel('Input rate [Hz]')
 
@@ -147,7 +150,7 @@ if __name__ == '__main__':
                 'ytick.labelsize' : 16, 
                 'axes.titlesize'  : 20,
                 'legend.fontsize': 9, 
-                'figure.subplot.hspace': .3, 
+                'figure.subplot.hspace': .4, 
                 'lines.markeredgewidth' : 0}
     pylab.rcParams.update(rcParams)
 

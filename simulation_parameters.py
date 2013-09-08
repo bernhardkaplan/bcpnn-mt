@@ -240,7 +240,7 @@ class parameter_storage(object):
         # INPUT
         # ######
         self.params['f_max_stim'] = 5000.       # [Hz]
-        self.params['w_input_exc'] = 5.0e-3     # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 1.5e-2     # [uS] mean value for input stimulus ---< exc_units (columns
         if self.params['use_pynest']:
             self.params['w_input_exc'] *= 1000. # [uS] --> [nS] Nest expects nS
 
@@ -314,11 +314,11 @@ class parameter_storage(object):
 #                folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
 #            else:
 #               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
+#            folder_name = 'Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
+#            folder_name += connectivity_code
+#            folder_name += '-'+ self.params['motion_type']
+            folder_name = 'WorkInProgress/'
 
-#            folder_name = 'Plasticity/Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
-            folder_name = 'Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
-            folder_name += connectivity_code
-            folder_name += '-'+ self.params['motion_type']
 
             folder_name += '/'
 
@@ -330,7 +330,6 @@ class parameter_storage(object):
             self.params['folder_name'] = folder_name
         else:
             self.params['folder_name'] = folder_name
-        print 'Folder name:', self.params['folder_name']
 
 
     def set_filenames(self, folder_name=None):
@@ -341,7 +340,8 @@ class parameter_storage(object):
         # in order to NOT re-compute the input spike trains when the stimulus parameters have not changed, do NOT store them in a subfolder of self.params['folder_name']
 #        self.params['input_folder'] = "Debug_InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
 #                (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
-        self.params['input_folder'] = "TwoCellInputSpikeTrains/" # folder containing the input spike trains for the network generated from a certain stimulus
+#        self.params['input_folder'] = "TwoCellInputSpikeTrains/" # folder containing the input spike trains for the network generated from a certain stimulus
+        self.params['input_folder'] = "InputForNetworkTests/" # folder containing the input spike trains for the network generated from a certain stimulus
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
@@ -482,7 +482,7 @@ class parameter_storage(object):
             fn = self.params['params_fn_json']
         print 'Writing parameters to: %s' % (fn)
         output_file = file(self.params['params_fn_json'], 'w')
-        d = json.dump(self.params, output_file)
+        d = json.dump(self.params, output_file, indent=0)
 
 
 class ParameterContainer(parameter_storage):

@@ -45,7 +45,7 @@ class CreateStimuli(object):
 #                    v0 *= 2. * (-.5 + np.random.randint(0, 2) % 2) # random flip of pos / neg x-direction
                     x0 = np.random.rand() # select a random start point
                     self.all_starting_pos[stim_cnt, 0] = x0
-                    self.all_starting_pos[stim_cnt, 1] = float(stim_cnt ) / self.n_stim_total
+#                    self.all_starting_pos[stim_cnt, 1] = float(stim_cnt ) / self.n_stim_total
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
 
@@ -53,7 +53,11 @@ class CreateStimuli(object):
         if random_order:
             random.shuffle(stim_order)
         self.stimuli_created = True
-        return np.array((self.all_starting_pos[stim_order], self.all_starting_pos[stim_order]))
+        stim_params = np.zeros((self.n_stim_total, 4))
+        stim_params[:, 0] = self.all_starting_pos[stim_order, 0]
+        stim_params[:, 1] = self.all_starting_pos[stim_order, 1]
+        stim_params[:, 2] = self.all_speeds[stim_order]
+        return stim_params
 #        return pos_speed_sequence[stim_order, :]
 
 
@@ -218,9 +222,12 @@ if __name__ == '__main__':
         v = 5 * all_speeds[stim_id]
         vx, vy = v * np.cos(theta), - v * np.sin(theta)
         x0, y0 = all_starting_pos[stim_id, :]
+        if params['n_grid_dimensions'] == 1: # for visibility reasons
+            y0 = float(stim_id) / CS.n_stim_total
         print 'debug stim_id %d x0=%.3f  y0=%.3f  vx=%.3f  vy=%.3f' % (stim_id, x0, y0, vx, vy)
         x_pos = x0 + vx
         y_pos = y0 + vy
+        print 'debug y_pos', y_pos
         color_idx = (stim_id / CS.n_stim_per_direction) % len(color_list)
         x_max = max(x_pos, x_max)
         y_max = max(y_pos, y_max)

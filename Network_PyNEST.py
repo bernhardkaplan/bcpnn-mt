@@ -136,13 +136,12 @@ class NetworkModel(object):
         # set the cell parameters
         self.inh_pop = nest.Create(self.params['neuron_model'], self.params['n_inh'], params=self.params['cell_params_inh'])
         self.local_idx_inh = self.get_local_indices(self.inh_pop)
+        self.spike_times_container = [ [] for i in xrange(len(self.local_idx_exc))]
 
         # v_init
 #        self.initialize_vmem(self.local_idx_exc)
 #        self.initialize_vmem(self.local_idx_inh)
 
-        if not input_created:
-            self.spike_times_container = [ [] for i in xrange(len(self.local_idx_exc))]
 
 #        self.times['t_create'] = self.timer.diff()
 
@@ -153,21 +152,10 @@ class NetworkModel(object):
 
 
         if load_files:
-            if self.pc_id == 0:
-                print "Loading input spiketrains..."
-            for i_, tgt in enumerate(self.local_idx_exc):
-                try:
-                    fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
-                    spike_times = np.load(fn)
-                except: # this cell does not get any input
-                    print "Missing file: ", fn
-                    spike_times = []
-                self.spike_times_container[i_] = spike_times
+            self.load_input()
         else:
             if self.pc_id == 0:
                 print "Computing input spiketrains..."
-
-
 
             my_units = np.array(self.local_idx_exc)[:, 0] - 1
 #            print 'debug  my_units', my_units
@@ -180,12 +168,12 @@ class NetworkModel(object):
             CS = CreateStimuli.CreateStimuli()
             random_order = self.params['random_training_order']
             motion_params = CS.create_motion_sequence_1D(self.params, random_order)
+            print 'DEBUG', motion_params
             np.savetxt(self.params['training_sequence_fn'], motion_params)
             n_stim_total = self.params['n_training_stim']
             for i_stim in xrange(n_stim_total):
                 print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-                x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 1]
-
+                x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 2]
 
                 # get the input signal
                 idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
@@ -196,7 +184,7 @@ class NetworkModel(object):
                     x_stim = x0 + time_ * v0
                     L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
                     L_input[:, i_time] *= self.params['f_max_stim']
-                    if (i_time % 1000 == 0):
+                    if (i_time % 5000 == 0):
                         print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
                     idx_within_stim += 1
 
@@ -214,7 +202,7 @@ class NetworkModel(object):
             # create the spike trains
             print 'Creating input spiketrains for unit'
             for i_, unit in enumerate(my_units):
-                print 'Creating input spiketrain for unit %d / %d (%.1f percent)' % (i_, len(my_units), float(i_) / len(my_units)* 100.)
+                print 'Creating input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(my_units), float(i_) / len(my_units) * 100.)
                 rate_of_t = np.array(L_input[i_, :])
                 # each cell will get its own spike train stored in the following file + cell gid
                 n_steps = rate_of_t.size
@@ -234,7 +222,18 @@ class NetworkModel(object):
         return self.spike_times_container
     
 
+    def load_input(self):
 
+        if self.pc_id == 0:
+            print "Loading input spiketrains..."
+        for i_, tgt in enumerate(self.local_idx_exc):
+            try:
+                fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
+                spike_times = np.load(fn)
+            except: # this cell does not get any input
+                print "Missing file: ", fn
+                spike_times = []
+            self.spike_times_container[i_] = spike_times
 
 
 
@@ -350,6 +349,9 @@ class NetworkModel(object):
 
 
     def get_weights_after_learning_cycle(self):
+        """
+        Saves the weights as adjacency lists (TARGET = Key) as dictionaries to file.
+        """
 
         print 'NetworkModel.get_weights_after_learning_cycle ...'
         n_my_conns = 0
@@ -383,7 +385,7 @@ class NetworkModel(object):
         output_fn = self.params['conn_mat_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
         print 'Saving connection list to: ', output_fn
         f = file(output_fn, 'w')
-        json.dump(my_adj_list, f)
+        json.dump(my_adj_list, f, indent=0)
 
 
 
@@ -711,7 +713,7 @@ class NetworkModel(object):
              
             gids_to_record = np.r_[selected_gids_r, selected_gids_l]
             np.savetxt(self.params['gids_to_record_fn'], gids_to_record, fmt='%d')
-            voltmeter = nest.Create('voltmeter')
+            voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval' :0.5})
             nest.SetStatus(voltmeter,[{"to_file": True, "withtime": True, 'label' : 'volt'}])
             
         exc_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'exc_spikes'})
@@ -735,62 +737,35 @@ class NetworkModel(object):
 #        self.times['t_sim'] = self.timer.diff()
 
 
-    def print_results(self, print_v=True):
+    def print_v(self, fn, multimeter):
         """
-            # # # # # # # # # # # # # # # # #
-            #   P R I N T    R E S U L T S  #
-            # # # # # # # # # # # # # # # # #
+        This function is copied from Henrik's code,
+        it's NOT TESTED, but maybe useful to save the voltages into one 
+        file from the beginning
         """
-        if print_v:
-            if self.pc_id == 0:
-                print 'print_v to file: %s.v' % (self.params['exc_volt_fn_base'])
-            self.exc_pop_view.print_v("%s.v" % (self.params['exc_volt_fn_base']), compatible_output=False)
-            if self.pc_id == 0:
-                print "Printing inhibitory membrane potentials"
-            self.inh_pop_view.print_v("%s.v" % (self.params['inh_volt_fn_base']), compatible_output=False)
+        ids = nest.GetStatus(multimeter, 'events')[0]['senders']
+        sender_ids = np.unique(ids)
+        volt = nest.GetStatus(multimeter, 'events')[0]['V_m']
+        time = nest.GetStatus(multimeter, 'events')[0]['times']
+        senders = nest.GetStatus(multimeter, 'events')[0]['senders']
+        print 'debug\n', nest.GetStatus(multimeter, 'events')[0]
+        print 'volt size', volt.size
+        print 'time size', time.size
+        print 'senders size', senders.size
+        n_col = volt.size / len(sender_ids)
+        d = np.zeros((n_col, len(sender_ids) + 1))
 
-        print 'DEBUG printing anticipatory cells', self.anticipatory_record
-        if self.anticipatory_record == True:   
-            print 'print_v to file: %s' % (self.params['exc_volt_anticipation'])
-            self.exc_pop_view_anticipation.print_v("%s" % (self.params['exc_volt_anticipation']), compatible_output=False)
-            print 'print_gsyn to file: %s' % (self.params['exc_gsyn_anticipation'])
-            self.exc_pop_view_anticipation.print_gsyn("%s" % (self.params['exc_gsyn_anticipation']), compatible_output=False)
-
-
-        if self.pc_id == 0:
-            print "Printing excitatory spikes"
-        self.exc_pop.printSpikes(self.params['exc_spiketimes_fn_merged'] + '.ras')
-        if self.pc_id == 0:
-            print "Printing inhibitory spikes"
-        self.inh_pop.printSpikes(self.params['inh_spiketimes_fn_merged'] + '.ras')
-
-
-#        self.times['t_print'] = self.timer.diff()
-#        self.times['t_end'] = self.timer.diff()
-
-#        if self.pc_id == 0:
-#            self.times['t_all'] = 0.
-#            for k in self.times.keys():
-#                self.times['t_all'] += self.times[k]
-
-#            self.n_cells = {}
-#            self.n_cells['n_exc'] = self.params['n_exc']
-#            self.n_cells['n_inh'] = self.params['n_inh']
-#            self.n_cells['n_cells'] = self.params['n_cells']
-#            self.n_cells['n_proc'] = self.n_proc
-#            output = {'times' : self.times, 'n_cells_proc' : self.n_cells}
-#            print "Proc %d Simulation time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (self.pc_id, self.times['t_sim'], (self.times['t_sim'])/60., self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
-#            print "Proc %d Full pyNN run time: %d sec or %.1f min for %d cells (%d exc %d inh)" % (self.pc_id, self.times['t_all'], (self.times['t_all'])/60., self.params['n_cells'], self.params['n_exc'], self.params['n_inh'])
-#            fn = utils.convert_to_url(params['folder_name'] + 'times_dict_np%d.py' % self.n_proc)
-
-#            output = ntp.ParameterSet(output)
-#            output.save(fn)
+        for sender in sender_ids:
+            idx = (sender == senders).nonzero()[0]
+            print sender, time[idx]
+            d[:, sender] = volt[idx]
+            d[:, 0] = time[idx]
+        np.savetxt(fn, d)
 
 
 if __name__ == '__main__':
 
-    input_created = False
-
+    t_0 = time.time()
 #    orientation = float(sys.argv[1])
 #    protocol = str(sys.argv[2])
 #    ps.params['motion_params'][4] = orientation
@@ -804,29 +779,29 @@ if __name__ == '__main__':
 
     sim_cnt = 0
     max_neurons_to_record = 15800
-    if params['n_cells'] > max_neurons_to_record:
-        load_files = False
-        record = False
-        save_input_files = False
-    else: # choose yourself
-        load_files = True
-        record = True
-        save_input_files = not load_files
+    input_created = True
+    load_files = input_created
+    record = True
+    save_input_files = not load_files
 
     NM = NetworkModel(ps.params, iteration=0)
 
     NM.setup(times=times)
 
     NM.create(input_created)
+
     if not input_created:
         spike_times_container = NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=False)
         input_created = True # this can be set True ONLY if the parameter does not affect the input i.e. set this to false when sweeping f_max_stim, or blur_X/V!
     else:
-        NM.spike_times_container = spike_times_container
+        NM.load_input()
     NM.connect()
     NM.run_sim(sim_cnt, record_v=record)
     NM.get_weights_after_learning_cycle()
-#    NM.print_results(print_v=record)
+
+    t_end = time.time()
+    t_diff = t_end - t_0
+    print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
 
 #    if comm != None:
 #        comm.Barrier()

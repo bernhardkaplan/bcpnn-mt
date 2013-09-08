@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     pylab.figure()
     for i_, fn in enumerate(list_of_files):
-        plot_volt(fn)
+        plot_volt(fn, gid='all')
         
 
     pylab.show() 
