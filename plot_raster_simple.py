@@ -5,6 +5,9 @@ import numpy as np
 import sys
 import utils 
 
+gid_axis = 0
+time_axis = 1
+
 # --------------------------------------------------------------------------
 params2 = {'backend': 'png',
           'axes.labelsize': 12,
@@ -24,14 +27,17 @@ def set_figsize(fig_width_pt):
 pylab.rcParams.update(params2)
 
 
-def plot_histogram(d, fig, gid=None, time_range=(0, 1000)):
+def plot_histogram(d, fig, gid=None, time_range=False):
+    if time_range == False:
+        time_range = (0, d[:, time_axis].max())
+    print 'Plot histogram time_range:', time_range
     binsize = 50
     n_bins = (time_range[1] - time_range[0]) / binsize
 
     if gid != None:
-        spikes = d[d[:, 1] == gid, 0]
+        spikes = d[d[:, gid_axis] == gid, 0]
     else:
-        spikes = d[:, 0]
+        spikes = d[:, gid_axis]
     n, bins = np.histogram(spikes, bins=n_bins, range=time_range)
 
     # transform into rate
@@ -53,14 +59,14 @@ for fn in fns:
         d = np.load(fn)
 
     gid = None# 5444
-    time_range = (0, 1600)
+#    time_range = (0, 1600)
 
     if gid != None:
-        spikes = d[d[:, 1] == gid, 0]
-        gids = d[d[:, 1] == gid, 1]
+        spikes = d[d[:, gid_axis] == gid, 0]
+        gids = d[d[:, gid_axis] == gid, 1]
     else:
-        spikes = d[:, 0]
-        gids = d[:, 1]
+        spikes = d[:, time_axis]
+        gids = d[:, gid_axis]
 
     fig = pylab.figure()
     ax = fig.add_subplot(211)
@@ -72,10 +78,10 @@ for fn in fns:
     ax.set_title(fn)
 #    ax.set_xlim((0, 1000))
 #    print 'xlim:', ax.get_xlim()
-    ax.set_ylim((d[:, 1].min()-1, d[:, 1].max()+1))
-    ax.set_xlim(time_range)
+    ax.set_ylim((d[:, gid_axis].min()-1, d[:, gid_axis].max()+1))
+    ax.set_xlim()#time_range)
 
-    plot_histogram(d, fig, gid, time_range=time_range)
+    plot_histogram(d, fig, gid)#, time_range=time_range)
 
 pylab.show()
 

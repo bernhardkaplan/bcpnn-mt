@@ -3,6 +3,8 @@ import os
 import numpy as np
 import re
 import json
+import utils
+import MergeSpikefiles
 
 
 
@@ -68,7 +70,17 @@ class WeightAnalyser(object):
 
 
     
+    def load_spikes(self):
 
+        Merger = MergeSpikefiles.MergeSpikefiles(
+        self.spiketrains = []
+        fns = utils.get_filenames(self.params['spiketimes_folder'], to_match='exc_spikes', to_match_contains_folder=False)
+        print 'Load spikes', fns
+        for fn in fns:
+            spiketrains = utils.get_spiketrains(fn)
+            self.spiketrains += spiketrains
+
+        print 'DEBUG', len(self.spiketrains)
 
 
 if __name__ == '__main__':
@@ -93,4 +105,8 @@ if __name__ == '__main__':
     WA.get_weight(201, 203)
     WA.get_weight(201, 13201928)
     WA.get_weight(13201928, 201)
+    WA.get_weight(130, 150)
+    WA.get_weight(150, 130)
+    WA.load_spikes()
+
 

@@ -7,6 +7,7 @@ import numpy.random as rnd
 import os
 from scipy.spatial import distance
 import copy
+import re
 
 
 def convert_connlist_to_matrix(fn, n_src, n_tgt):
@@ -735,43 +736,70 @@ def get_cond_in(nspikes, conn_list, target_gid):
     return cond_in
 
 
-def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
+#def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
+#    """
+#    Returns a list of spikes fired by each cell
+#    This function should be used for the format 
+#        time    GID
+#    if n_cells is not given, the length of the array will be the highest gid (not recommended!)
+#    """
+#    if pynest == True:
+#        gid_axis = 0
+#        time_axis = 1
+#    else: # it's likely PyNN
+#        gid_axis = 1
+#        time_axis = 0
+#    if type(spiketimes_fn_or_array) == type(np.array([])):
+#        d = spiketimes_fn_or_array
+#    else:
+#        d = np.loadtxt(spiketimes_fn_or_array)
+#    if (n_cells == 0):
+#        n_cells = 1 + np.int(np.max(d[:, gid_axis]))# highest gid
+#    spiketrains = [[] for i in xrange(n_cells)]
+#    if d.size == 0:
+#        return spiketrains
+#    elif d.shape == (2,):
+#        spiketrains[int(d[gid_axis])] = [d[time_axis]]
+#    else:
+#        for i in xrange(d[:, time_axis].size):
+#            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
+#    return spiketrains
+
+
+def get_filenames(folder, to_match, to_match_contains_folder=True, return_abspath=True):
     """
-    Returns a list of spikes fired by each cell
-
-    This function should be used for the format 
-        time    GID
-    if n_cells is not given, the length of the array will be the highest gid (not recommended!)
-
-
+    Keyword arguments:
+    folder -- the folder where to look for files
+    to_match -- the filename to look for (re.match operation)
+    to_match_contains_folder -- if to_match contains the folder in the name, the folder is seperated from the to_match string
     """
-    if type(spiketimes_fn_or_array) == type(np.array([])):
-        d = spiketimes_fn_or_array
-    else:
-        d = np.loadtxt(spiketimes_fn_or_array)
-    if (n_cells == 0):
-        n_cells = 1 + np.int(np.max(d[:, 1]))# highest gid
-    spiketrains = [[] for i in xrange(n_cells)]
+    fns = []
 
-    # seperate spike trains for all the cells
-    if d.size == 0:
-        return spiketrains
-    elif d.shape == (2,):
-        spiketrains[int(d[1])] = [d[0]]
-    else:
-        for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, 1])].append(d[i, 0])
-    return spiketrains
+    # find files written by different processes
+    if to_match_contains_folder:
+        to_match = to_match.rsplit('/')[-1]
+    for fn in os.listdir(os.path.abspath(folder)):
+        m = re.match(to_match, fn)
+        if m:
+            path = os.path.abspath(folder) + '/' + fn
+            fns.append(path)
+    return fns
 
 
-
-def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
+def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
     """
     Returns a list of spikes fired by each cell
     This function should be used for the format 
         GID     time
     if n_cells is not given, the length of the array will be the highest gid (not recommended!)
     """
+    if pynest == True:
+        gid_axis = 0
+        time_axis = 1
+    else: # it's likely PyNN
+        gid_axis = 1
+        time_axis = 0
+
     if type(spiketimes_fn_or_array) == type(np.array([])):
         d = spiketimes_fn_or_array
     else:
@@ -787,16 +815,16 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
             return spiketrains
     elif d.shape == (2,):
         if (n_cells == 0):
-            spiketrains = [d[1]]
+            spiketrains = [d[gid_axis]]
         else:
             spiketrains = [[] for i in xrange(n_cells)]
             spiketrains[int(d[0])] = [d[1]]
     else:
         if (n_cells == 0):
-            n_cells = 1 + np.int(np.max(d[:, 0]))# highest gid
+            n_cells = 1 + np.int(np.max(d[:, gid_axis]))# highest gid
         spiketrains = [[] for i in xrange(n_cells)]
         for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, 0])].append(d[i, 1])
+            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
     return spiketrains
 
 
