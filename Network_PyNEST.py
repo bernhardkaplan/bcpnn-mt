@@ -90,7 +90,8 @@ class NetworkModel(object):
         node_info   = nest.GetStatus(pop)
         for i_, d in enumerate(node_info):
             if d['local']:
-                local_nodes.append((d['global_id'], d['vp']))
+                local_nodes.append(d['global_id'])
+#                local_nodes.append((d['global_id'], d['vp']))
         return local_nodes
         
 
@@ -222,7 +223,8 @@ class NetworkModel(object):
             print "Loading input spiketrains..."
         for i_, tgt in enumerate(self.local_idx_exc):
             try:
-                fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
+#                fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
+                fn = self.params['input_st_fn_base'] + str(tgt - 1) + '.npy'
                 spike_times = np.load(fn)
             except: # this cell does not get any input
                 print "Missing file: ", fn
@@ -246,7 +248,8 @@ class NetworkModel(object):
         self.stimulus = nest.Create('spike_generator', len(self.local_idx_exc))
 
         n_per_hc = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
-        for i_, (unit, vp) in enumerate(self.local_idx_exc):
+#        for i_, (unit, vp) in enumerate(self.local_idx_exc):
+        for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
             nest.SetStatus([self.stimulus[i_]], {'spike_times' : spike_times})
             # get the cell from the list of populations
@@ -350,7 +353,8 @@ class NetworkModel(object):
         t_start = time.time()
         print 'NetworkModel.get_weights_after_learning_cycle ...'
         n_my_conns = 0
-        my_units = np.array(self.local_idx_exc)[:, 0] # !GIDs are 1-aligned!
+#        my_units = np.array(self.local_idx_exc)[:, 0] # !GIDs are 1-aligned!
+        my_units = self.local_idx_exc # !GIDs are 1-aligned!
         my_adj_list = {}
         for nrn in my_units:
             my_adj_list[nrn] = []
@@ -374,7 +378,7 @@ class NetworkModel(object):
                         n_my_conns += len(conns)
 
         print 'Proc %d holds %d connections' % (self.pc_id, n_my_conns)
-        output_fn = self.params['conn_mat_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
+        output_fn = self.params['adj_list_tgt_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
         print 'Saving connection list to: ', output_fn
         f = file(output_fn, 'w')
         json.dump(my_adj_list, f, indent=0, ensure_ascii=False)
@@ -698,10 +702,13 @@ class NetworkModel(object):
               
         if record_v:
             mp_r = np.array(self.params['motion_params'])
+            # cells well tuned to the normal stimulus
             selected_gids_r, pops = utils.select_well_tuned_cells_trajectory(self.tuning_prop_exc, \
                     mp_r, params, self.params['n_gids_to_record'] / 2, 1)
             mp_l = mp_r.copy()
+            # opposite direction
             mp_l[2] *= (-1.)
+            # cells well tuned to the normal stimulus
             selected_gids_l, pops = utils.select_well_tuned_cells_trajectory(self.tuning_prop_exc, \
                     mp_l, params, self.params['n_gids_to_record'] / 2, 1)
             print 'Recording cells close to mp_l', mp_l, '\nGIDS:', selected_gids_l
@@ -717,11 +724,14 @@ class NetworkModel(object):
             for mc in xrange(self.params['n_mc_per_hc']):
                 nest.ConvergentConnect(self.list_of_populations[hc][mc], exc_spike_recorder)
 
+        # TODO: why is there a conflict between record_v and recording spikes?
+        print 'Debug', type(self.local_idx_exc)
         if record_v: 
             for gid in gids_to_record:
 #            for i_, (unit, vp) in enumerate(self.local_idx_exc):
-                hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(gid)
-                nest.ConvergentConnect(voltmeter, [self.list_of_populations[hc_idx][mc_idx_in_hc][idx_in_mc]])
+                if gid in self.local_idx_exc:
+                    hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(gid)
+                    nest.ConvergentConnect(voltmeter, [self.list_of_populations[hc_idx][mc_idx_in_hc][idx_in_mc]])
     
 
         # # # # # # # # # # # # # #

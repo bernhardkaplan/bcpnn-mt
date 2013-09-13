@@ -232,6 +232,7 @@ class parameter_storage(object):
         self.params['input_spikes_seed'] = 0
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
+#        self.params['n_gids_to_record'] = self.params['n_exc']
         self.params['n_gids_to_record'] = 20
         
         
@@ -317,7 +318,7 @@ class parameter_storage(object):
 #            folder_name = 'Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
 #            folder_name += connectivity_code
 #            folder_name += '-'+ self.params['motion_type']
-            folder_name = 'WorkInProgress/'
+            folder_name = 'TestWorkInProgress/'
 
 
             folder_name += '/'
@@ -426,6 +427,7 @@ class parameter_storage(object):
         self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
 
         # used for different projections ['ee', 'ei', 'ie', 'ii'] for plotting
+        self.params['adj_list_tgt_fn_base'] = '%sadj_list_tgt_index_' % (self.params['connections_folder'])
         self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder'])
         self.params['delay_mat_fn_base'] = '%sdelay_mat_' % (self.params['connections_folder'])
 

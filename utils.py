@@ -681,15 +681,24 @@ def threshold_weights(connection_matrix, w_thresh):
     return connection_matrix
 
 
-def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
+def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False, pynest=True):
     """
     Returns an array with the number of spikes fired by each cell.
     nspikes[gid]
     if n_cells is not given, the length of the array will be the highest gid (not advised!)
     """
+    if pynest == True:
+        gid_axis = 0
+        time_axis = 1
+        gid_offset = 0
+    else: # it's likely PyNN
+        gid_axis = 1
+        time_axis = 0
+        gid_offset = 1
+
     d = np.loadtxt(spiketimes_fn_merged)
     if (n_cells == 0):
-        n_cells = 1 + int(np.max(d[:, 1]))# highest gid
+        n_cells = 1 + int(np.max(d[:, gid_axis]))# highest gid
     nspikes = np.zeros(n_cells)
     spiketrains = [[] for i in xrange(n_cells)]
     if (d.size == 0):
@@ -699,11 +708,11 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
             return spiketrains
     # seperate spike trains for all the cells
     if d.shape == (2,):
-        nspikes[int(d[1])] = 1
-        spiketrains[int(d[1])] = [d[0]]
+        nspikes[int(d[gid_axis])] = 1
+        spiketrains[int(d[gid_axis])] = [d[time_axis]]
     else:
         for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, 1])].append(d[i, 0])
+            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
         for gid in xrange(n_cells):
             nspikes[gid] = len(spiketrains[gid])
     if get_spiketrains:
@@ -796,9 +805,11 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
     if pynest == True:
         gid_axis = 0
         time_axis = 1
+        gid_offset = 0
     else: # it's likely PyNN
         gid_axis = 1
         time_axis = 0
+        gid_offset = 1
 
     if type(spiketimes_fn_or_array) == type(np.array([])):
         d = spiketimes_fn_or_array
@@ -823,8 +834,11 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
         if (n_cells == 0):
             n_cells = 1 + np.int(np.max(d[:, gid_axis]))# highest gid
         spiketrains = [[] for i in xrange(n_cells)]
-        for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
+        for gid in xrange(gid_offset, n_cells + gid_offset):
+            idx = (d[:, gid_axis] == gid).nonzero()[0]
+            spiketrains[gid] = d[idx, time_axis]
+#        for i in xrange(d[:, 0].size):
+#            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
     return spiketrains
 
 
@@ -1120,6 +1134,17 @@ def merge_files(input_fn_base, output_fn):
 
     cmd = 'cat %s* > %s' % (input_fn_base, output_fn)
     os.system(cmd)
+
+
+def merge_and_sort_files(merge_pattern, fn_out):
+    rnd_nr1 = np.random.randint(0,10**8)
+    rnd_nr2 = rnd_nr1 + 1
+    # merge files from different processors
+    tmp_file = "tmp_%d" % (rnd_nr2)
+    os.system("cat %s* > %s" % (merge_pattern, tmp_file))
+    # sort according to cell id
+    os.system("sort -gk 1 %s > %s" % (tmp_file, fn_out))
+    os.system("rm %s" % (tmp_file))
 
 
 def sort_cells_by_distance_to_stimulus(n_cells, verbose=False):
