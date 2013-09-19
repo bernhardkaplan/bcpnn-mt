@@ -241,7 +241,7 @@ class parameter_storage(object):
         # INPUT
         # ######
         self.params['f_max_stim'] = 5000.       # [Hz]
-        self.params['w_input_exc'] = 1.5e-2     # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 2e-2     # [uS] mean value for input stimulus ---< exc_units (columns
         if self.params['use_pynest']:
             self.params['w_input_exc'] *= 1000. # [uS] --> [nS] Nest expects nS
 

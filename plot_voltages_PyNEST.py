@@ -104,8 +104,8 @@ if __name__ == '__main__':
 
     pylab.figure()
     for i_, fn in enumerate(list_of_files):
-        plot_volt(fn, gid='all')
-#        plot_volt(fn, gid=[130, 150])
+#        plot_volt(fn, gid='all')
+        plot_volt(fn, gid=[49, 91])
 #    gid
         
 

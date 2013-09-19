@@ -139,17 +139,17 @@ if __name__ == '__main__':
     WA.load_weights()
     WA.load_spikes()
 #    WA.get_weights_to_cell(201)
+    gids = np.loadtxt(params['gids_to_record_fn'])
 #    gids = [49, 91, 201, 203]
-#    for i_ in xrange(len(gids)):
-#        for j_ in xrange(len(gids)):
-#            if i_ != j_:
-#                WA.get_weight(gids[i_], gids[j_])
+    for i_ in xrange(len(gids)):
+        for j_ in xrange(len(gids)):
+            if i_ != j_:
+                WA.get_weight(gids[i_], gids[j_])
 #        gid_ = gids[i_]
-#        print 'nspikes %d' % gid_, WA.nspikes[gid_]
+        print 'nspikes %d' % gids[i_], WA.nspikes[gids[i_]]
 #    WA.plot_nspikes_histogram()
     WA.get_weight_matrix()
 
     pylab.show()
-#    print 'WROOOOOOOOONG!!!!!!!!!'
 
 

@@ -37,7 +37,7 @@ class TrainingInputPlotter(object):
 #            mp[i, 0], mp[i, 1], mp[i, 2] = self.motion_params[i, :]
             mp[i, :] = self.motion_params[i, :]
             mp[i, 1] = i
-            print 'debug', i, mp[i, :]
+            print 'Debug stim and motion_params', i, mp[i, :]
             ax.annotate('(%.2f, %.2f)' % (mp[i, 0], mp[i, 2]), (max(0, mp[i, 0] - .1), mp[i, 1] + .2))
         
         ax.quiver(mp[:, 0], mp[:, 1], mp[:, 2], mp[:, 3], \
@@ -159,7 +159,8 @@ if __name__ == '__main__':
 
     random.seed(1)
     n_gids_to_plot = 10
-    gids_to_plot = random.sample(np.loadtxt(params['gids_to_record_fn'], dtype=np.int), n_gids_to_plot)
+#    gids_to_plot = random.sample(np.loadtxt(params['gids_to_record_fn'], dtype=np.int), n_gids_to_plot)
+    gids_to_plot = np.loadtxt(params['gids_to_record_fn'], dtype=np.int)[:n_gids_to_plot]
     print 'gids_to_plot: ', gids_to_plot
     fig2 = TIP.plot_training_input(gids_to_plot)
 

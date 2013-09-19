@@ -55,8 +55,8 @@ class NetworkModel(object):
         # # # # # # # # # # # #
         #     S E T U P       #
         # # # # # # # # # # # #
-        (delay_min, delay_max) = self.params['delay_range']
         nest.SetKernelStatus({'data_path':self.params['spiketimes_folder'], 'resolution': .1})
+        (delay_min, delay_max) = self.params['delay_range']
 #        nest.SetKernelStatus({'tics_per_ms':self.params['dt_sim'], 'min_delay':delay_min, 'max_delay':delay_max})
 
         # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -152,8 +152,8 @@ class NetworkModel(object):
             if self.pc_id == 0:
                 print "Computing input spiketrains..."
 
-            my_units = np.array(self.local_idx_exc)[:, 0] - 1
-#            print 'debug  my_units', my_units
+            my_units = np.array(self.local_idx_exc) - 1
+#            my_units = np.array(self.local_idx_exc)[:, 0] - 1
             n_cells = len(my_units)
             dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
             time = np.arange(0, self.params['t_sim'], dt)
@@ -163,7 +163,7 @@ class NetworkModel(object):
             CS = CreateStimuli.CreateStimuli()
             random_order = self.params['random_training_order']
             motion_params = CS.create_motion_sequence_1D(self.params, random_order)
-            print 'DEBUG', motion_params
+            print 'DEBUG saving motion params', motion_params, 'to:', self.params['training_sequence_fn']
             np.savetxt(self.params['training_sequence_fn'], motion_params)
             n_stim_total = self.params['n_training_stim']
             for i_stim in xrange(n_stim_total):
@@ -172,8 +172,7 @@ class NetworkModel(object):
 
                 # get the input signal
                 idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
-                idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt)
-                idx_within_stim = 0
+                idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) idx_within_stim = 0
                 for i_time in xrange(idx_t_start, idx_t_stop):
                     time_ = (idx_within_stim * dt) / self.params['t_stimulus']
                     x_stim = x0 + time_ * v0
@@ -725,7 +724,6 @@ class NetworkModel(object):
                 nest.ConvergentConnect(self.list_of_populations[hc][mc], exc_spike_recorder)
 
         # TODO: why is there a conflict between record_v and recording spikes?
-        print 'Debug', type(self.local_idx_exc)
         if record_v: 
             for gid in gids_to_record:
 #            for i_, (unit, vp) in enumerate(self.local_idx_exc):
