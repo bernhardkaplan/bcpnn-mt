@@ -118,6 +118,9 @@ class parameter_storage(object):
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
 
+        self.params['conn_conf'] = 'motion-based' 
+#        self.params['conn_conf'] = 'direction-based'
+#        self.params['conn_conf'] = 'orientation-direction' 
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['connectivity_radius'] = 0.5      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 500.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
@@ -127,10 +130,10 @@ class parameter_storage(object):
                                        # large w_sigma: high connection probability (independent of tuning_properties)
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 1.50 # [uS] how much input should an inh cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ie'] = 0.80 # [uS] how much input should an exc cell get from its inh source cells?
-        self.params['w_tgt_in_per_cell_ii'] = 0.05 # [uS] how much input should an inh cell get from its source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.18 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 0.18 # [uS] how much input should an inh cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ie'] = 1.00 # [uS] how much input should an exc cell get from its inh source cells?
+        self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ie'] *= 10. / self.params['tau_syn_inh']

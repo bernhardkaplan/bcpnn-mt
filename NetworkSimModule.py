@@ -687,8 +687,8 @@ if __name__ == '__main__':
 #    params['w_sigma_v'] = w_sigma_v
 #    ps.set_filenames()
 
-    fn = str(sys.argv[1])
-    ps = simulation_parameters.parameter_storage(fn)
+#    fn = str(sys.argv[1])
+    ps = simulation_parameters.parameter_storage()#fn)
     params = ps.params
 
     if pc_id == 0:
