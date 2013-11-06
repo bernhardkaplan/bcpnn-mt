@@ -11,11 +11,18 @@ import pylab
 
 class WeightAnalyser(object):
 
-    def __init__(self, params):
+    def __init__(self, params, iteration=0):
         self.params = params
+        self.iteration = iteration
 
 
-    def get_filenames(self, iteration=0):
+    def get_filenames(self, iteration=None):
+        """
+        As connections are stored as adjacency in separate files (for each processing node a separate file),
+        the connections_folder is filtered by the adjecency list filename 'adj_list_tgt_fn_base'
+        """
+        if iteration == None:
+            iteration = self.iteration
         fns = []
         folder = self.params['connections_folder']
 
@@ -33,7 +40,7 @@ class WeightAnalyser(object):
         return fns
                 
         
-    def load_weights(self):
+    def load_adj_lists(self):
 
         fns = self.get_filenames()
 
@@ -50,6 +57,7 @@ class WeightAnalyser(object):
         print 'Cells projecting to tgt:', tgt_gid
         d = np.array(self.adj_list[str(tgt_gid)])
         src_gids = d[:, 0] # source gids projecting to the gid
+        print 'src_gids', src_gids
 
 
     def get_weight(self, src_gid, tgt_gid):
@@ -95,7 +103,7 @@ class WeightAnalyser(object):
         ax.set_ylabel('# spikes')
 
 
-    def get_weight_matrix(self, plot=True):
+    def get_weight_matrix(self, plot=True, output_fn=None):
         w = np.zeros((self.params['n_exc'], self.params['n_exc']))
         for tgt in xrange(self.params['n_exc']):
             if self.adj_list.has_key(str(tgt)):
@@ -106,6 +114,11 @@ class WeightAnalyser(object):
                     src, w_ij = src_weight_array[i_, :]
                     w[src - 1, tgt] = w_ij
 
+
+        if output_fn != None:
+            print 'Saving connection matrix to:', output_fn
+            np.savetxt(output_fn, w)
+
         if plot:
             fig = pylab.figure()
             ax = fig.add_subplot(111)
@@ -115,9 +128,12 @@ class WeightAnalyser(object):
             ax.set_ylim(0, w.shape[0])
             ax.set_xlim(0, w.shape[1])
             pylab.colorbar(cax)
+
+            output_fig = self.params['connection_matrix_fig'] + str(self.iteration) + '.png'
+            print 'Savig fig to:', output_fig
+            pylab.savefig(output_fig, dpi=400)
+
             pylab.show()
-
-
 
 if __name__ == '__main__':
 
@@ -135,21 +151,23 @@ if __name__ == '__main__':
         param_tool = simulation_parameters.parameter_storage()
         params = param_tool.params
 
-    WA = WeightAnalyser(params)
+    iteration = 0
+    WA = WeightAnalyser(params, iteration=iteration)
     WA.load_weights()
     WA.load_spikes()
-#    WA.get_weights_to_cell(201)
-    gids = np.loadtxt(params['gids_to_record_fn'])
-#    gids = [49, 91, 201, 203]
-    for i_ in xrange(len(gids)):
-        for j_ in xrange(len(gids)):
-            if i_ != j_:
-                WA.get_weight(gids[i_], gids[j_])
-#        gid_ = gids[i_]
-        print 'nspikes %d' % gids[i_], WA.nspikes[gids[i_]]
-#    WA.plot_nspikes_histogram()
-    WA.get_weight_matrix()
+    WA.get_weights_to_cell(295)
 
-    pylab.show()
+#    gids = np.loadtxt(params['gids_to_record_fn'])
+#    gids = [49, 91, 201, 203]
+#    for i_ in xrange(len(gids)):
+#        for j_ in xrange(len(gids)):
+#            if i_ != j_:
+#                WA.get_weight(gids[i_], gids[j_])
+#        print 'nspikes %d' % gids[i_], WA.nspikes[gids[i_]]
+#    WA.plot_nspikes_histogram()
+
+    output_fn = params['conn_mat_fn_base'] + 'ee_' + str(iteration) + '.dat'
+    WA.get_weight_matrix(plot=True, output_fn=output_fn)
+
 
 

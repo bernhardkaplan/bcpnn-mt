@@ -35,6 +35,34 @@ def get_spike_fns(folder, spike_fn_pattern='exc_spikes'):
     return fns
 
 
+def get_spiketimes(all_spikes, gid, gid_idx=0, time_idx=1):
+    """
+    Returns the spikes fired by the cell with gid
+    all_spikes: 2-dim array containing all spiketimes
+    gid_idx: is the column index in the all_spikes array containing GID information
+    time_idx: is the column index in the all_spikes array containing time information
+    """
+    idx_ = (all_spikes[:, gid_idx] == gid).nonzero()[0]
+    spiketimes = all_spikes[idx_, time_idx]
+    return spiketimes
+
+
+
+def get_grid_index_mapping(values, bins):
+    """
+    Returns a 2-dim array (gid, grid_pos) mapping with values.size length, i.e. the indices of values 
+    and the bin index to which each value belongs.
+    values -- the values to be put in a grid
+    bins -- list or array with the 1-dim grid bins 
+    """
+
+    bin_idx = np.zeros((len(values), 2), dtype=np.int)
+    for i_, b in enumerate(bins):
+        idx_in_b = (values > b).nonzero()[0]
+        bin_idx[idx_in_b, 0] = idx_in_b
+        bin_idx[idx_in_b, 1] = i_
+    return bin_idx
+
 
 def convert_connlist_to_adjlist_srcidx(fn, n_src):
     """
@@ -325,97 +353,6 @@ def get_time_of_max_response(spikes, range=None, n_binsizes=1):
     return t_max_depending_on_binsize[:, 0].mean(), t_max_depending_on_binsize[:, 1].mean()
 
 
-def set_limited_tuning_properties(params, y_range=(0, 1.), x_range=(0, 1.), u_range=(0, 1.), v_range=(0, 1.), cell_type='exc'):
-    """
-    This function uses the same algorithm as set_tuning_prop, but discards those cells
-    that are out of the given parameter range.
-    Purpose of this is to simulate a sub-network of cells with only limited tuning properties 
-    and tune this network.
-    """
-
-    rnd.seed(params['tuning_prop_seed'])
-    if cell_type == 'exc':
-        n_cells = params['n_exc']
-        n_theta = params['n_theta']
-        n_v = params['n_v']
-        n_rf_x = params['n_rf_x']
-        n_rf_y = params['n_rf_y']
-        v_max = params['v_max_tp']
-        v_min = params['v_min_tp']
-    else:
-        n_cells = params['n_inh']
-        n_theta = params['n_theta_inh']
-        n_v = params['n_v_inh']
-        n_rf_x = params['n_rf_x_inh']
-        n_rf_y = params['n_rf_y_inh']
-        if n_v == 1:
-            v_min = params['v_min_tp'] + .5 * (params['v_max_tp'] - params['v_min_tp'])
-            v_max = v_min
-        else:
-            v_max = params['v_max_tp']
-            v_min = params['v_min_tp']
-
-    tuning_prop = np.zeros((n_cells, 4))
-    if params['log_scale']==1:
-        v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
-    else:
-        v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
-                        np.log(v_max)/np.log(params['log_scale']), num=n_v,
-                        endpoint=True, base=params['log_scale'])
-    v_theta = np.linspace(0, 2*np.pi, n_theta, endpoint=False)
-    parity = np.arange(params['n_v']) % 2
-
-    RF = np.zeros((2, n_rf_x * n_rf_y))
-    X, Y = np.mgrid[0:1:1j*(n_rf_x+1), 0:1:1j*(n_rf_y+1)]
-
-    # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
-    X, Y = X[1:, 1:], Y[1:, 1:]
-    # Add to every even Y a half RF width to generate hex grid
-    Y[::2, :] += (Y[0, 0] - Y[0, 1])/2
-    RF[0, :] = X.ravel()
-    RF[1, :] = Y.ravel()
-
-    # wrapping up:
-    index = 0
-    random_rotation = 2*np.pi*rnd.rand(n_rf_x * n_rf_y) * params['sigma_RF_direction']
-    neuron_in_range = np.zeros((n_cells, 1), dtype=bool)
-    for i_RF in xrange(n_rf_x * n_rf_y):
-        for i_v_rho, rho in enumerate(v_rho):
-            for i_theta, theta in enumerate(v_theta):
-                    x_pos = (RF[0, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
-                    y_pos = (RF[1, i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_height']
-                    v_x = np.cos(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
-                            * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-                    v_y = np.sin(theta + random_rotation[i_RF] + parity[i_v_rho] * np.pi / n_theta) \
-                            * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-                    tuning_prop[index, 0] = x_pos 
-                    tuning_prop[index, 1] = y_pos
-                    tuning_prop[index, 2] = v_x
-                    tuning_prop[index, 3] = v_y
-                    if ((x_pos > x_range[0]) and (x_pos <= x_range[1]) \
-                            and (y_pos > y_range[0]) and (y_pos <= y_range[1]) \
-                            and (v_x > u_range[0]) and (v_x <= u_range[1]) \
-                            and (v_y > v_range[0]) and (v_y <= v_range[1])):
-                        neuron_in_range[index] = True
-                    index += 1
-
-    n_cells_in_range = neuron_in_range.nonzero()[0].size
-    tp_good = np.zeros((n_cells_in_range, 4))
-    tp_good = tuning_prop[neuron_in_range.nonzero()[0], :]
-
-    idx_out_of_range = np.ones((n_cells, 1), dtype=int)
-    idx_out_of_range -= neuron_in_range
-    n_cells_out_of_range = idx_out_of_range.nonzero()[0].size
-    assert (n_cells_out_of_range + n_cells_in_range == n_cells), 'Number of cells in/out of range do not sum to one'
-    tp_out_of_range = np.zeros((n_cells_out_of_range, 4))
-    tp_out_of_range = tuning_prop[idx_out_of_range, :]
-    
-    return tp_good, tp_out_of_range
-
-
-
-
-
 def set_tuning_prop(params, mode, cell_type):
     if params['n_grid_dimensions'] == 2:
         return set_tuning_prop_2D(params, mode, cell_type)
@@ -498,18 +435,21 @@ def set_tuning_prop_2D(params, mode='hexgrid', cell_type='exc'):
         v_min = params['v_min_tp']
         n_per_mc = params['n_exc_per_mc']
     else:
-        n_cells = params['n_inh']
-        n_theta = params['n_theta_inh']
-        n_v = params['n_v_inh']
-        n_rf_x = params['n_rf_x_inh']
-        n_rf_y = params['n_rf_y_inh']
-        n_per_mc = 1
-        if n_v == 1:
-            v_min = params['v_min_tp'] + .5 * (params['v_max_tp'] - params['v_min_tp'])
-            v_max = v_min
-        else:
-            v_max = params['v_max_tp']
-            v_min = params['v_min_tp']
+        print 'Not supported with modular structure (yet)'
+        # possible solution: distribute tuning properties among the n_inh_per_mc neurons 
+
+#        n_cells = params['n_inh']
+#        n_theta = params['n_theta_inh']
+#        n_v = params['n_v_inh']
+#        n_rf_x = params['n_rf_x_inh']
+#        n_rf_y = params['n_rf_y_inh']
+#        n_per_mc = 1
+#        if n_v == 1:
+#            v_min = params['v_min_tp'] + .5 * (params['v_max_tp'] - params['v_min_tp'])
+#            v_max = v_min
+#        else:
+#            v_max = params['v_max_tp']
+#            v_min = params['v_min_tp']
 
     tuning_prop = np.zeros((n_cells, 5))
     if params['log_scale']==1:
@@ -1141,7 +1081,9 @@ def merge_and_sort_files(merge_pattern, fn_out):
     rnd_nr2 = rnd_nr1 + 1
     # merge files from different processors
     tmp_file = "tmp_%d" % (rnd_nr2)
-    os.system("cat %s* > %s" % (merge_pattern, tmp_file))
+    cmd = "cat %s* > %s" % (merge_pattern, tmp_file)
+    print 'debug cmd', cmd
+    os.system(cmd)
     # sort according to cell id
     os.system("sort -gk 1 %s > %s" % (tmp_file, fn_out))
     os.system("rm %s" % (tmp_file))

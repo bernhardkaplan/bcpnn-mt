@@ -18,6 +18,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
+        self.params['training_run'] = True# if false, it's a test_run and the input will be generated using a blank
+
         # ###################
         # HEXGRID PARAMETERS
         # ###################
@@ -36,8 +38,8 @@ class parameter_storage(object):
         self.params['n_v'] = 5
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
-        self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']
-        self.params['n_exc_per_mc'] = 4
+        self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
+        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
@@ -54,12 +56,19 @@ class parameter_storage(object):
         self.params['n_theta_inh'] = self.params['n_theta']
         self.params['n_v_inh'] = self.params['n_v']
         self.params['n_rf_inh'] = int(round(self.params['fraction_inh_cells'] * self.params['n_rf']))
-        self.params['n_rf_x_inh'] = np.int(np.sqrt(self.params['n_rf_inh'] * np.sqrt(3)))
-        # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rf dots?"
-        self.params['n_rf_y_inh'] = np.int(np.sqrt(self.params['n_rf_inh'])) 
-        self.params['n_inh' ] = self.params['n_rf_x_inh'] * self.params['n_rf_y_inh'] * self.params['n_theta_inh'] * self.params['n_v_inh'] * self.params['n_orientation'] * self.params['n_exc_per_mc']
+        self.params['n_rf_x_inh'] = np.int(np.sqrt(self.params['n_rf_inh'] * np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rf dots?"
+        # neuron numbers: based on n_mc
+        self.params['n_inh_unspec'] = int(round(.25 * self.params['n_exc'])) # normalizing inhibition on HC level, based on the assumption that n_inh_unspec = n_inh_spec
+        self.params['n_inh_unspec_per_hc'] = int(round(self.params['n_inh_unspec'] / self.params['n_hc']))
+        self.params['n_inh_spec'] =  self.params['n_inh_unspec'] # local inhibition
+        self.params['n_inh_per_mc'] = int(round(self.params['n_inh_spec'] / float(self.params['n_mc']))) # specific local inhibition
+        self.params['n_inh' ] = self.params['n_inh_unspec'] + self.params['n_inh_spec']
         self.params['n_cells'] = self.params['n_exc'] + self.params['n_inh']
-        print 'n_hc: %d\tn_mc_per_hc: %d\tn_mc: %d\tn_exc_per_mc: %d' % (self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_mc'], self.params['n_exc_per_mc'])
+        print '\nModular network structure:'
+        print '\tn_hc: %d\tn_mc_per_hc: %d\tn_mc: %d\tn_exc_per_mc: %d' % (self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_mc'], self.params['n_exc_per_mc'])
+        print '\tn_exc_per_mc: %d\tn_inh_per_mc: %d' % (self.params['n_exc_per_mc'], self.params['n_inh_per_mc'])
+        print '\tn_exc_per_hc: %d\tn_inh_per_mc specific: %d\tn_inh_per_hc UNspecific %d' % \
+                (self.params['n_exc_per_mc'] * self.params['n_mc_per_hc'], self.params['n_inh_per_mc'], self.params['n_inh_unspec_per_hc'])
         print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' \
                 % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
                 self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
@@ -98,7 +107,6 @@ class parameter_storage(object):
             self.params['v_init'] = self.params['cell_params_exc']['v_rest'] + .5 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
             self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
             
-
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
@@ -109,7 +117,7 @@ class parameter_storage(object):
 #        self.params['connectivity_ee'] = 'isotropic'
 #        self.params['connectivity_ee'] = 'random'
 #        self.params['connectivity_ee'] = False
-        self.params['connectivity_ei'] = 'anisotropic'
+#        self.params['connectivity_ei'] = 'anisotropic'
         self.params['connectivity_ei'] = 'isotropic'
 #        self.params['connectivity_ei'] = 'random'
 #        self.params['connectivity_ei'] = False
@@ -121,26 +129,35 @@ class parameter_storage(object):
         self.params['connectivity_ii'] = 'isotropic'
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
-
-        self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
-        self.params['w_thresh_min'] = 5e-4    # When probabilities are transformed to weights, they are scaled so that the weights are within this range
-        self.params['w_thresh_max'] = 1.0e+1
-        self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
+        
+        # exc - exc
+        self.params['p_ee_local'] = .7
+        self.params['w_ee_local'] = 1.
 
         # exc - inh
-        self.params['p_ei'] = 0.03 #self.params['p_ee']
-        self.params['w_ei_mean'] = 0.005
-        self.params['w_ei_sigma'] = 0.001
+        self.params['w_ei_unspec'] = 5. # untrained, unspecific PYR -> Basket connections
+        self.params['p_ei_unspec'] = .7 # probability for PYR -> Basket connections
 
         # inh - exc
-        self.params['p_ie'] = 0.03 #self.params['p_ee']
-        self.params['w_ie_mean'] = 0.005
-        self.params['w_ie_sigma'] = 0.001
+        self.params['w_ie_unspec'] = 5. # untrained, unspecific Basket -> PYR connections
+        self.params['p_ie_unspec'] = .7 # probability for Basket -> PYR Basket connections
+        self.params['w_ie_spec'] = 5. # RSNP -> PYR, effective only after training
+        self.params['p_ie_spec'] = 1. # RSNP -> PYR
 
         # inh - inh
-        self.params['p_ii'] = 0.03
-        self.params['w_ii_mean'] = 0.003
-        self.params['w_ii_sigma'] = 0.001
+        self.params['w_ii_unspec'] = 1. # untrained, unspecific Basket -> PYR connections
+        self.params['p_ii_unspec'] = .7 # probability for Basket -> PYR Basket connections
+
+        # approximately the same as in Mikael Lundqvist's work / copied from the olfaction project
+#        self.params['p_rsnp_pyr'] = 0.7
+#        self.params['p_pyr_pyr_local'] = 0.25
+#        self.params['p_pyr_pyr_global'] = 0.3 # only relevant when 'orthogonal' patterns are studied 
+#        self.params['p_pyr_basket'] = 0.7
+#        self.params['p_basket_pyr'] = 0.7
+#        self.params['p_pyr_rsnp'] = 0.3
+#        self.params['p_basket_basket'] = 0.7
+
+
 
 
         # when the initial connections are derived on the cell's tuning properties, these two values are used
@@ -187,7 +204,7 @@ class parameter_storage(object):
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .1, 0.1
+        self.params['blur_X'], self.params['blur_V'] = .1, .1
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -205,11 +222,13 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.10 # percentage of noise for each individual training speed
         self.params['n_cycles'] = 1   # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 5 # how many different speeds are trained per cycle
+        self.params['n_speeds'] = 1 # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
+
+
         # is one speed is trained, it is presented starting from on this number of different locations
-        self.params['n_stim_per_direction'] = 3
+        self.params['n_stim_per_direction'] = 1
         self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
@@ -225,8 +244,11 @@ class parameter_storage(object):
         self.params['t_training_stim'] = 2000.  # [ms] time each stimulus is presented
         self.params['t_sim'] = self.params['n_training_stim'] * self.params['t_training_stim']  # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         self.params['t_start'] = 0.           # [ms] blank time before stimulus appears
+        if self.params['training_run']:
+            self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
+        else:
+            self.params['t_blank'] = 200
         self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
@@ -236,14 +258,24 @@ class parameter_storage(object):
         self.params['n_gids_to_record'] = 20
         
         
+        # ########################
+        # BCPNN SYNAPSE PARAMETERS
+        # ########################
+        self.params['fmax_bcpnn'] = 100.0   # should be as the maximum output rate (with inhibitory feedback)
+        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
+        self.params['bcpnn_params'] =  {'gain': 0.0, 'K':1.0,'fmax': self.params['fmax_bcpnn'],'delay':1.0, 'tau_i': 10., 'tau_j': 10.,'tau_e': 10.,'tau_p': self.params['taup_bcpnn'],\
+                'epsilon': self.params['fmax_bcpnn'] / self.params['taup_bcpnn']}
+        # gain is set to zero in order to have no plasiticity effects while training
+        # K: learning rate (how strong the p-traces get updated)
 
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 5000.       # [Hz]
-        self.params['w_input_exc'] = 2e-2     # [uS] mean value for input stimulus ---< exc_units (columns
-        if self.params['use_pynest']:
-            self.params['w_input_exc'] *= 1000. # [uS] --> [nS] Nest expects nS
+        self.params['f_max_stim'] = 500.       # [Hz]
+        self.params['w_input_exc'] = 50. # [nS] mean value for input stimulus ---< exc_units (columns
+        # needs to be changed if PyNN is used
+        if not self.params['use_pynest']:
+            self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS
 
 
         # ######
@@ -262,71 +294,13 @@ class parameter_storage(object):
 
 
     def set_folder_name(self, folder_name=None):
-        # folder naming code:
-        #   PREFIX + XXXX + parameters
-        #  X = ['A', # for anisotropic connections
-        #       'I', # for isotropic connections
-        #       'R', # for random connections
-        #       '-', # for non-existant connections
-        # order of X: 'ee', 'ei', 'ie', 'ii'
-
-        connectivity_code = ''
-
-        if self.params['connectivity_ee'] == 'anisotropic':
-            connectivity_code += 'A'
-        elif self.params['connectivity_ee'] == 'isotropic':
-            connectivity_code += 'I'
-        elif self.params['connectivity_ee'] == 'random':
-            connectivity_code += 'R'
-        elif self.params['connectivity_ee'] == False:
-            connectivity_code += '-'
-
-        if self.params['connectivity_ei'] == 'anisotropic':
-            connectivity_code += 'A'
-        elif self.params['connectivity_ei'] == 'isotropic':
-            connectivity_code += 'I'
-        elif self.params['connectivity_ei'] == 'random':
-            connectivity_code += 'R'
-        elif self.params['connectivity_ei'] == False:
-            connectivity_code += '-'
-
-        if self.params['connectivity_ie'] == 'anisotropic':
-            connectivity_code += 'A'
-        elif self.params['connectivity_ie'] == 'isotropic':
-            connectivity_code += 'I'
-        elif self.params['connectivity_ie'] == 'random':
-            connectivity_code += 'R'
-        elif self.params['connectivity_ie'] == False:
-            connectivity_code += '-'
-
-        if self.params['connectivity_ii'] == 'anisotropic':
-            connectivity_code += 'A'
-        elif self.params['connectivity_ii'] == 'isotropic':
-            connectivity_code += 'I'
-        elif self.params['connectivity_ii'] == 'random':
-            connectivity_code += 'R'
-        elif self.params['connectivity_ii'] == False:
-            connectivity_code += '-'
-
-        self.params['connectivity_code'] = connectivity_code
 
         if folder_name == None:
-#            if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-#                folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
-#            else:
-#               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
-#            folder_name = 'Debug_' #% (self.params['motion_params'][4], self.params['w_sigma_x'])
-#            folder_name += connectivity_code
-#            folder_name += '-'+ self.params['motion_type']
-            folder_name = 'TestWorkInProgress/'
-
-
+            if self.params['training_run']:
+                folder_name = 'TrainingSim'
+            else:
+                folder_name = 'TestSim'
             folder_name += '/'
-
-            # if parameters should be stored in the folder name:
-#            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
-#                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
-#                        self.params['w_tgt_in_per_cell_ei'], self.params['w_tgt_in_per_cell_ie'], self.params['w_tgt_in_per_cell_ii'], self.params['delay_scale'], self.params['connectivity_radius'])
 
             self.params['folder_name'] = folder_name
         else:
@@ -342,7 +316,8 @@ class parameter_storage(object):
 #        self.params['input_folder'] = "Debug_InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
 #                (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
 #        self.params['input_folder'] = "TwoCellInputSpikeTrains/" # folder containing the input spike trains for the network generated from a certain stimulus
-        self.params['input_folder'] = "InputForNetworkTests/" # folder containing the input spike trains for the network generated from a certain stimulus
+
+        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
@@ -377,8 +352,8 @@ class parameter_storage(object):
         self.params['input_rate_fn_base'] = "%srate_" % self.params['input_folder']# input spike trains filename base
 
         # output spiketrains
-        self.params['exc_spiketimes_fn_base'] = '%sexc_spikes_' % self.params['spiketimes_folder']
-        self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged_' % self.params['spiketimes_folder']
+        self.params['exc_spiketimes_fn_base'] = '%sexc_spikes' % self.params['spiketimes_folder']
+        self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged.dat' % self.params['spiketimes_folder']
         self.params['exc_nspikes_fn_merged'] = '%sexc_nspikes' % self.params['spiketimes_folder']
         self.params['exc_nspikes_nonzero_fn'] = '%sexc_nspikes_nonzero.dat' % self.params['spiketimes_folder']
         self.params['inh_spiketimes_fn_base'] = '%sinh_spikes_' % self.params['spiketimes_folder']
@@ -411,6 +386,7 @@ class parameter_storage(object):
 
         # CONNECTION FILES
         self.params['weight_and_delay_fig'] = '%sweights_and_delays.png' % (self.params['figures_folder'])
+        self.params['connection_matrix_fig'] = '%sconnection_matrix_' % (self.params['figures_folder'])
 
         # connection lists have the following format: src_gid  tgt_gid  weight  delay
         # E - E
@@ -436,7 +412,7 @@ class parameter_storage(object):
         self.params['xdiff_vs_time_fn'] = 'xdiff_vs_time.dat'
         self.params['vdiff_vs_time_fn'] = 'vdiff_vs_time.dat'
 
-        self.create_folders()
+#        self.create_folders()
 
     def check_folders(self):
         """

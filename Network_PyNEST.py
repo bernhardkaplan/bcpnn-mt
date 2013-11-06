@@ -28,10 +28,9 @@ class NetworkModel(object):
 
         self.params = params
         self.debug_connectivity = True
-        self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
         self.iteration = 0  # the learning iteration (cycle)
         self.times = {}
-
+        self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
 
     def setup(self, load_tuning_prop=False):
 
@@ -70,8 +69,10 @@ class NetworkModel(object):
         self.setup_synapse_types()
 
         # clean spiketimes_folder:
-        cmd = 'rm %s* ' % self.params['spiketimes_folder']
-        os.system(cmd)
+        if self.pc_id == 0:
+            cmd = 'rm %s* ' % self.params['spiketimes_folder']
+            os.system(cmd)
+
 
 
     def setup_synapse_types(self):
@@ -80,6 +81,12 @@ class NetworkModel(object):
                 {'weight': self.params['w_input_exc'], 'receptor_type': 0})  # numbers must be consistent with cell_params_exc
         nest.CopyModel('static_synapse', 'input_exc_1', \
                 {'weight': self.params['w_input_exc'], 'receptor_type': 1})
+
+        nest.CopyModel('static_synapse', 'exc_exc_local', \
+                {'weight': self.params['w_ee_local'], 'receptor_type': 0})
+
+        nest.CopyModel('static_synapse', 'exc_inh_unspec', \
+                {'weight': self.params['w_ei_unspec'], 'receptor_type': 0})
 
         if (not 'bcpnn_synapse' in nest.Models('synapses')):
             nest.Install('pt_module')
@@ -105,32 +112,41 @@ class NetworkModel(object):
             # # # # # # # # # # # #
             #     C R E A T E     #
             # # # # # # # # # # # #
-        # TODO:
+        TODO:
 
         the cell_params dict entries tau_syn should be set according to the cells' tuning properties
         --> instead of populations, create single cells?
         """
 
-        self.list_of_populations = [ [] for i in xrange(self.params['n_hc'])]
+        self.list_of_exc_pop = [ [] for i in xrange(self.params['n_hc'])]
+        self.list_of_unspecific_inh_pop = [ [] for i in xrange(self.params['n_hc'])]
+        self.list_of_specific_inh_pop = [ [] for i in xrange(self.params['n_hc'])]
         self.local_idx_exc = []
-        self.local_idx_inh = []
-        cell_idx = 0
+        self.local_idx_inh_unspec = []
+        self.local_idx_inh_spec = []
+        ##### EXC CELLS
         for hc in xrange(self.params['n_hc']):
             for mc in xrange(self.params['n_mc_per_hc']):
                 cell_params = self.params['cell_params_exc'].copy()
-                # TODO:
-                # get the tuning properties for cells in that MC and 
-                # calculate the time_constants based on the preferred velocity
                 pop = nest.Create(self.params['neuron_model'], self.params['n_exc_per_mc'], params=cell_params)
-                # TODO:
-                # write tau_syn parameters to file
                 self.local_idx_exc += self.get_local_indices(pop)
-                self.list_of_populations[hc].append(pop)
+                self.list_of_exc_pop[hc].append(pop)
 
-#        print 'DEBUG ', len(self.list_of_populations)
+        ##### UNSPECIFIC INHIBITORY CELLS
+        for hc in xrange(self.params['n_hc']):
+            pop = nest.Create(self.params['neuron_model'], self.params['n_inh_unspec_per_hc'], params=cell_params)
+            self.list_of_unspecific_inh_pop.append(pop)
+            self.local_idx_inh_unspec += self.get_local_indices(pop)
+
+        ##### SPECIFIC INHIBITORY CELLS
+        for hc in xrange(self.params['n_hc']):
+            for mc in xrange(self.params['n_mc_per_hc']):
+                pop = nest.Create(self.params['neuron_model'], self.params['n_inh_per_mc'], params=cell_params)
+                self.list_of_specific_inh_pop.append(pop)
+                self.local_idx_inh_spec += self.get_local_indices(pop)
+
+#        print 'DEBUG ', len(self.list_of_exc_pop)
         # set the cell parameters
-        self.inh_pop = nest.Create(self.params['neuron_model'], self.params['n_inh'], params=self.params['cell_params_inh'])
-        self.local_idx_inh = self.get_local_indices(self.inh_pop)
         self.spike_times_container = [ [] for i in xrange(len(self.local_idx_exc))]
 
         # v_init
@@ -163,7 +179,6 @@ class NetworkModel(object):
             CS = CreateStimuli.CreateStimuli()
             random_order = self.params['random_training_order']
             motion_params = CS.create_motion_sequence_1D(self.params, random_order)
-            print 'DEBUG saving motion params', motion_params, 'to:', self.params['training_sequence_fn']
             np.savetxt(self.params['training_sequence_fn'], motion_params)
             n_stim_total = self.params['n_training_stim']
             for i_stim in xrange(n_stim_total):
@@ -172,7 +187,8 @@ class NetworkModel(object):
 
                 # get the input signal
                 idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
-                idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) idx_within_stim = 0
+                idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+                idx_within_stim = 0
                 for i_time in xrange(idx_t_start, idx_t_stop):
                     time_ = (idx_within_stim * dt) / self.params['t_stimulus']
                     x_stim = x0 + time_ * v0
@@ -184,8 +200,12 @@ class NetworkModel(object):
 
             
                 if with_blank:
-                    blank_idx = np.arange(1./dt * self.params['t_before_blank'] + idx_t_start, 1. / dt * (self.params['t_before_blank'] + self.params['t_blank']) + idx_t_start)
-                    before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt + idx_t_start)
+                    start_blank = idx_t_start + 1. / dt * self.params['t_before_blank']
+                    stop_blank = idx_t_start + 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
+                    blank_idx = np.arange(start_blank, stop_blank)
+                    before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
+                    print 'debug stim before_stim_idx', i_stim, before_stim_idx, before_stim_idx.size
+                    print 'debug stim blank_idx', i_stim, blank_idx, blank_idx.size
                     blank_idx = np.concatenate((blank_idx, before_stim_idx))
                     # blanking
                     for i_time in blank_idx:
@@ -207,10 +227,10 @@ class NetworkModel(object):
                         spike_times.append(i * dt)
                 self.spike_times_container[i_] = spike_times
                 if save_output:
-                    output_fn = self.params['input_rate_fn_base'] + str(unit) + '.npy'
-                    np.save(output_fn, rate_of_t)
-                    output_fn = self.params['input_st_fn_base'] + str(unit) + '.npy'
-                    np.save(output_fn, np.array(spike_times))
+                    output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
+                    np.savetxt(output_fn, rate_of_t)
+                    output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
+                    np.savetxt(output_fn, np.array(spike_times))
 
 #        self.times['create_input'] = self.timer.diff()
         return self.spike_times_container
@@ -223,15 +243,129 @@ class NetworkModel(object):
         for i_, tgt in enumerate(self.local_idx_exc):
             try:
 #                fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
-                fn = self.params['input_st_fn_base'] + str(tgt - 1) + '.npy'
-                spike_times = np.load(fn)
+                fn = self.params['input_st_fn_base'] + str(tgt - 1) + '.dat'
+                spike_times = np.loadtxt(fn)
             except: # this cell does not get any input
                 print "Missing file: ", fn
                 spike_times = []
-            self.spike_times_container[i_] = spike_times
+
+            if type(spike_times) == type(1.0): # it's just one spike
+                self.spike_times_container[i_] = np.array([spike_times])
+            else:
+                self.spike_times_container[i_] = spike_times
 
 
 
+    def connect(self):
+        nest.SetDefaults('bcpnn_synapse', params=self.params['bcpnn_params'])
+
+        self.connect_input_to_exc()
+
+        if self.params['training_run']:
+            self.connect_ee(load_weights=False)
+            self.connect_ei_unspecific()
+        else: # load the weight matrix
+            self.connect_ee(load_weights=True)
+            self.connect_ei_unspecific()
+            self.connect_ei_specific(load_weights=True)
+            self.connect_ie() # connect unspecific and specific inhibition to excitatory cells
+            self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
+
+#        self.times['t_calc_conns'] = self.timer.diff()
+
+
+    def connect_ei_unspecific(self):
+        pass   
+
+#        for 
+#        for src_hc in xrange(self.params['n_hc']):
+#            tgt_hc = src_hc
+#            for src_mc in xrange(self.params['n_mc_per_hc']):
+#                src_pop = self.list_of_exc_pop[src_hc][src_mc]
+#                tgt_pop = self.list_of_unspecific_inh_pop[tgt_hc]
+#                print 'src_pop %d %d' % (src_hc, src_mc), src_pop
+
+
+
+
+
+    def connect_ee(self, load_weights=False):
+
+        initial_weight = 0.
+
+        if load_weights:
+            fn = self.params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat'
+            assert (os.path.exists(fn)), 'ERROR: Weight matrix not found %s\n\tCorrect training_run flag set?\n\t\tHave you run Network_PyNEST_weight_analysis_after_training.py?\n' % fn
+            conn_mat_ee = np.loadtxt(self.params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat')
+        else:
+            conn_mat_ee = initial_weight * np.ones((self.params['n_mc'], self.params['n_mc']))
+
+        if load_weights:
+            for src_hc in xrange(self.params['n_hc']):
+                for src_mc in xrange(self.params['n_mc_per_hc']):
+                    src_pop = self.list_of_exc_pop[src_hc][src_mc]
+                    src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
+                    # TODO:
+                    # get the tuning properties for cells in that MC and 
+                    # calculate the time_constants based on the preferred velocity
+                    print 'Debug TODO Need to get the tuning prop of this source pop:', src_pop
+                    tp_src = self.tp_src[src_pop, 2] # get the v_x tuning for these cells
+                    for tgt_hc in xrange(self.params['n_hc']):
+                        for tgt_mc in xrange(self.params['n_mc_per_hc']):
+                            # TODO:
+                            # write tau_syn parameters to file
+                            tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
+                            nest.ConvergentConnect(src_pop, tgt_pop, model='bcpnn_synapse')
+                            tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
+
+                            # modify the parameters
+                            nest.SetStatus(nest.GetConnections(src_pop, tgt_pop), {'weight': conn_mat_ee[src_pop_idx, tgt_pop_idx]})
+        else:
+            for tgt_gid in self.local_idx_exc:
+                hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
+                n_rnd_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
+                source_gids = np.array([])
+                while source_gids.size != n_rnd_src:
+                    source_gids = np.random.randint(gid_min, gid_max, n_rnd_src)
+                nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local')
+
+
+#            for src_hc in xrange(self.params['n_hc']):
+#                for src_mc in xrange(self.params['n_mc_per_hc']):
+#                    src_pop = self.list_of_exc_pop[src_hc][src_mc]
+#                     for each neuron in src_pop choose p_ee_local * n_exc_per_mc sources
+#                    for i_, src_gid in enumerate(src_pop):
+
+
+
+
+
+    
+
+    def connect_ei(self):
+        for src_hc in xrange(self.params['n_hc']):
+            tgt_pop = self.list_of_unspecific_inh_pop[src_hc]
+            for src_mc in xrange(self.params['n_mc_per_hc']):
+                src_pop = self.list_of_exc_pop[src_hc][src_mc]
+                nest.ConvergentConnect(src_pop, tgt_pop, model='')
+
+
+
+    def get_gids_to_mc(self, pyr_gid):
+        """
+        Return the HC, MC within the HC in which the cell with pyr_gid is in
+        and the min and max gid of pyr cells belonging to the same MC.
+        """
+        mc_idx = (pyr_gid - 1) / self.params['n_exc_per_mc']
+        hc_idx = mc_idx / self.params['n_mc_per_hc']
+        gid_min = mc_idx * self.params['n_exc_per_mc'] + 1 # + 1 because of NEST's 'smart' indexing
+        gid_max = (mc_idx + 1) * self.params['n_exc_per_mc']  # here no +1 because it's used for randrange and +1 would include a false cell
+        return (hc_idx, mc_idx, gid_min, gid_max)
+
+
+
+
+    
     def connect_input_to_exc(self):
         """
             # # # # # # # # # # # # # # # # # # # # # #
@@ -250,98 +384,16 @@ class NetworkModel(object):
 #        for i_, (unit, vp) in enumerate(self.local_idx_exc):
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
-            nest.SetStatus([self.stimulus[i_]], {'spike_times' : spike_times})
-            # get the cell from the list of populations
-            mc_idx = (unit - 1) / self.params['n_exc_per_mc']
-            hc_idx = (unit - 1) / n_per_hc
-            mc_idx_in_hc = mc_idx - hc_idx * self.params['n_mc_per_hc']
-            idx_in_pop = (unit - 1) - mc_idx * self.params['n_exc_per_mc']
-
-#            print 'debug unit %d\ti_=%d\thc_idx = %d\tmc_idx_in_hc = %d\tidx_in_pop = %d' % (unit, i_, hc_idx, mc_idx_in_hc, idx_in_pop)
-            nest.Connect([self.stimulus[i_]], [self.list_of_populations[hc_idx][mc_idx_in_hc][idx_in_pop]], model='input_exc_0')
-
-
-
-
-
-#        self.stimulus = Population(len(self.local_idx_exc), SpikeSourceArray)
-#            self.exc_pop = Population(n_exc, IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
-#                prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
-#            self.projections[conn_type].append(prj)
-
-#        self.projections['stim'] = []
-#        self.stimuli = []
-#        self.pop_views = [] 
-#        conn = OneToOneConnector(weights=self.params['w_input_exc'])
-#        for i_, unit in enumerate(self.local_idx_exc):
-#            spike_times = self.spike_times_container[i_]
-
-#            ssa = create(SpikeSourceArray, {'spike_times': spike_times})
-#            ssa = Population(1, SpikeSourceArray, {'spike_times': spike_times})
-#            ssa.set({'spike_times' : spike_times})
-#            self.stimuli.append(ssa)
-
-#            if self.params['with_short_term_depression']:
-
-#                connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory', synapse_dynamics=self.short_term_depression)
-#                selector = np.zeros(self.params['n_exc'], dtype=np.bool)
-#                selector[unit] = True
-#                print 'debug unit', unit, type(unit)
-#                w[i_] = 1.#self.params['w_input_exc']
-#                tgt = PopulationView(self.exc_pop, np.array([unit]))
-#                self.pop_views.append(tgt)
-#                prj = Projection(ssa, tgt, conn, target='excitatory', synapse_dynamics=self.short_term_depression)
-#                prj = Projection(self.stimuli[-1], self.pop_views[-1], conn, target='excitatory', synapse_dynamics=self.short_term_depression)
-#                self.projections['stim'].append(prj)
-#            else:
-#            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
-#        self.times['connect_input'] = self.timer.diff()
-
-
-    def connect(self):
-        if self.params['n_exc'] > 5000:
-            save_output = False
-        else:
-            save_output = True
-
-        self.connect_input_to_exc()
-
-        self.connect_ee(load_weights=False)
-#        self.connect_populations('ee')
-#        self.connect_populations('ei')
-#        self.connect_populations('ie')
-#        self.connect_populations('ii')
-#        self.connect_noise()
-#        self.times['t_calc_conns'] = self.timer.diff()
-
-
-
-    def connect_ee(self, load_weights=False):
-
-#        initial_weight = np.log(nest.GetDefaults('bcpnn_synapse')['p_ij']/(nest.GetDefaults('bcpnn_synapse')['p_i']*nest.GetDefaults('bcpnn_synapse')['p_j']))
-        initial_weight = 0.
-        initial_bias = np.log(nest.GetDefaults('bcpnn_synapse')['p_j'])
-        syn_param = {'weight': initial_weight, 'bias': initial_bias,'gain': 0.0, 'delay': 1.0,\
-                'tau_i': 10.0, 'tau_j': 10.0, 'tau_e': 100.0, 'tau_p': 1000.0}
-
-        if load_weights:
-            conn_mat_ee = np.load(self.params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.npy')
-        else:
-            conn_mat_ee = initial_weight * np.ones((self.params['n_mc'], self.params['n_mc']))
-        for src_hc in xrange(self.params['n_hc']):
-            for src_mc in xrange(self.params['n_mc_per_hc']):
-                src_pop = self.list_of_populations[src_hc][src_mc]
-                src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
-                for tgt_hc in xrange(self.params['n_hc']):
-                    for tgt_mc in xrange(self.params['n_mc_per_hc']):
-                        tgt_pop = self.list_of_populations[tgt_hc][tgt_mc]
-                        nest.ConvergentConnect(src_pop, tgt_pop, model='bcpnn_synapse')
-                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
-
-                        # modify the parameters
-                        nest.SetStatus(nest.GetConnections(src_pop, tgt_pop), {'weight': conn_mat_ee[src_pop_idx, tgt_pop_idx]})
-
-#                        print 'modified params:', params
+#            print 'debug', type(spike_times), spike_times, unit
+            if spike_times.size > 1:
+                nest.SetStatus([self.stimulus[i_]], {'spike_times' : spike_times})
+                # get the cell from the list of populations
+                mc_idx = (unit - 1) / self.params['n_exc_per_mc']
+                hc_idx = (unit - 1) / n_per_hc
+                mc_idx_in_hc = mc_idx - hc_idx * self.params['n_mc_per_hc']
+                idx_in_pop = (unit - 1) - mc_idx * self.params['n_exc_per_mc']
+    #            print 'debug unit %d\ti_=%d\thc_idx = %d\tmc_idx_in_hc = %d\tidx_in_pop = %d' % (unit, i_, hc_idx, mc_idx_in_hc, idx_in_pop)
+                nest.Connect([self.stimulus[i_]], [self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_pop]], model='input_exc_0')
 
 
     def get_weights_after_learning_cycle(self):
@@ -360,11 +412,11 @@ class NetworkModel(object):
         for src_hc in xrange(self.params['n_hc']):
             print 'get_weights_after_learning_cycle: Proc %d src_hc %d' % (self.pc_id, src_hc)
             for src_mc in xrange(self.params['n_mc_per_hc']):
-                src_pop = self.list_of_populations[src_hc][src_mc]
+                src_pop = self.list_of_exc_pop[src_hc][src_mc]
                 src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
                 for tgt_hc in xrange(self.params['n_hc']):
                     for tgt_mc in xrange(self.params['n_mc_per_hc']):
-                        tgt_pop = self.list_of_populations[tgt_hc][tgt_mc]
+                        tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
 
                         # get the list of connections stored on the current MPI node
@@ -721,7 +773,7 @@ class NetworkModel(object):
         exc_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'exc_spikes'})
         for hc in xrange(self.params['n_hc']):
             for mc in xrange(self.params['n_mc_per_hc']):
-                nest.ConvergentConnect(self.list_of_populations[hc][mc], exc_spike_recorder)
+                nest.ConvergentConnect(self.list_of_exc_pop[hc][mc], exc_spike_recorder)
 
         # TODO: why is there a conflict between record_v and recording spikes?
         if record_v: 
@@ -729,7 +781,7 @@ class NetworkModel(object):
 #            for i_, (unit, vp) in enumerate(self.local_idx_exc):
                 if gid in self.local_idx_exc:
                     hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(gid)
-                    nest.ConvergentConnect(voltmeter, [self.list_of_populations[hc_idx][mc_idx_in_hc][idx_in_mc]])
+                    nest.ConvergentConnect(voltmeter, [self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]])
     
 
         # # # # # # # # # # # # # #
@@ -777,11 +829,29 @@ class NetworkModel(object):
 
 if __name__ == '__main__':
 
+    try: 
+        from mpi4py import MPI
+        USE_MPI = True
+        comm = MPI.COMM_WORLD
+        pc_id, n_proc = comm.rank, comm.size
+        print "USE_MPI:", USE_MPI, 'pc_id, n_proc:', pc_id, n_proc
+    except:
+        USE_MPI = False
+        pc_id, n_proc, comm = 0, 1, None
+        print "MPI not used"
+
     t_0 = time.time()
 
-    # always call set_filenames to update the folder name and all depending filenames!
-    ps.set_filenames()
+#    if pc_id == 0:
+#        ok = raw_input('\nNew folder: %s\nContinue to create this folder structure? Parameters therein will be overwritten\n\ty / Y / blank = OK; anything else --> exit\n' % ps.params['folder_name'])
+#        if not ((ok == '') or (ok.capitalize() == 'Y')):
+#            print 'quit'
+#            exit(1)
+#    if comm != None:
+#        comm.Barrier()
 
+    # always call set_filenames to update the folder name and all depending filenames (if params are modified and folder names change due to that)!
+    ps.set_filenames() 
     ps.create_folders()
     ps.write_parameters_to_file()
 
@@ -797,15 +867,16 @@ if __name__ == '__main__':
     NM.create(load_files)
 
     if not load_files:
-        spike_times_container = NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=False)
+        spike_times_container = NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
     else:
         NM.load_input()
     NM.connect()
-    NM.run_sim(sim_cnt, record_v=record)
-    NM.get_weights_after_learning_cycle()
-    NM.print_times()
 
-    t_end = time.time()
-    t_diff = t_end - t_0
-    print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
+#    NM.run_sim(sim_cnt, record_v=record)
+#    NM.get_weights_after_learning_cycle()
+#    NM.print_times()
+
+#    t_end = time.time()
+#    t_diff = t_end - t_0
+#    print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
 

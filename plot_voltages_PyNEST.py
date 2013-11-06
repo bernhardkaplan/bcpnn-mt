@@ -28,7 +28,9 @@ def plot_volt(fn, gid=None, n=1):
     
     for gid in gids:
         time_axis, volt = utils.extract_trace(d, gid)
-        pylab.plot(time_axis, volt, label='%d' % gid, lw=2)
+        print 'debug gid volt size', gid, volt.size
+        if volt.size > 0:
+            pylab.plot(time_axis, volt, label='%d' % gid, lw=2)
 
     parts = fn.rsplit('.')
     output_fn = "" 
