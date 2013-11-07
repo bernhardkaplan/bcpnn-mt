@@ -1,13 +1,19 @@
+import os, sys, inspect
+# use this if you want to include modules from a subforder
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../")))
+print 'cmd_subfolder', cmd_subfolder
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
+
 import random
 import numpy as np
-import sys
 import pylab
 import utils
-import os
 import re
 
 
 def plot_volt(fn, gid=None, n=1):
+    print 'Loading fn:', fn
     d = np.loadtxt(fn)
     if not d.size > 0:
         print 'No data found in:', fn
@@ -28,7 +34,7 @@ def plot_volt(fn, gid=None, n=1):
     
     for gid in gids:
         time_axis, volt = utils.extract_trace(d, gid)
-        print 'debug gid volt size', gid, volt.size
+#        print 'debug gid volt size', gid, volt.size
         if volt.size > 0:
             pylab.plot(time_axis, volt, label='%d' % gid, lw=2)
 
@@ -88,12 +94,18 @@ if __name__ == '__main__':
         params = ps.params
         params_fn = params['params_fn_json']
 
+    print sys.argv
+    try: 
+        cell_type = sys.argv[1]
+        assert cell_type in params['cell_types'], 'Wrong cell type given %s should be in: %s' % (cell_type, str(params['cell_types']))
+    except:
+        cell_type = 'exc'
+
     print 'Getting parameters from:', params_fn
     data_folder = params['spiketimes_folder'] # should be 'volt_folder', but pynest has only one data_path
 
-
     list_of_files = []
-    to_match = 'volt' #params['exc_volt_fn_base']
+    to_match = '%s_volt' % cell_type
     for fn in os.listdir(data_folder):
 #        print 'debug ', to_match, fn
         m = re.match(to_match, fn)
@@ -106,46 +118,9 @@ if __name__ == '__main__':
 
     pylab.figure()
     for i_, fn in enumerate(list_of_files):
-#        plot_volt(fn, gid='all')
-        plot_volt(fn, gid=[49, 91])
-#    gid
+        plot_volt(fn, gid='all')
+#        plot_volt(fn, gid=[49, 91])
         
 
     pylab.show() 
 
-#            pylab.figure()
-#            plot_volt(fn, gid=gids)
-#        else: # voltage file
-#            fn = sys.argv[1]
-#            pylab.figure()
-#            plot_volt(fn, gid=None, n=n_to_plot)
-#        except:
-#            gids = 'all'
-
-#    else:
-#        fns = sys.argv[1:]
-#        for fn in fns:
-#            pylab.figure()
-
-#    fn = sys.argv[1]
-#        gids = [205, 378]
-#        gids = [177, 130]
-#        plot_volt(fn, gids)
-
-#        n = 5
-#        plot_volt(fn, gid=None, n=n)
-
-#    plot_average_volt(fn, gids)
-
-#    plot_average_volt(fn, gid='all')
-
-#    pylab.xlabel('Time [ms]')
-#    pylab.ylabel('Voltage [mV]')
-
-#    output_fn = fn.rsplit('.')[0] + '.png'
-#    print 'Saving to', output_fn
-#    pylab.savefig(output_fn)
-#    pylab.show()
-
-#    plot_volt(fn, n=5)
-#    plot_volt(fn, 'all')

@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     iteration = 0
     WA = WeightAnalyser(params, iteration=iteration)
-    WA.load_weights()
+    WA.load_adj_lists()
     WA.load_spikes()
     WA.get_weights_to_cell(295)
 

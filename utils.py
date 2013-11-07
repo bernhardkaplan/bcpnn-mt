@@ -10,6 +10,18 @@ import copy
 import re
 
 
+def transform_tauzi_from_vx(vx, params):
+    """
+    tau_zi ~ 1 / v_min
+    """
+    if params['tau_vx_transformation_mode'] == 'linear':
+        tau_zi = params['tau_vx_param2'] * vx + params['tau_vx_param1']
+    else:
+        tau_zi = params['tau_vx_param1'] / (vx + params['tau_vx_param2']) # beta / (alpha + x)
+
+    return tau_zi
+
+
 def convert_connlist_to_matrix(fn, n_src, n_tgt):
     """
     Convert the connlist which is in format (src, tgt, weight, delay) to a weight matrix.

@@ -30,7 +30,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
-            self.params['n_theta'] = 3# resolution in velocity norm and direction
+            self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
             self.params['n_rf_x'] = 20
             self.params['n_rf_y'] = 1
@@ -39,7 +39,8 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 16# must be an integer multiple of 4
+        self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
@@ -52,26 +53,33 @@ class parameter_storage(object):
         # ###################
         # NETWORK PARAMETERS
         # ###################
-        self.params['fraction_inh_cells'] = 0.20 # fraction of inhibitory cells in the network, only approximately!
-        self.params['n_theta_inh'] = self.params['n_theta']
-        self.params['n_v_inh'] = self.params['n_v']
-        self.params['n_rf_inh'] = int(round(self.params['fraction_inh_cells'] * self.params['n_rf']))
-        self.params['n_rf_x_inh'] = np.int(np.sqrt(self.params['n_rf_inh'] * np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rf dots?"
+        self.params['fraction_inh_cells'] = 0.25 # fraction of inhibitory cells in the network, only approximately!
         # neuron numbers: based on n_mc
-        self.params['n_inh_unspec'] = int(round(.25 * self.params['n_exc'])) # normalizing inhibition on HC level, based on the assumption that n_inh_unspec = n_inh_spec
+        self.params['n_inh_unspec'] = int(round(self.params['fraction_inh_cells'] * self.params['n_exc'])) # normalizing inhibition on HC level, based on the assumption that n_inh_unspec = n_inh_spec
         self.params['n_inh_unspec_per_hc'] = int(round(self.params['n_inh_unspec'] / self.params['n_hc']))
         self.params['n_inh_spec'] =  self.params['n_inh_unspec'] # local inhibition
         self.params['n_inh_per_mc'] = int(round(self.params['n_inh_spec'] / float(self.params['n_mc']))) # specific local inhibition
         self.params['n_inh' ] = self.params['n_inh_unspec'] + self.params['n_inh_spec']
+        self.params['n_theta_inh'] = self.params['n_theta']
+        self.params['n_v_inh'] = self.params['n_v']
+        self.params['n_rf_inh'] = int(round(self.params['fraction_inh_cells'] * self.params['n_rf']))
+        self.params['n_rf_x_inh'] = np.int(np.sqrt(self.params['n_rf_inh'] * np.sqrt(3))) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rf dots?"
+
+        # cell gid offsets --> take care that cells are created in that order!
+        self.params['exc_offset'] = 0
+        self.params['inh_unspec_offset'] = self.params['n_exc']
+        self.params['inh_spec_offset'] = self.params['n_exc'] + self.params['n_inh_unspec']
+
         self.params['n_cells'] = self.params['n_exc'] + self.params['n_inh']
         print '\nModular network structure:'
         print '\tn_hc: %d\tn_mc_per_hc: %d\tn_mc: %d\tn_exc_per_mc: %d' % (self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_mc'], self.params['n_exc_per_mc'])
         print '\tn_exc_per_mc: %d\tn_inh_per_mc: %d' % (self.params['n_exc_per_mc'], self.params['n_inh_per_mc'])
-        print '\tn_exc_per_hc: %d\tn_inh_per_mc specific: %d\tn_inh_per_hc UNspecific %d' % \
+        print '\tn_exc_per_hc: %d\tn_inh_per_mc specific: %d\tn_inh_unspec_per_hc %d' % \
                 (self.params['n_exc_per_mc'] * self.params['n_mc_per_hc'], self.params['n_inh_per_mc'], self.params['n_inh_unspec_per_hc'])
         print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' \
                 % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
                 self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
+        self.params['cell_types'] = ['exc', 'inh_spec', 'inh_unspec']
 
         # ###################
         # CELL PARAMETERS   #
@@ -79,6 +87,7 @@ class parameter_storage(object):
         self.params['tau_syn_exc'] = 5.0 # 10.
         self.params['tau_syn_inh'] = 10.0 # 20.
         self.params['use_pynest'] = True
+        # receptor types: 0 -- AMPA (5 ms), 1 -- NMDA (100 ms), 2 -- GABA (20 ms)
         if self.params['use_pynest']:
             self.params['neuron_model'] = 'iaf_psc_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
@@ -132,14 +141,14 @@ class parameter_storage(object):
         
         # exc - exc
         self.params['p_ee_local'] = .7
-        self.params['w_ee_local'] = 1.
+        self.params['w_ee_local'] = 20.
 
         # exc - inh
-        self.params['w_ei_unspec'] = 5. # untrained, unspecific PYR -> Basket connections
+        self.params['w_ei_unspec'] = 200. # untrained, unspecific PYR -> Basket connections
         self.params['p_ei_unspec'] = .7 # probability for PYR -> Basket connections
 
         # inh - exc
-        self.params['w_ie_unspec'] = 5. # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -100. # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .7 # probability for Basket -> PYR Basket connections
         self.params['w_ie_spec'] = 5. # RSNP -> PYR, effective only after training
         self.params['p_ie_spec'] = 1. # RSNP -> PYR
@@ -268,11 +277,28 @@ class parameter_storage(object):
         # gain is set to zero in order to have no plasiticity effects while training
         # K: learning rate (how strong the p-traces get updated)
 
+        # transformation parameter for v_x --> tau_zi
+        # for a linear transformation
+        self.params['tau_zi_max'] = 2000.
+        self.params['tau_zi_min'] = 10.
+        self.params['tau_vx_transformation_mode'] = 'linear'
+        tau_max, tau_min = self.params['tau_zi_max'], self.params['tau_zi_min']
+        if self.params['tau_vx_transformation_mode']:
+            beta = (tau_max - tau_min * self.params['v_min_tp'] / self.params['v_max_tp']) / (1. - self.params['v_min_tp'] / self.params['v_max_tp'])
+            self.params['tau_vx_param1'] = beta
+            self.params['tau_vx_param2'] = (tau_min - beta) / self.params['v_max_tp']
+        else:
+            alpha = (tau_min * v_max - tau_max * v_min) / (tau_max - tau_min)
+            beta = tau_max * (alpha - v_min)
+            self.params['tau_vx_param1'] = beta
+            self.params['tau_vx_param2'] = (tau_min - beta) / self.params['v_max_tp']
+
+
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 500.       # [Hz]
-        self.params['w_input_exc'] = 50. # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['f_max_stim'] = 1000.       # [Hz]
+        self.params['w_input_exc'] = 100. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
             self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS
@@ -356,8 +382,10 @@ class parameter_storage(object):
         self.params['exc_spiketimes_fn_merged'] = '%sexc_spikes_merged.dat' % self.params['spiketimes_folder']
         self.params['exc_nspikes_fn_merged'] = '%sexc_nspikes' % self.params['spiketimes_folder']
         self.params['exc_nspikes_nonzero_fn'] = '%sexc_nspikes_nonzero.dat' % self.params['spiketimes_folder']
-        self.params['inh_spiketimes_fn_base'] = '%sinh_spikes_' % self.params['spiketimes_folder']
-        self.params['inh_spiketimes_fn_merged'] = '%sinh_spikes_merged_' % self.params['spiketimes_folder']
+        self.params['inh_spec_spiketimes_fn_base'] = '%sinh_spec_spikes' % self.params['spiketimes_folder']
+        self.params['inh_spec_spiketimes_fn_merged'] = '%sinh_spec_spikes_merged.dat' % self.params['spiketimes_folder']
+        self.params['inh_unspec_spiketimes_fn_base'] = '%sinh_unspec_spikes' % self.params['spiketimes_folder']
+        self.params['inh_unspec_spiketimes_fn_merged'] = '%sinh_unspec_spikes_merged.dat' % self.params['spiketimes_folder']
         self.params['inh_nspikes_fn_merged'] = '%sinh_nspikes' % self.params['spiketimes_folder']
         self.params['inh_nspikes_nonzero_fn'] = '%sinh_nspikes_nonzero.dat' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']

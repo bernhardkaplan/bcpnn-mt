@@ -49,7 +49,6 @@ def plot_histogram(d, fig, gids_to_plot=None, time_range=False):
     # transform into rate
     n = n * (1000. / binsize)
     
-    ax = fig.add_subplot(212)
     ax.bar(bins[:-1], n, width=binsize)
     ax.set_xlim(time_range)
     ax.set_ylabel('Network output rate (summed over %d cells) [Hz]' % len(gids_to_plot)) 
@@ -67,6 +66,9 @@ def plot_histogram(d, fig, gids_to_plot=None, time_range=False):
 
 fns = sys.argv[1:]
 
+fig = pylab.figure()
+ax1 = fig.add_subplot(211)
+ax2 = fig.add_subplot(212)
 for fn in fns:
     try:
         d = np.loadtxt(fn)
@@ -90,8 +92,6 @@ for fn in fns:
             gids = np.r_[gids, gids_]
 
 #    time_range = (0, 1600)
-    fig = pylab.figure()
-    ax = fig.add_subplot(211)
     if (d.ndim == 1):
         x_axis = np.arange(d.size)
         ax.scatter(x_axis, d)
