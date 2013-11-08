@@ -14,9 +14,6 @@ import sys
 #import NeuroTools.parameters as ntp
 import os
 import utils
-import simulation_parameters
-ps = simulation_parameters.parameter_storage()
-params = ps.params
 import nest
 import CreateStimuli
 import json
@@ -24,9 +21,10 @@ import json
 
 class NetworkModel(object):
 
-    def __init__(self, params, iteration=0):
+    def __init__(self, param_tool, iteration=0):
 
-        self.params = params
+        self.param_tool = param_tool
+        self.params = param_tool.params
         self.debug_connectivity = True
         self.iteration = 0  # the learning iteration (cycle)
         self.times = {}
@@ -45,6 +43,11 @@ class NetworkModel(object):
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
             self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
+
+        # update 
+        self.param_tool.set_vx_tau_transformation_params(self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
+        self.params = self.param_tool.params
+
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_means_fn']
             np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop_exc)
@@ -308,7 +311,6 @@ class NetworkModel(object):
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local')
 
 
-        bcpnn_params = self.params['bcpnn_params']
         # setup an all-to-all connectivity
 #        for src_hc in xrange(self.params['n_hc']):
 #            for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -319,7 +321,6 @@ class NetworkModel(object):
                 # calculate the time_constants based on the preferred velocity
 #                print 'Debug TODO Need to get the tuning prop of this source pop:', src_pop
 #                tp_src = self.tuning_prop_exc[src_pop_idx, 2] # get the v_x tuning for these cells
-#                print 'connect_ee src_hc %d src_mc %d' % (src_hc, src_mc)
 #                for tgt_hc in xrange(self.params['n_hc']):
 #                    for tgt_mc in xrange(self.params['n_mc_per_hc']):
 #                        tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
@@ -327,7 +328,6 @@ class NetworkModel(object):
 #                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
 #                        nest.SetStatus(nest.GetConnections(src_pop, tgt_pop), {'weight': initial_weight})
 
-        # connect cells within one MC
         eps = 1e-12
         self.debug_tau_zi = np.zeros((self.params['n_exc'], 3))
         for i_, tgt_gid in enumerate(self.local_idx_exc):
@@ -340,13 +340,19 @@ class NetworkModel(object):
                 for src_mc in xrange(self.params['n_mc_per_hc']):
                     src_pop = self.list_of_exc_pop[src_hc][src_mc]
 
-                    v_x = self.tuning_prop_exc[np.array(src_pop) - 1, 2]
-                    tau_zi = utils.transform_tauzi_from_vx(v_x, self.params)
+                    vx_src = self.tuning_prop_exc[np.array(src_pop) - 1, 2]
+                    tau_zi = utils.transform_tauzi_from_vx(vx_src, self.params)
+#                    tau_zi = 100.
                     self.debug_tau_zi[np.array(src_pop) - 1, 0] = np.array(src_pop) - 1
-                    self.debug_tau_zi[np.array(src_pop) - 1, 2] = v_x
+                    self.debug_tau_zi[np.array(src_pop) - 1, 1] = vx_src
                     self.debug_tau_zi[np.array(src_pop) - 1, 2] = tau_zi
+                    if np.any(tau_zi) < 0:
+                        print 'Wrong transformation'
+                        exit(1)
                     for j_, src_gid in enumerate(src_pop):
-                        nest.Connect([src_gid], [tgt_gid], model='bcpnn_synapse', params={'tau_i':tau_zi[j_], 'weight':initial_weight})
+#                        print 'debugtauzi', tgt_gid, src_gid, tau_zi[j_]
+                        nest.Connect([src_gid], [tgt_gid], model='bcpnn_synapse', params={'weight':initial_weight})
+#                        nest.Connect([src_gid], [tgt_gid], model='bcpnn_synapse', params={'tau_i':tau_zi[j_], 'weight':initial_weight})
 
 #                    nest.ConvergentConnect(src_pop, [tgt_pop], model='bcpnn_synapse', params={'tau_i':tau_zi[)
 #                    nest.SetStatus(nest.GetConnections(src_pop, tgt_pop), {'weight': initial_weight, 'tau_i':tau_zi})
@@ -512,15 +518,14 @@ class NetworkModel(object):
             print 'get_weights_after_learning_cycle: Proc %d src_hc %d' % (self.pc_id, src_hc)
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 src_pop = self.list_of_exc_pop[src_hc][src_mc]
-                src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
                 for tgt_hc in xrange(self.params['n_hc']):
                     for tgt_mc in xrange(self.params['n_mc_per_hc']):
                         tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
-                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
                         conns = nest.GetConnections(src_pop, tgt_pop) # get the list of connections stored on the current MPI node
                         for c in conns:
                             cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
                             w = cp[0]['weight'] 
+#                            print 'debugw', cp[0]['synapse_model'], w, cp
                             if ((cp[0]['synapse_model'] == 'bcpnn_synapse') and (w != 0)):
                                 my_adj_list[c[1]].append((c[0], cp[0]['weight']))
                         n_my_conns += len(conns)
@@ -702,6 +707,9 @@ if __name__ == '__main__':
 #        print "MPI not used"
 
     t_0 = time.time()
+    import simulation_parameters
+    ps = simulation_parameters.parameter_storage()
+    params = ps.params
 
 #    if pc_id == 0:
 #        ok = raw_input('\nNew folder: %s\nContinue to create this folder structure? Parameters therein will be overwritten\n\ty / Y / blank = OK; anything else --> exit\n' % ps.params['folder_name'])
@@ -721,7 +729,7 @@ if __name__ == '__main__':
     record = False
     save_input_files = not load_files
 
-    NM = NetworkModel(ps.params, iteration=0)
+    NM = NetworkModel(ps, iteration=0)
 
     NM.setup()
 

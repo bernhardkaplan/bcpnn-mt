@@ -279,19 +279,9 @@ class parameter_storage(object):
 
         # transformation parameter for v_x --> tau_zi
         # for a linear transformation
-        self.params['tau_zi_max'] = 2000.
-        self.params['tau_zi_min'] = 10.
+        self.params['tau_zi_max'] = 500.
+        self.params['tau_zi_min'] = 50.
         self.params['tau_vx_transformation_mode'] = 'linear'
-        tau_max, tau_min = self.params['tau_zi_max'], self.params['tau_zi_min']
-        if self.params['tau_vx_transformation_mode']:
-            beta = (tau_max - tau_min * self.params['v_min_tp'] / self.params['v_max_tp']) / (1. - self.params['v_min_tp'] / self.params['v_max_tp'])
-            self.params['tau_vx_param1'] = beta
-            self.params['tau_vx_param2'] = (tau_min - beta) / self.params['v_max_tp']
-        else:
-            alpha = (tau_min * v_max - tau_max * v_min) / (tau_max - tau_min)
-            beta = tau_max * (alpha - v_min)
-            self.params['tau_vx_param1'] = beta
-            self.params['tau_vx_param2'] = (tau_min - beta) / self.params['v_max_tp']
 
 
         # ######
@@ -318,12 +308,24 @@ class parameter_storage(object):
         self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
         self.params['f_inh_noise'] = 1# [Hz]
 
+    def set_vx_tau_transformation_params(self, vmin, vmax):
+        tau_max, tau_min = self.params['tau_zi_max'], self.params['tau_zi_min']
+        if self.params['tau_vx_transformation_mode'] == 'linear':
+            beta = (tau_max - tau_min * vmin / vmax) / (1. - vmin / vmax)
+            self.params['tau_vx_param1'] = beta
+            self.params['tau_vx_param2'] = (tau_min - beta) / vmax
+        else:
+            alpha = (tau_min * vmax - tau_max * vmin) / (tau_max - tau_min)
+            beta = tau_max * (alpha - vmin)
+            self.params['tau_vx_param1'] = beta
+            self.params['tau_vx_param2'] = (tau_min - beta) / vmax
+
 
     def set_folder_name(self, folder_name=None):
 
         if folder_name == None:
             if self.params['training_run']:
-                folder_name = 'TrainingSim'
+                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
             else:
                 folder_name = 'TestSim'
             folder_name += '/'
@@ -343,7 +345,8 @@ class parameter_storage(object):
 #                (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
 #        self.params['input_folder'] = "TwoCellInputSpikeTrains/" # folder containing the input spike trains for the network generated from a certain stimulus
 
-        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
+#        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
+        self.params['input_folder'] = "TrainingInputFiles/" 
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']
