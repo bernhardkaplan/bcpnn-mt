@@ -25,7 +25,7 @@ class ToyExperiment(object):
         self.params = params
         nprnd.seed(0)
         if bcpnn_params == None:
-            self.bcpnn_params = {'tau_i': 10., 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':50.}
+            self.bcpnn_params = {'tau_i': 10., 'tau_j': 10.0, 'tau_e': 100., 'tau_p': 1000., 'fmax':200.}
         else:
             self.bcpnn_params = bcpnn_params
 
@@ -56,15 +56,15 @@ class ToyExperiment(object):
         self.mp = [.0, self.v_stim] # choose the motion - parameters for the test stimulus
 
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
-#        n_stim = 2
+#        n_stim = 1
         n_stim = 10
-        dt_stim = 2 * abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
+        dt_stim = 3 * abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
 #        t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         t_z_decay = 8 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         # t_z_decay is the time for the z_traces to decay between stimuli
         if t_sim == None:
-            if (t_z_decay < dt_stim):
-                stim_duration = 5 * dt_stim 
+            if (t_z_decay <= dt_stim):
+                stim_duration = 4 * dt_stim 
             elif (t_z_decay > dt_stim):
                 stim_duration = t_z_decay
             t_sim = n_stim * stim_duration + 1 # +1 to allow odd stim_durations and indexing errors due to rounding
@@ -127,7 +127,7 @@ class ToyExperiment(object):
         
         # NEST - code 
         # Setup 
-        self.params['w_input_exc'] = 2.0  # [nS]
+        self.params['w_input_exc'] = 50.0  # [nS]
         nest.CopyModel('static_synapse', 'input_exc_0', \
                 {'weight': self.params['w_input_exc'], 'receptor_type': 0})  # numbers must be consistent with cell_params_exc
         nest.CopyModel('static_synapse', 'input_exc_1', \
@@ -167,7 +167,7 @@ class ToyExperiment(object):
         self.syn_params = {'weight': initial_weight, 'bias': initial_bias, 'K': 1.0, 'delay': 1.0,\
                 'tau_i': self.bcpnn_params['tau_i'], 'tau_j': self.bcpnn_params['tau_j'], \
                 'tau_e': self.bcpnn_params['tau_e'], 'tau_p': self.bcpnn_params['tau_p'], \
-                'p_i': 0.01, 'p_j': 0.01, 'p_ij': 0.0001}
+                'p_i': 0.01, 'p_j': 0.01, 'p_ij': 0.0001, 'epsilon': self.bcpnn_params['fmax'] / self.bcpnn_params['tau_p']}
 
         for i_ in xrange(self.n_cells - 1):
             nest.Connect([cells[i_]], [cells[i_ + 1]], model='bcpnn_synapse')
@@ -301,6 +301,7 @@ class ToyExperiment(object):
                     'tau_ei' : self.bcpnn_params['tau_e'], 'tau_ej' : self.bcpnn_params['tau_e'], 'tau_eij' : self.bcpnn_params['tau_e'],
                     'tau_pi' : self.bcpnn_params['tau_p'], 'tau_pj' : self.bcpnn_params['tau_p'], 'tau_pij' : self.bcpnn_params['tau_p'],
                     }
+
         fmax = self.bcpnn_params['fmax']
 
         # compute the traces 
@@ -326,6 +327,7 @@ class ToyExperiment(object):
         self.t_max = wij.argmax() * dt
         print 'BCPNN offline computation:'
         print '\tw_ij : %.4e\tt_wmax: %d' % (self.w_end, self.t_max)
+        print '\tw_avg : %.4e' % (self.w_avg)
         print '\tp_i  :', pi[-1]
         print '\tp_j  :', pj[-1]
         print '\tp_ij :', pij[-1]
@@ -401,8 +403,10 @@ class ToyExperiment(object):
 
 #        ax5.set_xticks([])
 
-        output_fn = self.params['figures_folder'] + 'traces_tauzi_%04d_tauzj%04d_taue%d_taup%d_dx%.2e_dv%.2e_vstim%.1e.png' % \
-                (self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j'], self.bcpnn_params['tau_e'], self.bcpnn_params['tau_p'], self.dx, self.dv, self.v_stim)
+#        output_fn = self.params['figures_folder'] + 'traces_tauzi_%04d_tauzj%04d_taue%d_taup%d_dx%.2e_dv%.2e_vstim%.1e.png' % \
+#                (self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j'], self.bcpnn_params['tau_e'], self.bcpnn_params['tau_p'], self.dx, self.dv, self.v_stim)
+        output_fn = self.params['figures_folder'] + 'traces_dx%.2e_dv%.2e_vstim%.1e_tauzi_%04d_tauzj%04d_taue%d_taup%d.png' % \
+                (self.dx, self.dv, self.v_stim, self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j'], self.bcpnn_params['tau_e'], self.bcpnn_params['tau_p'])
         print 'Saving traces to:', output_fn
         pylab.savefig(output_fn)
 
@@ -429,8 +433,18 @@ if __name__ == '__main__':
     tau_p = float(sys.argv[7])
     x0 = float(sys.argv[8])
     u0 = float(sys.argv[9])
-
     output_folder = os.path.abspath(sys.argv[10]) + '/'
+
+#    v_stim = .5
+#    tau_zi = 1. / v_stim * 100
+#    dx = .5
+#    dv = .0
+#    tau_zj = 10.
+#    tau_e = 10.
+#    tau_p = 5000.
+#    x0 = .3
+#    u0 = v_stim
+#    output_folder = 'TwoCellTest/'
 
     bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
 
@@ -443,6 +457,8 @@ if __name__ == '__main__':
     ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     ps.set_filenames(output_folder)
     params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
+#    params['dt_rate'] = 1.0
+    ps.create_folders()
 
     selected_gids = [0, 1]
 
