@@ -9,6 +9,20 @@ from scipy.spatial import distance
 import copy
 import re
 
+def get_spikes_within_interval(d, t0, t1, time_axis=1, gid_axis=0):
+    """
+    d -- spike data (each row contains one spike with (GID, time) as default format)
+    """
+    spikes = np.array(([], []))
+    idx_0 = (d[:, time_axis] > t0).nonzero()[0]
+    idx_1 = (d[:, time_axis] <= t1).nonzero()[0]
+    idx_ = list(set(idx_0).intersection(set(idx_1)))
+    idx = np.zeros(len(idx_), dtype=np.int)
+    idx = idx_
+
+    spikes = d[idx, time_axis]
+    gids = d[idx, gid_axis]
+    return (spikes, gids)
 
 def transform_tauzi_from_vx(vx, params):
     """
@@ -54,6 +68,7 @@ def get_spiketimes(all_spikes, gid, gid_idx=0, time_idx=1):
     gid_idx: is the column index in the all_spikes array containing GID information
     time_idx: is the column index in the all_spikes array containing time information
     """
+    
     idx_ = (all_spikes[:, gid_idx] == gid).nonzero()[0]
     spiketimes = all_spikes[idx_, time_idx]
     return spiketimes

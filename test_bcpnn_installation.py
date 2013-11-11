@@ -32,11 +32,11 @@ for i, c in enumerate(params):
 conns = nest.GetConnections(neuron1, neuron2, synapse_model='bcpnn_synapse')
 #print 'neuron1:', neuron1
 #print 'neuron2:', neuron2
-print 'default params:', params
+print 'default params:', params[0]['weight']
 nest.SetStatus(nest.GetConnections(neuron1), {'weight': 1999.6661} )
 params = nest.GetStatus(nest.GetConnections(neuron1))
 
-print 'modified params:', params
+print 'modified params:', params[0]['weight']
 #fconns = nest.FindConnections([neuron1[0]], neuron2)
 
 #print 'n1 - n2 conns:', conns

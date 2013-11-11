@@ -32,14 +32,14 @@ class parameter_storage(object):
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
             self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
-            self.params['n_rf_x'] = 20
+            self.params['n_rf_x'] = 5
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
         self.params['n_v'] = 5
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 16# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -213,7 +213,7 @@ class parameter_storage(object):
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .1, .1
+        self.params['blur_X'], self.params['blur_V'] = .05, .05
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -229,15 +229,15 @@ class parameter_storage(object):
         self.params['stimuli_seed'] = 1234
         self.params['v_max_training'] = self.params['v_max_tp']
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['v_noise_training'] = 0.10 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 1   # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 1 # how many different speeds are trained per cycle
+        self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
+        self.params['n_cycles'] = 3   # one cycle comprises training of all n_speeds
+        self.params['n_speeds'] = 5 # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
 
 
         # is one speed is trained, it is presented starting from on this number of different locations
-        self.params['n_stim_per_direction'] = 1
+        self.params['n_stim_per_direction'] = 2
         self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
@@ -271,8 +271,9 @@ class parameter_storage(object):
         # BCPNN SYNAPSE PARAMETERS
         # ########################
         self.params['fmax_bcpnn'] = 100.0   # should be as the maximum output rate (with inhibitory feedback)
-        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
-        self.params['bcpnn_params'] =  {'gain': 0.0, 'K':1.0,'fmax': self.params['fmax_bcpnn'],'delay':1.0, 'tau_i': 10., 'tau_j': 10.,'tau_e': 10.,'tau_p': self.params['taup_bcpnn'],\
+#        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
+        self.params['taup_bcpnn'] = 10000.
+        self.params['bcpnn_params'] =  {'gain': 0.0, 'K':1.0,'fmax': self.params['fmax_bcpnn'],'delay':1.0, 'tau_i': 100., 'tau_j': 10.,'tau_e': 10.,'tau_p': self.params['taup_bcpnn'],\
                 'epsilon': self.params['fmax_bcpnn'] / self.params['taup_bcpnn']}
         # gain is set to zero in order to have no plasiticity effects while training
         # K: learning rate (how strong the p-traces get updated)
@@ -288,7 +289,7 @@ class parameter_storage(object):
         # INPUT
         # ######
         self.params['f_max_stim'] = 1000.       # [Hz]
-        self.params['w_input_exc'] = 100. # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 120. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
             self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS
@@ -325,7 +326,8 @@ class parameter_storage(object):
 
         if folder_name == None:
             if self.params['training_run']:
-                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
+#                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
+                folder_name = 'TrainingSim_taui%d_taup%d' % (self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'])
             else:
                 folder_name = 'TestSim'
             folder_name += '/'
@@ -346,7 +348,7 @@ class parameter_storage(object):
 #        self.params['input_folder'] = "TwoCellInputSpikeTrains/" # folder containing the input spike trains for the network generated from a certain stimulus
 
 #        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
-        self.params['input_folder'] = "TrainingInputFiles/" 
+        self.params['input_folder'] = "InputFilesTraining/" 
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
         self.params['spiketimes_folder'] = "%sSpikes/" % self.params['folder_name']

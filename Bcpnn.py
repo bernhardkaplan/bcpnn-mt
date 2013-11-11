@@ -326,6 +326,7 @@ def compute_bcpnn_in_place(st_pre, st_post, tau_dict, dt, fmax, tmax, save_inter
     return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
 
 
+def get_traces
 
 
 def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \

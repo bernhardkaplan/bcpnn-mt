@@ -124,7 +124,7 @@ class WeightAnalyser(object):
             ax = fig.add_subplot(111)
             print "plotting ...."
 
-            cax = ax.pcolor(w)#, edgecolor='k', linewidths='1')
+            cax = ax.pcolormesh(w)#, edgecolor='k', linewidths='1')
             ax.set_ylim(0, w.shape[0])
             ax.set_xlim(0, w.shape[1])
             pylab.colorbar(cax)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     WA = WeightAnalyser(params, iteration=iteration)
     WA.load_adj_lists()
     WA.load_spikes()
-    WA.get_weights_to_cell(295)
+#    WA.get_weights_to_cell(295)
 
 #    gids = np.loadtxt(params['gids_to_record_fn'])
 #    gids = [49, 91, 201, 203]

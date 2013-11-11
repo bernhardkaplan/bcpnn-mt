@@ -39,10 +39,10 @@ class NetworkModel(object):
         self.projections['ii'] = []
         if not load_tuning_prop:
             self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
-            self.tuning_prop_inh = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='inh')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+#            self.tuning_prop_inh = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='inh')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
-            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
+#            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
         # update 
         self.param_tool.set_vx_tau_transformation_params(self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
@@ -51,8 +51,8 @@ class NetworkModel(object):
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_means_fn']
             np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop_exc)
-            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
-            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
+#            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
+#            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
         # # # # # # # # # # # #
         #     S E T U P       #
@@ -222,7 +222,7 @@ class NetworkModel(object):
             # create the spike trains
             print 'Creating input spiketrains...'
             for i_, unit in enumerate(my_units):
-                if not (i_ % 20):
+                if not (i_ % 10):
                     print 'Creating input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(my_units), float(i_) / len(my_units) * 100.)
                 rate_of_t = np.array(L_input[i_, :])
                 # each cell will get its own spike train stored in the following file + cell gid
@@ -339,23 +339,30 @@ class NetworkModel(object):
             for src_hc in xrange(self.params['n_hc']):
                 for src_mc in xrange(self.params['n_mc_per_hc']):
                     src_pop = self.list_of_exc_pop[src_hc][src_mc]
+                    nest.ConvergentConnect(src_pop, [tgt_gid], model='bcpnn_synapse')#, params={'tau_i':tau_zi[)
 
-                    vx_src = self.tuning_prop_exc[np.array(src_pop) - 1, 2]
-                    tau_zi = utils.transform_tauzi_from_vx(vx_src, self.params)
-#                    tau_zi = 100.
-                    self.debug_tau_zi[np.array(src_pop) - 1, 0] = np.array(src_pop) - 1
-                    self.debug_tau_zi[np.array(src_pop) - 1, 1] = vx_src
-                    self.debug_tau_zi[np.array(src_pop) - 1, 2] = tau_zi
-                    if np.any(tau_zi) < 0:
-                        print 'Wrong transformation'
-                        exit(1)
-                    for j_, src_gid in enumerate(src_pop):
+#                    if np.any(tau_zi) < 0:
+#                        print 'Wrong transformation'
+#                        exit(1)
+#                    for j_, src_gid in enumerate(src_pop):
+#                        vx_src = self.tuning_prop_exc[np.array(src_gid) - 1, 2]
+#                        tau_zi = utils.transform_tauzi_from_vx(vx_src, self.params)
+#                        self.debug_tau_zi[np.array(src_gid) - 1, 0] = np.array(src_gid) - 1
+#                        self.debug_tau_zi[np.array(src_gid) - 1, 1] = vx_src
+#                        self.debug_tau_zi[np.array(src_gid) - 1, 2] = tau_zi
+#                        nest.Connect([src_gid], [tgt_gid], model='bcpnn_synapse', params={'tau_i':tau_zi, 'weight':initial_weight})
+
+#                        conns = nest.GetConnections([src_gid], [tgt_gid]) # get the list of connections stored on the current MPI node
+#                        print 'conns;', conns
+#                        for c in conns:
+#                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+#                            print 'cp', cp
+#                            if (cp[0]['synapse_model'] == 'bcpnn_synapse'):
+#                                nest.SetStatus(nest.GetConnections([src_gid], [tgt_gid]), {'weight': initial_weight, 'tau_i':tau_zi})
+#                                nest.SetStatus(c, {'weight': initial_weight, 'tau_i':tau_zi})
+
 #                        print 'debugtauzi', tgt_gid, src_gid, tau_zi[j_]
-                        nest.Connect([src_gid], [tgt_gid], model='bcpnn_synapse', params={'weight':initial_weight})
-#                        nest.Connect([src_gid], [tgt_gid], model='bcpnn_synapse', params={'tau_i':tau_zi[j_], 'weight':initial_weight})
-
-#                    nest.ConvergentConnect(src_pop, [tgt_pop], model='bcpnn_synapse', params={'tau_i':tau_zi[)
-#                    nest.SetStatus(nest.GetConnections(src_pop, tgt_pop), {'weight': initial_weight, 'tau_i':tau_zi})
+#                    nest.ConvergentConnect(src_pop, [tgt_gid], model='bcpnn_synapse', params={'tau_i':tau_zi[)
 
         fn_out = self.params['parameters_folder'] + 'tau_zi_%d.dat' % (self.pc_id)
         np.savetxt(fn_out, self.debug_tau_zi)

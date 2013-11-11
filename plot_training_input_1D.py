@@ -159,8 +159,12 @@ if __name__ == '__main__':
 
     random.seed(1)
     n_gids_to_plot = 10
-#    gids_to_plot = random.sample(np.loadtxt(params['gids_to_record_fn'], dtype=np.int), n_gids_to_plot)
-    gids_to_plot = np.loadtxt(params['gids_to_record_fn'], dtype=np.int)[:n_gids_to_plot]
+    try:
+        gids_to_plot = np.loadtxt(params['gids_to_record_fn'], dtype=np.int)[:n_gids_to_plot]
+                      #random.sample(np.loadtxt(params['gids_to_record_fn'], dtype=np.int), n_gids_to_plot)
+    except:
+        print 'Could not find file: %s\nWill plot random GIDs'  % (params['gids_to_record_fn'])
+        gids_to_plot = np.unique(np.random.randint(0, params['n_exc'], n_gids_to_plot))
     print 'gids_to_plot: ', gids_to_plot
     fig2 = TIP.plot_training_input(gids_to_plot)
 

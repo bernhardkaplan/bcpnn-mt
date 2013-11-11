@@ -1,7 +1,6 @@
 import os, sys, inspect
 # use this if you want to include modules from a subforder
 cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../")))
-print 'cmd_subfolder', cmd_subfolder
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
@@ -56,7 +55,7 @@ class ActivityPlotter(object):
     def load_tuning_prop(self):
         print 'ActivityPlotter.load_tuning_prop ...'
         self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
-        self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
+#        self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
         self.x_grid = np.linspace(0, 1, self.n_bins_x, endpoint=False)
         self.gid_to_posgrid_mapping = utils.get_grid_index_mapping(self.tuning_prop_exc[:, 0], self.x_grid)
@@ -126,11 +125,12 @@ class ActivityPlotter(object):
             m = re.match('stim_spike_train_(\d+).dat', fn)
             if m:
                 gid = int(m.groups()[0])
-                y_pos_of_cell = tp[gid, sort_idx]
-                fn_ = self.params['input_folder'] + fn
-                d = np.loadtxt(fn_)
-                ax.plot(d, y_pos_of_cell * np.ones(d.size), 'o', markersize=3, markeredgewidth=0., alpha=.1, color='b')
-                cnt_file += 1
+                if (gid < self.params['n_exc']):
+                    y_pos_of_cell = tp[gid, sort_idx]
+                    fn_ = self.params['input_folder'] + fn
+                    d = np.loadtxt(fn_)
+                    ax.plot(d, y_pos_of_cell * np.ones(d.size), 'o', markersize=3, markeredgewidth=0., alpha=.1, color='b')
+                    cnt_file += 1
 
         print 'Found %d files to plot:' % cnt_file
 
@@ -231,12 +231,12 @@ if __name__ == '__main__':
     exc_spike_data = Plotter.load_spike_data('exc')
     inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
     inh_unspec_spike_data = Plotter.load_spike_data('inh_unspec')
-#    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0)
-#    Plotter.plot_input_spikes_sorted(ax, sort_idx=0)
+    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0)
+    Plotter.plot_input_spikes_sorted(ax, sort_idx=0)
 
-    time_steps = 5
+    time_steps = 1
     time_window = params['t_sim'] / time_steps
-    f_max = 200 / time_steps
+    f_max = 40 / time_steps
     for i_ in xrange(time_steps):
         time_range = (i_ * time_window, (i_ + 1) * time_window)
         output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_%02d.png' % i_
