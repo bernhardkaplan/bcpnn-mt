@@ -740,3 +740,10 @@ if __name__ == '__main__':
     """
     if comm != None:
         comm.Barrier()
+
+    if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
+        import plot_prediction as pp
+        pp.plot_prediction(params)
+
+        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
+        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])

@@ -51,8 +51,8 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_0.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_0.pdf'
-    print 'Saving figure to:', output_fn
+#    output_fn = output_fn_base + '_0.pdf'
+#    print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_0.eps'
 #    print 'Saving figure to:', output_fn
@@ -75,8 +75,8 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_1.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_1.pdf'
-    print 'Saving figure to:', output_fn
+#    output_fn = output_fn_base + '_1.pdf'
+#    print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_1.eps'
 #    print 'Saving figure to:', output_fn
@@ -120,8 +120,8 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_4.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_4.pdf'
-    print 'Saving figure to:', output_fn
+#    output_fn = output_fn_base + '_4.pdf'
+#    print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_4.eps'
 #    print 'Saving figure to:', output_fn
@@ -137,8 +137,8 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_quiver.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_quiver.pdf'
-    print 'Saving figure to:', output_fn
+#    output_fn = output_fn_base + '_quiver.pdf'
+#    print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_quiver.eps'
 #    print 'Saving figure to:', output_fn
