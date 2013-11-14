@@ -9,6 +9,14 @@ from scipy.spatial import distance
 import copy
 import re
 
+def remove_files_from_folder(folder):
+    print 'Removing all files from folder:', folder
+    path =  os.path.abspath(folder)
+    cmd = 'rm  %s/*' % path
+    print cmd
+    os.system(cmd)
+
+
 def get_spikes_within_interval(d, t0, t1, time_axis=1, gid_axis=0):
     """
     d -- spike data (each row contains one spike with (GID, time) as default format)
@@ -69,9 +77,12 @@ def get_spiketimes(all_spikes, gid, gid_idx=0, time_idx=1):
     time_idx: is the column index in the all_spikes array containing time information
     """
     
-    idx_ = (all_spikes[:, gid_idx] == gid).nonzero()[0]
-    spiketimes = all_spikes[idx_, time_idx]
-    return spiketimes
+    if all_spikes.size == 0:
+        return np.array([])
+    else:
+        idx_ = (all_spikes[:, gid_idx] == gid).nonzero()[0]
+        spiketimes = all_spikes[idx_, time_idx]
+        return spiketimes
 
 
 
@@ -137,7 +148,7 @@ def convert_spiketrain_to_trace(st, t_max, dt=0.1, spike_width=1):
     Keyword arguments: 
     st --  spike train in the format [time, id]
     n  --  size of the trace to be returned
-    spike_width -- number of time steps (=dt) for which the trace is set to 1
+    spike_width -- number of time steps (in dt) for which the trace is set to 1
     Returns a np.array with st[i] = 1 if i in st[:, 0], st[i] = 0 else.
     """
     n = np.int(t_max / dt)

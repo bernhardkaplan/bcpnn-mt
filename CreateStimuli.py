@@ -6,8 +6,50 @@ import pylab
 
 class CreateStimuli(object):
     def __init__(self):
-        self.stimuli_created = False
         pass
+
+
+    def create_test_stim_1D(self, test_params, training_params=None):
+
+        n_stim = test_params['n_test_stim']
+        if training_params != None:
+            # choose the first n_stim motion parameters from trainin_params
+            mp_training = np.loadtxt(training_params['training_sequence_fn'])
+            motion_params = mp_training[:n_stim, :]
+            return motion_params
+        else:
+            # create n_stim as during training
+            stim_params = np.zeros((n_stim, 4))
+            all_speeds = np.zeros(n_stim)
+            all_starting_pos = np.zeros((n_stim, 2))
+            import numpy.random as rnd
+            rnd.seed(test_params['stimuli_seed'])
+            random.seed(test_params['stimuli_seed'] + 1)
+            # create stimulus ranges as during training
+            if test_params['log_scale']==1:
+                speeds = np.linspace(test_params['v_min_training'], test_params['v_max_training'], num=test_params['n_speeds'], endpoint=True)
+            else:
+                speeds = np.logspace(np.log(test_params['v_min_training'])/np.log(test_params['log_scale']),
+                                np.log(test_params['v_max_training'])/np.log(test_params['log_scale']), num=test_params['n_speeds'],
+                                endpoint=True, base=test_params['log_scale'])
+#            stim_cnt = 0
+            for stim_cnt in xrange(n_stim):
+                speed = speeds[stim_cnt]
+                v0 = speed * rnd.uniform(1. - test_params['v_noise_training'], 1. + test_params['v_noise_training'])
+                x0 = np.random.rand() # select a random start point
+                all_starting_pos[stim_cnt, 0] = x0
+                all_speeds[stim_cnt] = v0
+#            for cycle in xrange(test_params['n_cycles']):
+#                for i_speed, speed in enumerate(speeds):
+#                    for i_ in xrange(test_params['n_stim_per_direction']):
+                        # add noise for the speed
+#                        stim_cnt += 1
+            stim_params[:, 0] = all_starting_pos[:, 0]
+            stim_params[:, 1] = all_starting_pos[:, 1]
+            stim_params[:, 2] = all_speeds
+            return stim_params
+
+
 
 
     def create_motion_sequence_1D(self, params, random_order):
@@ -21,7 +63,6 @@ class CreateStimuli(object):
         
         # arrays to be filled by the stimulus creation loops below
         self.all_speeds = np.zeros(self.n_stim_total)
-        self.all_thetas = np.zeros(self.n_stim_total)
         self.all_starting_pos = np.zeros((self.n_stim_total, 2))
 
         import numpy.random as rnd
@@ -42,17 +83,14 @@ class CreateStimuli(object):
                 for i_ in xrange(self.n_stim_per_direction):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
-#                    v0 *= 2. * (-.5 + np.random.randint(0, 2) % 2) # random flip of pos / neg x-direction
                     x0 = np.random.rand() # select a random start point
                     self.all_starting_pos[stim_cnt, 0] = x0
-#                    self.all_starting_pos[stim_cnt, 1] = float(stim_cnt ) / self.n_stim_total
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
 
         stim_order = range(self.n_stim_total)
         if random_order:
             random.shuffle(stim_order)
-        self.stimuli_created = True
         stim_params = np.zeros((self.n_stim_total, 4))
         stim_params[:, 0] = self.all_starting_pos[stim_order, 0]
         stim_params[:, 1] = self.all_starting_pos[stim_order, 1]
@@ -175,7 +213,6 @@ class CreateStimuli(object):
                         rnd_rotation = params['sigma_theta_training'] * (np.random.rand() - .5)
                         self.all_thetas[stim_cnt] = theta + rnd_rotation
                         stim_cnt += 1
-        self.stimuli_created = True
 
 
     def get_motion_params(self, random_order=False):

@@ -326,42 +326,24 @@ def compute_bcpnn_in_place(st_pre, st_post, tau_dict, dt, fmax, tmax, save_inter
     return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
 
 
-def get_traces
 
+#        bcpnn_params=None, dt=1., fmax=1000., initial_value=0.01, eps=1e-6):
+#def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
+#        bcpnn_params=None, dt=1., fmax=1000., initial_value=0.01, eps=1e-6):
+#        bcpnn_params=None, dt=1., fmax=1000.):
 
-def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
-        tau_dict=None, dt=1., fmax=1000., initial_value=0.01, eps=1e-6):
-#        tau_dict=None, dt=1., fmax=1000.):
+def get_spiking_weight_and_bias(pre_trace, post_trace, bcpnn_params, dt=.1):
     """
     Arguments:
         pre_trace, post_trace: pre-synaptic activity (0 means no spike, 1 means spike) (not spike trains!)
-        
+        bcpnn_params: dictionary containing all bcpnn parameters, initial value, fmax, time constants, etc
     """
     assert (len(pre_trace) == len(post_trace)), "Bcpnn.get_spiking_weight_and_bias: pre and post activity have different lengths!"
-    if tau_dict == None:
-        tau_dict = {'tau_zi' : 10.,    'tau_zj' : 10., 
-                    'tau_ei' : 100.,   'tau_ej' : 100., 'tau_eij' : 100.,
-                    'tau_pi' : 1000.,  'tau_pj' : 1000., 'tau_pij' : 1000.,
-                    }
-        print 'WARNING: No bcpnn parameters given, taking defaults. tau_dict=', tau_dict
 
-
-#    if bin_size != 1:
-#   TODO:
-#        return get_spiking_weight_and_bias_binned(pre_spikes, post_spikes, bin_size=1, tau_z=10, tau_e=100, tau_p=1000, dt=1, eps=1e-2)
-
-
+    initial_value = bcpnn_params['p_i']
     n = len(pre_trace)
     si = pre_trace      # spiking activity (spikes have a width and a height)
     sj = post_trace
-#    zi = np.ones(n) * 0.01
-#    zj = np.ones(n) * 0.01
-#    ei = np.ones(n) * 0.01
-#    ej = np.ones(n) * 0.01
-#    eij = np.ones(n) * 0.001
-#    pi = np.ones(n) * 0.01
-#    pj = np.ones(n) * 0.01
-#    pij = np.ones(n) * 0.001
     zi = np.ones(n) * initial_value
     zj = np.ones(n) * initial_value
     eij = np.ones(n) * initial_value**2
@@ -371,49 +353,51 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bin_size=1, \
     pj = np.ones(n) * initial_value
     pij = np.ones(n) * initial_value**2
     wij = np.ones(n)  *  np.log(pij[0] / (pi[0] * pj[0]))
-#    wij = np.zeros(n) 
     bias = np.ones(n) * np.log(initial_value)
-    spike_height = 1000. / fmax
-#    spike_height = fmax
+    spike_height = 1000. / bcpnn_params['fmax']
+    eps = bcpnn_params['epsilon']
 
     for i in xrange(1, n):
         # pre-synaptic trace zi follows si
-        dzi = dt * (si[i] * spike_height - zi[i-1] + eps) / tau_dict['tau_zi']
+        dzi = dt * (si[i] * spike_height - zi[i-1] + eps) / bcpnn_params['tau_i']
         zi[i] = zi[i-1] + dzi
 
         # post-synaptic trace zj follows sj
-        dzj = dt * (sj[i] * spike_height - zj[i-1] + eps) / tau_dict['tau_zj']
+        dzj = dt * (sj[i] * spike_height - zj[i-1] + eps) / bcpnn_params['tau_j']
         zj[i] = zj[i-1] + dzj
 
         # pre-synaptic trace zi follows zi
-        dei = dt * (zi[i] - ei[i-1]) / tau_dict['tau_ei']
+        dei = dt * (zi[i] - ei[i-1]) / bcpnn_params['tau_e']
         ei[i] = ei[i-1] + dei
 
         # post-synaptic trace ej follows zj
-        dej = dt * (zj[i] - ej[i-1]) / tau_dict['tau_ej']
+        dej = dt * (zj[i] - ej[i-1]) / bcpnn_params['tau_e']
         ej[i] = ej[i-1] + dej
 
         # joint eij follows zi * zj
-        deij = dt * (zi[i] * zj[i] - eij[i-1]) / tau_dict['tau_eij']
+        deij = dt * (zi[i] * zj[i] - eij[i-1]) / bcpnn_params['tau_e']
         eij[i] = eij[i-1] + deij
 
         # pre-synaptic probability pi follows zi
-        dpi = dt * (ei[i] - pi[i-1]) / tau_dict['tau_pi']
+        dpi = dt * (ei[i] - pi[i-1]) / bcpnn_params['tau_p']
         pi[i] = pi[i-1] + dpi
 
         # post-synaptic probability pj follows ej
-        dpj = dt * (ej[i] - pj[i-1]) / tau_dict['tau_pj']
+        dpj = dt * (ej[i] - pj[i-1]) / bcpnn_params['tau_p']
         pj[i] = pj[i-1] + dpj
 
         # joint probability pij follows e_ij
-        dpij = dt * (eij[i] - pij[i-1]) / tau_dict['tau_pij']
+        dpij = dt * (eij[i] - pij[i-1]) / bcpnn_params['tau_p']
         pij[i] = pij[i-1] + dpij
 
-        # weights
-        wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
+        # weights and  bias
+#        wij[i] = np.log(pij[i] / (pi[i] * pj[i]))
+#        bias[i] = np.log(pj[i])
+    # weights
+    wij = np.log(pij / (pi * pj))
 
-        # bias
-        bias[i] = np.log(pj[i])
+    # bias
+    bias = np.log(pj)
 
     return wij, bias, pi, pj, pij, ei, ej, eij, zi, zj
 

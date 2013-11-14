@@ -69,7 +69,7 @@ def plot_average_volt(fn, gid=None, n=1):
 
 if __name__ == '__main__':
 
-    n_to_plot = 10
+    n_to_plot = 2
     if len(sys.argv) == 1:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
