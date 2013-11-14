@@ -139,7 +139,11 @@ class NetworkModel(object):
 
 
         if (not 'bcpnn_synapse' in nest.Models('synapses')):
-            nest.Install('pt_module')
+            if self.params['Cluster']:
+                nest.sr('(/cfs/klemming/nobackup/b/bkaplan/Phils_code/share/nest/sli) addpath')
+                nest.Install('/cfs/klemming/nobackup/b/bkaplan/Phils_code/lib/nest/pt_module')
+            else:
+                nest.Install('pt_module')
 
 
     def get_local_indices(self, pop):

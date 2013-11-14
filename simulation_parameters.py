@@ -24,6 +24,7 @@ class parameter_storage(object):
 
 #        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
+        self.params['Cluster'] = False
 
         # ###################
         # HEXGRID PARAMETERS

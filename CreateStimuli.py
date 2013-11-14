@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import pylab
 #matplotlib.use('Agg')
 
 
@@ -237,6 +236,7 @@ if __name__ == '__main__':
         CS.create_motion_sequence_2D(params, random_order)
 
 
+    import pylab
     fig = pylab.figure()
     ax = fig.add_subplot(111)
     color_list = ['k', 'b', 'g', 'r', 'y', 'c', 'm', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
