@@ -659,7 +659,7 @@ def threshold_weights(connection_matrix, w_thresh):
     return connection_matrix
 
 
-def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False, pynest=True):
+def get_nspikes(spiketimes_fn_merged, n_cells=0, cell_offset=0, get_spiketrains=False, pynest=True):
     """
     Returns an array with the number of spikes fired by each cell.
     nspikes[gid]
@@ -668,17 +668,19 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False, pynest=T
     if pynest == True:
         gid_axis = 0
         time_axis = 1
-        gid_offset = 0
+        gid_offset = 0 + cell_offset
     else: # it's likely PyNN
         gid_axis = 1
         time_axis = 0
-        gid_offset = 1
+        gid_offset = cell_offset
 
     d = np.loadtxt(spiketimes_fn_merged)
     if (n_cells == 0):
         n_cells = 1 + int(np.max(d[:, gid_axis]))# highest gid
+
     nspikes = np.zeros(n_cells)
     spiketrains = [[] for i in xrange(n_cells)]
+
     if (d.size == 0):
         if get_spiketrains:
             return nspikes, spiketrains
@@ -687,12 +689,17 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False, pynest=T
     # seperate spike trains for all the cells
     if d.shape == (2,):
         nspikes[int(d[gid_axis])] = 1
-        spiketrains[int(d[gid_axis])] = [d[time_axis]]
+        spiketrains[int(d[gid_axis]) - gid_offset] = [d[time_axis]]
     else:
-        for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
-        for gid in xrange(n_cells):
-            nspikes[gid] = len(spiketrains[gid])
+        gids = np.unique(d[:, gid_axis])
+        for i_, gid in enumerate(gids):
+            idx = (d[:, gid_axis] == gid).nonzero()[0]
+            spiketrains[int(i_)] = d[idx, time_axis]
+            nspikes[int(i_)] = spiketrains[int(i_)].size
+#        for i in xrange(d[:, 0].size):
+#            spiketrains[int(d[i, gid_axis]) - gid_offset].append(d[i, time_axis])
+#        for gid in xrange(n_cells):
+#            nspikes[gid] = len(spiketrains[gid])
     if get_spiketrains:
         return nspikes, spiketrains
     else:

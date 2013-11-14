@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
 
         # ###################
@@ -150,8 +150,8 @@ class parameter_storage(object):
         self.params['w_ee_local'] = 3.
 
         # exc - exc: global
-        self.params['w_ee_global_max'] = 20.
-        self.params['w_ei_global_max'] = 20.
+        self.params['w_ee_global_max'] = 50.
+        self.params['w_ei_global_max'] = 50.
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh
@@ -401,22 +401,32 @@ class parameter_storage(object):
         self.params['exc_spiketimes_fn_merged'] = '%sexc_merged_spikes.dat' % self.params['spiketimes_folder']
         self.params['exc_nspikes_fn_merged'] = '%sexc_nspikes' % self.params['spiketimes_folder']
         self.params['exc_nspikes_nonzero_fn'] = '%sexc_nspikes_nonzero.dat' % self.params['spiketimes_folder']
+
         self.params['inh_spec_spiketimes_fn_base'] = '%sinh_spec_spikes' % self.params['spiketimes_folder']
         self.params['inh_spec_spiketimes_fn_merged'] = '%sinh_spec_merged_spikes.dat' % self.params['spiketimes_folder']
+        self.params['inh_spec_nspikes_fn_merged'] = '%sinh_spec_nspikes' % self.params['spiketimes_folder']
+        self.params['inh_spec_nspikes_nonzero_fn'] = '%sinh_spec_nspikes_nonzero.dat' % self.params['spiketimes_folder']
+
         self.params['inh_unspec_spiketimes_fn_base'] = '%sinh_unspec_spikes' % self.params['spiketimes_folder']
         self.params['inh_unspec_spiketimes_fn_merged'] = '%sinh_unspec_merged_spikes.dat' % self.params['spiketimes_folder']
+        self.params['inh_unspec_nspikes_fn_merged'] = '%sinh_unspec_nspikes' % self.params['spiketimes_folder']
+        self.params['inh_unspec_nspikes_nonzero_fn'] = '%sinh_unspec_nspikes_nonzero.dat' % self.params['spiketimes_folder']
+
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
         self.params['exc_volt_anticipation'] = '%sexc_volt_anticipation.v' % self.params['volt_folder']
         self.params['exc_gsyn_anticipation'] = '%sexc_gsyn_anticipation.dat' % self.params['gsyn_folder']
         self.params['exc_curr_anticipation'] = '%sexc_curr_anticipation.dat' % self.params['curr_folder']
-        self.params['population_volt_fn'] = '%spopulation_volt.dat' % (self.params['data_folder'])
-        self.params['population_cond_fn'] = '%spopulation_cond.dat' % (self.params['data_folder'])
-        self.params['population_volt_fn'] = '%spopulation_curr.dat' % (self.params['data_folder'])
-
-        self.params['inh_volt_fn_base'] = '%sinh_volt' % self.params['volt_folder']
-        self.params['inh_gsyn_fn_base'] = '%sinh_gsyn' % self.params['curr_folder']
+        self.params['inh_spec_volt_fn_base'] = '%sinh_spec_volt' % self.params['volt_folder']
+        self.params['inh_spec_volt_anticipation'] = '%sinh_spec_volt_anticipation.v' % self.params['volt_folder']
+        self.params['inh_spec_gsyn_anticipation'] = '%sinh_spec_gsyn_anticipation.dat' % self.params['gsyn_folder']
+        self.params['inh_spec_curr_anticipation'] = '%sinh_spec_curr_anticipation.dat' % self.params['curr_folder']
+        self.params['inh_unspec_volt_fn_base'] = '%sinh_unspec_volt' % self.params['volt_folder']
+        self.params['inh_unspec_volt_anticipation'] = '%sinh_unspec_volt_anticipation.v' % self.params['volt_folder']
+        self.params['inh_unspec_gsyn_anticipation'] = '%sinh_unspec_gsyn_anticipation.dat' % self.params['gsyn_folder']
+        self.params['inh_unspec_curr_anticipation'] = '%sinh_unspec_curr_anticipation.dat' % self.params['curr_folder']
         self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
-        self.params['rasterplot_inh_fig'] = '%srasterplot_inh.png' % (self.params['figures_folder'])
+        self.params['rasterplot_inh_spec_fig'] = '%srasterplot_inh_spec.png' % (self.params['figures_folder'])
+        self.params['rasterplot_inh_unspec_fig'] = '%srasterplot_inh_unspec.png' % (self.params['figures_folder'])
 
         # tuning properties and other cell parameter files
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder']) # for excitatory cells

@@ -562,7 +562,7 @@ class NetworkModel(object):
                         w = self.conn_mat_training[src_pop_idx, tgt_pop_idx]
                         if w != 0:
                             w_ = self.transform_weight(w)
-                            print 'debug', src_pop, tgt_pop, w_, self.params['delay_ee_global']
+#                            print 'debug', src_pop, tgt_pop, w_, self.params['delay_ee_global']
                             nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast')
                             nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
@@ -673,7 +673,7 @@ class NetworkModel(object):
             pj = cp[0]['p_j']
             pij = cp[0]['p_ij']
             wij = cp[0]['weight']
-            print 'debug tracking', conns[0], cp
+#            print 'debug tracking', conns[0], cp
             return (pi, pj, pij, wij)
         return False
 

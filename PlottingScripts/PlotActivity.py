@@ -22,9 +22,12 @@ class ActivityPlotter(object):
     def __init__(self, params, it_max=None):
         self.params = params
         if it_max == None:
-            self.it_max = self.params['n_training_stim']
+            if self.params['training_run']:
+                self.n_stim_total = self.params['n_training_stim']
+            else:
+                self.n_stim_total = self.params['n_test_stim']
         else:
-            self.it_max = it_max
+            self.n_stim_total = it_max
 
         self.spike_times_loaded = False
         self.n_bins_x = 30
@@ -91,7 +94,7 @@ class ActivityPlotter(object):
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
-        for stim in xrange(self.params['n_training_stim']):
+        for stim in xrange(self.n_stim_total):
             t0 = stim * self.params['t_training_stim']
             t1 = (stim + 1) * self.params['t_training_stim']
             ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
@@ -127,7 +130,7 @@ class ActivityPlotter(object):
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
-        for stim in xrange(self.params['n_training_stim']):
+        for stim in xrange(self.n_stim_total):
             t0 = stim * self.params['t_training_stim']
             t1 = (stim + 1) * self.params['t_training_stim']
             ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
@@ -263,8 +266,8 @@ if __name__ == '__main__':
     inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
     inh_unspec_spike_data = Plotter.load_spike_data('inh_unspec')
 
-#    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
-#    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc')
+    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
+    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc')
 
     fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=0)
@@ -272,16 +275,16 @@ if __name__ == '__main__':
     fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by $v_x$', sort_idx=2)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=2)
 
-#    time_steps = 1
-#    time_window = params['t_sim'] / time_steps
-#    f_max = 50 / time_steps
-#    for i_ in xrange(time_steps):
-#        time_range = (i_ * time_window, (i_ + 1) * time_window)
-#        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_%02d.png' % i_
-#        Plotter.plot_nspike_histogram_in_MCs(exc_spike_data, cell_type='exc', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
+    time_steps = 1
+    time_window = params['t_sim'] / time_steps
+    f_max = 50 / time_steps
+    for i_ in xrange(time_steps):
+        time_range = (i_ * time_window, (i_ + 1) * time_window)
+        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_%02d.png' % i_
+        Plotter.plot_nspike_histogram_in_MCs(exc_spike_data, cell_type='exc', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
 
-#        output_fn = params['figures_folder'] + 'hc_inh_nspike_histogram_%02d.png' % i_
-#        Plotter.plot_nspike_histogram_in_MCs(inh_unspec_spike_data, cell_type='inh_unspec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
+        output_fn = params['figures_folder'] + 'hc_inh_nspike_histogram_%02d.png' % i_
+        Plotter.plot_nspike_histogram_in_MCs(inh_unspec_spike_data, cell_type='inh_unspec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
 
 #        output_fn = params['figures_folder'] + 'mc_inh_nspike_histogram_%02d.png' % i_
 #        Plotter.plot_nspike_histogram_in_MCs(inh_spec_spike_data, cell_type='inh_spec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
