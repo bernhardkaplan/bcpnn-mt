@@ -200,12 +200,14 @@ class TrainingAnalyser(object):
             pylab.savefig(output_fn)
 
 
-    def plot_bcpnn_traces(self, spike_data, pre_gid, post_gid, syn_params=None):
+    def plot_bcpnn_traces(self, spike_data, pre_gid, post_gid, syn_params=None, t_max=None):
 
         spiketimes_pre = utils.get_spiketimes(spike_data, pre_gid, gid_idx=0, time_idx=1)
         spiketimes_post = utils.get_spiketimes(spike_data, post_gid, gid_idx=0, time_idx=1)
-        pre_trace = utils.convert_spiketrain_to_trace(spiketimes_pre, self.params['t_sim'] + 1, dt=.1, spike_width=10) # + 1 is to handle spikes in the last time step
-        post_trace = utils.convert_spiketrain_to_trace(spiketimes_post, self.params['t_sim'] + 1, dt=.1, spike_width=10) # + 1 is to handle spikes in the last time step
+        if t_max == None:
+            t_max = self.params['t_sim'] + 1
+        pre_trace = utils.convert_spiketrain_to_trace(spiketimes_pre, t_max, dt=.1, spike_width=10) # + 1 is to handle spikes in the last time step
+        post_trace = utils.convert_spiketrain_to_trace(spiketimes_post, t_max, dt=.1, spike_width=10) # + 1 is to handle spikes in the last time step
 
         wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, self.params['bcpnn_params'])
         print 'Weight after training:', wij[-1], ' maximum in trace:', np.max(wij)
@@ -243,8 +245,8 @@ if __name__ == '__main__':
     for stim in xrange(params['n_training_stim']):
         Plotter.get_coactivated_cell_gids(stim, exc_spike_data)
 
-    pre_gid = 62
-    post_gid = 81
+    pre_gid = 1
+    post_gid = 72
     initial_value = None#1e-6
-    Plotter.plot_bcpnn_traces(exc_spike_data, pre_gid, post_gid, params['bcpnn_params'])
+    Plotter.plot_bcpnn_traces(exc_spike_data, pre_gid, post_gid, syn_params=params['bcpnn_params'])
     pylab.show()

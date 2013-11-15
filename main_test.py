@@ -133,8 +133,8 @@ if __name__ == '__main__':
     NM.setup()
     NM.training_params = training_params
     NM.create()
-    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True)
-#    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True, training_params=training_params)
+#    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True)
+    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True, training_params=training_params)
     NM.connect()
 
     if record:
@@ -146,7 +146,7 @@ if __name__ == '__main__':
         run_tracking(params, NM)
     else:
         NM.run_sim(params['t_sim'])
-        NM.get_weights_after_learning_cycle()
+#        NM.get_weights_after_learning_cycle()
 
     t_end = time.time()
     t_diff = t_end - t_0

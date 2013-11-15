@@ -246,13 +246,14 @@ class NetworkModel(object):
         motion_params = CS.create_test_stim_1D(self.params, training_params=training_params)
         np.savetxt(self.params['test_sequence_fn'], motion_params)
         n_stim_total = self.params['n_test_stim']
+
         for i_stim in xrange(n_stim_total):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 2]
 
             # get the input signal
-            idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
-            idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+            idx_t_start = np.int(i_stim * self.params['t_test_stim'] / dt)
+            idx_t_stop = np.int((i_stim + 1) * self.params['t_test_stim'] / dt) 
             idx_within_stim = 0
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
@@ -274,6 +275,11 @@ class NetworkModel(object):
                 # blanking
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+
+            # make a pause between the test stimuli
+            idx_t_start_pause = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+            idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_test_stim'] / dt) 
+            L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
 
         nprnd.seed(self.params['input_spikes_seed'])
         # create the spike trains
@@ -439,10 +445,8 @@ class NetworkModel(object):
             gid_min += self.params['inh_spec_offset']
             gid_max += self.params['inh_spec_offset']
             n_src = int(round(self.params['n_inh_per_mc'] * self.params['p_ie_spec']))
-            source_gids = np.array([])
-            while source_gids.size != n_src:
-                source_gids = np.random.randint(gid_min, gid_max, n_src)
-                source_gids = np.unique(source_gids)
+            source_gids = np.random.randint(gid_min, gid_max, n_src)
+            source_gids = np.unique(source_gids)
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='inh_exc_specific_fast')
 
 
@@ -466,10 +470,8 @@ class NetworkModel(object):
         for tgt_gid in self.local_idx_exc:
             hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
             n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
-            source_gids = np.array([])
-            while source_gids.size != n_src:
-                source_gids = np.random.randint(gid_min, gid_max, n_src)
-                source_gids = np.unique(source_gids)
+            source_gids = np.random.randint(gid_min, gid_max, n_src)
+            source_gids = np.unique(source_gids)
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
 
@@ -536,10 +538,8 @@ class NetworkModel(object):
         for tgt_gid in self.local_idx_exc:
             hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
             n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
-            source_gids = np.array([])
-            while source_gids.size != n_src:
-                source_gids = np.random.randint(gid_min, gid_max, n_src)
-                source_gids = np.unique(source_gids)
+            source_gids = np.random.randint(gid_min, gid_max, n_src)
+            source_gids = np.unique(source_gids)
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
 
@@ -594,10 +594,8 @@ class NetworkModel(object):
             n_src = int(round(self.params['p_ei_unspec'] * self.params['n_exc_per_hc']))
             hc_idx = (tgt_gid - self.params['n_exc'] - 1) / self.params['n_inh_unspec_per_hc']
             src_gid_range = (hc_idx * self.params['n_exc_per_hc'] + 1, (hc_idx + 1) * self.params['n_exc_per_hc'] + 1)
-            source_gids = np.array([])
-            while (source_gids.size != n_src):
-                source_gids = np.random.randint(src_gid_range[0], src_gid_range[1], n_src)
-                source_gids = np.unique(source_gids)
+            source_gids = np.random.randint(src_gid_range[0], src_gid_range[1], n_src)
+            source_gids = np.unique(source_gids)
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_inh_unspec_fast')
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_inh_unspec_slow')
 
@@ -611,10 +609,8 @@ class NetworkModel(object):
             n_src = int(round(self.params['p_ie_unspec'] * self.params['n_inh_unspec_per_hc']))
             hc_idx = (tgt_gid - 1) / self.params['n_exc_per_hc']
             src_gid_range = (hc_idx * self.params['n_inh_unspec_per_hc'] + self.params['n_exc'] + 1, (hc_idx + 1) * self.params['n_inh_unspec_per_hc'] + self.params['n_exc'] + 1)
-            source_gids = np.array([])
-            while (source_gids.size != n_src):
-                source_gids = np.random.randint(src_gid_range[0], src_gid_range[1], n_src)
-                source_gids = np.unique(source_gids)
+            source_gids = np.random.randint(src_gid_range[0], src_gid_range[1], n_src)
+            source_gids = np.unique(source_gids)
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='inh_exc_unspec_fast')
 #            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='inh_exc_unspec_slow')
 

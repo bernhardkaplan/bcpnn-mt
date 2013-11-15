@@ -35,7 +35,7 @@ class CreateStimuli(object):
             for stim_cnt in xrange(n_stim):
                 speed = speeds[stim_cnt]
                 v0 = speed * rnd.uniform(1. - test_params['v_noise_training'], 1. + test_params['v_noise_training'])
-                x0 = np.random.rand() # select a random start point
+                x0 = .5 * np.random.rand() # select a random start point between 0 - 0.5
                 all_starting_pos[stim_cnt, 0] = x0
                 all_speeds[stim_cnt] = v0
 #            for cycle in xrange(test_params['n_cycles']):

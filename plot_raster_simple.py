@@ -27,7 +27,7 @@ def set_figsize(fig_width_pt):
 pylab.rcParams.update(params2)
 
 
-def plot_histogram(d, fig, gids_to_plot=None, time_range=False):
+def plot_histogram_vs_time(d, fig, gids_to_plot=None, time_range=False):
 
     if time_range == False:
         time_range = (0, d[:, time_axis].max())
@@ -67,8 +67,7 @@ def plot_histogram(d, fig, gids_to_plot=None, time_range=False):
 fns = sys.argv[1:]
 
 fig = pylab.figure()
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212)
+ax = fig.add_subplot(111)
 for fn in fns:
     try:
         d = np.loadtxt(fn)
@@ -103,7 +102,7 @@ for fn in fns:
     ax.set_ylim((d[:, gid_axis].min()-1, d[:, gid_axis].max()+1))
     ax.set_xlim()#time_range)
 
-    plot_histogram(d, fig, np.unique(gids))#, time_range=time_range)
+#    plot_histogram_vs_time(d, fig, np.unique(gids))#, time_range=time_range)
 
 pylab.show()
 

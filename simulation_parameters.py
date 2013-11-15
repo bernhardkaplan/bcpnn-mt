@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
 #        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
 
         # ###################
@@ -38,10 +38,10 @@ class parameter_storage(object):
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
             self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
-            self.params['n_rf_x'] = 5
+            self.params['n_rf_x'] = 10
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 5
+        self.params['n_v'] = 10
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -150,13 +150,13 @@ class parameter_storage(object):
         self.params['w_ee_local'] = 3.
 
         # exc - exc: global
-        self.params['w_ee_global_max'] = 50.
-        self.params['w_ei_global_max'] = 50.
+        self.params['w_ee_global_max'] = 20.
+        self.params['w_ei_global_max'] = 20.
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh
         self.params['w_ei_unspec'] = 50.    # untrained, unspecific PYR -> Basket connections
-        self.params['p_ei_unspec'] = .7     # probability for PYR -> Basket connections
+        self.params['p_ei_unspec'] = .75     # probability for PYR -> Basket connections
 
         # inh - exc
         self.params['w_ie_unspec'] = -200.  # untrained, unspecific Basket -> PYR connections
@@ -217,7 +217,7 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_cycles'] = 20   # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 5 # how many different speeds are trained per cycle
+        self.params['n_speeds'] = 10 # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
         # is one speed is trained, it is presented starting from on this number of different locations
@@ -228,6 +228,7 @@ class parameter_storage(object):
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
         self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
+#        self.params['n_test_stim'] = 1
 
 
         # ######################
@@ -238,11 +239,12 @@ class parameter_storage(object):
         # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
         self.params['t_training_stim'] = 2000.  # [ms] time each stimulus is presented
+        self.params['t_test_stim'] = self.params['t_training_stim'] + 200
 
         if self.params['training_run']:
             self.params['t_sim'] = self.params['n_training_stim'] * self.params['t_training_stim']  # [ms] total simulation time
         else:
-            self.params['t_sim'] = self.params['n_test_stim'] * self.params['t_training_stim']
+            self.params['t_sim'] = self.params['n_test_stim'] * self.params['t_test_stim']
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
         self.params['t_start'] = 0.           # [ms] blank time before stimulus appears
         if self.params['training_run']:
@@ -335,11 +337,15 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%d%d%d_taui%d_taup%d' % ( \
+                folder_name = 'TrainingSim_%d%d%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
                         self.params['n_cycles'], self.params['n_stim_per_direction'], self.params['n_speeds'], \
-                        self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'])
+                        self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
+                        self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim'
+                folder_name = 'TestSim_%d%d%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
+                        self.params['n_cycles'], self.params['n_stim_per_direction'], self.params['n_speeds'], \
+                        self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
+                        self.params['n_hc'], self.params['n_mc_per_hc'])
             folder_name += '/'
 
             self.params['folder_name'] = folder_name
