@@ -29,8 +29,9 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
         return
 
     plotter.compute_v_estimates()
-    plotter.compute_position_estimates()
+#    plotter.compute_position_estimates() --> happening in compute_v_estimates
     plotter.compute_theta_estimates()
+    plotter.compute_orientation_estimates()
 
     # fig 1
     # neuronal level
@@ -51,9 +52,21 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_0.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_0.pdf'
+#    output_fn = output_fn_base + '_0.pdf'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
+
+    # orientation figure
+    plotter.create_fig()  # create an empty figure
+    plotter.n_fig_x = 3
+    plotter.n_fig_y = 2 # to have the ~same figure sizes as for the others
+    plotter.plot_orientation_grid_vs_time(1)
+    plotter.plot_orientation_estimates(2)
+    plotter.plot_orientation_diff(3)
+    output_fn = output_fn_base + '_orientation.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
+
 #    output_fn = output_fn_base + '_0.eps'
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=200)
@@ -75,9 +88,9 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_1.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_1.pdf'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_1.pdf'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_1.eps'
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=200)
@@ -120,9 +133,9 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_4.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_4.pdf'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_4.pdf'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_4.eps'
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=200)
@@ -137,9 +150,9 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
     output_fn = output_fn_base + '_quiver.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    output_fn = output_fn_base + '_quiver.pdf'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=200)
+#    output_fn = output_fn_base + '_quiver.pdf'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=200)
 #    output_fn = output_fn_base + '_quiver.eps'
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=200)

@@ -4,6 +4,7 @@ import simulation_parameters
 import NeuroTools.parameters as NTP
 import pylab
 import utils
+import json
 
 try:
     from mpi4py import MPI
@@ -134,7 +135,7 @@ class ResultsCollector(object):
             param_dict = json.load(f)
             value = param_dict[param_name]
             self.param_space[i_][param_name] = value
-            
+        return self.param_space    
 
     def plot_param_vs_xvdiff_integral(self, param_name, xv='x', t_integral=None, fig_cnt=1):
 

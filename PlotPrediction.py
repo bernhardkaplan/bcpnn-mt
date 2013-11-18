@@ -5,6 +5,7 @@ import numpy as np
 import simulation_parameters
 import utils
 from matplotlib import cm
+import os
 
 class PlotPrediction(object):
     def __init__(self, params=None, data_fn=None):
@@ -37,6 +38,7 @@ class PlotPrediction(object):
         self.t_axis = np.arange(0, self.n_bins * self.time_binsize, self.time_binsize)
         self.n_vx_bins, self.n_vy_bins = 30, 30     # colormap grid dimensions for predicted direction
         self.n_x_bins, self.n_y_bins = 50, 50       # colormap grid dimensions for predicted position
+        self.n_orientation_bins = 30
         self.t_ticks = np.linspace(0, self.params['t_sim'], 6)
 
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
@@ -55,18 +57,20 @@ class PlotPrediction(object):
         self.vx_tuning = self.tuning_prop[:, 2].copy()
         self.vx_tuning.sort()
         self.sorted_indices_vx = self.tuning_prop[:, 2].argsort()
-        self.vx_min, self.vx_max = .7 * self.tuning_prop[:, 2].min(), .7 * self.tuning_prop[:, 2].max()
+        self.vx_min, self.vx_max = -1.5, 1.5
+#        self.vx_min, self.vx_max = .3 * self.tuning_prop[:, 2].min(), .3 * self.tuning_prop[:, 2].max()
         # maximal range of vx_speeds
 #        self.vx_min, self.vx_max = np.min(self.vx_tuning), np.max(self.vx_tuning)
         self.vx_grid = np.linspace(self.vx_min, self.vx_max, self.n_vx_bins, endpoint=True)
+
         #self.vx_grid = np.linspace(np.min(self.vx_tuning), np.max(self.vx_tuning), self.n_vx_bins, endpoint=True)
 
         # vy
         self.vy_tuning = self.tuning_prop[:, 3].copy()
         self.vy_tuning.sort()
         self.sorted_indices_vy = self.tuning_prop[:, 3].argsort()
-#        self.vy_min, self.vy_max = -0.5, 0.5
-        self.vy_min, self.vy_max = self.tuning_prop[:, 3].min(), self.tuning_prop[:, 3].max()
+        self.vy_min, self.vy_max = -1.5, 1.5
+#        self.vy_min, self.vy_max = self.tuning_prop[:, 3].min(), self.tuning_prop[:, 3].max()
 #        self.vy_min, self.vy_max = np.min(self.vy_tuning), np.max(self.vy_tuning)
         self.vy_grid = np.linspace(self.vy_min, self.vy_max, self.n_vy_bins, endpoint=True)
 
@@ -84,6 +88,13 @@ class PlotPrediction(object):
         self.y_min, self.y_max = .0, self.params['torus_height']
         self.y_grid = np.linspace(self.y_min, self.y_max, self.n_y_bins, endpoint=True)
 
+        # orientation
+        self.sorted_indices_x = self.tuning_prop[:, 0].argsort()
+        self.orientation_tuning= self.tuning_prop[:, 4].copy()
+        self.orientation_tuning.sort()
+        self.orientation_min, self.orientation_max = .0, np.pi
+        self.orientation_grid = np.linspace(self.orientation_min, self.orientation_max, self.n_orientation_bins, endpoint=True)
+
         self.normalize_spiketimes(data_fn)
         if self.no_spikes:
             return
@@ -94,8 +105,8 @@ class PlotPrediction(object):
         fig_height = fig_width*golden_mean      # height in inches
         fig_size =  [fig_width,fig_height]
         params = {#'backend': 'png',
-                  'titel.fontsize': 16,
-                  'axes.labelsize': 14,
+                  'title.fontsize': 16,
+                  'axes.labelsize': 16,
 #                  'text.fontsize': 10,
 #                  'legend.fontsize': 10,
 #                  'xtick.labelsize': 8,
@@ -148,7 +159,7 @@ class PlotPrediction(object):
         nspikes_exp = np.exp(nspikes_shifted)
         self.nspikes_normalized_nonlinear = nspikes_exp / nspikes_exp.sum()
 
-    def bin_estimates(self, grid_edges, index=2):
+    def bin_estimates(self, grid_edges, index):
         """
         Bring the speed estimates from the neuronal level to broader representation in a grid:
         index = index in tuning_parameters for the parameter (vx=2, vy=3)
@@ -160,19 +171,10 @@ class PlotPrediction(object):
                     time_bins
 
         """
-        # torus dimensions
-        w, h = self.params['torus_width'], self.params['torus_height']
         
         output_data = np.zeros((len(grid_edges), self.n_bins))
         for gid in xrange(self.n_cells):
             xyuv_predicted = self.tuning_prop[gid, index] # cell tuning properties
-            if (index == 0):
-                xyuv_predicted += self.tuning_prop[gid, 2]
-                xyuv_predicted = xyuv_predicted % w
-
-            elif (index == 1):
-                xyuv_predicted += self.tuning_prop[gid, 3]
-                xyuv_predicted = xyuv_predicted % h
             y_pos_grid = utils.get_grid_pos_1d(xyuv_predicted, grid_edges)
             output_data[y_pos_grid, :] += self.nspikes_binned_normalized[gid, :]
         return output_data, grid_edges
@@ -182,31 +184,90 @@ class PlotPrediction(object):
         pass
 
 
-    def get_average_of_circular_quantity(self, confidence_vec, tuning_vec, xv='x'):
+
+    def compute_orientation_estimates(self):
+        mp = self.params['motion_params']
+        self.sorted_indices_orientation = self.tuning_prop[:, 4].argsort()
+        self.orientation_avg = np.zeros(self.n_bins) 
+        self.orientation_diff_avg = np.zeros(self.n_bins)  # stores |orientation_predicted(t) - orientation_stimulus(t)|
+        self.orientation_stim = self.params['motion_params'][4] * np.ones(self.t_axis.size)
+        # # # # # # # # # # # # # # # # # # # # # # # #
+        # O R I E N T A T I O N     P R E D I C T I O N 
+        # # # # # # # # # # # # # # # # # # # # # # # #
+        self.orientation_confidence_binned = self.nspikes_binned_normalized[self.sorted_indices_vx]
+        for i in xrange(self.n_bins):
+            # 1) momentary vote
+            # take the weighted average for orientation_prediction (weight = normalized activity)
+            self.orientation_avg[i] = self.get_average_of_circular_quantity(self.orientation_confidence_binned[:, i], self.orientation_tuning, modality='orientation')
+            self.orientation_diff_avg[i] = np.abs(mp[4] - self.orientation_avg[i])
+
+        # ---> time INdependent estimates: based on activity of the full run
+        self.orientation_marginalized_binned = np.zeros(self.n_orientation_bins)
+        for gid in xrange(self.n_cells):
+            grid_pos = utils.get_grid_pos_1d(self.tuning_prop[gid, 4], self.orientation_grid)
+            self.orientation_marginalized_binned[grid_pos] += self.nspikes_normalized[gid]
+
+    def plot_orientation_diff(self, fig_cnt=1, show_blank=None):
+        if show_blank == None:
+            show_blank = self.show_blank
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title('Orientation prediction error: \n $|\Theta_{diff}(t)| = |\Theta_{stim}-\Theta_{predicted}(t)|$')
+        ax.plot(self.t_axis, self.orientation_diff_avg, ls='-', lw=2, label='linear')
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$|\Theta_{diff}|$')
+        ax.legend()#loc='upper right')
+        ny = self.t_axis.size
+#        n_ticks = min(11, int(round(self.params['t_sim'] / 100.)))
+#        t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
+        t_labels= ['%d' % i for i in self.t_ticks]
+        ax.set_xticks(self.t_ticks)
+        ax.set_xticklabels(t_labels)
+        ax.set_xlim((0, self.params['t_sim']))
+        if show_blank:
+            self.plot_blank(ax)
+
+        print 'vdiff_avg.sum:', self.vdiff_avg.sum()
+        output_data = np.zeros((self.t_axis.size, 4))
+        output_data[:, 0] = self.t_axis
+        output_data[:, 1] = self.vdiff_avg
+        output_data[:, 2] = self.vdiff_moving_avg[:, 0]
+        output_data[:, 3] = self.vdiff_non_linear
+        output_fn = self.params['vdiff_vs_time_fn']
+        self.data_to_store[output_fn] = {'data' : output_data}
+    
+
+
+    def get_average_of_circular_quantity(self, confidence_vec, tuning_vec, modality='x'):
         """
         Computes the population average of a circular quantity.
-        This is done by 1) mapping the quantity onto a circle
+        This is done by 
+        0) transforming it to an angle (for position and direction)
+        1) mapping the quantity onto a circle
         2) weighting the single quantities on the circle
         3) getting the average by using arctan2 giving the 'directed' angle
-        """
 
-        if xv == 'x':
-            range_0_1 = True
-        else:
-            range_0_1 = False
+        Keyword arguments:
+        confidence_vec -- the array of weights (votes)
+        tuning_vec -- the preferred position / direction / orientation
+        modality -- either 'x', 'v' or 'orientation'
+        """
 
         n = confidence_vec.size
         sin = np.zeros(n)
         cos = np.zeros(n)
 
-        if range_0_1:
+        if modality == 'x': # range 0 - 1
             sin = confidence_vec * np.sin(tuning_vec * 2 * np.pi - np.pi) 
             cos = confidence_vec * np.cos(tuning_vec * 2 * np.pi - np.pi)
             avg = .5 * (np.arctan2(sin.sum(), cos.sum()) / np.pi + 1.)
-        else: # range_-1_1
+        elif modality == 'v': # range -V +V
             sin = confidence_vec * np.sin(tuning_vec * np.pi) 
             cos = confidence_vec * np.cos(tuning_vec * np.pi)
             avg = np.arctan2(sin.sum(), cos.sum()) / np.pi
+        elif modality == 'orientation':
+            sin = confidence_vec * np.sin(tuning_vec)
+            cos = confidence_vec * np.cos(tuning_vec)
+            avg = np.arctan2(sin.sum(), cos.sum())
 
         return avg
 
@@ -238,8 +299,7 @@ class PlotPrediction(object):
         self.xdiff_avg = np.zeros(self.n_bins)  # stores |x_predicted(t) - x_stimulus(t)|
         self.vx_avg = np.zeros(self.n_bins) 
         self.vy_avg = np.zeros(self.n_bins)
-        self.vdiff_avg = np.zeros(self.n_bins)  # stores |v_predicted(t) - v_stimulus(t)|
-        # ---> gives theta_avg 
+        self.vdiff_avg = np.zeros(self.n_bins)  # stores |v_predicted(t) - v_stimulus(t)| # ---> gives theta_avg 
 
         # based on the activity in several time bins
         self.x_moving_avg = np.zeros((self.n_bins, 2))
@@ -279,15 +339,9 @@ class PlotPrediction(object):
         w, h = self.params['torus_width'], self.params['torus_height']
         for i in xrange(self.n_bins):
 
-            # 1) momentary vote
-            # take the weighted average for v_prediction (weight = normalized activity)
-            vx_pred = self.vx_confidence_binned[:, i] * self.vx_tuning
-            vy_pred = self.vy_confidence_binned[:, i] * self.vy_tuning
-
-            self.vx_avg[i] = self.get_average_of_circular_quantity(self.vx_confidence_binned[:, i], self.vx_tuning, xv='v')
-            self.vy_avg[i] = self.get_average_of_circular_quantity(self.vy_confidence_binned[:, i], self.vy_tuning, xv='v')
-#            self.vx_avg[i] = np.sum(vx_pred)
-#            self.vy_avg[i] = np.sum(vy_pred)
+            # take the weighted mean on the circle (weight = normalized activity)
+            self.vx_avg[i] = self.get_average_of_circular_quantity(self.vx_confidence_binned[:, i], self.vx_tuning, modality='v')
+            self.vy_avg[i] = self.get_average_of_circular_quantity(self.vy_confidence_binned[:, i], self.vy_tuning, modality='v')
             self.vdiff_avg[i] = np.sqrt((mp[2] - self.vx_avg[i])**2 + (mp[3] - self.vy_avg[i])**2)
 
             # position
@@ -296,12 +350,8 @@ class PlotPrediction(object):
             stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
             self.x_stim[i] = stim_pos_x
             self.y_stim[i] = stim_pos_y
-            x_pred = self.x_confidence_binned[:, i] * self.x_tuning
-            y_pred = self.y_confidence_binned[:, i] * self.y_tuning
-            self.x_avg[i] = self.get_average_of_circular_quantity(self.x_confidence_binned[:, i], self.x_tuning, xv='x')
-            self.y_avg[i] = self.get_average_of_circular_quantity(self.y_confidence_binned[:, i], self.y_tuning, xv='x')
-#            self.x_avg[i] = np.sum(x_pred)
-#            self.y_avg[i] = np.sum(y_pred)
+            self.x_avg[i] = self.get_average_of_circular_quantity(self.x_confidence_binned[:, i], self.x_tuning, modality='x')
+            self.y_avg[i] = self.get_average_of_circular_quantity(self.y_confidence_binned[:, i], self.y_tuning, modality='x')
             self.xdiff_avg[i] = np.sqrt((stim_pos_x - self.x_avg[i])**2 + (stim_pos_y - self.y_avg[i])**2)
 
             # 2) moving average
@@ -353,8 +403,8 @@ class PlotPrediction(object):
 #            self.x_non_linear[i] = x_votes.sum()
 #            self.y_non_linear[i] = y_votes.sum()
 #            self.xdiff_non_linear[i] = np.sqrt((stim_pos_x - self.x_non_linear[i])**2 + (stim_pos_y - self.y_non_linear[i])**2)
-            self.x_non_linear[i] = self.get_average_of_circular_quantity(x_exp, self.x_tuning, xv='x')
-            self.y_non_linear[i] = self.get_average_of_circular_quantity(y_exp, self.x_tuning, xv='x')
+            self.x_non_linear[i] = self.get_average_of_circular_quantity(x_exp, self.x_tuning, modality='x')
+            self.y_non_linear[i] = self.get_average_of_circular_quantity(y_exp, self.x_tuning, modality='x')
             self.xdiff_non_linear[i] = np.sqrt((stim_pos_x - self.x_non_linear[i])**2 + (stim_pos_y - self.y_non_linear[i])**2)
 
             # v
@@ -371,8 +421,8 @@ class PlotPrediction(object):
 #            self.vy_non_linear[i] = vy_votes.sum()
 #            self.vdiff_non_linear[i] = np.sqrt((mp[2] - self.vx_non_linear[i])**2 + (mp[3] - self.vy_non_linear[i])**2)
 
-            self.vx_non_linear[i] = self.get_average_of_circular_quantity(vx_exp, self.vx_tuning, xv='v')
-            self.vy_non_linear[i] = self.get_average_of_circular_quantity(vy_exp, self.vy_tuning, xv='v')
+            self.vx_non_linear[i] = self.get_average_of_circular_quantity(vx_exp, self.vx_tuning, modality='v')
+            self.vy_non_linear[i] = self.get_average_of_circular_quantity(vy_exp, self.vy_tuning, modality='v')
             self.vdiff_non_linear[i] = np.sqrt((mp[2]- self.vx_non_linear[i])**2 + (mp[3]- self.vy_non_linear[i])**2)
 
         # in the first step the trace can not have a standard deviation --> avoid NANs 
@@ -424,6 +474,9 @@ class PlotPrediction(object):
             np.savetxt(fn, data)
 
     def compute_theta_estimates(self):
+        """
+        Theta means the angle of the predicted direction
+        """
 
         # time dependent averages
         self.theta_avg = np.arctan2(self.vy_avg, self.vx_avg)
@@ -443,6 +496,9 @@ class PlotPrediction(object):
             self.theta_marginalized_binned[grid_pos] += self.nspikes_normalized[gid]
             self.theta_marginalized_binned_nonlinear[grid_pos] += self.nspikes_normalized_nonlinear[gid]
 
+#    def compute_orientation(self):
+
+
 #        assert (np.sum(self.theta_marginalized_binned) == 1), "Marginalization incorrect: %.1f" % (np.sum(self.theta_marginalized_binned))
 #        assert (np.sum(self.theta_marginalized_binned_nonlinear) == 1), "Marginalization incorrect: %.1f" % (np.sum(self.theta_marginalized_binned_nonlinear))
 
@@ -450,8 +506,9 @@ class PlotPrediction(object):
     def create_fig(self):
         print "plotting ...."
         self.fig = pylab.figure(figsize=self.fig_size)
-        pylab.subplots_adjust(hspace=0.4)
-        pylab.subplots_adjust(wspace=0.35)
+        pylab.subplots_adjust(hspace=0.02)
+        pylab.subplots_adjust(wspace=0.18)
+        pylab.subplots_adjust(top=0.97, right=0.97)
 
     def load_spiketimes(self, cell_type):
         if cell_type == 'inh':
@@ -499,7 +556,68 @@ class PlotPrediction(object):
         if show_blank:
             self.plot_blank(ax)
 
-    def plot_network_activity(self, cell_type, fig_cnt=1):
+
+    def plot_input_spikes_sorted_in_space(self, fig_cnt=1, shift=0., m='o', c='g', sort_idx=0, ms=2):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        sorted_idx = self.tuning_prop[:, sort_idx].argsort()
+
+        if sort_idx == 0 or sort_idx == 1:
+            ylim = (0, 1)
+        else: # it's a velocity --> adjust the range to plot
+            crop = .8
+            ylim = (crop * self.tuning_prop[:, sort_idx].min(), crop * self.tuning_prop[:, sort_idx].max())
+        ylen = (abs(ylim[0] - ylim[1]))
+        for i in xrange(self.params['n_exc']):
+            cell = sorted_idx[i]
+            fn = self.params['input_st_fn_base'] + str(cell) + '.npy'
+            if os.path.exists(fn):
+                spiketimes = np.load(fn)
+                nspikes = len(spiketimes)
+                if sort_idx == 0:
+                    y_pos = (self.tuning_prop[cell, sort_idx] % 1.) / ylen * (abs(ylim[0] - ylim[1]))
+                else:
+                    y_pos = (self.tuning_prop[cell, sort_idx]) / ylen * (abs(ylim[0] - ylim[1]))
+                ax.plot(spiketimes, y_pos * np.ones(nspikes) + shift, m, color=c, alpha=.05, markersize=2)
+
+        if sort_idx == 0:
+            ylabel_txt ='Neurons sorted\nby x-pos'
+        elif sort_idx == 1:
+            ylabel_txt ='Neurons sorted\nby y-pos'
+        elif sort_idx == 2:
+            ylabel_txt ='Neurons sorted\nby x-direction'
+        elif sort_idx == 3:
+            ylabel_txt ='Neurons sorted\nby y-direction'
+
+        ax.set_ylabel(ylabel_txt)
+
+
+
+    def plot_output_spikes_sorted_in_space(self, fig_cnt, cell_type, shift=0., m='o', c='g', sort_idx=0, ms=2):
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        n_cells = self.params['n_%s' % cell_type]
+        fn = self.params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
+        nspikes, spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
+        sorted_idx = self.tuning_prop[:, sort_idx].argsort()
+
+        if sort_idx == 0:
+            ylim = (0, 1)
+        else:
+#            crop = .8
+#            ylim = (crop * self.tuning_prop[:, sort_idx].min(), crop * self.tuning_prop[:, sort_idx].max())
+            ylim = (-4, 4)
+            print '\n', 'sort_idx', sort_idx, ylim, 
+        ylen = (abs(ylim[0] - ylim[1]))
+        for i in xrange(n_cells):
+            cell = sorted_idx[i]
+            if sort_idx == 0:
+                y_pos = (self.tuning_prop[cell, sort_idx] % 1.) / ylen * (abs(ylim[0] - ylim[1]))
+            else:
+                y_pos = (self.tuning_prop[cell, sort_idx]) / ylen * (abs(ylim[0] - ylim[1]))
+            ax.plot(spiketimes[cell], y_pos * np.ones(nspikes[cell]), 'o', color='k', markersize=ms)
+            ax.set_ylim(ylim)
+
+
+    def plot_network_activity(self, cell_type, fig_cnt=1, set_ylabel=True):
 
         if cell_type == 'exc':
             n_cells = self.params['n_exc']
@@ -526,30 +644,33 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         bins = np.linspace(0, self.params['t_sim'], n_bins, endpoint=True)
         ax.bar(bins, avg_activity, width=bins[1]-bins[0], )
-        ax.set_xlabel('Time [ms]')
-        ax.set_ylabel('Average firing rate [Hz]')
+#        ax.set_xlabel('Time [ms]')
+        ax.set_xticklabels([])
+        if set_ylabel:
+            ax.set_ylabel('Average firing rate [Hz]')
         ax.set_title('Activity of %s cells' % cell_type)
 
 
     def plot_vx_grid_vs_time(self, fig_cnt=1):
         print 'plot_vx_grid_vs_time ... '
-        xlabel = 'Time [ms]'
+        xlabel = ''#Time [ms]'
         ylabel = '$v_x$'
 #        title = '$v_x$ binned vs time'
         title = ''
         vx_grid, v_edges = self.bin_estimates(self.vx_grid, index=2)
-        self.plot_grid_vs_time(vx_grid, title, xlabel, ylabel, v_edges, fig_cnt)
+        self.plot_grid_vs_time(vx_grid, title, xlabel, ylabel, v_edges, fig_cnt, max_conf=.05, set_colorbar=False, set_xlabels=False)
         self.data_to_store['vx_grid.dat'] = {'data' : vx_grid, 'edges': v_edges}
 
 
 
     def plot_vy_grid_vs_time(self, fig_cnt=1):
         print 'plot_vy_grid_vs_time ...'
-        xlabel = 'Time [ms]'
+        xlabel = ''
+#        xlabel = 'Time [ms]'
         ylabel = '$v_y$'
         title = ''#$v_y$ binned vs time'
         vy_grid, v_edges = self.bin_estimates(self.vy_grid, index=3)
-        self.plot_grid_vs_time(vy_grid, title, xlabel, ylabel, v_edges, fig_cnt)
+        self.plot_grid_vs_time(vy_grid, title, xlabel, ylabel, v_edges, fig_cnt, max_conf=.05, set_colorbar=False, set_xlabels=False)
         self.data_to_store['vy_grid.dat'] = {'data' : vy_grid, 'edges': v_edges}
 
 
@@ -560,7 +681,8 @@ class PlotPrediction(object):
             ylabel = '$x_{predicted}$'
         title = ''#$x_{predicted}$ binned vs time'
         x_grid, x_edges = self.bin_estimates(self.x_grid, index=0)
-        self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt)
+#        self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt, max_conf=.05, set_colorbar=False, set_xlabels=True)
+        self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt, max_conf=.05, set_colorbar=True, set_xlabels=True)
         self.data_to_store['xpos_grid.dat'] = {'data' : x_grid, 'edges': x_edges}
 
 
@@ -571,11 +693,54 @@ class PlotPrediction(object):
             ylabel = '$y_{predicted}$'
         title = ''#$y_{predicted}$ binned vs time'
         y_grid, y_edges = self.bin_estimates(self.y_grid, index=1)
-        self.plot_grid_vs_time(y_grid, title, xlabel, ylabel, y_edges, fig_cnt)
+#        self.plot_grid_vs_time(y_grid, title, xlabel, ylabel, y_edges, fig_cnt, max_conf=.05, set_colorbar=False, set_xlabels=True)
+        self.plot_grid_vs_time(y_grid, title, xlabel, ylabel, y_edges, fig_cnt, max_conf=.05, set_colorbar=True, set_xlabels=True)
         self.data_to_store['ypos_grid.dat'] = {'data' : y_grid, 'edges': y_edges}
 
 
-    def plot_grid_vs_time(self, data, title='', xlabel='', ylabel='', yticks=[], fig_cnt=1, show_blank=None):
+    def plot_orientation_grid_vs_time(self, fig_cnt=1):
+        print 'plot_orientation_grid_vs_time ... '
+        xlabel = 'Time [ms]'
+        ylabel = 'Orientation'
+#        title = '$v_x$ binned vs time'
+        title = ''
+        grid, edges = self.bin_estimates(self.orientation_grid, index=4)
+        self.plot_grid_vs_time(grid, title, xlabel, ylabel, edges, fig_cnt, max_conf=.10, set_colorbar=True, set_xlabels=True)
+        self.data_to_store['orientation_grid.dat'] = {'data' : grid, 'edges': edges}
+
+
+    def plot_orientation_estimates(self, fig_cnt=1, show_blank=None):
+        if show_blank == None:
+            show_blank = self.show_blank
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+        ax.set_title('$\Theta$-predictions')#: avg, moving_avg, nonlinear')
+        ax.plot(self.t_axis, self.orientation_avg, ls='-', lw=2, label='linear')
+#        ax.plot(self.t_axis, self.x_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
+#        ax.errorbar(self.t_axis, self.x_moving_avg[:, 0], yerr=self.x_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
+#        ax.plot(self.t_axis, self.x_non_linear, ls=':', lw=2, label='soft-max')
+        ny = self.t_axis.size
+        ax.plot(self.t_axis, self.orientation_stim, ls='-', c='k', lw=2, label='$x_{stim}$')
+        ax.legend()#loc='upper left')
+        ax.set_xlabel('Time [ms]')
+        ax.set_ylabel('$\Theta$')
+        n_ticks = min(11, int(round(self.params['t_sim'] / 100.)))
+#        t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
+        t_labels= ['%d' % i for i in self.t_ticks]
+        ax.set_xticks(self.t_ticks)
+        ax.set_xticklabels(t_labels)
+        ax.set_xlim((0, self.params['t_sim']))
+        if show_blank:
+            self.plot_blank(ax)
+        output_data = np.zeros((self.t_axis.size, 3))
+        output_data[:, 0] = self.t_axis
+        output_data[:, 1] = self.orientation_avg
+        output_data[:, 2] = self.orientation_stim
+        self.data_to_store['orientation_vs_time.dat'] = {'data' : output_data}
+
+
+
+
+    def plot_grid_vs_time(self, data, title='', xlabel='', ylabel='', yticks=[], fig_cnt=1, show_blank=None, max_conf=None, set_colorbar=True, set_xlabels=True):
         """
         Plots a colormap / grid versus time
         """
@@ -594,32 +759,43 @@ class PlotPrediction(object):
         ax.set_yticks(y_ticks)
         ax.set_yticklabels(['%.2f' %i for i in yticks[::5]])
 
-        n_x_bins = len(self.t_ticks)
-        x_bin_labels = ['%d' % i for i in self.t_ticks]
-        ax.set_xticks(np.linspace(0, self.n_bins, n_x_bins))#range(self.n_bins)[::4])
-        ax.set_xticklabels(x_bin_labels)
 #        print  '\nDEBUG\n\t ticks', self.t_ticks
 #        ax.set_xticks(self.t_ticks)
 #        ax.set_xticklabels(['%d' %i for i in self.t_ticks])
 #        color_boundaries = (0., .5)
 
 #        max_conf = min(data.mean() + data.std(), data.max())
-        max_conf = data.max()
+        if max_conf == None:
+            max_conf = data.max()
         norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)#jet)
         m.set_array(np.arange(0., max_conf, 0.01))
-        cb = pylab.colorbar(m, orientation='horizontal', aspect=40, anchor=(.5, .0))
-        ticklabels = cb.ax.get_xticklabels()
-#        print 'ticklabels', ticklabels, type(ticklabels)
-#        ticklabels = list(ticklabels)
-        ticklabel_texts = []
-        for text in ticklabels:
-            ticklabel_texts.append('%s' % text.get_text())
-        ticklabel_texts[-1] = '> %.1f' % max_conf
-        for i_, text in enumerate(ticklabels):
-            text.set_text(ticklabel_texts[i_])
-        cb.ax.set_xticklabels(ticklabel_texts)
-        cb.set_label('Prediction confidence')
+        if set_colorbar:
+
+            cb = pylab.colorbar(m, orientation='horizontal', aspect=40, anchor=(.5, .0))
+            ticklabels = cb.ax.get_xticklabels()
+    #        print 'ticklabels', ticklabels, type(ticklabels)
+    #        ticklabels = list(ticklabels)
+            ticklabel_texts = []
+            for text in ticklabels:
+                ticklabel_texts.append('%s' % text.get_text())
+            ticklabel_texts[-1] = '> %.2f' % max_conf
+            for i_, text in enumerate(ticklabels):
+                text.set_text(ticklabel_texts[i_])
+            cb.ax.set_xticklabels(ticklabel_texts)
+            cb.set_label('Prediction confidence')
+
+        if set_xlabels:
+            n_x_bins = len(self.t_ticks)
+            x_bin_labels = ['%d' % i for i in self.t_ticks]
+            ax.set_xticks(np.linspace(0, self.n_bins, n_x_bins))#range(self.n_bins)[::4])
+            ax.set_xticklabels(x_bin_labels)
+
+
+        else:
+            ax.set_xticks([])
+#            ax.set_xticklabels([])
+
         if show_blank:
             self.plot_blank_on_cmap(cax, txt='blank')
 
@@ -781,6 +957,11 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        output_data = np.zeros((self.t_axis.size, 3))
+        output_data[:, 0] = self.t_axis
+        output_data[:, 1] = self.x_avg
+        output_data[:, 2] = self.x_stim
+        self.data_to_store['x_linear_vs_time.dat'] = {'data' : output_data}
 
 
     def plot_y_estimates(self, fig_cnt=1, show_blank=None):
@@ -807,6 +988,11 @@ class PlotPrediction(object):
         if show_blank:
             self.plot_blank(ax)
 
+        output_data = np.zeros((self.t_axis.size, 3))
+        output_data[:, 0] = self.t_axis
+        output_data[:, 1] = self.y_avg
+        output_data[:, 2] = self.y_stim
+        self.data_to_store['y_linear_vs_time.dat'] = {'data' : output_data}
 
 
     def plot_vx_estimates(self, fig_cnt=1, show_blank=None):
@@ -833,7 +1019,11 @@ class PlotPrediction(object):
         if show_blank:
             self.plot_blank(ax)
 
-        output_data = np.array((self.t_axis, self.vx_avg))
+
+        output_data = np.zeros((self.t_axis.size, 3))
+        output_data[:, 0] = self.t_axis
+        output_data[:, 1] = self.vx_avg
+        output_data[:, 2] = np.ones(self.t_axis.size) * self.params['motion_params'][2]
         self.data_to_store['vx_linear_vs_time.dat'] = {'data' : output_data}
 
 
@@ -861,7 +1051,10 @@ class PlotPrediction(object):
         if show_blank:
             self.plot_blank(ax)
 
-        output_data = np.array((self.t_axis, self.vy_avg))
+        output_data = np.zeros((self.t_axis.size, 3))
+        output_data[:, 0] = self.t_axis
+        output_data[:, 1] = self.vy_avg
+        output_data[:, 2] = np.ones(self.t_axis.size) * self.params['motion_params'][3]
         self.data_to_store['vy_linear_vs_time.dat'] = {'data' : output_data}
 
     def plot_theta_estimates(self, fig_cnt=1, show_blank=None):

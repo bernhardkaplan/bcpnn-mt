@@ -110,21 +110,21 @@ class parameter_storage(object):
 #        self.params['connectivity_ee'] = 'random'
 #        self.params['connectivity_ee'] = False
         self.params['connectivity_ei'] = 'anisotropic'
-#        self.params['connectivity_ei'] = 'isotropic'
+        self.params['connectivity_ei'] = 'isotropic'
 #        self.params['connectivity_ei'] = 'random'
 #        self.params['connectivity_ei'] = False
-        self.params['connectivity_ie'] = 'anisotropic'
-#        self.params['connectivity_ie'] = 'isotropic'
+#        self.params['connectivity_ie'] = 'anisotropic'
+        self.params['connectivity_ie'] = 'isotropic'
 #        self.params['connectivity_ie'] = 'random'
 #        self.params['connectivity_ie'] = False
-        self.params['connectivity_ii'] = 'anisotropic'
-#        self.params['connectivity_ii'] = 'isotropic'
+#        self.params['connectivity_ii'] = 'anisotropic'
+        self.params['connectivity_ii'] = 'isotropic'
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
 
         self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
-        self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
-        self.params['w_max'] = 5e-3
+        self.params['w_thresh_min'] = 5e-4    # When probabilities are transformed to weights, they are scaled so that the weights are within this range
+        self.params['w_thresh_max'] = 1.0e+1
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
 
         # exc - inh
@@ -147,21 +147,16 @@ class parameter_storage(object):
         self.params['connectivity_radius'] = 1.0      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 1.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
         self.params['delay_range'] = (0.1, 5000.)
-        self.params['w_sigma_x'] = 0.6 # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.6 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 1.0 # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 1.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
                                         
-        self.params['w_sigma_theta'] = 0.6 # how sensitive connectivity is on similarity between source and target cell
+        self.params['w_sigma_theta'] = 1.0 # how sensitive connectivity is on similarity between source and target cell
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['p_to_w_ee'] = 7e-5
-        self.params['weight_scaling_ee'] = self.params['p_to_w_ee'] / (self.params['n_exc'] * self.params['p_ee'])
-        self.params['weight_scaling_ei'] = self.params['p_to_w_ee'] / (self.params['n_exc'] * self.params['p_ei'])
-        self.params['weight_scaling_ie'] = self.params['p_to_w_ee'] / (self.params['n_inh'] * self.params['p_ie'])
-        self.params['weight_scaling_ii'] = self.params['p_to_w_ee'] / (self.params['n_inh'] * self.params['p_ii'])
-        self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.25 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1.50 # [uS] how much input should an inh cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ie'] = 0.80 # [uS] how much input should an exc cell get from its inh source cells?
+        self.params['w_tgt_in_per_cell_ie'] = 1.80 # [uS] how much input should an exc cell get from its inh source cells?
         self.params['w_tgt_in_per_cell_ii'] = 0.05 # [uS] how much input should an inh cell get from its source cells?
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
@@ -191,7 +186,6 @@ class parameter_storage(object):
         self.params['n_gids_to_record'] = 20
         
         
-        
 
         # ######
         # INPUT
@@ -207,11 +201,20 @@ class parameter_storage(object):
         u0 (v0) : velocity in x-direction (y-direction)
         """
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
-        self.params['motion_params'] = (0.0, .5 , 0.5, 0, np.pi/6.0) # stimulus start parameters (x, y, v_x, v_y, orientation of bar)
+        self.params['motion_params'] = [.0, .5 , .5, 0, np.pi/6.0] # (x, y, v_x, v_y, orientation of bar)
+        # the 'motion_params' are those that determine the stimulus (depending on the protocol, they might change during one run, e.g. 'random predictor)
+        self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
         self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
-        self.params['motion_protocol'] = 'congruent' # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
-        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
+        
+        self.allowed_protocols = ['congruent', 'incongruent', 'crf_only', 'missing_crf', 'random_predictor']
+        self.params['motion_protocol'] = self.allowed_protocols[2] # the default motion protocol for dot and bar. for bar other protocols are also possible: incongruent, CRF only, Missing CRF, random predictor
+        assert (self.params['motion_protocol'] in self.allowed_protocols), 'Spelling error? Wrong protocol given: %s!\n Should be in %s' % (self.params['motion_protocol'], str(allowed_protocols))
         self.params['predictor_interval_duration'] = 200 # [ms] each stimulus consists of several 'predictor intervals'
+        self.params['n_predictor_interval'] = int(self.params['t_sim'] / self.params['predictor_interval_duration'])
+        self.params['t_start_CRF'] = (self.params['n_predictor_interval'] - 3.0) * self.params['predictor_interval_duration']
+        self.params['t_stop_CRF'] = (self.params['n_predictor_interval'] - 1.0) * self.params['predictor_interval_duration']
+
+#        self.params['n_random_predictor_orientations'] = 8 # number of different orientations presented in a random order to the network
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
@@ -297,16 +300,18 @@ class parameter_storage(object):
         self.params['connectivity_code'] = connectivity_code
 
         if folder_name == None:
-            if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-                folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
-            else:
-               folder_name = 'ResultsBar_ptow%.2e_bx%.2e' % (self.params['p_to_w_ee'], self.params['blur_X'])
+#            if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
+#                folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
+#            else:
+#               folder_name = 'ResultsBar_bx%.2e' % (self.params['blur_X'])
 
+            folder_name = 'OrientationSweep/Test_%.2e_wsigmax%.2e' % (self.params['motion_params'][4], self.params['w_sigma_x'])
             folder_name += connectivity_code
             folder_name += '-'+ self.params['motion_type']
             folder_name += '-'+ self.params['motion_protocol']
 
             folder_name += '/'
+
             # if parameters should be stored in the folder name:
 #            folder_name += "_pee%.1e_wen%.1e_tausynE%d_I%d_bx%.1e_bv%.1e_wsigmax%.2e_wsigmav%.2e_wee%.2e_wei%.2e_wie%.2e_wii%.2e_delay%d_connRadius%.2f/" % \
 #                        (self.params['p_ee'], self.params['w_exc_noise'], self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['blur_X'], self.params['blur_V'], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_tgt_in_per_cell_ee'], \
@@ -387,6 +392,8 @@ class parameter_storage(object):
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
+        self.params['all_predictor_params_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
+
 
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
 
@@ -435,7 +442,7 @@ class parameter_storage(object):
         for f in self.params['folder_names']:
             if not os.path.exists(f):
                 print 'Creating folder:\t%s' % f
-                os.system("mkdir %s" % (f))
+                os.system("mkdir -p %s" % (f))
 
     def load_params(self):
         """
