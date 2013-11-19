@@ -277,8 +277,10 @@ class NetworkModel(object):
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
             # make a pause between the test stimuli
-            idx_t_start_pause = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+            idx_t_start_pause = np.int(((i_stim + 1) * self.params['t_test_stim']  - self.params['t_training_pause'])/ dt) 
             idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_test_stim'] / dt) 
+            print 'Debug idx_t_start_pause', idx_t_start_pause
+            print 'Debug idx_t_stop_pause', idx_t_stop_pause
             L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
 
         nprnd.seed(self.params['input_spikes_seed'])
@@ -395,6 +397,7 @@ class NetworkModel(object):
             except: # this cell does not get any input
                 print "Missing file: ", fn
                 spike_times = []
+                exit(1)
 
             if type(spike_times) == type(1.0): # it's just one spike
                 self.spike_times_container[i_] = np.array([spike_times])

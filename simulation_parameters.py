@@ -45,7 +45,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 16 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -147,11 +147,11 @@ class parameter_storage(object):
         
         # exc - exc
         self.params['p_ee_local'] = .7
-        self.params['w_ee_local'] = 3.
+        self.params['w_ee_local'] = 5.
 
         # exc - exc: global
-        self.params['w_ee_global_max'] = 20.
-        self.params['w_ei_global_max'] = 20.
+        self.params['w_ee_global_max'] = 25.
+        self.params['w_ei_global_max'] = 25.
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh
@@ -227,7 +227,8 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
+        self.params['n_test_stim'] = 10
+#        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
 
 
@@ -239,7 +240,8 @@ class parameter_storage(object):
         # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
         self.params['t_training_stim'] = 2000.  # [ms] time each stimulus is presented
-        self.params['t_test_stim'] = self.params['t_training_stim'] + 200
+        self.params['t_training_pause'] = 200.
+        self.params['t_test_stim'] = self.params['t_training_stim'] + self.params['t_training_pause']
 
         if self.params['training_run']:
             self.params['t_sim'] = self.params['n_training_stim'] * self.params['t_training_stim']  # [ms] total simulation time
@@ -342,10 +344,10 @@ class parameter_storage(object):
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim_%d%d%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
+                folder_name = 'TestSim_%d%d%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
                         self.params['n_cycles'], self.params['n_stim_per_direction'], self.params['n_speeds'], \
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
-                        self.params['n_hc'], self.params['n_mc_per_hc'])
+                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'])
             folder_name += '/'
 
             self.params['folder_name'] = folder_name

@@ -112,18 +112,21 @@ if __name__ == '__main__':
     training_param_tool = simulation_parameters.parameter_storage(params_fn=training_params_fn)
     training_params = training_param_tool.params
 
+
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
     params = ps.params
     if params['training_run']:
         print 'Wrong flag in simulation parameters. Set training_run = False.'
         exit(1)
+
+    assert (params['n_cells'] == training_params['n_cells']), 'ERROR: Test and training params are differen wrt n_cells!\n\ttraining %d \t test %d' % (trainin_params['n_cells'], params['n_cells'])
     # always call set_filenames to update the folder name and all depending filenames (if params are modified and folder names change due to that)!
     ps.set_filenames() 
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = True
+    load_files = False
     record = False
     save_input_files = not load_files
     NM = NetworkModel(ps, iteration=0)
@@ -151,4 +154,6 @@ if __name__ == '__main__':
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
+    if pc_id == 0:
+        os.system('python PlottingScripts/PlotPrediction.py')
 

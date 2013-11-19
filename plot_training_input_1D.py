@@ -8,7 +8,10 @@ class TrainingInputPlotter(object):
 
     def __init__(self, params):
         self.params = params
-        self.motion_params = np.loadtxt(self.params['training_sequence_fn'])
+        if self.params['training_run']:
+            self.motion_params = np.loadtxt(self.params['training_sequence_fn'])
+        else:
+            self.motion_params = np.loadtxt(self.params['test_sequence_fn'])
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
         self.color_list = ['b', 'g', 'r', 'k', 'y', 'c', 'm', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
 

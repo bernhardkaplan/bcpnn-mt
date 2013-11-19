@@ -89,10 +89,10 @@ class ActivityPlotter(object):
         nspikes = utils.get_nspikes(spike_data)
         n_cells = self.params['n_%s' % cell_type]
         idx_0 = (nspikes == 0).nonzero()[0]
-        print 'Cells that did not fire any spikes:'
-        for gid in idx_0:
-            print 'tp[%d, :] = ' % gid, self.tuning_prop_exc[gid, :]
-        print 'Number of cells that fired zero spikes:', idx_0, idx_0.size
+#        print 'Cells that did not fire any spikes:'
+#        for gid in idx_0:
+#            print 'tp[%d, :] = ' % gid, self.tuning_prop_exc[gid, :]
+#        print 'Number of cells that fired zero spikes:', idx_0, idx_0.size
         x = range(n_cells)
         fig = pylab.figure()
         ax = fig.add_subplot(111)
@@ -127,7 +127,7 @@ class ActivityPlotter(object):
         return fig, ax
 
 
-    def plot_raster_sorted(self, title='', cell_type='exc', sort_idx=0):
+    def plot_raster_sorted(self, title='', cell_type='exc', sort_idx=0, time_range=None):
         """
         sort_idx : the index in tuning properties after which the cell gids are to be sorted for  the rasterplot
         """
@@ -160,6 +160,8 @@ class ActivityPlotter(object):
             ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
             ax.plot((t1, t1), (ylim[0], ylim[1]), '--', c='k', lw=1)
 
+        if time_range != None:
+            ax.set_xlim((time_range[0], time_range[1]))
         return fig, ax
 
 
@@ -295,10 +297,14 @@ if __name__ == '__main__':
 
     Plotter.plot_nspike_histogram_vs_gids(exc_spike_data)
 
-    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0)
+#    stim = 11
+#    time_range = (stim * params['t_test_stim'], (stim + 1) * params['t_test_stim'])
+    time_range = None
+    print 'Time range', time_range
+    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0, time_range=time_range)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=0)
 
-    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by $v_x$', sort_idx=2)
+    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by $v_x$', sort_idx=2, time_range=time_range)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=2)
 
 #    time_steps = 1

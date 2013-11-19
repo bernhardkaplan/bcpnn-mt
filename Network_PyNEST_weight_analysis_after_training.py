@@ -27,7 +27,7 @@ class WeightAnalyser(object):
         folder = self.params['connections_folder']
 
         # find files written by different processes
-        conn_mat_fn = self.params['adj_list_tgt_fn_base'] + 'AS_(\d)_(\d).json'
+        conn_mat_fn = self.params['adj_list_tgt_fn_base'] + 'AS_(\d)_(\d+).json'
         to_match = conn_mat_fn.rsplit('/')[-1]
         for fn in os.listdir(os.path.abspath(folder)):
             m = re.match(to_match, fn)
@@ -47,7 +47,7 @@ class WeightAnalyser(object):
         self.adj_list = {}
         for fn in fns:
             f = file(fn, 'r')
-            print 'Debug loading weights:', fn
+            print 'Loading weights:', fn
             d = json.load(f)
             self.adj_list.update(d)
 

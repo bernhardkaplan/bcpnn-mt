@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import os
+import sys
 #matplotlib.use('Agg')
 
 
@@ -11,10 +13,15 @@ class CreateStimuli(object):
     def create_test_stim_1D(self, test_params, training_params=None):
 
         n_stim = test_params['n_test_stim']
+        self.n_stim_total = n_stim
         if training_params != None:
             # choose the first n_stim motion parameters from trainin_params
             mp_training = np.loadtxt(training_params['training_sequence_fn'])
             motion_params = mp_training[:n_stim, :]
+            self.all_starting_pos = mp_training[:n_stim, 0:2]
+            self.all_speeds = mp_training[:n_stim, 2]
+            self.all_thetas = np.zeros(n_stim)
+
             return motion_params
         else:
             # create n_stim as during training
@@ -46,6 +53,11 @@ class CreateStimuli(object):
             stim_params[:, 0] = all_starting_pos[:, 0]
             stim_params[:, 1] = all_starting_pos[:, 1]
             stim_params[:, 2] = all_speeds
+
+            # required for plotting
+            self.all_starting_pos = all_starting_pos[:, 0:2]
+            self.all_speeds = all_speeds
+            self.all_thetas = np.zeros(n_stim)
             return stim_params
 
 
@@ -63,6 +75,7 @@ class CreateStimuli(object):
         # arrays to be filled by the stimulus creation loops below
         self.all_speeds = np.zeros(self.n_stim_total)
         self.all_starting_pos = np.zeros((self.n_stim_total, 2))
+        self.all_thetas = np.zeros(self.n_stim_total)
 
         import numpy.random as rnd
         rnd.seed(params['stimuli_seed'])
@@ -230,11 +243,18 @@ if __name__ == '__main__':
     random_order = False
     CS = CreateStimuli()
 
-    if params['n_grid_dimensions'] == 1:
-        CS.create_motion_sequence_1D(params, random_order)
-    else:
+    if params['n_grid_dimensions'] == 2:
         CS.create_motion_sequence_2D(params, random_order)
-
+    else:
+        if not params['training_run']:
+            training_folder = os.path.abspath(sys.argv[1]) # contains the EPTH and OB activity of simple patterns
+            print 'Training folder:', training_folder
+            training_params_fn = os.path.abspath(training_folder) + '/Parameters/simulation_parameters.json'
+            training_param_tool = simulation_parameters.parameter_storage(params_fn=training_params_fn)
+            training_params = training_param_tool.params
+            CS.create_test_stim_1D(params, training_params=training_params)
+        else:
+            CS.create_motion_sequence_1D(params, random_order)
 
     import pylab
     fig = pylab.figure()
@@ -251,7 +271,10 @@ if __name__ == '__main__':
     x_min, y_min = 0, 0
     all_speeds, all_starting_pos, all_thetas = CS.get_motion_params(random_order)
     stim_start = 0
-    stim_stop = params['n_training_stim']
+    if params['training_run']:
+        stim_stop = params['n_training_stim']
+    else:
+        stim_stop = params['n_test_stim']
 #    stim_start = CS.n_stim_per_direction * 8
 #    stim_stop = CS.n_stim_per_direction * (9 + 1)
     for stim_id in xrange(stim_start, stim_stop):
@@ -265,7 +288,7 @@ if __name__ == '__main__':
         x_pos = x0 + vx
         y_pos = y0 + vy
         print 'debug y_pos', y_pos
-        color_idx = (stim_id / CS.n_stim_per_direction) % len(color_list)
+        color_idx = (stim_id / params['n_stim_per_direction']) % len(color_list)
         x_max = max(x_pos, x_max)
         y_max = max(y_pos, y_max)
         x_min = min(x_pos, x_min)
