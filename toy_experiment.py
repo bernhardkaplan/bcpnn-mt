@@ -57,7 +57,7 @@ class ToyExperiment(object):
 
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
 #        n_stim = 1
-        n_stim = 10
+        n_stim = 1
         dt_stim = 3 * abs(self.dx) / self.v_stim * 1000.# time between cells see the stimulus
 #        t_z_decay = 12 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
         t_z_decay = 8 * max(self.bcpnn_params['tau_i'], self.bcpnn_params['tau_j']) 
@@ -424,29 +424,30 @@ if __name__ == '__main__':
 
 
 
-    tau_zi = float(sys.argv[1])
-    v_stim = float(sys.argv[2])
-    dx = float(sys.argv[3])
-    dv = float(sys.argv[4])
-    tau_zj = float(sys.argv[5])
-    tau_e = float(sys.argv[6])
-    tau_p = float(sys.argv[7])
-    x0 = float(sys.argv[8])
-    u0 = float(sys.argv[9])
-    output_folder = os.path.abspath(sys.argv[10]) + '/'
+#    tau_zi = float(sys.argv[1])
+#    v_stim = float(sys.argv[2])
+#    dx = float(sys.argv[3])
+#    dv = float(sys.argv[4])
+#    tau_zj = float(sys.argv[5])
+#    tau_e = float(sys.argv[6])
+#    tau_p = float(sys.argv[7])
+#    x0 = float(sys.argv[8])
+#    u0 = float(sys.argv[9])
+#    output_folder = os.path.abspath(sys.argv[10]) + '/'
 
-#    v_stim = .5
+    v_stim = 1.0
 #    tau_zi = 1. / v_stim * 100
-#    dx = .5
-#    dv = .0
-#    tau_zj = 10.
-#    tau_e = 10.
-#    tau_p = 5000.
-#    x0 = .3
-#    u0 = v_stim
-#    output_folder = 'TwoCellTest/'
+    tau_zi = 150.
+    dx = .25
+    dv = .0
+    tau_zj = 10.
+    tau_e = 10.
+    tau_p = 50000.
+    x0 = .5
+    u0 = v_stim
+    output_folder = 'TwoCellTest/'
 
-    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':50.}
+    bcpnn_params = {'tau_i': tau_zi, 'tau_j': tau_zj, 'tau_e': tau_e, 'tau_p': tau_p, 'fmax':300.}
 
 #    output_fn = '%sdetailed_sweep_tauiz%d_tauzj%d_taue%d_taup%d_x0%.2f_u0%.2f_vstim%.2f.dat' % \
 #            (output_folder, tau_zi, tau_zj, tau_e, tau_p, x0, u0, v_stim)
