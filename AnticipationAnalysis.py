@@ -47,17 +47,25 @@ def get_average_spikerate(spiketrains, pops, n_bins=20):
 
     for i_, p in enumerate(pops):
         for gid in p:
-            n, bins = np.histogram(spiketrains[gid], bins=n_bins)
-            avg_rate[:, i_] += n
+            if not (spiketrains[gid] == []):
+                n, bins = np.histogram(spiketrains[gid], bins=n_bins)
+                avg_rate[:, i_] += n
         avg_rate[:, i_] /= float(len(p))
 
     return avg_rate, bins
 
 
 tp = np.loadtxt(params['tuning_prop_means_fn'])
-n_pop = 6
-selected_gids, pops = utils.select_well_tuned_cells(tp, params, params['n_gids_to_record'], n_pop)
-print 'pops', pops
+
+# this doesn't work anymore, because we recorded cells given from utils.select_well_tuned_cells
+#n_pop = 6
+#selected_gids, pops = utils.select_well_tuned_cells_trajectory(tp, params['motion_params'], params, params['n_gids_to_record'], n_pop)
+#print 'pops', pops
+
+n_pop = 1
+recorded_gids = np.loadtxt(params['gids_to_record_fn'], dtype=np.int)
+print 'Recorded_gids', recorded_gids
+pops = [recorded_gids]
 
 spike_fn = params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
 assert (os.path.exists(spike_fn)), 'File not found %s' % spike_fn
@@ -75,7 +83,11 @@ print 'Loading ', fn_g
 d_gsyn = np.loadtxt(fn_g)
 
 
+print 'debug gid', pops[0][0]
 time_axis, volt = utils.extract_trace(d_volt, pops[0][0])
+print 'debug time_axis', time_axis
+print 'debug volt', volt
+
 
 avg_volts = np.zeros((time_axis.size, len(pops) + 1))
 avg_gsyns = np.zeros((time_axis.size, len(pops) + 1))
@@ -85,14 +97,16 @@ avg_volts[:, 0] = time_axis
 avg_gsyns[:, 0] = time_axis
 avg_currs[:, 0] = time_axis
 #selected_gids = utils.all_anticipatory_gids(params)
-print 'selected_gids', len(selected_gids)
+#print 'selected_gids', len(selected_gids)
 for j_, pop in enumerate(pops): 
+    print 'debug pop[0]', pop[0]
     time_axis, volt = utils.extract_trace(d_volt, pop[0])
     volt_sum = np.zeros(time_axis.size)
     gsyn_sum = np.zeros(time_axis.size)
     curr_sum = np.zeros(time_axis.size)
     x_group, y_group, u_group, v_group, o_group = np.zeros(len(pop)),np.zeros(len(pop)),np.zeros(len(pop)),np.zeros(len(pop)), np.zeros(len(pop))
     for i_, gid in enumerate(pop):
+        print 'Loading volt for gid:', gid
         x, y, u, v, o = tp[gid, :]
         x_group[i_] = x
         y_group[i_] = y
@@ -101,6 +115,7 @@ for j_, pop in enumerate(pops):
         o_group[i_] = o
 
         time_axis, volt = utils.extract_trace(d_volt,gid)
+        print 'debug volt shape', volt.shape, volt_sum.shape
         volt_sum += volt
         time_axis, gsyn = utils.extract_trace(d_gsyn,gid)
         gsyn_sum += gsyn
@@ -169,11 +184,11 @@ ax2_input = ax2.twinx()
 ax3_input = ax3.twinx()
 for i in xrange(len(pops)):
     L_avg, L_std, time_coarse = recompute_input(params, tp, pops[i])
-#    ax1_input.errorbar(time_coarse, L_avg, yerr=L_std / np.sqrt(len(pops[i])), lw=3, ls='--')
     ax1_input.plot(time_coarse, L_avg, lw=3, color=colorlist[i])
     ax2_input.plot(time_coarse, L_avg, lw=3, color=colorlist[i])
     ax3_input.plot(time_coarse, L_avg, lw=3, color=colorlist[i])
 
+#    ax1_input.errorbar(time_coarse, L_avg, yerr=L_std / np.sqrt(len(pops[i])), lw=3, ls='--')
 
 ax1.set_ylabel('V_m [mV]')
 ax2.set_ylabel('G_syn [uS]')
