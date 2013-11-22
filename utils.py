@@ -460,8 +460,9 @@ def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
     
         # It's a torus, so we remove the first row and column to avoid redundancy (would in principle not harm)
         X, Y = X[1:, 1:], Y[1:, 1:]
-        # Add to every even Y a half RF width to generate hex grid
-        Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
+        if n_rf_y > 1:
+            # Add to every even Y a half RF width to generate hex grid
+            Y[::2, :] += (Y[0, 0] - Y[0, 1])/2 # 1./N_RF
         RF[0, :] = X.ravel()
         RF[1, :] = Y.ravel() 
         RF[1, :] /= np.sqrt(3) # scale to get a regular hexagonal grid

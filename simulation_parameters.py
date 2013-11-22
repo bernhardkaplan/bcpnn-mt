@@ -37,10 +37,16 @@ class parameter_storage(object):
 #         self.params['N_V'], self.params['N_theta'] = 8, 8# resolution in velocity norm and direction
 # 
 #         Medium-scale system
+        #self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
+        #self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
+        #self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
+        #self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
+# 
+#         Medium-scale system
         self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
-        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
+        self.params['N_RF_X'] = self.params['N_RF']
+        self.params['N_RF_Y'] = 1
+        self.params['N_V'], self.params['N_theta'] = 5, 2# resolution in velocity norm and direction
 # 
 #         Small-scale system
 #        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)

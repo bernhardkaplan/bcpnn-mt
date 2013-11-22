@@ -1,11 +1,11 @@
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 import utils
 import pylab
 import sys
 import os
 import simulation_parameters
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib import cm
 import json
 
