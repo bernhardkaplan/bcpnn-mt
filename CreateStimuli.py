@@ -17,9 +17,11 @@ class CreateStimuli(object):
         if training_params != None:
             # choose the first n_stim motion parameters from trainin_params
             mp_training = np.loadtxt(training_params['training_sequence_fn'])
-            motion_params = mp_training[:n_stim, :]
-            self.all_starting_pos = mp_training[:n_stim, 0:2]
-            self.all_speeds = mp_training[:n_stim, 2]
+            stim_idx_0 = test_params['test_stim_range'][0]
+            stim_idx_1 = test_params['test_stim_range'][1]
+            motion_params = mp_training[stim_idx_0:stim_idx_1, :]
+            self.all_starting_pos = motion_params[:, 0:2]
+            self.all_speeds = motion_params[:n_stim, 2]
             self.all_thetas = np.zeros(n_stim)
 
             return motion_params
@@ -42,7 +44,7 @@ class CreateStimuli(object):
             for stim_cnt in xrange(n_stim):
                 speed = speeds[stim_cnt]
                 v0 = speed * rnd.uniform(1. - test_params['v_noise_training'], 1. + test_params['v_noise_training'])
-                x0 = .5 * np.random.rand() # select a random start point between 0 - 0.5
+                x0 = .25 * np.random.rand() # select a random start point between 0 - 0.25
                 all_starting_pos[stim_cnt, 0] = x0
                 all_speeds[stim_cnt] = v0
 #            for cycle in xrange(test_params['n_cycles']):

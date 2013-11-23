@@ -92,6 +92,7 @@ def run_tracking(params, NM):
         print 'Saving traces to', output_fn
         np.savetxt(output_fn, np.array((t_axis, pi_nest, pj_nest, pij_nest, wij_nest)).transpose())
 
+
 if __name__ == '__main__':
 
 #    try: 
@@ -111,7 +112,6 @@ if __name__ == '__main__':
     training_params_fn = os.path.abspath(training_folder) + '/Parameters/simulation_parameters.json'
     training_param_tool = simulation_parameters.parameter_storage(params_fn=training_params_fn)
     training_params = training_param_tool.params
-
 
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()

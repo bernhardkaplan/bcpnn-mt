@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-#        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
 
         # ###################
@@ -41,11 +41,11 @@ class parameter_storage(object):
             self.params['n_rf_x'] = 10
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 10
+        self.params['n_v'] = 5
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 16 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -147,7 +147,7 @@ class parameter_storage(object):
         
         # exc - exc
         self.params['p_ee_local'] = .7
-        self.params['w_ee_local'] = 5.
+        self.params['w_ee_local'] = 0.1
 
         # exc - exc: global
         self.params['w_ee_global_max'] = 25.
@@ -216,8 +216,8 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp']
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 20   # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 10 # how many different speeds are trained per cycle
+        self.params['n_cycles'] = 20 # one cycle comprises training of all n_speeds
+        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
         # is one speed is trained, it is presented starting from on this number of different locations
@@ -227,7 +227,8 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        self.params['n_test_stim'] = 10
+        self.params['test_stim_range'] = (0, 1)
+        self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
 
@@ -339,13 +340,13 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%d%d%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
-                        self.params['n_cycles'], self.params['n_stim_per_direction'], self.params['n_speeds'], \
+                folder_name = 'TrainingSim_%d-%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
+                        self.params['n_cycles'], self.params['n_speeds'], \
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim_%d%d%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
-                        self.params['n_cycles'], self.params['n_stim_per_direction'], self.params['n_speeds'], \
+                folder_name = 'TestSim_%d-%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
+                        self.params['n_cycles'], self.params['n_speeds'], \
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'])
             folder_name += '/'

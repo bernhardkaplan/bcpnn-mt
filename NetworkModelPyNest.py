@@ -34,6 +34,7 @@ class NetworkModel(object):
 
     def setup(self, load_tuning_prop=False):
 
+        print 'NetworkModel.setup'
         self.projections = {}
         self.projections['ee'] = []
         self.projections['ei'] = []
@@ -171,6 +172,7 @@ class NetworkModel(object):
         the cell_params dict entries tau_syn should be set according to the cells' tuning properties
         --> instead of populations, create single cells?
         """
+        print 'NetworkModel.create'
 
         self.list_of_exc_pop = [ [] for i in xrange(self.params['n_hc'])]
         self.list_of_unspecific_inh_pop = []
@@ -233,6 +235,8 @@ class NetworkModel(object):
         training_params-- if not None, it has to be the parameter dictionary used for training 
                         ==> load the same motion parameters as used during training to generate test stimuli
         """
+        print 'NetworkModel.create_test_input(load_files=%s, save_output=%s, with_blank=%s, training_params=%s)' % (\
+                load_files, save_output, with_blank, training_params!=None)
         if load_files:
             self.load_input() # load previously generated files
             return True
@@ -247,9 +251,10 @@ class NetworkModel(object):
         np.savetxt(self.params['test_sequence_fn'], motion_params)
         n_stim_total = self.params['n_test_stim']
 
-        for i_stim in xrange(n_stim_total):
+        stimuli = range(self.params['test_stim_range'][0], self.params['test_stim_range'][1])
+        for i_stim, stim_idx in enumerate(stimuli):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 2]
+            x0, v0 = motion_params[stim_idx, 0], motion_params[stim_idx, 2]
 
             # get the input signal
             idx_t_start = np.int(i_stim * self.params['t_test_stim'] / dt)
@@ -257,7 +262,8 @@ class NetworkModel(object):
             idx_within_stim = 0
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
-                x_stim = x0 + time_ * v0
+#                x_stim = x0 + time_ * v0
+                x_stim = (x0 + time_ * v0) % self.params['torus_width']
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 5000 == 0):
@@ -269,8 +275,6 @@ class NetworkModel(object):
                 stop_blank = idx_t_start + 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
                 blank_idx = np.arange(start_blank, stop_blank)
                 before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
-#                    print 'debug stim before_stim_idx', i_stim, before_stim_idx, before_stim_idx.size
-#                    print 'debug stim blank_idx', i_stim, blank_idx, blank_idx.size
                 blank_idx = np.concatenate((blank_idx, before_stim_idx))
                 # blanking
                 for i_time in blank_idx:
@@ -298,10 +302,10 @@ class NetworkModel(object):
                 if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
                     spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
-            if save_output:
-                output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
+            if (save_output and self.spike_times_container[i_].size > 1):
+                output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 np.savetxt(output_fn, rate_of_t)
-                output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
+                output_fn = self.params['input_st_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 np.savetxt(output_fn, np.array(spike_times))
         return True
 
@@ -341,7 +345,7 @@ class NetworkModel(object):
             idx_within_stim = 0
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
-                x_stim = x0 + time_ * v0
+                x_stim = (x0 + time_ * v0) % self.params['torus_width']
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 5000 == 0):
@@ -385,19 +389,29 @@ class NetworkModel(object):
         return True
     
 
+
     def load_input(self):
 
         if self.pc_id == 0:
             print "Loading input spiketrains..."
         for i_, tgt in enumerate(self.local_idx_exc):
-            try:
-#                fn = self.params['input_st_fn_base'] + str(tgt[0] - 1) + '.npy'
-                fn = self.params['input_st_fn_base'] + str(tgt - 1) + '.dat'
-                spike_times = np.loadtxt(fn)
-            except: # this cell does not get any input
-                print "Missing file: ", fn
-                spike_times = []
-                exit(1)
+            print 'Loading test input for cell %d / %d (%.1f percent)' % (i_, len(self.local_idx_exc), float(i_) / len(self.local_idx_exc) * 100.)
+            if self.params['training_run']:
+                try:
+                    fn = self.params['input_st_fn_base'] + str(tgt) + '.dat'
+                    spike_times = np.loadtxt(fn)
+                except: # this cell does not get any input
+                    print "Missing file: ", fn
+                    spike_times = []
+                    exit(1)
+            else:
+                try:
+                    fn = self.params['input_rate_fn_base'] + str(tgt) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
+                    spike_times = np.loadtxt(fn)
+                except: # this cell does not get any input
+                    print "Missing file: ", fn
+                    spike_times = []
+                    exit(1)
 
             if type(spike_times) == type(1.0): # it's just one spike
                 self.spike_times_container[i_] = np.array([spike_times])
@@ -675,6 +689,18 @@ class NetworkModel(object):
 #            print 'debug tracking', conns[0], cp
             return (pi, pj, pij, wij)
         return False
+
+
+    def check_if_conn_on_node(self, pre_gid, post_gid):
+        hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(pre_gid)
+        pre_neuron = self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]
+        hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(post_gid)
+        post_neuron = self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]
+        on_node = self.get_p_values([pre_neuron, post_neuron])
+        if on_node == False:
+            return False
+        else:
+            return True
 
     def get_weights_after_learning_cycle(self):
         """

@@ -86,8 +86,8 @@ class ActivityPlotter(object):
         """
         spike_data is the raw rasterplot data
         """
-        nspikes = utils.get_nspikes(spike_data)
         n_cells = self.params['n_%s' % cell_type]
+        nspikes = utils.get_nspikes(spike_data, n_cells=n_cells)
         idx_0 = (nspikes == 0).nonzero()[0]
 #        print 'Cells that did not fire any spikes:'
 #        for gid in idx_0:
@@ -103,7 +103,7 @@ class ActivityPlotter(object):
         ax.set_xlabel('Cell GIDs')
 
 
-    def plot_raster_simple(self, title='', cell_type='exc'):
+    def plot_raster_simple(self, title='', cell_type='exc', time_range=None):
 
         merged_spike_fn = self.params['%s_spiketimes_fn_merged' % cell_type]
         print 'Loading spikes from:', merged_spike_fn
@@ -119,11 +119,13 @@ class ActivityPlotter(object):
 
         ylim = ax.get_ylim()
         for stim in xrange(self.n_stim_total):
-            t0 = stim * t_stim
-            t1 = (stim + 1) * t_stim
+            t0 = stim * self.t_stim
+            t1 = (stim + 1) * self.t_stim
             ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
             ax.plot((t1, t1), (ylim[0], ylim[1]), '--', c='k', lw=1)
 
+        if time_range != None:
+            ax.set_xlim((time_range[0], time_range[1]))
         return fig, ax
 
 
@@ -136,8 +138,8 @@ class ActivityPlotter(object):
         else:
             tp = self.tuning_prop_inh
 
-        tp_idx_sorted = tp[:, sort_idx].argsort() # + 1 because nest indexing
 
+        n_cells = self.params['n_%s' % cell_type]
         if not self.spike_times_loaded:
             merged_spike_fn = self.params['%s_spiketimes_fn_merged' % cell_type]
             spikes_unsrtd = np.loadtxt(merged_spike_fn)
@@ -147,7 +149,7 @@ class ActivityPlotter(object):
         fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.set_title(title)
-        for i_, gid in enumerate(tp_idx_sorted):
+        for gid in xrange(n_cells):
             spikes = utils.get_spiketimes(self.spike_times_merged, gid + 1)
             nspikes = spikes.size
             y_ = np.ones(spikes.size) * tp[gid, sort_idx]
@@ -292,14 +294,14 @@ if __name__ == '__main__':
     inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
     inh_unspec_spike_data = Plotter.load_spike_data('inh_unspec')
 
-#    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
-#    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc')
 
     Plotter.plot_nspike_histogram_vs_gids(exc_spike_data)
 
-#    stim = 11
-#    time_range = (stim * params['t_test_stim'], (stim + 1) * params['t_test_stim'])
     time_range = None
+#    stim = 0
+#    time_range = (stim * params['t_test_stim'], (stim + 1) * params['t_test_stim'])
+#    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
+    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc', time_range=time_range)
     print 'Time range', time_range
     fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0, time_range=time_range)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=0)

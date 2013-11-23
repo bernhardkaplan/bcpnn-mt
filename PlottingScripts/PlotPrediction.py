@@ -83,8 +83,8 @@ class PlotPrediction(object):
         self.sorted_indices_x = self.tuning_prop[:, 0].argsort()
         self.x_tuning = self.tuning_prop[:, 0].copy()
         self.x_tuning.sort()
-        self.x_min, self.x_max = .0, 1.25 
-#        self.x_min, self.x_max = .0, self.params['torus_width']
+#        self.x_min, self.x_max = .0, 1.25 
+        self.x_min, self.x_max = .0, self.params['torus_width']
         self.x_grid = np.linspace(self.x_min, self.x_max, self.n_x_bins, endpoint=True)
 
         # y
@@ -93,18 +93,6 @@ class PlotPrediction(object):
         self.sorted_indices_y = self.tuning_prop[:, 1].argsort()
         self.y_min, self.y_max = .0, self.params['torus_height']
         self.y_grid = np.linspace(self.y_min, self.y_max, self.n_y_bins, endpoint=True)
-
-        if self.params['training_run']:
-            self.t_stim = self.params['t_training_stim']
-            self.all_motion_params = np.loadtxt(self.params['training_sequence_fn'])
-        else:
-            self.t_stim = self.params['t_test_stim']
-            self.all_motion_params = np.loadtxt(self.params['test_sequence_fn'])
-        if len(self.all_motion_params.shape) == 1:
-            tmp = np.zeros((1, self.all_motion_params.shape[0]))
-            tmp[0, :] = self.all_motion_params
-            self.all_motion_params = tmp
-
         self.normalize_spiketimes(data_fn)
         if self.no_spikes:
             return
@@ -125,6 +113,17 @@ class PlotPrediction(object):
                   'figure.figsize': fig_size}
         pylab.rcParams.update(params)
 
+    def load_motion_params(self, from_training=False):
+        if self.params['training_run']:
+            self.t_stim = self.params['t_training_stim']
+            self.all_motion_params = np.loadtxt(self.params['training_sequence_fn'])
+        else:
+            self.t_stim = self.params['t_test_stim']
+            self.all_motion_params = np.loadtxt(self.params['test_sequence_fn'])
+        if len(self.all_motion_params.shape) == 1:
+            tmp = np.zeros((1, self.all_motion_params.shape[0]))
+            tmp[0, :] = self.all_motion_params
+            self.all_motion_params = tmp
 
     def normalize_spiketimes(self, fn=None):
         """
@@ -179,11 +178,11 @@ class PlotPrediction(object):
             xyuv_predicted = self.tuning_prop[gid, index] # cell tuning properties
             if (index == 0):
                 xyuv_predicted += self.tuning_prop[gid, 2]
-#                xyuv_predicted = xyuv_predicted % w
+                xyuv_predicted = xyuv_predicted % w
 
             elif (index == 1):
                 xyuv_predicted += self.tuning_prop[gid, 3]
-#                xyuv_predicted = xyuv_predicted % h
+                xyuv_predicted = xyuv_predicted % h
             y_pos_grid = utils.get_grid_pos_1d(xyuv_predicted, grid_edges)
             output_data[y_pos_grid, :] += self.nspikes_binned_normalized[gid, :]
         return output_data, grid_edges
@@ -302,10 +301,10 @@ class PlotPrediction(object):
             self.vdiff_avg[i] = np.sqrt((mp[2] - self.vx_avg[i])**2 + (mp[3] - self.vy_avg[i])**2)
 
             # position
-#            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
-#            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
-            stim_pos_x = mp[0] + mp[2] * (t - stim_idx * self.t_stim) / self.params['t_stimulus']# be sure that this works the same as utils.get_input is called!
-            stim_pos_y = mp[1] + mp[3] * (t - stim_idx * self.t_stim) / self.params['t_stimulus']# be sure that this works the same as utils.get_input is called!
+            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
+            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
+#            stim_pos_x = mp[0] + mp[2] * (t - stim_idx * self.t_stim) / self.params['t_stimulus']# be sure that this works the same as utils.get_input is called!
+#            stim_pos_y = mp[1] + mp[3] * (t - stim_idx * self.t_stim) / self.params['t_stimulus']# be sure that this works the same as utils.get_input is called!
             self.x_stim[i] = stim_pos_x
             self.y_stim[i] = stim_pos_y
             x_pred = self.x_confidence_binned[:, i] * self.x_tuning
@@ -471,7 +470,7 @@ class PlotPrediction(object):
 
         fn = self.params['%s_spiketimes_fn_merged' % cell_type]
         n_cells = self.params['n_%s' % cell_type]
-        nspikes, spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
+        nspikes, spiketimes = utils.get_nspikes(fn, n_cells=n_cells, get_spiketrains=True)
         np.savetxt(self.params['%s_nspikes_fn_merged' % cell_type] + '.dat', nspikes)
         idx = np.nonzero(nspikes)[0]
         np.savetxt(self.params['%s_nspikes_nonzero_fn' % cell_type], np.array((idx, nspikes[idx])).transpose())
@@ -626,11 +625,13 @@ class PlotPrediction(object):
             ylabel = '$x_{predicted}$'
         title = ''#$x_{predicted}$ binned vs time'
         x_grid, x_edges = self.bin_estimates(self.x_grid, index=0)
+        print 'debug', time_range
         if time_range != None:
             bin0 = int(round(time_range[0] / self.time_binsize))
             bin1 = int(round(time_range[1] / self.time_binsize))
             x_grid = x_grid[:, bin0:bin1]
             stim_idx = int(time_range[0] / self.t_stim)
+            print 'debug stim_idx', stim_idx
             mp = self.all_motion_params[stim_idx, :]
             title = 'Stim x_0=%.2f v_0=%.2f' % (mp[0], mp[2])
         self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt, time_range=time_range)
@@ -864,7 +865,6 @@ class PlotPrediction(object):
         if show_blank == None:
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.set_title('$x$-predictions')#: avg, moving_avg, nonlinear')
         ax.plot(self.t_axis, self.x_avg, ls='-', lw=2, label='linear')
 #        ax.plot(self.t_axis, self.x_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.x_moving_avg[:, 0], yerr=self.x_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
@@ -873,6 +873,7 @@ class PlotPrediction(object):
         ax.legend()#loc='upper left')
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('$x$ position [a.u.]')
+        title = '$x$-predictions'
 
         if time_range == None:
             n_x_bins = len(self.t_ticks)
@@ -888,6 +889,11 @@ class PlotPrediction(object):
             idx1 = int(time_range[1] / self.time_binsize)
             ylim = (0, 1.1 * max(max(self.x_stim[idx0:idx1]), max(self.x_stim[idx0:idx1])))
             ax.set_ylim(ylim)
+            stim_idx = int(time_range[0] / self.t_stim)
+            mp = self.all_motion_params[stim_idx, :]
+            title += ' Stim: $x_0=%.2f v_0=%.2f$' % (mp[0], mp[2])
+
+        ax.set_title(title)#: avg, moving_avg, nonlinear')
 
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_ticklabels)
@@ -1201,9 +1207,11 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes = Non
         if params['training_run']:
             stim_range = (0, params['n_training_stim'])
         else:
-            stim_range = (0, params['n_test_stim'])
+            stim_range = params['test_stim_range']
 
+    print 'debug', stim_range
     for stim in xrange(stim_range[0], stim_range[1]):
+        print 'Stim:', stim
         time_range = (stim * t_stim, (stim + 1) * t_stim)
         plotter.create_fig()  # create an empty figure
         pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
@@ -1238,7 +1246,6 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes = Non
 
 if __name__ == '__main__':
 
-    stim_range = (0, 5)
     if len(sys.argv) > 1:
         param_fn = sys.argv[1]
         if os.path.isdir(param_fn):
@@ -1247,10 +1254,9 @@ if __name__ == '__main__':
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
-        plot_prediction(stim_range, params=params)
-
+        plot_prediction(params=params)
     else:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
-        plot_prediction(stim_range)
+        plot_prediction()
 
 #    pylab.show()

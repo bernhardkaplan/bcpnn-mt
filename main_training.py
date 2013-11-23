@@ -19,7 +19,7 @@ import json
 import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
-def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None):
+def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None, title=''):
 
     import pylab
     wij = np.log(pij / (pi * pj))
@@ -38,8 +38,8 @@ def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None):
     labels = ['$p_i$', '$p_j$', '$p_{ij}$']
     ax1.legend(plots, labels, loc='upper left')
     ax1.set_ylabel('p values')
-
-
+    ax1.set_title(title)
+    
     plots = []
     p1, = ax2.plot(t_axis, wij)
     p2, = ax2.plot(t_axis, wij_nest)
@@ -60,6 +60,52 @@ def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None):
         output_fn = params['figures_folder'] + 'nest_traces.png'
     print 'Saving to:', output_fn
     pylab.savefig(output_fn, dpi=300)
+
+
+
+def run_tracking(params, NM):
+
+    neuron_gid_pairs = [(139, 38), (38, 139), (29, 50), (29, 69), (29, 92), (166, 186), (166, 5), (186, 5)]
+    n_conn = len(neuron_gid_pairs)
+    on_node = np.zeros(n_conn)
+    for i_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
+        on_node[i_] = NM.check_if_conn_on_node(pre_gid, post_gid)
+
+    t = 0
+    t_step = 100.
+    t_axis = np.arange(0, params['t_sim'], t_step)
+    # set default values for all connections 
+    pi_nest = np.ones((n_conn, t_axis.size)) * params['bcpnn_init_val']
+    pj_nest = np.ones((n_conn, t_axis.size)) * params['bcpnn_init_val']
+    pij_nest = np.ones((n_conn, t_axis.size)) * params['bcpnn_init_val'] ** 2
+    wij_nest = np.zeros((n_conn, t_axis.size))
+    for j_ in xrange(n_conn):
+        wij_nest[j_, :] = np.log(pij_nest[j_, :] / (pi_nest[j_, :] * pj_nest[j_, :]))
+
+    for i_, t in enumerate(t_axis):
+        NM.run_sim(t_step)
+        # iterate over all connections on the node
+        for j_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
+            if on_node[j_] != False:
+                pi, pj, pij, wij = NM.get_p_values([pre_gid, post_gid])
+                pi_nest[j_, i_] = pi
+                pj_nest[j_, i_] = pj
+                pij_nest[j_, i_] = pij
+                wij_nest[j_, i_] = wij
+
+    # ---- end sim ---------
+
+    # plot traces
+    for j_ in xrange(n_conn):
+        if on_node[j_] != False:
+            pre_gid, post_gid = neuron_gid_pairs[j_]
+            output_fn = params['figures_folder'] + 'p_traces_%d_%d.png' % (pre_gid, post_gid)
+            title = 'Traces for GIDs %d - %d' % (pre_gid, post_gid)
+            plot_traces(t_axis, pi_nest[j_], pj_nest[j_], pij_nest[j_], wij_nest[j_], output_fn=output_fn, title=title)
+            output_fn = params['connections_folder'] + 'p_traces_%d_%d.dat' % (pre_gid, post_gid)
+            print 'Saving traces to', output_fn
+            np.savetxt(output_fn, np.array((t_axis, pi_nest[j_], pj_nest[j_], pij_nest[j_], wij_nest[j_])).transpose())
+
 
 if __name__ == '__main__':
 
@@ -111,40 +157,12 @@ if __name__ == '__main__':
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
-    tracking = False
+    tracking = True
     if tracking:
-        pre_gid = 62
-        post_gid = 81
-        hc_idx, mc_idx_in_hc, idx_in_mc = NM.get_indices_for_gid(pre_gid)
-        pre_neuron = NM.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]
-        hc_idx, mc_idx_in_hc, idx_in_mc = NM.get_indices_for_gid(post_gid)
-        post_neuron = NM.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]
-        on_node = NM.get_p_values([pre_neuron, post_neuron])
-        t = 0
-        t_step = 10.
-        t_axis = np.arange(0, params['t_sim'], t_step)
-        pi_nest = np.ones(t_axis.size) * params['bcpnn_init_val']
-        pj_nest = np.ones(t_axis.size) * params['bcpnn_init_val']
-        pij_nest = np.ones(t_axis.size) * params['bcpnn_init_val'] ** 2
-        wij_nest = np.log(pij_nest / (pi_nest * pj_nest))
-        for i_, t in enumerate(t_axis):
-            NM.run_sim(t_step)
-            if on_node != False:
-                pi, pj, pij, wij = NM.get_p_values([pre_neuron, post_neuron])
-                pi_nest[i_] = pi
-                pj_nest[i_] = pj
-                pij_nest[i_] = pij
-                wij_nest[i_] = wij
-        if on_node != False:
-            output_fn = params['figures_folder'] + 'p_traces_%d_%d.png' % (pre_gid, post_gid)
-            plot_traces(t_axis, pi_nest, pj_nest, pij_nest, wij_nest, output_fn)
-            output_fn = params['connections_folder'] + 'p_traces_%d_%d.dat' % (pre_gid, post_gid)
-            print 'Saving traces to', output_fn
-            np.savetxt(output_fn, np.array((t_axis, pi_nest, pj_nest, pij_nest, wij_nest)).transpose())
+        run_tracking(params, NM)
     else:
         NM.run_sim(params['t_sim'])
         NM.get_weights_after_learning_cycle()
-#    NM.print_times()
 
     t_end = time.time()
     t_diff = t_end - t_0
