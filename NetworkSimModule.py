@@ -688,8 +688,18 @@ if __name__ == '__main__':
 #    ps.set_filenames()
 
 #    fn = str(sys.argv[1])
-    ps = simulation_parameters.parameter_storage()#fn)
-    params = ps.params
+
+    if len(sys.argv) > 1:
+        param_fn = sys.argv[1]
+        if os.path.isdir(param_fn):
+            param_fn += '/Parameters/simulation_parameters.json'
+#        f = file(param_fn, 'r')
+        print 'Loading parameters from', param_fn
+        ps = simulation_parameters.parameter_storage(param_fn)
+        params = ps.params
+    else:
+        ps = simulation_parameters.parameter_storage()#fn)
+        params = ps.params
 
     if pc_id == 0:
         ps.create_folders()

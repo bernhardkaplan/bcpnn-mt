@@ -48,8 +48,6 @@ class parameter_storage(object):
 #        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
 #        self.params['N_V'], self.params['N_theta'] = 4, 4# resolution in velocity norm and direction
 
-        print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
-        print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
         self.params['sigma_RF_speed'] = .30 # some variability in the speed of RFs
@@ -68,9 +66,6 @@ class parameter_storage(object):
 
         self.params['n_inh' ] = self.params['N_RF_X_INH'] * self.params['N_RF_Y_INH'] * self.params['N_theta_inh'] * self.params['N_V_INH']
         self.params['n_cells'] = self.params['n_exc'] + self.params['n_inh']
-        print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
-                self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
-
         # ###################
         # CELL PARAMETERS   #
         # ###################
@@ -219,7 +214,7 @@ class parameter_storage(object):
 #        self.params['f_exc_noise'] = 1# [Hz]
 #        self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
 #        self.params['f_inh_noise'] = 1# [Hz]
-
+        self.print_cell_numbers()
 
     def set_folder_name(self, folder_name=None):
         # folder naming code:
@@ -437,6 +432,12 @@ class parameter_storage(object):
         print 'Writing parameters to: %s' % (fn)
         output_file = file(fn, 'w')
         d = json.dump(params_to_write, output_file, sort_keys=True, indent=4)
+
+    def print_cell_numbers(self):
+        print 'N_RF_X %d N_RF_Y %d' % (self.params['N_RF_X'], self.params['N_RF_Y'])
+        print 'N_HC: %d   N_MC_PER_HC: %d' % (self.params['N_RF_X'] * self.params['N_RF_Y'], self.params['N_V'] * self.params['N_theta'])
+        print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
+                self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
 
 
 class ParameterContainer(parameter_storage):
