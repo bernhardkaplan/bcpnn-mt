@@ -244,7 +244,8 @@ class TrainingAnalyser(object):
         print 'Tuning prop pre_gid ', pre_gid, self.tuning_prop_exc[pre_gid, :], ' post_gid ', post_gid, self.tuning_prop_exc[post_gid, :]
 
         output_fn = self.params['figures_folder'] + 'traces_gid%d-%d.png' % (pre_gid, post_gid)
-        title = 'Neuron GIDs: %d - %d ' % (pre_gid, post_gid)
+        title = 'Neuron GIDs: %d (%.1e, %.1e) - %d (%.1e, %.1e) ' % (pre_gid, self.tuning_prop_exc[pre_gid, 0], self.tuning_prop_exc[pre_gid, 2], \
+                post_gid, self.tuning_prop_exc[post_gid, 0], self.tuning_prop_exc[post_gid, 2])
         self.plot_traces(pre_trace, post_trace, zi, zj, ei, ej, eij, pi, pj, pij, wij, bias, output_fn, title=title)
 
 
@@ -278,10 +279,13 @@ if __name__ == '__main__':
     for stim in xrange(params['n_training_stim']):
         Plotter.get_coactivated_cell_gids(stim, exc_spike_data)
 
-    neuron_gid_pairs = [(139, 38), (38, 139), (29, 50), (29, 69), (29, 92), (166, 186), (166, 5), (186, 5)]
+    neuron_gid_pairs = [(37, 204), (204, 37), (106, 178), (106, 155), (106, 224), \
+            (3, 24), (24, 3), (58, 79), (58, 144), (79, 144), (79, 128), (58, 128), \
+            (90, 210), (90, 137), (137, 90), (210, 137), (137, 210)]
+#    neuron_gid_pairs = [(139, 38), (38, 139), (29, 50), (29, 69), (29, 92), (166, 186), (166, 5), (186, 5)]
     for j_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
 #    pre_gid = 1
 #    post_gid = 72
         initial_value = None#1e-6
         Plotter.plot_bcpnn_traces(exc_spike_data, pre_gid, post_gid, syn_params=params['bcpnn_params'])
-    pylab.show()
+#    pylab.show()

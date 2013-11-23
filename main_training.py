@@ -42,9 +42,10 @@ def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None, title=''):
     
     plots = []
     p1, = ax2.plot(t_axis, wij)
-    p2, = ax2.plot(t_axis, wij_nest)
+#    p2, = ax2.plot(t_axis, wij_nest)
     plots += [p1, p2]
-    labels = ['$w=\log(p_{ij} / (p_i \cdot p_j))$', '$w_{NEST}$']
+#    labels = ['$w=\log(p_{ij} / (p_i \cdot p_j))$', '$w_{NEST}$']
+    labels = ['$w=\log(p_{ij} / (p_i \cdot p_j))$']#, '$w_{NEST}$']
     ax2.set_ylabel('Weight')
     ax2.legend(plots, labels, loc='upper left')
 
@@ -66,12 +67,15 @@ def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None, title=''):
 def run_tracking(params, NM):
 
     neuron_gid_pairs = [(37, 204), (204, 37), (106, 178), (106, 155), (106, 224), \
-            (3, 24), (24, 3), (58, 79), (58, 144), (79, 144), (79, 128), (58, 128), \
+            (3, 24), (24, 3), (58, 79), (58, 144), (79, 144), (79, 128), (58, 128), 
+            (58, 102), (58, 124), \
             (90, 210), (90, 137), (137, 90), (210, 137), (137, 210)]
     n_conn = len(neuron_gid_pairs)
     on_node = np.zeros(n_conn)
     for i_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
-        on_node[i_] = NM.check_if_conn_on_node(pre_gid, post_gid)
+        pre_gid_nest = pre_gid + 1
+        post_gid_nest = post_gid + 1
+        on_node[i_] = NM.check_if_conn_on_node(pre_gid_nest, post_gid_nest)
 
     t = 0
     t_step = 50.
@@ -86,8 +90,7 @@ def run_tracking(params, NM):
 
     for i_, t in enumerate(t_axis):
         NM.run_sim(t_step)
-        # iterate over all connections on the node
-        for j_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
+        for j_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs): # iterate over all connections on the node
             if on_node[j_] != False:
                 pre_gid_nest = pre_gid + 1
                 post_gid_nest = post_gid + 1
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = False
+    load_files = True
     record = False
     save_input_files = not load_files
 

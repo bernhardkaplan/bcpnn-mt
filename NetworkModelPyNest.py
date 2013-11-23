@@ -394,24 +394,24 @@ class NetworkModel(object):
 
         if self.pc_id == 0:
             print "Loading input spiketrains..."
-        for i_, tgt in enumerate(self.local_idx_exc):
+        for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
             print 'Loading test input for cell %d / %d (%.1f percent)' % (i_, len(self.local_idx_exc), float(i_) / len(self.local_idx_exc) * 100.)
             if self.params['training_run']:
                 try:
-                    fn = self.params['input_st_fn_base'] + str(tgt) + '.dat'
+                    gid = tgt_gid_nest - 1
+                    fn = self.params['input_st_fn_base'] + str(gid) + '.dat'
                     spike_times = np.loadtxt(fn)
                 except: # this cell does not get any input
                     print "Missing file: ", fn
-                    spike_times = []
-                    exit(1)
+                    spike_times = np.array([])
             else:
                 try:
-                    fn = self.params['input_rate_fn_base'] + str(tgt) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
+                    gid = tgt_gid_nest - 1
+                    fn = self.params['input_rate_fn_base'] + str(gid) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                     spike_times = np.loadtxt(fn)
                 except: # this cell does not get any input
                     print "Missing file: ", fn
-                    spike_times = []
-                    exit(1)
+                    spike_times = np.array([])
 
             if type(spike_times) == type(1.0): # it's just one spike
                 self.spike_times_container[i_] = np.array([spike_times])
