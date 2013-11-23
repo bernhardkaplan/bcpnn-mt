@@ -680,13 +680,6 @@ if __name__ == '__main__':
         ps.set_filenames(folder_name=ps.params['folder_name'])
     """
 
-
-#    w_sigma_x = float(sys.argv[1])
-#    w_sigma_v = float(sys.argv[2])
-#    params['w_sigma_x'] = w_sigma_x
-#    params['w_sigma_v'] = w_sigma_v
-#    ps.set_filenames()
-
 #    fn = str(sys.argv[1])
 
     if len(sys.argv) > 1:
@@ -700,6 +693,13 @@ if __name__ == '__main__':
     else:
         ps = simulation_parameters.parameter_storage()#fn)
         params = ps.params
+
+    w_sigma_x = float(sys.argv[1])
+    w_sigma_v = float(sys.argv[2])
+    params['w_sigma_x'] = w_sigma_x
+    params['w_sigma_v'] = w_sigma_v
+    ps.set_filenames()
+
 
     if pc_id == 0:
         ps.create_folders()

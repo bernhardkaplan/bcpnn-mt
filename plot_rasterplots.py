@@ -4,7 +4,7 @@ and the output rasterplots in the middle and lower panel
 """
 import sys
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import pylab
 import numpy as np
 import re
