@@ -518,7 +518,6 @@ class PlotPrediction(object):
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title(title)
         for i_, gid in enumerate(tp_idx_sorted):
-#            spikes = utils.get_spiketimes(self.spike_times_merged, gid + 1)
             spikes = self.spiketrains[gid]
             nspikes = spikes.size
             y_ = np.ones(spikes.size) * tp[gid, sort_idx]

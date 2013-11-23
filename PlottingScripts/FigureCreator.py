@@ -25,10 +25,10 @@ plot_params = {'backend': 'png',
                'lines.linewidth': 1,
               'font.size': 12,
               'path.simplify': False,
-              'figure.subplot.left':.10,
+              'figure.subplot.left':.15,
               'figure.subplot.bottom':.13,
               'figure.subplot.right':.94,
-              'figure.subplot.top':.94}
+              'figure.subplot.top':.92}
 #              'figure.figsize': get_fig_size(800)}
 
 plot_params_portrait = {'backend': 'png',

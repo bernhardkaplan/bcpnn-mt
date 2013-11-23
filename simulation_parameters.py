@@ -41,7 +41,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = 10
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 5
+        self.params['n_v'] = 6
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -208,15 +208,14 @@ class parameter_storage(object):
         # low blur means high input selectivity, few cells respond
         # the maximum number of spikes as response to the input alone is not much affected by the blur parameter
 
-
         # #####################
         # TRAINING PARAMETERS
         # #####################
-        self.params['stimuli_seed'] = 1234
-        self.params['v_max_training'] = self.params['v_max_tp']
+        self.params['stimuli_seed'] = 321
+        self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 20 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 1 # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
@@ -301,8 +300,8 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 500.       # [Hz]
-        self.params['w_input_exc'] = 30. # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['f_max_stim'] = 300.       # [Hz]
+        self.params['w_input_exc'] = 50. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
             self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS

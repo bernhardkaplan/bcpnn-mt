@@ -69,18 +69,19 @@ def get_spike_fns(folder, spike_fn_pattern='exc_spikes'):
     return fns
 
 
-def get_spiketimes(all_spikes, gid, gid_idx=0, time_idx=1):
+def get_spiketimes(all_spikes, nest_gid, gid_idx=0, time_idx=1):
     """
-    Returns the spikes fired by the cell with gid
-    all_spikes: 2-dim array containing all spiketimes
+    Returns the spikes fired by the cell with gid the 
+    all_spikes: 2-dim array containing all spiketimes (raw data, gids are 1-aligned thanks to NEST)
     gid_idx: is the column index in the all_spikes array containing GID information
     time_idx: is the column index in the all_spikes array containing time information
+    if pynest == True: subtract 1 from gids
     """
     
     if all_spikes.size == 0:
         return np.array([])
     else:
-        idx_ = (all_spikes[:, gid_idx] == gid).nonzero()[0]
+        idx_ = (all_spikes[:, gid_idx] == nest_gid).nonzero()[0]
         spiketimes = all_spikes[idx_, time_idx]
         return spiketimes
 

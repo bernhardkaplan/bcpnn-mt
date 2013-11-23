@@ -13,6 +13,8 @@ import sys
 import os
 import utils
 import re
+from FigureCreator import plot_params
+pylab.rcParams.update(plot_params)
 
 gid_axis = 0
 time_axis = 1
@@ -112,7 +114,8 @@ class ActivityPlotter(object):
         ax = fig.add_subplot(111)
         ax.set_title(title)
         for gid in xrange(self.params['%s_offset' % cell_type], self.params['%s_offset' % cell_type] + self.params['n_%s' % cell_type]):
-            spikes = utils.get_spiketimes(spikes_unsrtd, gid)
+            gid_nest = gid + 1
+            spikes = utils.get_spiketimes(spikes_unsrtd, gid_nest)
             nspikes = spikes.size
             y_ = np.ones(spikes.size) * gid
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
@@ -126,6 +129,9 @@ class ActivityPlotter(object):
 
         if time_range != None:
             ax.set_xlim((time_range[0], time_range[1]))
+        output_fn = self.params['figures_folder'] + '%s_raster_simple.png' % (cell_type)
+        print 'Saving to:', output_fn
+        fig.savefig(output_fn, dpi=300)
         return fig, ax
 
 
@@ -138,7 +144,6 @@ class ActivityPlotter(object):
         else:
             tp = self.tuning_prop_inh
 
-
         n_cells = self.params['n_%s' % cell_type]
         if not self.spike_times_loaded:
             merged_spike_fn = self.params['%s_spiketimes_fn_merged' % cell_type]
@@ -149,8 +154,14 @@ class ActivityPlotter(object):
         fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.set_title(title)
+        ax.set_xlabel('Time [ms]')
+        if sort_idx == 0:
+            ax.set_ylabel('Cell position')
+        elif sort_idx == 2:
+            ax.set_ylabel('Preferred speed')
         for gid in xrange(n_cells):
-            spikes = utils.get_spiketimes(self.spike_times_merged, gid + 1)
+            gid_nest = gid + 1
+            spikes = utils.get_spiketimes(self.spike_times_merged, gid_nest)
             nspikes = spikes.size
             y_ = np.ones(spikes.size) * tp[gid, sort_idx]
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
@@ -252,8 +263,8 @@ class ActivityPlotter(object):
         fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.bar(range(n_columns), nspikes_per_mc, width=1)
-        ax.set_title('Activity during time %d - %d' % (time_range[0], time_range[1]))
-        ax.set_ylabel('Mean output rate (averaged over %d %s cells) [Hz]' % (n_per_mc, cell_type))
+        ax.set_title('%s activity during time %d - %d' % (cell_type.capitalize(), time_range[0], time_range[1]))
+        ax.set_ylabel('Mean output rate\n(avg over %d cells) [Hz]' % (n_per_mc))
         ax.set_xlabel('Column index')
         ax.set_ylim((0, f_max))
         ax.set_xlim((0, n_columns))
@@ -298,29 +309,42 @@ if __name__ == '__main__':
     Plotter.plot_nspike_histogram_vs_gids(exc_spike_data)
 
     time_range = None
-#    stim = 0
-#    time_range = (stim * params['t_test_stim'], (stim + 1) * params['t_test_stim'])
+    stim = 1
+
+    if params['training_run']:
+        t_stim = params['t_training_stim']
+    else:
+        t_stim = params['t_test_stim']
+
+#    time_range = (stim * t_stim, (stim + 1) * t_stim)
 #    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
     Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc', time_range=time_range)
+
     print 'Time range', time_range
     fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0, time_range=time_range)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=0)
+    output_fn = params['figures_folder'] + 'exc_raster_x.png'
+    print 'Saving to:', output_fn
+    fig.savefig(output_fn, dpi=300)
 
     fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by $v_x$', sort_idx=2, time_range=time_range)
     Plotter.plot_input_spikes_sorted(ax, sort_idx=2)
+    output_fn = params['figures_folder'] + 'exc_raster_vx.png'
+    print 'Saving to:', output_fn
+    fig.savefig(output_fn, dpi=300)
 
-#    time_steps = 1
-#    time_window = params['t_sim'] / time_steps
+#    time_steps = 1 # in which one stimulus is to be divided
+#    time_window = (time_range[0] / time_steps, time_range[1] / time_steps)
 #    f_max = 50 / time_steps
 #    for i_ in xrange(time_steps):
-#        time_range = (i_ * time_window, (i_ + 1) * time_window)
-#        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_%02d.png' % i_
+#        time_range = ((i_+1) * time_window[0], (i_ + 1) * time_window[1])
+#        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_stim%02d_step%02d.png' % (stim, i_)
 #        Plotter.plot_nspike_histogram_in_MCs(exc_spike_data, cell_type='exc', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
 
-#        output_fn = params['figures_folder'] + 'hc_inh_nspike_histogram_%02d.png' % i_
+#        output_fn = params['figures_folder'] + 'mc_inh_unspec_nspike_histogram_stim%02d_step%02d.png' % (stim, i_)
 #        Plotter.plot_nspike_histogram_in_MCs(inh_unspec_spike_data, cell_type='inh_unspec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
 
-#        output_fn = params['figures_folder'] + 'mc_inh_nspike_histogram_%02d.png' % i_
+#        output_fn = params['figures_folder'] + 'mc_inh_spec_nspike_histogram_stim%02d_step%02d.png' % (stim, i_)
 #        Plotter.plot_nspike_histogram_in_MCs(inh_spec_spike_data, cell_type='inh_spec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
 
 

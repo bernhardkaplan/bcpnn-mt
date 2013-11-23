@@ -24,9 +24,16 @@ class TrainingAnalyser(object):
         self.params = params
 
         if it_max == None:
-            self.it_max = self.params['n_training_stim']
+            if self.params['training_run']:
+                self.n_stim_total = self.params['n_training_stim']
+            else:
+                self.n_stim_total = self.params['n_test_stim']
         else:
-            self.it_max = it_max
+            self.n_stim_total = it_max
+        if self.params['training_run']:
+            self.t_stim = self.params['t_training_stim']
+        else:
+            self.t_stim = self.params['t_test_stim']
 
         self.spike_times_loaded = False
 
@@ -84,7 +91,17 @@ class TrainingAnalyser(object):
         print 'During stim %d mean output rate was %.2f +- %.2f' % (stim, mean_rate.mean(), mean_rate.std())
 
 
-    def plot_traces(self, pre_trace, post_trace, zi, zj, ei, ej, eij, pi, pj, pij, wij, bias, output_fn=None):
+    def plot_stim_markers(self, ax):
+        ylim = ax.get_ylim()
+        for stim in xrange(self.n_stim_total):
+            t0 = stim * self.t_stim
+            t1 = (stim + 1) * self.t_stim
+            ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
+            ax.plot((t1, t1), (ylim[0], ylim[1]), '--', c='k', lw=1)
+
+
+    def plot_traces(self, pre_trace, post_trace, zi, zj, ei, ej, eij, pi, pj, pij, wij, bias, \
+            output_fn=None, title='', with_stim_markers=True):
         dt = .1
         t_axis = dt * np.arange(zi.size)
 
@@ -124,9 +141,10 @@ class TrainingAnalyser(object):
         ax5 = fig.add_subplot(515)
         self.title_fontsize = 18
 
+        title += ' $\\tau_{z_i} = %d$ ms, $\\tau_{z_j} = %d$ ms' % \
+                (self.params['bcpnn_params']['tau_i'], self.params['bcpnn_params']['tau_j'])
         plots = []
-        ax1.set_title('$\\tau_{z_i} = %d$ ms, $\\tau_{z_j} = %d$ ms' % \
-                (self.params['bcpnn_params']['tau_i'], self.params['bcpnn_params']['tau_j']), fontsize=self.title_fontsize)
+        ax1.set_title(title, fontsize=self.title_fontsize)
         ax1.plot(t_axis, pre_trace, c='b', alpha=.2, lw=2)
         ax1.plot(t_axis, post_trace + 1, c='g', alpha=.2, lw=2)
         p1, = ax1.plot(t_axis, zi, c='b', label='$z_i$', lw=2)
@@ -137,6 +155,8 @@ class TrainingAnalyser(object):
 #        ax1.set_xlabel('Time [ms]')
         ax1.set_ylabel('z-traces')
         ax1.set_xlim((0, t_axis[-1]))
+        if with_stim_markers:
+            self.plot_stim_markers(ax1)
 
         plots = []
         p1, = ax2.plot(t_axis, ei, c='b', lw=2)
@@ -150,6 +170,8 @@ class TrainingAnalyser(object):
 #        ax2.set_xlabel('Time [ms]')
         ax2.set_ylabel('e-traces')
         ax2.set_xlim((0, t_axis[-1]))
+        if with_stim_markers:
+            self.plot_stim_markers(ax2)
 
         plots = []
         p1, = ax3.plot(t_axis, pi, c='b', lw=2)
@@ -163,6 +185,8 @@ class TrainingAnalyser(object):
 #        ax3.set_xlabel('Time [ms]')
         ax3.set_ylabel('p-traces')
         ax3.set_xlim((0, t_axis[-1]))
+        if with_stim_markers:
+            self.plot_stim_markers(ax3)
 
         plots = []
         p1, = ax4.plot(t_axis, wij, c='b', lw=2)
@@ -172,6 +196,8 @@ class TrainingAnalyser(object):
 #        ax4.set_xlabel('Time [ms]')
         ax4.set_ylabel('Weight')
         ax4.set_xlim((0, t_axis[-1]))
+        if with_stim_markers:
+            self.plot_stim_markers(ax4)
 
         plots = []
         p1, = ax5.plot(t_axis, bias, c='b', lw=2)
@@ -181,6 +207,8 @@ class TrainingAnalyser(object):
         ax5.set_xlabel('Time [ms]')
         ax5.set_ylabel('Bias')
         ax5.set_xlim((0, t_axis[-1]))
+        if with_stim_markers:
+            self.plot_stim_markers(ax5)
 
 #        ax5.set_yticks([])
 #        ax5.set_xticks([])
@@ -202,8 +230,10 @@ class TrainingAnalyser(object):
 
     def plot_bcpnn_traces(self, spike_data, pre_gid, post_gid, syn_params=None, t_max=None):
 
-        spiketimes_pre = utils.get_spiketimes(spike_data, pre_gid, gid_idx=0, time_idx=1)
-        spiketimes_post = utils.get_spiketimes(spike_data, post_gid, gid_idx=0, time_idx=1)
+        pre_gid_nest = pre_gid + 1
+        post_gid_nest = post_gid + 1
+        spiketimes_pre = utils.get_spiketimes(spike_data, pre_gid_nest, gid_idx=0, time_idx=1)
+        spiketimes_post = utils.get_spiketimes(spike_data, post_gid_nest, gid_idx=0, time_idx=1)
         if t_max == None:
             t_max = self.params['t_sim'] + 1
         pre_trace = utils.convert_spiketrain_to_trace(spiketimes_pre, t_max, dt=.1, spike_width=10) # + 1 is to handle spikes in the last time step
@@ -211,8 +241,11 @@ class TrainingAnalyser(object):
 
         wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = Bcpnn.get_spiking_weight_and_bias(pre_trace, post_trace, self.params['bcpnn_params'])
         print 'Weight after training:', wij[-1], ' maximum in trace:', np.max(wij)
+        print 'Tuning prop pre_gid ', pre_gid, self.tuning_prop_exc[pre_gid, :], ' post_gid ', post_gid, self.tuning_prop_exc[post_gid, :]
+
         output_fn = self.params['figures_folder'] + 'traces_gid%d-%d.png' % (pre_gid, post_gid)
-        self.plot_traces(pre_trace, post_trace, zi, zj, ei, ej, eij, pi, pj, pij, wij, bias, output_fn)
+        title = 'Neuron GIDs: %d - %d ' % (pre_gid, post_gid)
+        self.plot_traces(pre_trace, post_trace, zi, zj, ei, ej, eij, pi, pj, pij, wij, bias, output_fn, title=title)
 
 
 
@@ -245,8 +278,10 @@ if __name__ == '__main__':
     for stim in xrange(params['n_training_stim']):
         Plotter.get_coactivated_cell_gids(stim, exc_spike_data)
 
-    pre_gid = 1
-    post_gid = 72
-    initial_value = None#1e-6
-    Plotter.plot_bcpnn_traces(exc_spike_data, pre_gid, post_gid, syn_params=params['bcpnn_params'])
+    neuron_gid_pairs = [(139, 38), (38, 139), (29, 50), (29, 69), (29, 92), (166, 186), (166, 5), (186, 5)]
+    for j_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
+#    pre_gid = 1
+#    post_gid = 72
+        initial_value = None#1e-6
+        Plotter.plot_bcpnn_traces(exc_spike_data, pre_gid, post_gid, syn_params=params['bcpnn_params'])
     pylab.show()

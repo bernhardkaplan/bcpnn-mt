@@ -97,7 +97,7 @@ class CreateStimuli(object):
                 for i_ in xrange(self.n_stim_per_direction):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
-                    x0 = np.random.rand() # select a random start point
+                    x0 = np.random.rand() * .5 # select a random start point
                     self.all_starting_pos[stim_cnt, 0] = x0
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1

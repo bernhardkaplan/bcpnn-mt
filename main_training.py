@@ -65,14 +65,16 @@ def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None, title=''):
 
 def run_tracking(params, NM):
 
-    neuron_gid_pairs = [(139, 38), (38, 139), (29, 50), (29, 69), (29, 92), (166, 186), (166, 5), (186, 5)]
+    neuron_gid_pairs = [(37, 204), (204, 37), (106, 178), (106, 155), (106, 224), \
+            (3, 24), (24, 3), (58, 79), (58, 144), (79, 144), (79, 128), (58, 128), \
+            (90, 210), (90, 137), (137, 90), (210, 137), (137, 210)]
     n_conn = len(neuron_gid_pairs)
     on_node = np.zeros(n_conn)
     for i_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
         on_node[i_] = NM.check_if_conn_on_node(pre_gid, post_gid)
 
     t = 0
-    t_step = 100.
+    t_step = 50.
     t_axis = np.arange(0, params['t_sim'], t_step)
     # set default values for all connections 
     pi_nest = np.ones((n_conn, t_axis.size)) * params['bcpnn_init_val']
@@ -87,7 +89,9 @@ def run_tracking(params, NM):
         # iterate over all connections on the node
         for j_, (pre_gid, post_gid) in enumerate(neuron_gid_pairs):
             if on_node[j_] != False:
-                pi, pj, pij, wij = NM.get_p_values([pre_gid, post_gid])
+                pre_gid_nest = pre_gid + 1
+                post_gid_nest = post_gid + 1
+                pi, pj, pij, wij = NM.get_p_values([pre_gid_nest, post_gid_nest])
                 pi_nest[j_, i_] = pi
                 pj_nest[j_, i_] = pj
                 pij_nest[j_, i_] = pij
