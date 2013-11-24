@@ -395,21 +395,22 @@ class NetworkModel(object):
         if self.pc_id == 0:
             print "Loading input spiketrains..."
         for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
-            print 'Loading test input for cell %d / %d (%.1f percent)' % (i_, len(self.local_idx_exc), float(i_) / len(self.local_idx_exc) * 100.)
+            print 'Loading input for cell %d / %d (%.1f percent)' % (i_, len(self.local_idx_exc), float(i_) / len(self.local_idx_exc) * 100.)
             if self.params['training_run']:
-                try:
-                    gid = tgt_gid_nest - 1
-                    fn = self.params['input_st_fn_base'] + str(gid) + '.dat'
-                    spike_times = np.loadtxt(fn)
-                except: # this cell does not get any input
+                gid = tgt_gid_nest - 1
+                fn = self.params['input_st_fn_base'] + str(gid) + '.dat'
+                if os.path.exists(fn):
+                    spike_times = np.around(np.loadtxt(fn), decimals=1)
+                else: # this cell does not get any input
                     print "Missing file: ", fn
                     spike_times = np.array([])
             else:
-                try:
-                    gid = tgt_gid_nest - 1
-                    fn = self.params['input_rate_fn_base'] + str(gid) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
-                    spike_times = np.loadtxt(fn)
-                except: # this cell does not get any input
+                gid = tgt_gid_nest - 1
+                fn = self.params['input_rate_fn_base'] + str(gid) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
+                if os.path.exists(fn):
+                    spike_times = np.around(np.loadtxt(fn), decimals=1)
+                    print 'debug', spike_times
+                else:
                     print "Missing file: ", fn
                     spike_times = np.array([])
 
@@ -667,7 +668,7 @@ class NetworkModel(object):
                 print 'Connecting input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(self.local_idx_exc), float(i_) / len(self.local_idx_exc) * 100.)
             spike_times = self.spike_times_container[i_]
             if spike_times.size > 1:
-                nest.SetStatus([self.stimulus[i_]], {'spike_times' : spike_times})
+                nest.SetStatus([self.stimulus[i_]], {'spike_times' : np.sort(spike_times)})
                 # get the cell from the list of populations
                 mc_idx = (unit - 1) / self.params['n_exc_per_mc']
                 hc_idx = (unit - 1) / n_per_hc

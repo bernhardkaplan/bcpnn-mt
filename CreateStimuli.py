@@ -19,12 +19,13 @@ class CreateStimuli(object):
             mp_training = np.loadtxt(training_params['training_sequence_fn'])
             stim_idx_0 = test_params['test_stim_range'][0]
             stim_idx_1 = test_params['test_stim_range'][1]
-            motion_params = mp_training[stim_idx_0:stim_idx_1, :]
+            motion_params = np.zeros((stim_idx_1 - stim_idx_0, 4))
+            motion_params[stim_idx_0:stim_idx_1, :] = mp_training[stim_idx_0:stim_idx_1, :]
             self.all_starting_pos = motion_params[:, 0:2]
             self.all_speeds = motion_params[:n_stim, 2]
             self.all_thetas = np.zeros(n_stim)
 
-            return motion_params
+            return mp_training # return all motion params, for convenience in PlotPrediction
         else:
             # create n_stim as during training
             stim_params = np.zeros((n_stim, 4))

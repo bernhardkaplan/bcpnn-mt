@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     load_files = False
     record = False
-    save_input_files = not load_files
+    save_input_files = False #not load_files
     NM = NetworkModel(ps, iteration=0)
     pc_id, n_proc = NM.pc_id, NM.n_proc
     if pc_id == 0:
