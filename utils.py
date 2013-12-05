@@ -384,9 +384,60 @@ def set_limited_tuning_properties(params, y_range=(0, 1.), x_range=(0, 1.), u_ra
 
 
 
+def set_tuning_prop(params, mode, cell_type):
+    if params['n_grid_dimensions'] == 2:
+        return set_tuning_prop_2D(params, mode, cell_type)
+    else:
+        return set_tuning_prop_1D(params, cell_type)
 
 
-def set_tuning_prop(params, mode='hexgrid', cell_type='exc'):
+def set_tuning_prop_1D(params, cell_type='exc'):
+
+    rnd.seed(params['tuning_prop_seed'])
+    if cell_type == 'exc':
+        n_cells = params['n_exc']
+        n_v = params['N_V']
+        n_rf_x = params['N_RF_X']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+    else:
+        n_cells = params['n_inh']
+        n_v = params['N_V_INH']
+        n_rf_x = params['N_RF_X']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+
+    tuning_prop = np.zeros((n_cells, 4))
+    if params['log_scale']==1:
+        v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+    else:
+        v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
+                        np.log(v_max)/np.log(params['log_scale']), num=n_v,
+                        endpoint=True, base=params['log_scale'])
+
+    n_orientation = params['n_orientation']
+    orientations = np.linspace(0, np.pi, n_orientation, endpoint=False)
+    xlim = (0, params['torus_width'])
+
+    RF = np.linspace(0, params['torus_width'], n_rf_x, endpoint=False)
+    index = 0
+    random_rotation_for_orientation = np.pi*rnd.rand(n_rf_x * n_v * n_orientation) * params['sigma_RF_orientation']
+
+    for i_RF in xrange(n_rf_x):
+        for i_v_rho, rho in enumerate(v_rho):
+            for orientation in orientations:
+                for i_cell in xrange(params['n_exc_per_mc']):
+                    tuning_prop[index, 0] = (RF[i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
+                    tuning_prop[index, 1] = 0. # i_RF / float(n_rf_x) # y-pos
+                    tuning_prop[index, 2] = rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                    tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
+#                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
+                    index += 1
+
+    return tuning_prop
+
+
+def set_tuning_prop_2D(params, mode='hexgrid', cell_type='exc'):
     """
     Place n_exc excitatory cells in a 4-dimensional space by some mode (random, hexgrid, ...).
     The position of each cell represents its excitability to a given a 4-dim stimulus.
@@ -1115,3 +1166,17 @@ def convert_to_url(fn):
     s = 'file://%s/%s' % (p, fn)
     return s
 
+
+def get_figsize(fig_width_pt, portrait=True):
+    """
+    For getting a figure with an 'aesthetic' ratio
+    """
+    inches_per_pt = 1.0 / 72.0 # Convert pt to inch
+    golden_mean = (np.sqrt(5) - 1.0) / 2.0 # Aesthetic ratio
+    fig_width = fig_width_pt * inches_per_pt # width in inches
+    fig_height = fig_width * golden_mean # height in inches
+    if portrait:
+        fig_size = (fig_height, fig_width) # exact figsize
+    else:
+        fig_size = (fig_width, fig_height) # exact figsize
+    return fig_size

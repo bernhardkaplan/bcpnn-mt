@@ -21,6 +21,9 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
+        # new parameter make distinguishment between one / two dimensional model easy
+        self.params['n_grid_dimensions'] = 1
+
         # ###################
         # HEXGRID PARAMETERS
         # ###################
@@ -43,7 +46,7 @@ class parameter_storage(object):
         #self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
 # 
 #         Medium-scale system
-        self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 30 # np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 5, 2# resolution in velocity norm and direction
@@ -59,10 +62,15 @@ class parameter_storage(object):
         self.params['sigma_RF_speed'] = .30 # some variability in the speed of RFs
         self.params['sigma_RF_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
 
+        # only for compatitibility with code borrowed from  v1-anticipation branch
+        self.params['n_orientation'] = 1
+        self.params['sigma_RF_orientation'] = .1 * np.pi
+
         # ###################
         # NETWORK PARAMETERS
         # ###################
         self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
+        self.params['n_exc_per_mc'] = 1 # only for compatitibility with code borrowed from  v1-anticipation branch
         self.params['fraction_inh_cells'] = 0.20 # fraction of inhibitory cells in the network, only approximately!
         self.params['N_theta_inh'] = self.params['N_theta']
         self.params['N_V_INH'] = 1
@@ -186,8 +194,8 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 5000.       # [Hz]
-        self.params['w_input_exc'] = 5.0e-3     # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['f_max_stim'] = 1000.       # [Hz]
+        self.params['w_input_exc'] = 1.0e-1     # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
