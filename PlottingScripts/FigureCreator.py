@@ -13,8 +13,8 @@ def get_fig_size(fig_width_pt, portrait=False):
     return fig_size
 
 plot_params = {'backend': 'png',
-              'axes.labelsize': 24,
-              'axes.titlesize': 24,
+              'axes.labelsize': 20,
+              'axes.titlesize': 20,
               'text.fontsize': 20,
               'xtick.labelsize': 16,
               'ytick.labelsize': 16,
@@ -28,7 +28,10 @@ plot_params = {'backend': 'png',
               'figure.subplot.left':.15,
               'figure.subplot.bottom':.13,
               'figure.subplot.right':.94,
-              'figure.subplot.top':.92}
+              'figure.subplot.top':.92,
+              'figure.subplot.hspace':.30,
+              'figure.subplot.wspace':.30}
+
 #              'figure.figsize': get_fig_size(800)}
 
 plot_params_portrait = {'backend': 'png',
