@@ -46,7 +46,7 @@ class parameter_storage(object):
         #self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
 # 
 #         Medium-scale system
-        self.params['N_RF'] = 30 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 40 # np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 5, 2# resolution in velocity norm and direction
@@ -139,7 +139,7 @@ class parameter_storage(object):
                                        # large w_sigma: high connection probability (independent of tuning_properties)
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.15 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 0.25 # [uS] how much input should an inh cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ie'] = 1.20 # [uS] how much input should an exc cell get from its inh source cells?
         self.params['w_tgt_in_per_cell_ii'] = 0.10 # [uS] how much input should an inh cell get from its source cells?
@@ -194,8 +194,8 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 1000.       # [Hz]
-        self.params['w_input_exc'] = 1.0e-1     # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['f_max_stim'] = 5000.       # [Hz]
+        self.params['w_input_exc'] = 4.0e-2     # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
@@ -206,7 +206,7 @@ class parameter_storage(object):
         """
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
-        self.params['motion_params'] = (0.0, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
+        self.params['motion_params'] = (0.1, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.15  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['blur_X'], self.params['blur_V'] = .15, .15

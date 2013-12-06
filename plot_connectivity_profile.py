@@ -468,11 +468,8 @@ class ConnectionPlotter(object):
 
 if __name__ == '__main__':
 
-
 #    print 'Running merge_connlists.py...'
 #    os.system('python merge_connlists.py')
-
-
     with_directions = True
     with_delays = True
     with_histogram = False
