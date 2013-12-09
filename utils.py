@@ -434,6 +434,9 @@ def set_tuning_prop_1D(params, cell_type='exc'):
 #                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
                     index += 1
 
+    if index != n_cells:
+        print 'WARNING: utils.set_tuning_prop_1D mismatch between n_cells and index of tuning properties set'
+
     return tuning_prop
 
 
@@ -861,11 +864,12 @@ def torus(x, w=1.):
     """
     return np.mod(x + w/2., w) - w/2.
 
-def torus_distance_array(x0, x1):
+def torus_distance_array(x0, x1, w=1.):
     """
     Compute the 1-D distance on a torus for arrays
+    w -- torus width
     """
-    return np.minimum(np.abs(x0 - x1), 1. - np.abs(x0 - x1))
+    return np.minimum(np.abs(x0 - x1), w - np.abs(x0 - x1))
 
 def torus_distance(x0, x1):
     """

@@ -330,11 +330,11 @@ class NetworkModel(object):
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
         for i_, tgt in enumerate(tgt_cells):
             if self.params['conn_conf'] == 'direction-based':
-                p, latency = CC.get_p_conn_direction_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+                p, latency = CC.get_p_conn_direction_based(params, tp_src, tp_tgt[tgt, :])
             elif self.params['conn_conf'] == 'motion-based':
-                p, latency = CC.get_p_conn_motion_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['connectivity_radius'])
+                p, latency = CC.get_p_conn_motion_based(params, tp_src, tp_tgt[tgt, :])
             elif self.params['conn_conf'] == 'orientation-direction':
-                p, latency = CC.get_p_conn_direction_and_orientation_based(tp_src, tp_tgt[tgt, :], self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_theta'], self.params['connectivity_radius'])
+                p, latency = CC.get_p_conn_direction_and_orientation_based(params, tp_src, tp_tgt[tgt, :])
             else:
                 print '\n\nERROR! Wrong connection configutation conn_conf parameter provided\nShould be direction-based, motion-based or orientation-direction\n'
                 exit(1)
@@ -714,8 +714,8 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = False
-        record = True
+        load_files = True
+        record = False
         save_input_files = not load_files
 
     NM = NetworkModel(ps.params, comm)
@@ -756,4 +756,6 @@ if __name__ == '__main__':
         pp.plot_prediction(params)
 
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+#        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+        os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
+        os.system('ristretto %s' % (ps.params['figures_folder']))

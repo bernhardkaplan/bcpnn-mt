@@ -5,39 +5,53 @@ from scipy.spatial import distance
 import os
 import time
 
-def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+def get_p_conn_motion_based(params, tp_src, tp_tgt):
     """
-    tp_src is a list/array with the 4 tuning property values of the source cell: x, y, u, v
-        
-    Latex code for formulas:
-    \delta_{latency} = \frac{\sqrt{d_{torus}(x_0, x_1)^2 + d_{torus}(y_0, y_1)^2}}{\sqrt{u_0^2 + v_0^2}}
-    x_{predicted} = x_0 + u_0 \cdot \delta_{latency}
-    y_{predicted} = y_0 + v_0 \cdot \delta_{latency}
-    p = exp(-\frac{(d_{torus}(x_{predicted}, x_1))^2 + (d_{torus}(y_{predicted}, y_1))^2}{2 \cdot \sigma_{space}^2})
-        \cdot exp(-\frac{(u_0-u_1)^2 + (v_0 - v_1)^2}{2 \cdot \sigma_V^2})
- 
+    Motion-based connectivity 
+    -------------------------
+
+    Calculates the connection probabilities for all source cells targeting one cell.
+    tp_src = np.array, shape = (n_src, 4)
+    tp_tgt = (x, y, u, v)
+    TODO: exp(cos(v_i, x_j - x_i) / (2*sigma_x**2))
     """
-    d_ij = utils.torus_distance2D(tp_src[0], tp_tgt[0], tp_src[1], tp_tgt[1])
-    latency = d_ij / np.sqrt(tp_src[2]**2 + tp_src[3]**2)
-#    if latency < connectivity_radius:
-    x_predicted = tp_src[0] + tp_src[2] * latency
-    y_predicted = tp_src[1] + tp_src[3] * latency
-    sigma_x = w_sigma_x#* np.sqrt(latency)
-    sigma_v = w_sigma_v# * np.sqrt(latency)
-    v1 = (tp_src[2], tp_src[3])
-    v2 = (tp_tgt[2], tp_tgt[3])
-    p = np.exp(- (utils.torus_distance2D(x_predicted, tp_tgt[0], y_predicted, tp_tgt[1]))**2 / (2 * sigma_x**2)) \
-            * np.exp( (np.dot(v1, v2) / (np.sqrt(np.dot(v1, v1) * np.dot(v2, v2)))) / sigma_v**2)
+    if params['n_grid_dimensions'] == 2:
+        return get_p_conn_motion_based_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+    else:
+        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+
+
+def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+    n_src = tp_src[:, 0].size
+    d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
+    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
+    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
+    d_pred_tgt = utils.torus_distance_array(x_pred, tp_tgt[0] * np.ones(n_src))
+    v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
+    p = np.exp(- (d_pred_tgt / (2 * w_sigma_x**2))) \
+            * np.exp(- (v_tuning_diff / (2 * w_sigma_v**2)))
+    if connectivity_radius < 1.0:
+        p[d_ij > connectivity_radius] = 0.
     return p, latency
 
-#            * np.exp(- ((tp_src[2] - tp_tgt[2])**2 + (tp_src[3] - tp_tgt[3])**2) / (2 * sigma_v**2))
-#        p *= np.exp(- latency / connectivity_radius)
-#    else:
-#        return 0., 0.
+def get_p_conn_motion_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+    n_src = tp_src[:, 0].size
 
-def get_p_conn_direction_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+    d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
+    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
+    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
+    y_pred = tp_src[:, 1]  + tp_src[:, 3] * latency
+    d_pred_tgt = utils.torus_distance2D_vec(x_pred, tp_tgt[0] * np.ones(n_src), y_pred, tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
+#    v_tuning_diff = utils.torus_distance2D_vec(tp_src[:, 2], tp_tgt[2] * np.ones(n_src), tp_src[:, 3], tp_tgt[3] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
+    v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2 + (tp_src[:, 3] - tp_tgt[3] * np.ones(n_src))**2
+
+    p = np.exp(- (d_pred_tgt / (2 * w_sigma_x**2))) \
+            * np.exp(- (v_tuning_diff / (2 * w_sigma_v**2)))
+    return p, latency
+    
+
+def get_p_conn_direction_based(params, tp_src, tp_tgt):
     """
-
     Direction-basd connectivity
     ---------------------------
 
@@ -46,6 +60,23 @@ def get_p_conn_direction_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
     tp_tgt = (x, y, u, v)
     TODO: exp(cos(v_i, x_j - x_i) / (2*sigma_x**2))
     """
+    if params['n_grid_dimensions'] == 2:
+        get_p_conn_direction_based_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+    else:
+        get_p_conn_direction_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+
+
+def get_p_conn_direction_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+    """
+    Direction-based connectivity doesn't make sense in 1-D
+    """
+    n_src = tp_src[:, 0].size
+    d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
+
+    return p, latency
+
+
+def get_p_conn_direction_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
 #    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
@@ -84,13 +115,44 @@ def get_p_conn_direction_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
 #        invalid_idx = d_ij > connectivity_radius
 #        invalid_idx = invalid_idx.nonzero()[0]
 #        p[invalid_idx] = 0.
-        p[d_ij > connectivity_radius] = 0.
+        p[[d_ij] > connectivity_radius] = 0.
     
     return p, d_ij
 #    return p, latency
 
     # old:
 #    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(v_cos_array/(sigma_v**2))
+
+def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+    """
+    tp_src is a list/array with the 4 tuning property values of the source cell: x, y, u, v
+        
+    Latex code for formulas:
+    \delta_{latency} = \frac{\sqrt{d_{torus}(x_0, x_1)^2 + d_{torus}(y_0, y_1)^2}}{\sqrt{u_0^2 + v_0^2}}
+    x_{predicted} = x_0 + u_0 \cdot \delta_{latency}
+    y_{predicted} = y_0 + v_0 \cdot \delta_{latency}
+    p = exp(-\frac{(d_{torus}(x_{predicted}, x_1))^2 + (d_{torus}(y_{predicted}, y_1))^2}{2 \cdot \sigma_{space}^2})
+        \cdot exp(-\frac{(u_0-u_1)^2 + (v_0 - v_1)^2}{2 \cdot \sigma_V^2})
+ 
+    """
+    d_ij = utils.torus_distance2D(tp_src[0], tp_tgt[0], tp_src[1], tp_tgt[1])
+    latency = d_ij / np.sqrt(tp_src[2]**2 + tp_src[3]**2)
+#    if latency < connectivity_radius:
+    x_predicted = tp_src[0] + tp_src[2] * latency
+    y_predicted = tp_src[1] + tp_src[3] * latency
+    sigma_x = w_sigma_x#* np.sqrt(latency)
+    sigma_v = w_sigma_v# * np.sqrt(latency)
+    v1 = (tp_src[2], tp_src[3])
+    v2 = (tp_tgt[2], tp_tgt[3])
+    p = np.exp(- (utils.torus_distance2D(x_predicted, tp_tgt[0], y_predicted, tp_tgt[1]))**2 / (2 * sigma_x**2)) \
+            * np.exp( (np.dot(v1, v2) / (np.sqrt(np.dot(v1, v1) * np.dot(v2, v2)))) / sigma_v**2)
+    return p, latency
+
+#            * np.exp(- ((tp_src[2] - tp_tgt[2])**2 + (tp_src[3] - tp_tgt[3])**2) / (2 * sigma_v**2))
+#        p *= np.exp(- latency / connectivity_radius)
+#    else:
+#        return 0., 0.
+
 
 
 def get_p_conn_direction_and_orientation_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, w_sigma_theta, connectivity_radius=1.0):
@@ -150,31 +212,6 @@ def get_p_conn_direction_and_orientation_based(tp_src, tp_tgt, w_sigma_x, w_sigm
 
 
 
-
-def get_p_conn_motion_based(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
-    """
-    Motion-based connectivity 
-    -------------------------
-
-    Calculates the connection probabilities for all source cells targeting one cell.
-    tp_src = np.array, shape = (n_src, 4)
-    tp_tgt = (x, y, u, v)
-    TODO: exp(cos(v_i, x_j - x_i) / (2*sigma_x**2))
-    """
-    n_src = tp_src[:, 0].size
-
-    d_ij = utils.torus_distance2D_vec(tp_src[:, 0], tp_tgt[0] * np.ones(n_src), tp_src[:, 1], tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
-    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
-    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
-    y_pred = tp_src[:, 1]  + tp_src[:, 3] * latency
-    d_pred_tgt = utils.torus_distance2D_vec(x_pred, tp_tgt[0] * np.ones(n_src), y_pred, tp_tgt[1] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
-#    v_tuning_diff = utils.torus_distance2D_vec(tp_src[:, 2], tp_tgt[2] * np.ones(n_src), tp_src[:, 3], tp_tgt[3] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
-    v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2 + (tp_src[:, 3] - tp_tgt[3] * np.ones(n_src))**2
-
-    p = np.exp(- (d_pred_tgt / (2 * w_sigma_x**2))) \
-            * np.exp(- (v_tuning_diff / (2 * w_sigma_v**2)))
-    return p, latency
-    
 
 
 

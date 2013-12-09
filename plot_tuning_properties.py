@@ -208,7 +208,6 @@ def plot_tuning_prop_2D(params):
     print 'Saving to', output_fn
     fig2.savefig(output_fn, dpi=200)
 
-    pylab.show()
 
 
 def plot_histogram(data, fig, xlabel='', ylabel='count', title='', n_bins=20):
@@ -442,7 +441,27 @@ def plot_tuning_prop_1D(params, re_calculate):
     fig5 = pylab.figure(figsize=utils.get_figsize(600))
     plot_histogram(d[:, 2], fig5, xlabel='$v_x$', title='Distribution of preferred x-directions')
 
-    pylab.show()
+
+
+def plot_tuning_space(params):
+
+    fn = params['tuning_prop_means_fn']
+    print '\nLoading from', fn
+    tp = np.loadtxt(fn)
+    fig = pylab.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel('Receptive field center $x$', fontsize=18)
+    ax.set_ylabel('Preferred speed', fontsize=18)
+    for i in xrange(tp[:, 0].size):
+        ax.plot(tp[i, 0], tp[i, 2], 'o', c='k', markersize=5)
+
+    ylim = ax.get_ylim()
+    ax.set_title('Tuning property space')
+    ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
+    output_fn = params['figures_folder'] + 'tuning_space.png'
+    print 'Saving to:', output_fn
+    pylab.savefig(output_fn)
+
 
 if __name__ == '__main__':
 
@@ -478,3 +497,5 @@ if __name__ == '__main__':
         plot_tuning_prop_2D(params)
     else:
         plot_tuning_prop_1D(params, re_calculate)
+        plot_tuning_space(params)
+    pylab.show()

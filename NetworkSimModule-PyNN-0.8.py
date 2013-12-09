@@ -127,6 +127,7 @@ class NetworkModel(object):
                 constrain='redraw',
                 boundaries=(-80, -60))
 
+
         self.times['t_setup'] = self.timer.diff()
         self.times['t_calc_conns'] = 0
         if self.comm != None:
@@ -156,6 +157,9 @@ class NetworkModel(object):
         
         # initialize membrane potentials
 #        self.exc_pop.set(v=lambda i
+
+        self.exc_pop.initialize(v=self.v_init_dist)
+        self.inh_pop.initialize(v=self.v_init_dist)
         self.local_idx_exc = get_local_indices(self.exc_pop, offset=0)
         self.local_idx_inh = get_local_indices(self.inh_pop, offset=self.params['n_exc'])
         print 'Debug, pc_id %d has local %d exc indices:' % (self.pc_id, len(self.local_idx_exc)), self.local_idx_exc
@@ -270,12 +274,20 @@ class NetworkModel(object):
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
             if len(spike_times) > 0:
-                ssa = create(SpikeSourceArray, {'spike_times': spike_times})
-                conn = OneToOneConnector()
-                prj = Projection(ssa, self.exc_pop[unit], synapse_type='excitatory')
-                prj.set('weight', self.params['w_input_exc'])
+#                ssa = create(SpikeSourceArray, {'spike_times': spike_times})
+#                ssa = create(SpikeSourceArray(spike_times=spike_times))
+#                conn = OneToOneConnector()
+#                prj = Projection(ssa, self.exc_pop[unit:unit+1], conn, receptor_type='excitatory')
+#                prj.set(weight=self.params['w_input_exc'])
+
+                ssa = create(SpikeSourceArray(spike_times=spike_times))
+                connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], receptor_type='excitatory')
+#                conn = OneToOneConnector(weight=self.params['w_input_exc'])
+#                prj = Projection(ssa, self.exc_pop[unit:unit+1], conn, receptor_type='excitatory')
+
+#                prj.set('weight', self.params['w_input_exc'])
 #                conn.connect(ssa, self.exc_pop[unit])#, weight=self.params['w_input_exc'])
-#                connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
+#                connect(ssa, self.exc_pop[unit], self.params['w_input_exc'])
         self.times['connect_input'] = self.timer.diff()
 
 
@@ -470,10 +482,13 @@ class NetworkModel(object):
                 boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
 
         p_max = utils.get_pmax(self.params['p_%s' % conn_type], self.params['w_sigma_isotropic'], conn_type)
-        connector = DistanceDependentProbabilityConnector('%f * exp(-d/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
-                weights=w_dist, delays=delay_dist, space=self.torus)#, n_connections=n_conn_ee)
+        connector = DistanceDependentProbabilityConnector('%f * exp(-d/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False)
+        prj = Projection(src_pop, tgt_pop, connector, receptor_type=syn_type, space=self.torus)
+        prj.set(weight=w_dist, delay=delay_dist)
+        print 'src_pop:', src_pop.all_cells
+        print 'debug len(src_pop) %d\tlen(tgt_pop) %d' % (len(src_pop), len(tgt_pop))
         print 'p_max for %s' % conn_type, p_max
-        prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
+
         self.projections[conn_type].append(prj)
         if self.debug_connectivity:
             prj.saveConnections(self.params['conn_list_%s_fn_base' % conn_type] + '.dat', gather=True)
@@ -513,7 +528,7 @@ class NetworkModel(object):
                 boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
 
         connector= FastFixedProbabilityConnector(self.params['p_%s' % conn_type], weights=weight_distr, delays=delay_dist)
-        prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
+        prj = Projection(src_pop, tgt_pop, connector, receptor_type=syn_type)
 
         conn_list_fn = self.params['conn_list_%s_fn_base' % conn_type] + '%d.dat' % (self.pc_id)
         print 'Saving random %s connections to %s' % (conn_type, conn_list_fn)

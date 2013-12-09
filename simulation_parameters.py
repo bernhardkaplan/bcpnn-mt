@@ -27,29 +27,20 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        # Large-scale system
-#        self.params['N_RF'] = 100# np.int(n_cells/N_V/N_theta)
-#        self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#        self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#        self.params['N_V'], self.params['N_theta'] = 2, 50# resolution in velocity norm and direction
-
-#         Medium-large system
-#         self.params['N_RF'] = 90# np.int(n_cells/N_V/N_theta)
-#         self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-#         self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']))# np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-#         self.params['N_V'], self.params['N_theta'] = 8, 8# resolution in velocity norm and direction
-# 
-#         Medium-scale system
-        #self.params['N_RF'] = 60 # np.int(n_cells/N_V/N_theta)
-        #self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF']*np.sqrt(3)))
-        #self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF'])) # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of N_RF dots?"
-        #self.params['N_V'], self.params['N_theta'] = 5, 5# resolution in velocity norm and direction
-# 
-#         Medium-scale system
-        self.params['N_RF'] = 40 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 100 # np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
-        self.params['N_V'], self.params['N_theta'] = 5, 2# resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
+       
+        if self.params['n_grid_dimensions'] == 2:
+            self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
+            self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf']))
+            # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
+            self.params['n_theta'] = 1# resolution in velocity norm and direction
+        else:
+            self.params['N_RF_X'] = self.params['N_RF']
+            self.params['N_RF_Y'] = 1
+            self.params['N_theta'] = 1
 # 
 #         Small-scale system
 #        self.params['N_RF'] = 40# np.int(n_cells/N_V/N_theta)
@@ -127,22 +118,22 @@ class parameter_storage(object):
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
 
-#        self.params['conn_conf'] = 'motion-based' 
-        self.params['conn_conf'] = 'direction-based'
+        self.params['conn_conf'] = 'motion-based' 
+#        self.params['conn_conf'] = 'direction-based'
 #        self.params['conn_conf'] = 'orientation-direction' 
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['connectivity_radius'] = 1.0      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
-        self.params['delay_scale'] = 100.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
-        self.params['delay_range'] = (0.1, 5000.)
+        self.params['connectivity_radius'] = 0.05      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
+        self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
+        self.params['delay_range'] = (0.1, 2000.)
         self.params['w_sigma_x'] = 0.7 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.7 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 0.25 # [uS] how much input should an inh cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ie'] = 1.20 # [uS] how much input should an exc cell get from its inh source cells?
-        self.params['w_tgt_in_per_cell_ii'] = 0.10 # [uS] how much input should an inh cell get from its source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.25 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 0.35 # [uS] how much input should an inh cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ie'] = 1.50 # [uS] how much input should an exc cell get from its inh source cells?
+        self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ie'] *= 10. / self.params['tau_syn_inh']
@@ -281,7 +272,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'MpN_dS%d/' % (self.params['delay_scale'])
+               folder_name = 'MpN_DS%d_CR%.3f/' % (self.params['delay_scale'], self.params['connectivity_radius'])
 
 #            folder_name += connectivity_code
 #            folder_name += '/'
