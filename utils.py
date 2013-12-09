@@ -688,18 +688,14 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
         return nspikes
 
 def get_sources(conn_list, target_gid):
-    n = conn_list[:, 0].size 
-    target = target_gid * np.ones(n)
-    mask = conn_list[:, 1] == target
-    sources = conn_list[mask, :]
+    idx = conn_list[:, 1] == target_gid
+    sources = conn_list[idx, :]
     return sources
 
 
 def get_targets(conn_list, source_gid):
-    n = conn_list[:, 0].size 
-    source = source_gid * np.ones(n)
-    mask = conn_list[:, 0] == source
-    targets = conn_list[mask, :]
+    idx = conn_list[:, 0] == source_gid
+    targets = conn_list[idx, :]
     return targets
 
 

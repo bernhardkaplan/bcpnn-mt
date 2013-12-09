@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import numpy as np
 import utils
 import pylab
@@ -36,12 +36,12 @@ class ConnectionPlotter(object):
         self.x_min, self.x_max = 1.0, .0
         self.y_min, self.y_max = 1.0, .0
         self.quiver_scale = 1.
+        self.markersize_cell = 8
+        self.markersize_min = 3
+        self.markersize_max = 8
 
     def create_fig(self, n_plots_x, n_plots_y):
         self.n_plots_x, self.n_plots_y = n_plots_x, n_plots_y
-        self.markersize_cell = 12
-        self.markersize_min = 5
-        self.markersize_max = 15
         self.shaft_width = 0.01
 #        self.shaft_width = 0.005
         pylab.rcParams['axes.labelsize'] = 28
@@ -338,6 +338,7 @@ class ConnectionPlotter(object):
 
     def load_connection_list(self, conn_type):
 
+        print 'debug conn_type', conn_type
         if conn_type == 'ee':
             loaded = self.conn_list_loaded[0]
         elif conn_type == 'ei':
@@ -463,13 +464,96 @@ class ConnectionPlotter(object):
         print 'find_cell_closest_to_vector', v, direction
         print 'is ', gid, self.tp_exc[gid, :]
         return gid#, self.tp_exc[gid, :]
-    
 
 
-if __name__ == '__main__':
+    def plot_connectivity_profile_1D(self, conn_type='ee', gid=None):
+        """
+        Plot the tuning space and mark the source and targets for the given gid.
+        Gid is the cell within the source population.
+        """
+        if gid == None:
+            if conn_type[0] == 'e':
+                gid = np.random.randint(0, params['n_exc'])
+            else:
+                gid = np.random.randint(0, params['n_inh'])
 
-#    print 'Running merge_connlists.py...'
-#    os.system('python merge_connlists.py')
+        self.load_connection_list(conn_type)
+        targets = utils.get_targets(self.connection_lists[conn_type], gid)
+        tgt_ids, tgt_weights, tgt_delays = targets[:, 1], targets[:, 2], targets[:, 3]
+
+        sources = utils.get_sources(self.connection_lists[conn_type], gid)
+        src_ids, src_weights, src_delays = sources[:, 1], sources[:, 2], sources[:, 3]
+
+        if conn_type == 'ee':
+            src_tp = self.tp_exc
+            tgt_tp = self.tp_exc
+            legend_txt = 'exc src gid: %d --> exc tgts, n=%d' % (gid, len(tgt_ids))
+        elif conn_type == 'ei':
+            src_tp = self.tp_exc
+            tgt_tp = self.tp_inh
+            legend_txt = 'exc src gid: %d --> inh tgts, n=%d' % (gid, len(tgt_ids))
+        elif conn_type == 'ie':
+            src_tp = self.tp_inh
+            tgt_tp = self.tp_exc
+            legend_txt = 'inh src gid: %d --> exc tgts, n=%d' % (gid, len(tgt_ids))
+        elif conn_type == 'ii':
+            src_tp = self.tp_inh
+            tgt_tp = self.tp_inh
+            legend_txt = 'inh src gid: %d --> inh tgts, n=%d' % (gid, len(tgt_ids))
+
+        fig = pylab.figure(figsize=(12,8))
+        ax1 = fig.add_subplot(211)
+        ax2 = fig.add_subplot(212)
+        ax1.set_xlabel('Receptive field center $x$', fontsize=18)
+        ax1.set_ylabel('Preferred speed $v_x$', fontsize=18)
+        ax2.set_xlabel('Receptive field center $x$', fontsize=18)
+        ax2.set_ylabel('Preferred speed $v_x$', fontsize=18)
+
+        for i in xrange(src_tp[:, 0].size):
+            ax1.plot(src_tp[i, 0], src_tp[i, 2], 'o', c='k', markersize=3, alpha=.2)
+            ax2.plot(src_tp[i, 0], src_tp[i, 2], 'o', c='k', markersize=3, alpha=.2)
+
+        ylim = ax1.get_ylim()
+        ax1.set_title('Tuning property space')
+        ax1.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
+
+        x_, vx_ = src_tp[gid, 0], src_tp[gid, 2]
+        ax1.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
+        ax2.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
+
+        weight_min_out = np.min(targets[:, 2])
+        weight_max_out = np.max(targets[:, 2])
+        weight_min_in = np.min(sources[:, 2])
+        weight_max_in = np.max(sources[:, 2])
+        markersizes_out = utils.linear_transformation(targets[:, 2] / weight_min_out, self.markersize_min, self.markersize_max)
+        x_min, x_max = 1., 0.0
+        for j_ in xrange(len(targets)):
+            tgt_gid = targets[j_, 1]
+            print 'ms:', markersizes_out[j_], targets[j_, :], src_tp[tgt_gid, 0], src_tp[tgt_gid, 2]
+            x_min, x_max = min(x_min, tgt_tp[tgt_gid, 0]), max(x_max, tgt_tp[tgt_gid, 0])
+            ax1.plot(tgt_tp[tgt_gid, 0], tgt_tp[tgt_gid, 2], '^', c='b', markersize=markersizes_out[j_])
+            
+        ax1.set_xlim((.8 * x_min, 1.2 * x_max))
+
+        x_min, x_max = 1., 0.0
+        markersizes_in= utils.linear_transformation(sources[:, 2] / weight_min_in, self.markersize_min, self.markersize_max)
+        for i_ in xrange(len(sources)):
+            src_gid = sources[i_, 0]
+            print 'ms:', markersizes_in[i_], sources[i_, :], tgt_tp[src_gid, 0], tgt_tp[src_gid, 2]
+            x_min, x_max = min(x_min, src_tp[src_gid, 0]), max(x_max, src_tp[src_gid, 0])
+            ax2.plot(src_tp[src_gid, 0], src_tp[src_gid, 2], 'D', c='g', markersize=markersizes_in[i_])
+        ax2.set_xlim((.8 * x_min, 1.2 * x_max))
+
+        output_fig = self.params['figures_folder'] + 'connectivity_profile_%d.png' % (gid)
+        print 'Saving to:', output_fig
+        fig.savefig(output_fig, dpi=300)
+
+
+
+def plot_connectivity_profile_2D(params):
+
+    P = ConnectionPlotter(params)
+
     with_directions = True
     with_delays = True
     with_histogram = False
@@ -477,34 +561,6 @@ if __name__ == '__main__':
         n_plots_x, n_plots_y = 1, 2
     else:
         n_plots_x, n_plots_y = 1, 1
-
-    np.random.seed(0)
-    if len(sys.argv) > 1:
-        if sys.argv[1].isdigit():
-            gid = int(sys.argv[1])
-            param_fn = sys.argv[2]
-            if os.path.isdir(param_fn):
-                param_fn += '/Parameters/simulation_parameters.json'
-            import json
-            f = file(param_fn, 'r')
-            print 'Loading parameters from', param_fn
-            params = json.load(f)
-        else:
-            param_fn = sys.argv[1]
-            if os.path.isdir(param_fn):
-                param_fn += '/Parameters/simulation_parameters.json'
-            import json
-            f = file(param_fn, 'r')
-            print 'Loading parameters from', param_fn
-            params = json.load(f)
-            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
-    else:
-        import simulation_parameters
-        ps = simulation_parameters.parameter_storage()
-        params = ps.params
-        gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
-
-    P = ConnectionPlotter(params)
 
 #    gid = 5339
 
@@ -556,16 +612,50 @@ if __name__ == '__main__':
 
     if with_directions:
         P.plot_directions()
-
 #    P.plot_cells_as_dots(range(params['n_exc']), P.tp_exc)
 #    P.plot_cells_as_dots(range(params['n_exc']), P.tp_inh)
-
-
 #    P.make_legend()
 
     output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f_%s_varying_xylim.png' % (gid, params['w_sigma_x'], params['w_sigma_v'], str(params['conn_conf']))
     print 'Saving figure to', output_fig
     pylab.savefig(output_fig)
 
-#    pylab.show()
+    
+
+if __name__ == '__main__':
+
+#    print 'Running merge_connlists.py...'
+#    os.system('python merge_connlists.py')
+    np.random.seed(0)
+    if len(sys.argv) > 1:
+        if sys.argv[1].isdigit():
+            gid = int(sys.argv[1])
+            param_fn = sys.argv[2]
+            if os.path.isdir(param_fn):
+                param_fn += '/Parameters/simulation_parameters.json'
+            import json
+            f = file(param_fn, 'r')
+            print 'Loading parameters from', param_fn
+            params = json.load(f)
+        else:
+            param_fn = sys.argv[1]
+            if os.path.isdir(param_fn):
+                param_fn += '/Parameters/simulation_parameters.json'
+            import json
+            f = file(param_fn, 'r')
+            print 'Loading parameters from', param_fn
+            params = json.load(f)
+            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
+    else:
+        import simulation_parameters
+        ps = simulation_parameters.parameter_storage()
+        params = ps.params
+        gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
+
+    if params['n_grid_dimensions'] == 2:
+        plot_connectivity_profile_2D(params)
+    else:
+        P = ConnectionPlotter(params)
+        P.plot_connectivity_profile_1D()
+    pylab.show()
 
