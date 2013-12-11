@@ -155,6 +155,14 @@ def create_spike_trains_for_motion(tuning_prop, params, contrast=.9, my_units=No
 
 
 
+def get_plus_minus(rnd):
+    """
+    Returns either -1., or +1. as float.
+    rnd -- should be your numpy.random RNG
+    """
+    return (rnd.randint(-1, 1) + .5) * 2
+
+
 def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='dot'):
     """
     This function computes the input to each cell for one point in time t based on the given tuning properties.
@@ -429,7 +437,9 @@ def set_tuning_prop_1D(params, cell_type='exc'):
                 for i_cell in xrange(params['n_exc_per_mc']):
                     tuning_prop[index, 0] = (RF[i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
                     tuning_prop[index, 1] = 0. # i_RF / float(n_rf_x) # y-pos
-                    tuning_prop[index, 2] = rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+#                    tuning_prop[index, 2] = rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                    tuning_prop[index, 2] = get_plus_minus(rnd) * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+
                     tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
 #                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
                     index += 1

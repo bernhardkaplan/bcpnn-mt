@@ -36,7 +36,7 @@ class ConnectionPlotter(object):
         self.x_min, self.x_max = 1.0, .0
         self.y_min, self.y_max = 1.0, .0
         self.quiver_scale = 1.
-        self.markersize_cell = 8
+        self.markersize_cell = 10
         self.markersize_min = 3
         self.markersize_max = 8
 
@@ -338,7 +338,6 @@ class ConnectionPlotter(object):
 
     def load_connection_list(self, conn_type):
 
-        print 'debug conn_type', conn_type
         if conn_type == 'ee':
             loaded = self.conn_list_loaded[0]
         elif conn_type == 'ei':
@@ -479,11 +478,21 @@ class ConnectionPlotter(object):
 
         self.load_connection_list(conn_type)
         targets = utils.get_targets(self.connection_lists[conn_type], gid)
-        tgt_ids, tgt_weights, tgt_delays = targets[:, 1], targets[:, 2], targets[:, 3]
+        n_tgts = targets[:, 0].size
+        target_gids = np.zeros(n_tgts, dtype=np.int)
+        for i_ in xrange(n_tgts):
+            target_gids[i_] = np.int(targets[i_, 1])
+
 
         sources = utils.get_sources(self.connection_lists[conn_type], gid)
         src_ids, src_weights, src_delays = sources[:, 1], sources[:, 2], sources[:, 3]
 
+        n_srcs = sources[:, 0].size
+        source_gids = np.zeros(n_srcs, dtype=np.int)
+        for i_ in xrange(n_srcs):
+            source_gids[i_] = np.int(sources[i_, 1])
+
+        tgt_ids, tgt_weights, tgt_delays = targets[:, 1], targets[:, 2], targets[:, 3]
         if conn_type == 'ee':
             src_tp = self.tp_exc
             tgt_tp = self.tp_exc
@@ -518,9 +527,6 @@ class ConnectionPlotter(object):
         ax1.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
 
         x_, vx_ = src_tp[gid, 0], src_tp[gid, 2]
-        ax1.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
-        ax2.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
-
         weight_min_out = np.min(targets[:, 2])
         weight_max_out = np.max(targets[:, 2])
         weight_min_in = np.min(sources[:, 2])
@@ -533,7 +539,7 @@ class ConnectionPlotter(object):
             x_min, x_max = min(x_min, tgt_tp[tgt_gid, 0]), max(x_max, tgt_tp[tgt_gid, 0])
             ax1.plot(tgt_tp[tgt_gid, 0], tgt_tp[tgt_gid, 2], '^', c='b', markersize=markersizes_out[j_])
             
-        ax1.set_xlim((.8 * x_min, 1.2 * x_max))
+        ax1.set_xlim((.9 * x_min, 1.1 * x_max))
 
         x_min, x_max = 1., 0.0
         markersizes_in= utils.linear_transformation(sources[:, 2] / weight_min_in, self.markersize_min, self.markersize_max)
@@ -542,9 +548,28 @@ class ConnectionPlotter(object):
             print 'ms:', markersizes_in[i_], sources[i_, :], tgt_tp[src_gid, 0], tgt_tp[src_gid, 2]
             x_min, x_max = min(x_min, src_tp[src_gid, 0]), max(x_max, src_tp[src_gid, 0])
             ax2.plot(src_tp[src_gid, 0], src_tp[src_gid, 2], 'D', c='g', markersize=markersizes_in[i_])
-        ax2.set_xlim((.8 * x_min, 1.2 * x_max))
+        ax2.set_xlim((.9 * x_min, 1.1 * x_max))
+
+        # plot the cell
+        ax1.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
+        ax2.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
+
 
         output_fig = self.params['figures_folder'] + 'connectivity_profile_%d.png' % (gid)
+        print 'Saving to:', output_fig
+        fig.savefig(output_fig, dpi=300)
+
+
+        # plot the connectivity as histogram
+        from plot_tuning_properties import plot_scatter_with_histograms
+        fig = pylab.figure()
+        print 'debug 0 type(fig)', type(fig)
+        axScatter, axHistx, axHisty = plot_scatter_with_histograms(tgt_tp[target_gids, 0], tgt_tp[target_gids, 2], fig)
+        axScatter.set_xlabel('Receptive field center $x$', fontsize=18)
+        axScatter.set_ylabel('Preferred speed $v_x$', fontsize=18)
+        axScatter.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
+
+        output_fig = self.params['figures_folder'] + 'connectivity_profile_%d_with_histogram.png' % (gid)
         print 'Saving to:', output_fig
         fig.savefig(output_fig, dpi=300)
 
@@ -620,6 +645,7 @@ def plot_connectivity_profile_2D(params):
     print 'Saving figure to', output_fig
     pylab.savefig(output_fig)
 
+
     
 
 if __name__ == '__main__':
@@ -652,10 +678,10 @@ if __name__ == '__main__':
         params = ps.params
         gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
 
+    print 'GID:', gid
     if params['n_grid_dimensions'] == 2:
         plot_connectivity_profile_2D(params)
     else:
         P = ConnectionPlotter(params)
-        P.plot_connectivity_profile_1D()
+        P.plot_connectivity_profile_1D(gid=gid)
     pylab.show()
-

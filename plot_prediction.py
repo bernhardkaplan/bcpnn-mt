@@ -129,18 +129,12 @@ def plot_prediction(params=None, data_fn=None, inh_spikes = None):
 
 
 
-    plotter.n_fig_x = 1
-    plotter.n_fig_y = 1
-    plotter.create_fig()
-    weights = [plotter.nspikes_binned_normalized[i, :].sum() / plotter.n_bins for i in xrange(plotter.n_cells)]
-    plotter.quiver_plot(weights, fig_cnt=1)
-    output_fn = output_fn_base + '_quiver.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=200)
-#    output_fn = output_fn_base + '_quiver.pdf'
-#    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=200)
-#    output_fn = output_fn_base + '_quiver.eps'
+#    plotter.n_fig_x = 1
+#    plotter.n_fig_y = 1
+#    plotter.create_fig()
+#    weights = [plotter.nspikes_binned_normalized[i, :].sum() / plotter.n_bins for i in xrange(plotter.n_cells)]
+#    plotter.quiver_plot(weights, fig_cnt=1)
+#    output_fn = output_fn_base + '_quiver.png'
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=200)
 

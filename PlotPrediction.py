@@ -115,7 +115,7 @@ class PlotPrediction(object):
         self.nspikes_normalized_nonlinear
         """
 
-        print(' Loading data .... ')
+        print(' Loading data from %s ...' % fn)
         try:
             d = np.loadtxt(fn)
             for i in xrange(d[:, 0].size):

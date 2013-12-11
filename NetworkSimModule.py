@@ -341,7 +341,11 @@ class NetworkModel(object):
 
             if conn_type[0] == conn_type[1]:
                 p[tgt], latency[tgt] = 0., 0.
+            
+
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
+            invalid_idx = np.nonzero(latency > self.params['delay_range'][1])
+            p[invalid_idx] = 0.
 
             sorted_indices = np.argsort(p)
             if conn_type[0] == 'e':
@@ -353,13 +357,20 @@ class NetworkModel(object):
                     sources = sorted_indices[:n_src_cells_per_neuron]
 
 #            eta = 1e-9
+            p_to_w = np.zeros(n_src)
+            p_to_w[sources] = 1.
             eta = 0
-            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+
+            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p[sources]
+
 #            print 'debug p', i_, tgt, p[sources]
 #            print 'debug sources', i_, tgt, sources
 #            print 'debug w', i_, tgt, w
 
-            delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+#            delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+            delays = (self.params['delay_range'][1] - self.params['delay_range'][0]) * np.random.rand(sources.size) + self.params['delay_range'][0]
+#            w = np.minimum(np.maximum(w, self.params['w_min']), self.params['w_max'])  # map the weights into a certain range
             conn_list = np.array((sources, tgt * np.ones(n_src_cells_per_neuron), w, delays))
             local_connlist[i_ * n_src_cells_per_neuron : (i_ + 1) * n_src_cells_per_neuron, :] = conn_list.transpose()
             connector = FromListConnector(conn_list.transpose())
@@ -656,6 +667,26 @@ class NetworkModel(object):
             d = json.dump(self.params, output_file, sort_keys=True, indent=4)
 
 
+def clean_up_results_directory(params):
+    filenames = [params['exc_nspikes_fn_merged'], \
+                params['exc_spiketimes_fn_merged'], \
+                params['inh_spiketimes_fn_merged'], \
+                params['inh_nspikes_fn_merged'], \
+                params['exc_spiketimes_fn_base'], \
+                params['inh_spiketimes_fn_base'], \
+                params['merged_conn_list_ee'], \
+                params['merged_conn_list_ei'], \
+                params['merged_conn_list_ie'], \
+                params['merged_conn_list_ii']]
+
+    for fn in filenames:
+        cmd = 'rm %s*' % (fn)
+        print 'Removing %s' % (cmd)
+        os.system(cmd)
+
+
+
+
 if __name__ == '__main__':
 
     input_created = False
@@ -694,6 +725,10 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()#fn)
         params = ps.params
 
+    if pc_id == 0:
+        clean_up_results_directory(params)
+    if comm != None:
+        comm.Barrier()
 #    w_sigma_x = float(sys.argv[1])
 #    w_sigma_v = float(sys.argv[2])
 #    params['w_sigma_x'] = w_sigma_x
@@ -756,6 +791,6 @@ if __name__ == '__main__':
         pp.plot_prediction(params)
 
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-#        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
+        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         os.system('ristretto %s' % (ps.params['figures_folder']))
