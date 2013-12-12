@@ -328,6 +328,7 @@ class NetworkModel(object):
         n_src_cells_per_neuron = int(round(self.params['p_%s' % conn_type] * n_src))
         (delay_min, delay_max) = self.params['delay_range']
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
+
         for i_, tgt in enumerate(tgt_cells):
             if self.params['conn_conf'] == 'direction-based':
                 p, latency = CC.get_p_conn_direction_based(params, tp_src, tp_tgt[tgt, :])
@@ -344,7 +345,9 @@ class NetworkModel(object):
             
 
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
-            invalid_idx = np.nonzero(latency > self.params['delay_range'][1])
+            invalid_idx = np.nonzero(latency * self.params['delay_scale'] > self.params['delay_range'][1])[0]
+            print 'invalid_idx', invalid_idx.size
+
             p[invalid_idx] = 0.
 
             sorted_indices = np.argsort(p)
@@ -368,8 +371,10 @@ class NetworkModel(object):
 #            print 'debug sources', i_, tgt, sources
 #            print 'debug w', i_, tgt, w
 
-#            delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
-            delays = (self.params['delay_range'][1] - self.params['delay_range'][0]) * np.random.rand(sources.size) + self.params['delay_range'][0]
+            delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+
+#            delays = (self.params['delay_range'][1] - self.params['delay_range'][0]) * np.random.rand(sources.size) + self.params['delay_range'][0]
+
 #            w = np.minimum(np.maximum(w, self.params['w_min']), self.params['w_max'])  # map the weights into a certain range
             conn_list = np.array((sources, tgt * np.ones(n_src_cells_per_neuron), w, delays))
             local_connlist[i_ * n_src_cells_per_neuron : (i_ + 1) * n_src_cells_per_neuron, :] = conn_list.transpose()
@@ -749,7 +754,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record = False
         save_input_files = not load_files
 
@@ -788,7 +793,11 @@ if __name__ == '__main__':
 
     if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
         import plot_prediction as pp
-        pp.plot_prediction(params)
+
+        if params['n_grid_dimensions'] == 2:
+            pp.plot_prediction_2D(params)
+        else:
+            pp.plot_prediction_1D(params)
 
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
         os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])

@@ -123,7 +123,6 @@ class ConnectionPlotter(object):
             self.y_min = min(y_tgt, self.y_min)
             self.x_max = max(x_tgt, self.x_max)
             self.y_max = max(y_tgt, self.y_max)
-#            print 'debug', tgt, x_tgt, y_tgt
             w = weights[i_]
 #            if is_target:
 #                print 'x, y', x_tgt, y_tgt, w
@@ -418,7 +417,6 @@ class ConnectionPlotter(object):
             good_gids = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')
             idx = self.tp_exc[good_gids, 0].argsort()
             gids_to_check = good_gids[idx]
-#            print 'debug x_pos', self.tp_exc[idx, 0]
 
             conn_list_ei = np.loadtxt(self.params['merged_conn_list_ei'])
 
@@ -563,7 +561,6 @@ class ConnectionPlotter(object):
         # plot the connectivity as histogram
         from plot_tuning_properties import plot_scatter_with_histograms
         fig = pylab.figure()
-        print 'debug 0 type(fig)', type(fig)
         axScatter, axHistx, axHisty = plot_scatter_with_histograms(tgt_tp[target_gids, 0], tgt_tp[target_gids, 2], fig)
         axScatter.set_xlabel('Receptive field center $x$', fontsize=18)
         axScatter.set_ylabel('Preferred speed $v_x$', fontsize=18)
@@ -684,4 +681,4 @@ if __name__ == '__main__':
     else:
         P = ConnectionPlotter(params)
         P.plot_connectivity_profile_1D(gid=gid)
-    pylab.show()
+#    pylab.show()

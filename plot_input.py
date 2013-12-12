@@ -132,13 +132,10 @@ ax.bar(bins[:-1], n, width= bins[1] - bins[0])
 ax.set_xlim((0, params['t_sim']))
 ax.set_ylabel('Num input spikes')
 ax.set_xlabel('Time [ms]')
-#ylabels = ax.get_yticklabels()
 set_yticks(ax, 4)
 
-output_fn = params['figures_folder'] + 'input_%d.png' % (gid)
-print 'Saving to', output_fn
-pylab.savefig(output_fn, dpi=200)
+#output_fn = params['figures_folder'] + 'input_%d.png' % (gid)
+#print 'Saving to', output_fn
+#pylab.savefig(output_fn, dpi=200)
 
-#output_fn = 'delme.dat'
-#np.savetxt(output_fn, data)
 pylab.show()

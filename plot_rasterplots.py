@@ -34,6 +34,7 @@ def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms
         crop = .8
         ylim = (crop * tp[:, sort_idx].min(), crop * tp[:, sort_idx].max())
     ylen = (abs(ylim[0] - ylim[1]))
+    n_input_spikes = np.zeros((n_cells, 2))
     for i in xrange(n_cells):
         cell = sorted_idx[i]
         fn = params['input_st_fn_base'] + str(cell) + '.npy'
@@ -44,9 +45,16 @@ def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms
                 y_pos = (tp[cell, sort_idx] % 1.) / ylen * (abs(ylim[0] - ylim[1]))
             else:
                 y_pos = (tp[cell, sort_idx]) / ylen * (abs(ylim[0] - ylim[1]))
+            n_input_spikes[i, 0] = nspikes 
+            n_input_spikes[i, 1] = cell
             ax.plot(spiketimes, y_pos * np.ones(nspikes) + shift, m, color=c, alpha=.3, markersize=2)
         # else: this cell gets no input, because not well tuned
 #        ax.plot(spiketimes, i * np.ones(nspikes) + shift, m, color=c, markersize=2)
+#    print 'nspikes:', n_input_spikes[-10:, 0]
+#    print 'gids:', n_input_spikes[-10:, 1]
+    idx = n_input_spikes[:, 0].nonzero()[0]
+    print 'input spikes:', n_input_spikes[idx, 0]
+    print 'gids :', n_input_spikes[idx, 1]
 
     if sort_idx == 0:
         ylabel_txt ='Neurons sorted by $x$-pos'

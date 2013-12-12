@@ -27,7 +27,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 200 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 100 # np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -122,9 +122,9 @@ class parameter_storage(object):
 #        self.params['conn_conf'] = 'direction-based'
 #        self.params['conn_conf'] = 'orientation-direction' 
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['connectivity_radius'] = 0.10      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
+        self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
-        self.params['delay_range'] = (0.1, 2.)
+        self.params['delay_range'] = (0.1, 10.)
         self.params['w_sigma_x'] = 0.7 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.7 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
@@ -185,8 +185,8 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 1000.       # [Hz]
-        self.params['w_input_exc'] = 2.20e-1     # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['f_max_stim'] = 5000.       # [Hz]
+        self.params['w_input_exc'] = 1.50e-1     # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
@@ -200,7 +200,7 @@ class parameter_storage(object):
         self.params['motion_params'] = (0.1, .5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
-        self.params['blur_X'], self.params['blur_V'] = .15, .15
+        self.params['blur_X'], self.params['blur_V'] = .10, .10
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
         # low blur means high input selectivity, few cells respond
