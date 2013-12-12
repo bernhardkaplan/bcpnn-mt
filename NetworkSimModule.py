@@ -749,7 +749,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record = False
         save_input_files = not load_files
 

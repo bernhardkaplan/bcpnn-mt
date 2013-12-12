@@ -166,7 +166,16 @@ def get_plus_minus(rnd):
 def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='dot'):
     """
     This function computes the input to each cell for one point in time t based on the given tuning properties.
-
+    Knowing the velocity one can estimate the analytical response to 
+     - motion energy detectors
+     - to a gaussian blob
+    as a function of the distance between 
+     - the center of the receptive fields,
+     - the current position of the blob.
+     
+    # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
+    
+    L range between 0 and 1
     Arguments:
         tuning_prop: 2-dim np.array; 
             dim 0 is number of cells
@@ -174,53 +183,53 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
             tuning_prop[:, 1] : y-position
             tuning_prop[:, 2] : u-position (speed in x-direction)
             tuning_prop[:, 3] : v-position (speed in y-direction)
-        t: time in the period (not restricted to 0 .. 1)
-        motion: type of motion (TODO: filename to movie, ... ???)
+        t: time (NOT in [ms]) in the period (not restricted to 0 .. 1) 
+        motion: type of motion 
     """
-    n_cells = tuning_prop[:, 0].size
     if motion_params == None:
         motion_params = params['motion_params']
-#    L = np.zeros(n_cells)
+    n_cells = tuning_prop[:, 0].size
+    blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
+    # get the current stimulus parameters
+    x_stim, y_stim, u_stim, v_stim = motion_params[0], motion_params[1], motion_params[2], motion_params[3]
     if motion=='dot':
-        # define the parameters of the motion
-        x0, y0, u0, v0 = motion_params
-
-        blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
+        if params['n_grid_dimensions'] == 2:
+            d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
+            L = np.exp(-.5 * (d_ij)**2 / blur_X**2
+                    -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
+                    -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2)
+        else:
+#            d_ij = np.sqrt((tuning_prop[:, 0] - x_stim * np.ones(n_cells))**2)
+            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
+            L = np.exp(-.5 * (d_ij)**2 / blur_X**2 \
+                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2)
+    elif motion=='bar':
+        blur_theta = params['blur_theta']
+        if params['n_grid_dimensions'] == 2:
+            d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
+        else:
+            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
         # compute the motion energy input to all cells
-        """
-            Knowing the velocity one can estimate the analytical response to 
-             - motion energy detectors
-             - to a gaussian blob
-            as a function of the distance between 
-             - the center of the receptive fields,
-             - the current position of the blob.
-             
-            # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
-            
-            L range between 0 and 1
-        """
-        x, y = (x0 + u0*t) % params['torus_width'], (y0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
+        # then for all cells we have to check if they get stimulate by any x and y on the bar
+        L = np.exp(-.5 * (d_ij)**2 / blur_X**2
+                -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
+    else: # to be implemented: 'oriented dot' (bar)
+        print 'Unspecified motion in get_input:', motion
+    return L
 
-#    for cell in xrange(n_cells): # todo: vectorize
-#        L[cell] = np.exp( -.5 * (torus_distance2D(tuning_prop[cell, 0], x, tuning_prop[cell, 1], y)**2 / blur_X**2)
-#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
-#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
-#                          )
-
-        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2 / blur_X**2)
-                -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
-                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2
-                )
-                          
-#        L[cell] = np.exp( -.5 * (tuning_prop[cell, 0] - x)**2/blur_X**2
-#                          -.5 * (tuning_prop[cell, 1] - y)**2/blur_X**2
-#                          -.5 * (tuning_prop[cell, 2] - u0)**2/blur_V**2
-#                          -.5 * (tuning_prop[cell, 3] - v0)**2/blur_V**2
-#                          )
-    
+        # OLD
+        # define the parameters of the motion
+#        x0, y0, u0, v0 = motion_params
+#        blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
+#        x, y = (x0 + u0*t) % params['torus_width'], (y0 + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
+        # compute the motion energy input to all cells
+#        L = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x*np.ones(n_cells), tuning_prop[:, 1], y*np.ones(n_cells)))**2 / blur_X**2)
+#                -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
+#                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2
+#                )
 #    L = (1. - contrast) + contrast * L
-        
-    return L#, (x, y, x_, y_)
 
 
 
@@ -1175,7 +1184,6 @@ def convert_to_url(fn):
     p = os.path.realpath('.')
     s = 'file://%s/%s' % (p, fn)
     return s
-
 
 def get_figsize(fig_width_pt, portrait=True):
     """

@@ -684,4 +684,4 @@ if __name__ == '__main__':
     else:
         P = ConnectionPlotter(params)
         P.plot_connectivity_profile_1D(gid=gid)
-    pylab.show()
+#    pylab.show()

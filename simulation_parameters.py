@@ -27,7 +27,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 200 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 50 # np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
