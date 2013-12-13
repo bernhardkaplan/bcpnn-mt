@@ -191,18 +191,20 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
     n_cells = tuning_prop[:, 0].size
     blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
     # get the current stimulus parameters
-    x_stim, y_stim, u_stim, v_stim = motion_params[0], motion_params[1], motion_params[2], motion_params[3]
+    x0, y0, u0, v0 = motion_params[0], motion_params[1], motion_params[2], motion_params[3]
+    x_stim = (x0 + u0 * t) % params['torus_width'] 
+    y_stim = (y0 + v0 * t) % params['torus_height'] 
     if motion=='dot':
         if params['n_grid_dimensions'] == 2:
             d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
             L = np.exp(-.5 * (d_ij)**2 / blur_X**2
-                    -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
-                    -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2)
+                    -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
+                    -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2)
         else:
-#            d_ij = np.sqrt((tuning_prop[:, 0] - x_stim * np.ones(n_cells))**2)
+#            d_ij = np.sqrt((tuning_prop[:, 0] - x * np.ones(n_cells))**2)
             d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
             L = np.exp(-.5 * (d_ij)**2 / blur_X**2 \
-                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2)
+                       -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2)
     elif motion=='bar':
         blur_theta = params['blur_theta']
         if params['n_grid_dimensions'] == 2:
@@ -212,8 +214,8 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
         # compute the motion energy input to all cells
         # then for all cells we have to check if they get stimulate by any x and y on the bar
         L = np.exp(-.5 * (d_ij)**2 / blur_X**2
-                -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
-                -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 2] - u0)**2 / blur_V**2
+                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2
                 -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
     else: # to be implemented: 'oriented dot' (bar)
         print 'Unspecified motion in get_input:', motion
@@ -230,6 +232,24 @@ def get_input(tuning_prop, params, t, motion_params=None, contrast=.9, motion='d
 #                -.5 * (tuning_prop[:, 3] - v0)**2 / blur_V**2
 #                )
 #    L = (1. - contrast) + contrast * L
+
+
+def set_receptive_fields(self, params, tuning_prop):
+    """
+    Can be called only after set_tuning_prop.
+    Receptive field sizes increase linearly depending on their relative position.
+    """
+#    rfs[:, 0] = params['rf_size_x_gradient'] * np.abs(tuning_prop[:, 0] - .5) + params['rf_size_x_min']
+#    rfs[:, 1] = params['rf_size_y_gradient'] * np.abs(tuning_prop[:, 1] - .5) + params['rf_size_y_min']
+    rfs = np.zeros((tuning_prop[:, 0].size, 4))
+    rfs[:, 0] = params['blur_X']
+    rfs[:, 1] = params['blur_X']
+    rfs[:, 2] = params['rf_size_vx_gradient'] * np.abs(tuning_prop[:, 2])# + params['rf_size_vx_min']
+    rfs[:, 3] = params['rf_size_vy_gradient'] * np.abs(tuning_prop[:, 3])# + params['rf_size_vy_min']
+    rfs[rfs[:, 2] < params['rf_size_vx_min'], 2] = params['rf_size_vx_min']
+    rfs[rfs[:, 3] < params['rf_size_vy_min'], 3] = params['rf_size_vy_min']
+    return rfs
+
 
 
 

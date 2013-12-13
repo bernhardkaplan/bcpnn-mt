@@ -10,7 +10,7 @@ import plot_hexgrid
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
-def plot_scatter_with_histograms(x, y, fig, title='', xv='x'):
+def plot_scatter_with_histograms(x, y, fig, title='', xv='x', markersizes=None):
     # definitions for the axes
     left, width = 0.1, 0.65
     bottom, height = 0.1, 0.65
@@ -21,16 +21,21 @@ def plot_scatter_with_histograms(x, y, fig, title='', xv='x'):
     rect_histy = [left_h, bottom, 0.2, height]
     axScatter = fig.add_axes(rect_scatter)
     if xv == 'x':
-        axScatter.set_xlabel('x')
-        axScatter.set_ylabel('y')
+        axScatter.set_xlabel('$x$')
+        axScatter.set_ylabel('$y')
     else:
-        axScatter.set_xlabel('v_x')
-        axScatter.set_ylabel('v_y')
+        axScatter.set_xlabel('$v_x$')
+        axScatter.set_ylabel('$v_y$')
     axHistx = fig.add_axes(rect_histx)
     axHisty = fig.add_axes(rect_histy)
 
     # the scatter plot:
-    axScatter.scatter(x, y)
+    if markersizes == None:
+        axScatter.scatter(x, y)
+    else:
+        print 'debu markersize', markersizes
+        for i in xrange(x.size):
+            axScatter.plot(x[i], y[i], 'o', c='b', markersize=markersizes[i])
 
     # now determine nice limits by hand:
     binwidth = 0.025

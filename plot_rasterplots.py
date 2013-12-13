@@ -205,7 +205,7 @@ if __name__ == '__main__':
     #ax3.set_xlim((0, params['t_sim']))
     #ax4.set_xlim((0, params['t_sim']))
 
-    output_fn = params['figures_folder'] + 'rasterplot_sorted_by_tp.png'
+    output_fn = params['figures_folder'] + 'rasterplot_sorted_by_tp_vstim%.1f.png' % (params['motion_params'][2])
     print "Saving to", output_fn
     pylab.savefig(output_fn, dpi=200)
     #output_fn = params['figures_folder'] + 'rasterplot_sorted_by_tp.pdf'

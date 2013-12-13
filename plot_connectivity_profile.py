@@ -553,7 +553,9 @@ class ConnectionPlotter(object):
         ax2.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
 
 
-        output_fig = self.params['figures_folder'] + 'connectivity_profile_%d.png' % (gid)
+#        output_fig = self.params['figures_folder'] + 'connectivity_profile_%d.png' % (gid)
+        output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f.png' % (self.params['figures_folder'], gid, \
+                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['delay_range'][1], self.params['connectivity_radius'], self.params['w_tgt_in_per_cell_ee'])
         print 'Saving to:', output_fig
         fig.savefig(output_fig, dpi=300)
 
@@ -561,12 +563,13 @@ class ConnectionPlotter(object):
         # plot the connectivity as histogram
         from plot_tuning_properties import plot_scatter_with_histograms
         fig = pylab.figure()
-        axScatter, axHistx, axHisty = plot_scatter_with_histograms(tgt_tp[target_gids, 0], tgt_tp[target_gids, 2], fig)
+        axScatter, axHistx, axHisty = plot_scatter_with_histograms(tgt_tp[target_gids, 0], tgt_tp[target_gids, 2], fig, markersizes=markersizes_out)
         axScatter.set_xlabel('Receptive field center $x$', fontsize=18)
         axScatter.set_ylabel('Preferred speed $v_x$', fontsize=18)
         axScatter.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
 
-        output_fig = self.params['figures_folder'] + 'connectivity_profile_%d_with_histogram.png' % (gid)
+        output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f_with_histogram.png' % (self.params['figures_folder'], gid, \
+                self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['delay_range'][1], self.params['connectivity_radius'], self.params['w_tgt_in_per_cell_ee'])
         print 'Saving to:', output_fig
         fig.savefig(output_fig, dpi=300)
 

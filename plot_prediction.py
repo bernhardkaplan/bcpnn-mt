@@ -34,8 +34,8 @@ def plot_prediction_2D(params=None, data_fn=None, inh_spikes = None):
 
     # fig 1
     # neuronal level
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_delayScale%d_connRadius%.2f_wee%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['delay_scale'], params['connectivity_radius'], params['w_tgt_in_per_cell_ee'])
+    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
+            params['w_sigma_x'], params['w_sigma_v'], params['delay_range'][1], params['connectivity_radius'], params['w_tgt_in_per_cell_ee'])
 
 
     plotter.create_fig()  # create an empty figure
@@ -182,8 +182,8 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
     plotter.compute_theta_estimates()
 
     # fig 1:  neuronal level
-    output_fn_base = '%s%s_wsigmaX_%.2f_wsigmaV%.2f_delayScale%d_connRadius%.2f_wee%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
-            params['w_sigma_x'], params['w_sigma_v'], params['delay_scale'], params['connectivity_radius'], params['w_tgt_in_per_cell_ee'])
+    output_fn_base = '%s%s_vx%.2f_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
+            params['motion_params'][2], params['w_sigma_x'], params['w_sigma_v'], params['delay_range'][1], params['connectivity_radius'], params['w_tgt_in_per_cell_ee'])
     plotter.create_fig()  # create an empty figure
     pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
     plotter.n_fig_x = 2
