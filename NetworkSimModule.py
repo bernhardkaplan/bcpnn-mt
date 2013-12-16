@@ -408,7 +408,7 @@ class NetworkModel(object):
             latency = np.zeros(self.params['n_exc'], dtype='float32')
             for src in xrange(self.params['n_exc']):
                 if (src != tgt):
-                    p[src], latency[src] = CC.get_p_conn(self.tuning_prop_exc[src, :], self.tuning_prop_exc[tgt, :], sigma_x, sigma_v, params['connectivity_radius']) #                            print 'debug pc_id src tgt ', self.pc_id, src, tgt#, int(ID) < self.params['n_exc']
+                    p[src], latency[src] = CC.get_p_conn(self.tuning_prop_exc[src, :], self.tuning_prop_exc[tgt, :], sigma_x, sigma_v, params['connectivity_radius']) 
             sources = random.sample(xrange(self.params['n_exc']), int(self.params['n_src_cells_per_neuron']))
             idx = p[sources] > 0
             non_zero_idx = np.nonzero(idx)[0]
@@ -584,28 +584,41 @@ class NetworkModel(object):
 
 
 
+    def place_electrode(self):
+        # TODO: create a list or dictionary of population views, depending on the number of locations to record from
+        # from each location n_cells_to_record_per_location will be recorded
+        self.selected_pop_views = []
+        for i_ in xrange(len(self.params['locations_to_record'])):
+            mp_to_record = [self.params['motion_params'][0] + self.params['locations_to_record'][i_], \
+                    self.params['motion_params'][1], self.params['motion_params'][2], self.params['motion_params'][3]]
+            gids_ = utils.select_well_tuned_cells_1D(self.tuning_prop_exc, mp_to_record, self.params, self.params['n_cells_to_record_per_location'])
+            self.selected_pop_views.append(PopulationView(self.exc_pop, gids_, label='anticipation_%d' % i_))
+            self.selected_pop_views[i_].record_v()
+#            self.selected_pop_views[i_].record_gsyn()
+
+            pop_info_fn = self.params['parameters_folder'] + 'pop_%d.info' % i_
+            f = file(pop_info_fn, 'w')
+            d = {'gids' : gids_.tolist(), 'mp' : mp_to_record}
+            json.dump(d, f, sort_keys=True, indent=4)
+
+        self.anticipatory_record = True
+
 
     def run_sim(self, sim_cnt, record_v=True):
-        # # # # # # # # # # # # # # # # # # # #
-        #     P R I N T    W E I G H T S      #
-        # # # # # # # # # # # # # # # # # # # #
-        # normally you don't want to do that ...
-    #    print 'Printing weights to :\n  %s\n  %s\n  %s' % (self.params['conn_list_ei_fn'], self.params['conn_list_ie_fn'], self.params['conn_list_ii_fn'])
-    #    exc_inh_prj.saveConnections(self.params['conn_list_ei_fn'])
-    #    inh_exc_prj.saveConnections(self.params['conn_list_ie_fn'])
-    #    inh_inh_prj.saveConnections(self.params['conn_list_ii_fn'])
-    #    self.times['t_save_conns'] = self.timer.diff()
 
         # # # # # # # # # # # #
         #     R E C O R D     #
         # # # # # # # # # # # #
         record_exc = True
-        if os.path.exists(self.params['gids_to_record_fn']):
-            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
-            record_exc = True
-            n_rnd_cells_to_record = 2
+#        if os.path.exists(self.params['gids_to_record_fn']):
+#            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
+#            record_exc = True
+#            n_rnd_cells_to_record = 2
+#        else:
+        if self.params['anticipatory_mode']:
+            self.place_electrode()
         else:
-            n_cells_to_record = 5# self.params['n_exc'] * 0.02
+            n_cells_to_record = self.params['n_gids_to_record']
             gids_to_record = np.random.randint(0, self.params['n_exc'], n_cells_to_record)
 
         if record_v:
@@ -639,6 +652,15 @@ class NetworkModel(object):
             if self.pc_id == 0:
                 print "Printing inhibitory membrane potentials"
             self.inh_pop_view.print_v("%s.v" % (self.params['inh_volt_fn_base']), compatible_output=False)
+
+        if self.anticipatory_record == True:
+            for i_ in xrange(len(self.params['locations_to_record'])):
+                output_fn = self.params['exc_volt_fn_base'] + '_pop%d.v' % (i_)
+                print 'Printing to:', output_fn
+                self.selected_pop_views[i_].print_v(output_fn, compatible_output=False)
+#                output_fn = self.params['exc_gsyn_fn_base'] + '_pop%d.gsyn' % (i_)
+#                print 'Printing to:', output_fn
+#                self.selected_pop_views[i_].print_gsyn(output_fn, compatible_output=False)
 
         if self.pc_id == 0:
             print "Printing excitatory spikes"
@@ -754,7 +776,7 @@ if __name__ == '__main__':
         record = False
         save_input_files = False
     else: # choose yourself
-        load_files = False
+        load_files = True
         record = False
         save_input_files = not load_files
 

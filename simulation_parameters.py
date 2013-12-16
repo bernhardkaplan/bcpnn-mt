@@ -27,7 +27,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 200 # np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 300# np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -125,8 +125,8 @@ class parameter_storage(object):
         self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
         self.params['delay_range'] = (0.1, 100.)
-        self.params['w_sigma_x'] = 0.4 # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 1.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 1.0 # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 100.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
@@ -173,7 +173,7 @@ class parameter_storage(object):
         self.params['np_random_seed'] = 0
         self.params['t_sim'] = 1600.            # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_blank'] = 200.           # [ms] time for 'blanked' input
+        self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
         self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
@@ -197,10 +197,17 @@ class parameter_storage(object):
         """
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
-        self.params['motion_params'] = (0.1, 0.5 , 1.5, 0) # stimulus start parameters (x, y, v_x, v_y)
+        self.params['motion_params'] = (0.1, 0.5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['blur_X'], self.params['blur_V'] = .10, .10
+
+        self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
+        self.params['n_cells_to_record_per_location'] = 10
+#        self.params['locations_to_record'] = (.15, .20, .25, .30, .35, .45) # these values + motion_params[0] will determine the cells to record from
+        self.params['locations_to_record'] = [  .05 + self.params['motion_params'][0], \
+                                                .15 + self.params['motion_params'][0], \
+                                                .25 + self.params['motion_params'][0]]
 
         # the blur parameter represents the input selectivity:
         # high blur means many cells respond to the stimulus
@@ -282,7 +289,8 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'MpN_delayMax%d_CR%.3f_pee%.2e_wee%.2e/' % (self.params['delay_range'][1], self.params['connectivity_radius'], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'])
+               folder_name = 'MpN_nRF%d_delayMax%d_CR%.3f_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e/' % (self.params['N_RF'], self.params['delay_range'][1], self.params['connectivity_radius'], \
+                       self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], self.params['w_sigma_x'], self.params['w_sigma_v'])
 
 #            folder_name += connectivity_code
 #            folder_name += '/'
@@ -345,6 +353,7 @@ class parameter_storage(object):
         self.params['inh_nspikes_fn_merged'] = '%sinh_nspikes' % self.params['spiketimes_folder']
         self.params['inh_nspikes_nonzero_fn'] = '%sinh_nspikes_nonzero.dat' % self.params['spiketimes_folder']
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
+        self.params['exc_gsyn_fn_base'] = '%sexc_gsyn' % self.params['volt_folder']
         self.params['inh_volt_fn_base'] = '%sinh_volt' % self.params['volt_folder']
         self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
         self.params['rasterplot_inh_fig'] = '%srasterplot_inh.png' % (self.params['figures_folder'])

@@ -9,6 +9,25 @@ from scipy.spatial import distance
 import copy
 
 
+def filter_spike_train(spikes, dt=1., tau=30., t_max=None):
+    """
+    spikes: list or array of spikes
+    """
+    if t_max == None:
+        t_max = spikes[-1] + tau
+    t_vec = np.arange(0, t_max, dt)
+    y = np.zeros(t_vec.size)
+
+    spike_idx = []
+    for spike in spikes:
+        spike_idx.append((t_vec < spike).nonzero()[0][-1])
+
+    for i_, spike in enumerate(spikes):
+        y[spike_idx[i_]:] += np.exp(-(t_vec[spike_idx[i_]:] - spike) / tau)
+
+    return t_vec, y
+
+
 def convert_connlist_to_matrix(fn, n_src, n_tgt):
     """
     Convert the connlist which is in format (src, tgt, weight, delay) to a weight matrix.
@@ -251,6 +270,24 @@ def set_receptive_fields(self, params, tuning_prop):
     return rfs
 
 
+def select_well_tuned_cells_2D_with_orientation(tp, mp, params, n_cells):
+    """
+    mp -- [x, y, vx, vy, orientation]
+    """
+    w_pos = 10.
+    x_diff = (tp[:, 0] - mp[0])**2 * w_pos + (tp[:, 1] - mp[1])**2 * w_pos + (tp[:, 2] - mp[2])**2 + (tp[:, 3] - mp[3])**2 + (tp[:, 4] - mp[4])**2
+    idx_sorted = np.argsort(x_diff)
+    return idx_sorted[:n_cells]
+
+
+def select_well_tuned_cells_1D(tp, mp, params, n_cells):
+    """
+    mp -- [x, y, vx, vy, orientation]
+    """
+    w_pos = 5.
+    x_diff = torus_distance_array(tp[:, 0], mp[0]) * w_pos + np.abs(tp[:, 2] - mp[2])
+    idx_sorted = np.argsort(x_diff)
+    return idx_sorted[:n_cells]
 
 
 def distribute_list(l, n_proc, pid):
@@ -695,6 +732,20 @@ def threshold_weights(connection_matrix, w_thresh):
                 connection_matrix[i, j] = 0.0
     return connection_matrix
 
+
+def get_spiketimes(all_spikes, gid, gid_idx=0, time_idx=1):
+    """
+    Returns the spikes fired by the cell with gid the
+    all_spikes: 2-dim array containing all spiketimes (raw data, if NEST: gids are 1-aligned)
+    gid_idx: is the column index in the all_spikes array containing GID information
+    time_idx: is the column index in the all_spikes array containing time information
+    """
+    if all_spikes.size == 0:
+        return np.array([])
+    else:
+        idx_ = (all_spikes[:, gid_idx] == gid).nonzero()[0]
+        spiketimes = all_spikes[idx_, time_idx]
+        return spiketimes
 
 def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
     """
