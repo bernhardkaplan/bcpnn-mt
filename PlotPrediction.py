@@ -94,15 +94,16 @@ class PlotPrediction(object):
         fig_height = fig_width*golden_mean      # height in inches
         fig_size =  [fig_width,fig_height]
         params = {#'backend': 'png',
-                  'titel.fontsize': 16,
-                  'axes.labelsize': 14,
+                  'titel.fontsize': 24,
+                  'axes.labelsize': 24,
+                  'legend.fontsize': 14,
 #                  'text.fontsize': 10,
-#                  'legend.fontsize': 10,
 #                  'xtick.labelsize': 8,
 #                  'ytick.labelsize': 8,
 #                  'text.usetex': True,
                   'figure.figsize': fig_size}
-        pylab.rcParams.update(params)
+#        pylab.rcParams.update(params)
+        
 
 
     def normalize_spiketimes(self, fn=None):
@@ -277,6 +278,9 @@ class PlotPrediction(object):
 
         # torus dimensions
         w, h = self.params['torus_width'], self.params['torus_height']
+
+        # introduce neural delay
+        n_delay_bins = self.params['neural_perception_delay'] / self.time_binsize
         for i in xrange(self.n_bins):
 
             # 1) momentary vote
@@ -291,7 +295,8 @@ class PlotPrediction(object):
             self.vdiff_avg[i] = np.sqrt((mp[2] - self.vx_avg[i])**2 + (mp[3] - self.vy_avg[i])**2)
 
             # position
-            t = i * self.time_binsize + .5 * self.time_binsize
+#            t = i * self.time_binsize + .5 * self.time_binsize
+            t = (i + n_delay_bins) * self.time_binsize + .5 * self.time_binsize
             stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
             stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
             self.x_stim[i] = stim_pos_x
@@ -302,7 +307,10 @@ class PlotPrediction(object):
             self.y_avg[i] = self.get_average_of_circular_quantity(self.y_confidence_binned[:, i], self.y_tuning, xv='x')
 #            self.x_avg[i] = np.sum(x_pred)
 #            self.y_avg[i] = np.sum(y_pred)
-            self.xdiff_avg[i] = np.sqrt((stim_pos_x - self.x_avg[i])**2 + (stim_pos_y - self.y_avg[i])**2)
+            if self.params['n_grid_dimensions'] == 2:
+                self.xdiff_avg[i] = np.sqrt((stim_pos_x - self.x_avg[i])**2 + (stim_pos_y - self.y_avg[i])**2)
+            else:
+                self.xdiff_avg[i] = np.abs(stim_pos_x - self.x_avg[i])
 
             # 2) moving average
             past_bin = max(0, i-trace_length_in_bins)
@@ -449,6 +457,15 @@ class PlotPrediction(object):
 
     def create_fig(self):
         print "plotting ...."
+        rcParams = { 'axes.labelsize' : 20,
+                    'axes.titlesize'  : 20,
+                    'label.fontsize': 20,
+                    'xtick.labelsize' : 18, 
+                    'ytick.labelsize' : 18, 
+                    'legend.fontsize': 16, 
+                    'lines.markeredgewidth' : 0}
+        pylab.rcParams.update(rcParams)
+
         self.fig = pylab.figure(figsize=self.fig_size)
         pylab.subplots_adjust(hspace=0.4)
         pylab.subplots_adjust(wspace=0.35)
@@ -629,7 +646,7 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('Position prediction error: \n $|\\vec{x}_{diff}(t)| = |\\vec{x}_{stim}(t) - \\vec{x}_{predicted}(t)|$')#, fontsize=self.plot_params['title_fs'])
-        ax.plot(self.t_axis, self.xdiff_avg, ls='-', lw=2, label='linear')
+        ax.plot(self.t_axis, self.xdiff_avg, ls='-', lw=2, label='linear readout')
 #        ax.plot(self.t_axis, self.xdiff_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.xdiff_moving_avg[:, 0], yerr=self.xdiff_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.xdiff_non_linear, ls=':', lw=2, label='soft-max')
@@ -661,7 +678,7 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('Velocity prediction error: \n $|\\vec{v}_{diff}(t)| = |\\vec{v}_{stim}-\\vec{v}_{predicted}(t)|$')#, fontsize=self.plot_params['title_fs'])
-        ax.plot(self.t_axis, self.vdiff_avg, ls='-', lw=2, label='linear')
+        ax.plot(self.t_axis, self.vdiff_avg, ls='-', lw=2, label='linear readout')
 #        ax.plot(self.t_axis, self.vdiff_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.vdiff_moving_avg[:, 0], yerr=self.vdiff_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.vdiff_non_linear, ls=':', lw=2, label='soft-max')
@@ -764,7 +781,7 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('$x$-predictions')#: avg, moving_avg, nonlinear')
-        ax.plot(self.t_axis, self.x_avg, ls='-', lw=2, label='linear')
+        ax.plot(self.t_axis, self.x_avg, ls='-', lw=2, label='linear readout')
 #        ax.plot(self.t_axis, self.x_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.x_moving_avg[:, 0], yerr=self.x_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.x_non_linear, ls=':', lw=2, label='soft-max')
@@ -788,7 +805,7 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('$y$-predictions')#: avg, moving_avg, nonlinear')
-        ax.plot(self.t_axis, self.y_avg, ls='-', lw=2, label='linear')
+        ax.plot(self.t_axis, self.y_avg, ls='-', lw=2, label='linear readout')
 #        ax.plot(self.t_axis, self.y_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.y_moving_avg[:, 0], yerr=self.y_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.y_non_linear, ls=':', lw=2, label='soft-max')
@@ -814,7 +831,7 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('$v_{x}$-predictions')#: avg, moving_avg, nonlinear')
-        ax.plot(self.t_axis, self.vx_avg, ls='-', lw=2, label='linear')
+        ax.plot(self.t_axis, self.vx_avg, ls='-', lw=2, label='linear readout')
 #        ax.plot(self.t_axis, self.vx_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.vx_moving_avg[:, 0], yerr=self.vx_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.vx_non_linear, ls=':', lw=2, label='soft-max')
@@ -841,7 +858,7 @@ class PlotPrediction(object):
         if show_blank == None:
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.plot(self.t_axis, self.vy_avg, ls='-', lw=2, label='linear')
+        ax.plot(self.t_axis, self.vy_avg, ls='-', lw=2, label='linear readout')
 #        ax.plot(self.t_axis, self.vy_moving_avg[:, 0], lw=2, ls='--', label='moving avg')
 #        ax.errorbar(self.t_axis, self.vy_moving_avg[:, 0], yerr=self.vy_moving_avg[:, 1], lw=2, ls='--', label='moving avg')
 #        ax.plot(self.t_axis, self.vy_non_linear, ls=':', lw=2, label='soft-max')

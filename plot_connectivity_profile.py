@@ -554,7 +554,7 @@ class ConnectionPlotter(object):
 
 
 #        output_fig = self.params['figures_folder'] + 'connectivity_profile_%d.png' % (gid)
-        output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f.png' % (self.params['figures_folder'], gid, \
+        output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2e_wsigmaV%.2e_delayMax%d_connRadius%.2f_wee%.2e.png' % (self.params['figures_folder'], gid, \
                 self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['delay_range'][1], self.params['connectivity_radius'], self.params['w_tgt_in_per_cell_ee'])
         print 'Saving to:', output_fig
         fig.savefig(output_fig, dpi=300)
@@ -568,7 +568,7 @@ class ConnectionPlotter(object):
         axScatter.set_ylabel('Preferred speed $v_x$', fontsize=18)
         axScatter.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
 
-        output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f_with_histogram.png' % (self.params['figures_folder'], gid, \
+        output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2e_wsigmaV%.2e_delayMax%d_connRadius%.2f_wee%.2e_with_histogram.png' % (self.params['figures_folder'], gid, \
                 self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['delay_range'][1], self.params['connectivity_radius'], self.params['w_tgt_in_per_cell_ee'])
         print 'Saving to:', output_fig
         fig.savefig(output_fig, dpi=300)
@@ -641,7 +641,7 @@ def plot_connectivity_profile_2D(params):
 #    P.plot_cells_as_dots(range(params['n_exc']), P.tp_inh)
 #    P.make_legend()
 
-    output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2f_wsv%.2f_%s_varying_xylim.png' % (gid, params['w_sigma_x'], params['w_sigma_v'], str(params['conn_conf']))
+    output_fig = params['figures_folder'] + 'connectivity_profile_%d_wsx%.2e_wsv%.2e_%s_varying_xylim.png' % (gid, params['w_sigma_x'], params['w_sigma_v'], str(params['conn_conf']))
     print 'Saving figure to', output_fig
     pylab.savefig(output_fig)
 

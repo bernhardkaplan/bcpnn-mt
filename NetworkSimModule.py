@@ -69,6 +69,7 @@ class NetworkModel(object):
             print "MPI not used"
 
         np.random.seed(params['np_random_seed'] + self.pc_id)
+        self.anticipatory_record = False
 
     def import_pynn(self):
         """
@@ -217,6 +218,7 @@ class NetworkModel(object):
             before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt)
             blank_idx = np.concatenate((blank_idx, before_stim_idx))
 
+
             my_units = self.local_idx_exc
             n_cells = len(my_units)
             L_input = np.zeros((n_cells, time.shape[0]))
@@ -224,7 +226,8 @@ class NetworkModel(object):
             # get the input signal
             print 'Calculating input signal'
             for i_time, time_ in enumerate(time):
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
+#                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
+                L_input[:, i_time] = utils.get_input_delay(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
                     print "t:", time_
@@ -362,10 +365,9 @@ class NetworkModel(object):
 #            eta = 1e-9
             p_to_w = np.zeros(n_src)
             p_to_w[sources] = 1.
-            eta = 0
-#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
-
-            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p[sources]
+            eta = 0.
+            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p[sources]
 
 #            print 'debug p', i_, tgt, p[sources]
 #            print 'debug sources', i_, tgt, sources
@@ -615,17 +617,17 @@ class NetworkModel(object):
 #            record_exc = True
 #            n_rnd_cells_to_record = 2
 #        else:
-        if self.params['anticipatory_mode']:
-            self.place_electrode()
-        else:
-            n_cells_to_record = self.params['n_gids_to_record']
-            gids_to_record = np.random.randint(0, self.params['n_exc'], n_cells_to_record)
 
         if record_v:
             self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
             self.exc_pop_view.record_v()
             self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
-            self.inh_pop_view.record_v()
+            if self.params['anticipatory_mode']:
+                self.place_electrode()
+            else:
+                n_cells_to_record = self.params['n_gids_to_record']
+                gids_to_record = np.random.randint(0, self.params['n_exc'], n_cells_to_record)
+                self.inh_pop_view.record_v()
 
         self.inh_pop.record()
         self.exc_pop.record()
@@ -773,11 +775,11 @@ if __name__ == '__main__':
     max_neurons_to_record = 15800
     if params['n_cells'] > max_neurons_to_record:
         load_files = False
-        record = False
+        record_v = False
         save_input_files = False
     else: # choose yourself
         load_files = True
-        record = False
+        record_v = False
         save_input_files = not load_files
 
     NM = NetworkModel(ps.params, comm)
@@ -790,8 +792,8 @@ if __name__ == '__main__':
         NM.spike_times_container = spike_times_container
 
     NM.connect()
-    NM.run_sim(sim_cnt, record_v=record)
-    NM.print_results(print_v=record)
+    NM.run_sim(sim_cnt, record_v=record_v)
+    NM.print_results(print_v=record_v)
 
     """
     The following scripts should only be called, if you are not running on a cluster...
@@ -824,4 +826,5 @@ if __name__ == '__main__':
         os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
         os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
         os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+        os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
         os.system('ristretto %s' % (ps.params['figures_folder']))

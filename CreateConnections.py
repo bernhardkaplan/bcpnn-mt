@@ -18,14 +18,17 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
     if params['n_grid_dimensions'] == 2:
         return get_p_conn_motion_based_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
     else:
-        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'], tau_perception=params['neural_perception_delay'] / params['t_stimulus'])
+#        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
 
 
-def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
+def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_perception=0.):
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
-    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2)
-    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
+    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2) 
+    x_pred = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
+    # normal
+#    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
     d_pred_tgt = utils.torus_distance_array(x_pred, tp_tgt[0] * np.ones(n_src))
     v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
     p = np.exp(- (d_pred_tgt / (2 * w_sigma_x**2))) \
