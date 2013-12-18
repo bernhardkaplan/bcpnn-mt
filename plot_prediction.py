@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import pylab
 import PlotPrediction as P
 import sys
@@ -188,10 +188,10 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
     pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
     plotter.n_fig_x = 1
     plotter.n_fig_y = 1
-    plotter.plot_rasterplot('exc', 1)
-    output_fn = output_fn_base + '_rp_exc.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
+#    plotter.plot_rasterplot('exc', 1)
+#    output_fn = output_fn_base + '_rp_exc.png'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=300)
 
     plotter.create_fig()  # create an empty figure
     plotter.plot_rasterplot('inh', 1)
@@ -199,6 +199,7 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
+    pylab.subplots_adjust(left=0.13, bottom=0.22, right=0.90, top=0.95, wspace=0.3, hspace=.3)
     plotter.create_fig()  # create an empty figure
     plotter.plot_x_grid_vs_time(1)
     output_fn = output_fn_base + '_grid_x.png'
@@ -270,3 +271,4 @@ if __name__ == '__main__':
         else:
             plot_prediction_1D()
 
+    pylab.show()

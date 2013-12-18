@@ -41,7 +41,6 @@ class PlotPrediction(object):
 
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
         self.n_cells = self.tuning_prop[:, 0].size #self.params['n_exc']
-#        assert (self.tuning_prop[:, 0].size == self.params['n_exc']), 'Number of cells does not match in %s and simulation_parameters!\n Wrong tuning_prop file?' % self.params['tuning_prop_means_fn']
 
         # create data structures
         self.nspikes = np.zeros(self.n_cells)                                   # summed activity
@@ -168,11 +167,11 @@ class PlotPrediction(object):
         for gid in xrange(self.n_cells):
             xyuv_predicted = self.tuning_prop[gid, index] # cell tuning properties
             if (index == 0):
-                xyuv_predicted += self.tuning_prop[gid, 2]
+#                xyuv_predicted += self.tuning_prop[gid, 2]
                 xyuv_predicted = xyuv_predicted % w
 
             elif (index == 1):
-                xyuv_predicted += self.tuning_prop[gid, 3]
+#                xyuv_predicted += self.tuning_prop[gid, 3]
                 xyuv_predicted = xyuv_predicted % h
             y_pos_grid = utils.get_grid_pos_1d(xyuv_predicted, grid_edges)
             output_data[y_pos_grid, :] += self.nspikes_binned_normalized[gid, :]
@@ -577,7 +576,7 @@ class PlotPrediction(object):
             ylabel = '$x_{predicted}$'
         title = ''#$x_{predicted}$ binned vs time'
         x_grid, x_edges = self.bin_estimates(self.x_grid, index=0)
-        self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt)
+        self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt, plot_stim=True)
         self.data_to_store['xpos_grid.dat'] = {'data' : x_grid, 'edges': x_edges}
 
 
@@ -592,7 +591,7 @@ class PlotPrediction(object):
         self.data_to_store['ypos_grid.dat'] = {'data' : y_grid, 'edges': y_edges}
 
 
-    def plot_grid_vs_time(self, data, title='', xlabel='', ylabel='', yticks=[], fig_cnt=1, show_blank=None):
+    def plot_grid_vs_time(self, data, title='', xlabel='', ylabel='', yticks=[], fig_cnt=1, show_blank=None, plot_stim=False):
         """
         Plots a colormap / grid versus time
         """
@@ -600,7 +599,6 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title(title)
-        cax = ax.pcolormesh(data)
 
         ax.set_ylim((0, data[:, 0].size))
         ax.set_xlim((0, data[0, :].size))
@@ -615,24 +613,21 @@ class PlotPrediction(object):
         x_bin_labels = ['%d' % i for i in self.t_ticks]
         ax.set_xticks(np.linspace(0, self.n_bins, n_x_bins))#range(self.n_bins)[::4])
         ax.set_xticklabels(x_bin_labels)
-#        print  '\nDEBUG\n\t ticks', self.t_ticks
-#        ax.set_xticks(self.t_ticks)
-#        ax.set_xticklabels(['%d' %i for i in self.t_ticks])
-#        color_boundaries = (0., .5)
 
-#        max_conf = min(data.mean() + data.std(), data.max())
-        max_conf = data.max()
-        norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)
-        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)#jet)
+#        max_conf = min(data.mean() + .5 * data.std(), data.max())
+        max_conf = .25 * data.max()
+        print 'max_conf:', max_conf, ' data mean, std', data.mean(), data.std(), 'data max', data.max()
+        norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)#, clip=True)
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
         m.set_array(np.arange(0., max_conf, 0.01))
         cb = pylab.colorbar(m, orientation='horizontal', aspect=40, anchor=(.5, .0))
+        cax = ax.pcolormesh(data, vmin=0., vmax=max_conf)
+
         ticklabels = cb.ax.get_xticklabels()
-#        print 'ticklabels', ticklabels, type(ticklabels)
-#        ticklabels = list(ticklabels)
         ticklabel_texts = []
         for text in ticklabels:
             ticklabel_texts.append('%s' % text.get_text())
-        ticklabel_texts[-1] = '> %.1f' % max_conf
+        ticklabel_texts[-1] = '> %.2f' % max_conf
         for i_, text in enumerate(ticklabels):
             text.set_text(ticklabel_texts[i_])
         cb.ax.set_xticklabels(ticklabel_texts)
@@ -640,6 +635,12 @@ class PlotPrediction(object):
         if show_blank:
             self.plot_blank_on_cmap(cax, txt='blank')
 
+        if plot_stim:
+            ax = cax.axes
+            y_pos_of_stim = np.zeros(self.n_bins)
+            for t_bin in xrange(self.n_bins):
+                y_pos_of_stim[t_bin] = utils.get_grid_pos_1d(self.x_stim[t_bin], yticks)
+            ax.plot((0, self.n_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='w', lw=3, label='$x_{stim}$')
 
     def plot_xdiff(self, fig_cnt=1, show_blank=None):
         if show_blank == None:
@@ -647,15 +648,11 @@ class PlotPrediction(object):
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('Position prediction error: \n $|\\vec{x}_{diff}(t)| = |\\vec{x}_{stim}(t) - \\vec{x}_{predicted}(t)|$')#, fontsize=self.plot_params['title_fs'])
         ax.plot(self.t_axis, self.xdiff_avg, ls='-', lw=2, label='linear readout')
-#        ax.plot(self.t_axis, self.xdiff_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
-#        ax.errorbar(self.t_axis, self.xdiff_moving_avg[:, 0], yerr=self.xdiff_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
-#        ax.plot(self.t_axis, self.xdiff_non_linear, ls=':', lw=2, label='soft-max')
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('$|\\vec{x}_{diff}|$')
         ax.legend()#loc='upper right')
         ny = self.t_axis.size
         n_ticks = min(11, int(round(self.params['t_sim'] / 100.)))
-#        t_ticks = [self.t_axis[int(i * ny/n_ticks)] for i in xrange(n_ticks)]
         t_labels= ['%d' % i for i in self.t_ticks]
         ax.set_xticks(self.t_ticks)
         ax.set_xticklabels(t_labels)

@@ -126,12 +126,12 @@ class parameter_storage(object):
         self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
         self.params['delay_range'] = (0.1, 100.)
         self.params['w_sigma_x'] = 1.0 # width of connectivity profile for pre-computed weights
-#        self.params['w_sigma_v'] = 0.2 # small w_sigma: tuning_properties get stronger weight when deciding on connection
-        self.params['w_sigma_v'] = 10.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_v'] = 1.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+#        self.params['w_sigma_v'] = 10.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
         self.params['w_sigma_isotropic'] = 0.25 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
         self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
@@ -143,7 +143,7 @@ class parameter_storage(object):
         self.params['conn_types'] = ['ee', 'ei', 'ie', 'ii']
 
 #        self.params['p_to_w'] =
-        self.params['p_ee'] = 0.02 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.01 # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 8e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
@@ -183,7 +183,7 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['neural_perception_delay'] = 50. # [ms] delay accumulated along the neural pathways during the motion perception and prediction process
+        self.params['neural_perception_delay'] = 100. # [ms] delay accumulated along the neural pathways during the motion perception and prediction process
 
         # ######
         # INPUT
@@ -293,7 +293,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'MpN_%s_nRF%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e/' % (\
+               folder_name = 'MpN_unequalWeights_%s_nRF%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e/' % (\
                        self.params['connectivity_code'], self.params['N_RF'], self.params['neural_perception_delay'], \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
                        self.params['w_sigma_x'], self.params['w_sigma_v'])

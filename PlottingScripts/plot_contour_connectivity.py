@@ -211,4 +211,4 @@ if __name__ == '__main__':
             gid = None
 
     plot_contour_connectivity(params, gid)
-    pylab.show()
+#    pylab.show()

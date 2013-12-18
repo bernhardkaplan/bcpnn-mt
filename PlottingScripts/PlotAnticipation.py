@@ -125,7 +125,8 @@ class PlotAnticipation(object):
                     confidence_trace[t_, i_] = self.normalized_traces[t_, gids[i_]].sum()
                 ax.plot(all_traces[:, -1], confidence_trace[:, i_], c=self.colorlist[i_], lw=3)
         else:
-            ax.plot(all_traces[:, -1], mean_trace[:, i_], c=self.colorlist[i_], lw=3)
+            for i_ in xrange(n_pop):
+                ax.plot(all_traces[:, -1], mean_trace[:, i_], c=self.colorlist[i_], lw=3)
 
         confidence_trace[:, -1] = all_traces[:, -1]
         data_fn = self.params['data_folder'] + 'not_aligned_mean_trace.dat'
@@ -329,7 +330,7 @@ if __name__ == '__main__':
                              .45 + params['motion_params'][0]]
 
 
-    w_pos = 1.
+    w_pos = .5
     n_pop = len(locations_to_record)
     n_cells_per_pop = 10
     vx_record = .4 # params['motion_params'][2]
@@ -347,7 +348,7 @@ if __name__ == '__main__':
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
-    normalize = True # if True: plot the 'confidence' based on the normalized filtered spike rate
+    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
     P.filter_and_normalize_spikes()
     P.n_fig_x = 1
     P.n_fig_y = 2

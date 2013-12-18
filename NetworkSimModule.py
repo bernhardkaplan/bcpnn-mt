@@ -364,12 +364,12 @@ class NetworkModel(object):
 
 #            print 'debug sources', sources.size
             assert (sources.size > 0)
-#            eta = 1e-9
+            eta = 1e-12
             p_to_w = np.zeros(n_src)
             p_to_w[sources] = 1.
-            eta = 0.
-#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
-            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p_to_w[sources]
+#            eta = 0.
+            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p_to_w[sources]
 
 #            print 'debug p', i_, tgt, p[sources]
 #            print 'debug sources', i_, tgt, sources
@@ -829,4 +829,5 @@ if __name__ == '__main__':
         os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
         os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
+        os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
         os.system('ristretto %s' % (ps.params['figures_folder']))

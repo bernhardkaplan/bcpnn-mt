@@ -57,8 +57,8 @@ def plot_diff_data(params1, params2, normalize=False):
         data_fn1 = params1['data_folder'] + 'aligned_confidence_trace.dat'
         data_fn2 = params2['data_folder'] + 'aligned_confidence_trace.dat'
     else:
-        data_fn1 = params1['data_folder'] + 'aligned_aligned_mean_trace.dat'
-        data_fn2 = params2['data_folder'] + 'aligned_aligned_mean_trace.dat'
+        data_fn1 = params1['data_folder'] + 'aligned_mean_trace.dat'
+        data_fn2 = params2['data_folder'] + 'aligned_mean_trace.dat'
     print 'Loading data from:', data_fn1
     aligned_mean_trace1 = np.loadtxt(data_fn1)
     print 'Loading data from:', data_fn2
@@ -104,6 +104,7 @@ if __name__ == '__main__':
     print 'Loading param_posteters from', param_post_fn
     params_post = json.load(f)
 
+    normalize = False
     replot_anticipation = True
     if replot_anticipation:
         cmd = 'python PlottingScripts/PlotAnticipation.py %s' % (param_pre_fn)
@@ -114,5 +115,5 @@ if __name__ == '__main__':
         cmd = 'python PlottingScripts/PlotAnticipation.py %s' % (param_post_fn)
         os.system(cmd)
 
-    plot_diff_data(params_pre, params_post, normalize=True)
+    plot_diff_data(params_pre, params_post, normalize=normalize)
     pylab.show()
