@@ -34,7 +34,7 @@ class PlotAnticipation(object):
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
         self.tp = np.loadtxt(self.params['tuning_prop_means_fn'])
-        self.tau_filter = 50.
+        self.tau_filter = 100.
         self.dt_filter = 1.
         self.normalized_traces = None
 
@@ -249,7 +249,7 @@ class PlotAnticipation(object):
         gids -- list of cell populations (list of lists)
         """
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.set_title('Tuning properties of selected position\n or: Electrode position in tuning space')
+        ax.set_title('Tuning properties of selected cells\n or: Electrode position in tuning space')
         ax.set_xlabel('Receptive field position $x$')
         ax.set_ylabel('Preferred speed $v_x$')
         if gids == None:
@@ -319,17 +319,23 @@ if __name__ == '__main__':
 #                             .25 + params['motion_params'][0], \
 #                             .35 + params['motion_params'][0]]
 
-    locations_to_record = [  .10 + params['motion_params'][0], \
-                             .20 + params['motion_params'][0], \
-                             .30 + params['motion_params'][0], \
-                             .40 + params['motion_params'][0]]
+#    locations_to_record = [  .10 + params['motion_params'][0], \
+#                             .20 + params['motion_params'][0], \
+#                             .30 + params['motion_params'][0], \
+#                             .40 + params['motion_params'][0]]
+    locations_to_record = [  .15 + params['motion_params'][0], \
+                             .25 + params['motion_params'][0], \
+                             .35 + params['motion_params'][0], \
+                             .45 + params['motion_params'][0]]
 
-    w_pos = .6
+
+    w_pos = 1.
     n_pop = len(locations_to_record)
-    n_cells_per_pop = 5
+    n_cells_per_pop = 10
+    vx_record = .4 # params['motion_params'][2]
     gids = [[] for i in xrange(n_pop)]
     for i_ in xrange(n_pop):
-        gids[i_] = P.select_cells(locations_to_record[i_], params['motion_params'][2], n_cells_per_pop, w_pos=w_pos)
+        gids[i_] = P.select_cells(locations_to_record[i_], vx_record, n_cells_per_pop, w_pos=w_pos)
         gids[i_].sort()
         print 'Pop %d:' % i_, gids[i_]
 
@@ -341,17 +347,17 @@ if __name__ == '__main__':
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
-
+    normalize = True # if True: plot the 'confidence' based on the normalized filtered spike rate
     P.filter_and_normalize_spikes()
     P.n_fig_x = 1
     P.n_fig_y = 2
     pylab.subplots_adjust(hspace=0.25)
     P.create_fig()
-    P.plot_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=True)
-    P.plot_aligned_exponential_spiketrains(fig_cnt=2, gids=gids, normalize=True)
+    P.plot_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
+    P.plot_aligned_exponential_spiketrains(fig_cnt=2, gids=gids, normalize=normalize)
     output_fn = output_fn_base + 'mean_exp_traces.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
-    pylab.show()
+#    pylab.show()
 

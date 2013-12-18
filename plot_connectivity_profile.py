@@ -687,8 +687,8 @@ if __name__ == '__main__':
 
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
-
     print 'GID:', gid
+
     if params['n_grid_dimensions'] == 2:
         plot_connectivity_profile_2D(params)
     else:
