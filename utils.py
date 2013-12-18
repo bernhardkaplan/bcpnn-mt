@@ -307,7 +307,7 @@ def select_well_tuned_cells_1D(tp, mp, params, n_cells):
     """
     mp -- [x, y, vx, vy, orientation]
     """
-    w_pos = 5.
+    w_pos = 1.
     x_diff = torus_distance_array(tp[:, 0], mp[0]) * w_pos + np.abs(tp[:, 2] - mp[2])
     idx_sorted = np.argsort(x_diff)
     return idx_sorted[:n_cells]
@@ -845,7 +845,6 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0):
 
 
 def get_grid_pos(x0, y0, xedges, yedges):
-
     x_index, y_index = len(xedges)-1, len(yedges)-1
     for (ix, x) in enumerate(xedges[1:]):
         if x0 <= x:

@@ -25,7 +25,7 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
 def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_perception=0.):
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
-    latency = d_ij / np.sqrt(tp_src[:, 2]**2 + tp_src[:, 3]**2) 
+    latency = d_ij / np.abs(tp_src[:, 2])
     x_pred = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
     # normal
 #    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency

@@ -345,10 +345,10 @@ class NetworkModel(object):
 
             if conn_type[0] == conn_type[1]:
                 p[tgt], latency[tgt] = 0., 0.
-            
 
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
             invalid_idx = np.nonzero(latency * self.params['delay_scale'] > self.params['delay_range'][1])[0]
+#            print 'invalid_idx', latency.mean(), latency.mean() * self.params['delay_scale']
             print 'invalid_idx', invalid_idx.size
 
             p[invalid_idx] = 0.
@@ -362,12 +362,14 @@ class NetworkModel(object):
                 else:
                     sources = sorted_indices[:n_src_cells_per_neuron]
 
+#            print 'debug sources', sources.size
+            assert (sources.size > 0)
 #            eta = 1e-9
             p_to_w = np.zeros(n_src)
             p_to_w[sources] = 1.
             eta = 0.
-            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
-#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p[sources]
+#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
+            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p_to_w[sources]
 
 #            print 'debug p', i_, tgt, p[sources]
 #            print 'debug sources', i_, tgt, sources

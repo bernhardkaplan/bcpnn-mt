@@ -2,6 +2,7 @@ import matplotlib
 #matplotlib.use('Agg')
 import numpy as np
 import utils
+import random
 import pylab
 import sys
 import os
@@ -17,6 +18,7 @@ class ConnectionPlotter(object):
     def __init__(self, params):
         self.params = params
 
+        random.seed(0)
         self.tp_exc = np.loadtxt(params['tuning_prop_means_fn'])
         self.tp_inh = np.loadtxt(params['tuning_prop_inh_fn'])
         self.connection_matrices = {}
@@ -468,13 +470,15 @@ class ConnectionPlotter(object):
         Plot the tuning space and mark the source and targets for the given gid.
         Gid is the cell within the source population.
         """
-        if gid == None:
-            if conn_type[0] == 'e':
-                gid = np.random.randint(0, params['n_exc'])
-            else:
-                gid = np.random.randint(0, params['n_inh'])
-
         self.load_connection_list(conn_type)
+        if gid == None:
+#            if conn_type[0] == 'e':
+            gids = np.unique(self.connection_lists[conn_type][:, 0])
+            gid = random.choice(gids)
+#                gid = np.random.randint(0, params['n_exc'])
+#            else:
+#                gid = np.random.randint(0, params['n_inh'])
+
         targets = utils.get_targets(self.connection_lists[conn_type], gid)
         n_tgts = targets[:, 0].size
         target_gids = np.zeros(n_tgts, dtype=np.int)
@@ -676,12 +680,19 @@ if __name__ == '__main__':
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
         params = ps.params
-        gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
+        try:
+            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
+        except:
+            gid = None
+
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
 
     print 'GID:', gid
     if params['n_grid_dimensions'] == 2:
         plot_connectivity_profile_2D(params)
     else:
         P = ConnectionPlotter(params)
-        P.plot_connectivity_profile_1D(gid=gid)
+        P.plot_connectivity_profile_1D()
+#        P.plot_connectivity_profile_1D(gid=gid)
 #    pylab.show()
