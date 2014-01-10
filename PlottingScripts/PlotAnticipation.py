@@ -12,7 +12,6 @@ import pylab
 import json
 import utils
 import numpy as np
-import json
 
 
 class PlotAnticipation(object):
@@ -87,7 +86,7 @@ class PlotAnticipation(object):
             f = file(pop_info_fn, 'r')
             info = json.load(f)
             gids = info['gids']
-            print 'Population %d gids:' % i_, gids
+#            print 'Population %d gids:' % i_, gids
             for j_, gid in enumerate(gids):
                 time_axis, d = utils.extract_trace(volt_data, gid)
                 all_data[:, i_ * n_cells_per_pop + j_] = d
@@ -107,8 +106,6 @@ class PlotAnticipation(object):
 
         if gids == None:
             gids = self.load_selected_cells()
-        if normalize == True:
-            assert (self.normalized_traces != None), 'Call filter_and_normalize_spikes before!'
         n_pop = len(gids)
         n_cells_per_pop = len(gids[0])
         spike_fn = self.params['exc_spiketimes_fn_merged'] + '.ras'
@@ -119,15 +116,21 @@ class PlotAnticipation(object):
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
 
         if normalize:
+            assert (self.normalized_traces != None), 'Call filter_and_normalize_spikes before!'
             for i_ in xrange(n_pop):
                 print 'Computing mean trace for population %d / %d' % (i_, n_pop)
                 for t_ in xrange(int(n_data)):
                     confidence_trace[t_, i_] = self.normalized_traces[t_, gids[i_]].sum()
                 ax.plot(all_traces[:, -1], confidence_trace[:, i_], c=self.colorlist[i_], lw=3)
+                # compute the estimated stimulus arrival time and plot a vertical bar there
+                x_mean = self.tp[gids[i_], 0].mean()
+                t_arrive = 1000. * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
+                self.plot_vertical_line(ax, t_arrive, self.colorlist[i_])
+            ylabel = 'Confidence trace\naveraged over %d cells' % n_cells_per_pop
         else:
             for i_ in xrange(n_pop):
                 ax.plot(all_traces[:, -1], mean_trace[:, i_], c=self.colorlist[i_], lw=3)
-
+            ylabel = 'Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop
         confidence_trace[:, -1] = all_traces[:, -1]
         data_fn = self.params['data_folder'] + 'not_aligned_mean_trace.dat'
         print 'Saving data to:', data_fn
@@ -138,7 +141,7 @@ class PlotAnticipation(object):
         np.savetxt(data_fn, confidence_trace)
 #        ax.set_xlabel('Time [ms]')
         ax.set_title('Not aligned to stimulus')
-        ax.set_ylabel('Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop)
+        ax.set_ylabel(ylabel)
 
 
     def get_exponentially_filtered_spiketrain_traces(self, gids, dt_filter=1., tau_filter=30.):
@@ -151,9 +154,9 @@ class PlotAnticipation(object):
         mean_trace = np.zeros((n_data, n_pop + 1)) # + 1 for time_axis
         std_trace = np.zeros((n_data, n_pop))
         idx = 0
-        print 'DEBUG Gids:', gids
+#        print 'DEBUG Gids:', gids
         for i_ in xrange(n_pop):
-            print 'Population %d gids:' % i_, gids[i_]
+#            print 'Population %d gids:' % i_, gids[i_]
             for j_, gid in enumerate(gids[i_]):
                 st = utils.get_spiketimes(all_spikes, gid, gid_idx=1, time_idx=0)
                 t_vec, filter_spike_train = utils.filter_spike_train(st, dt=dt_filter, tau=tau_filter, t_max=self.params['t_sim'])
@@ -176,6 +179,8 @@ class PlotAnticipation(object):
 
     def plot_aligned_exponential_spiketrains(self, fig_cnt=1, gids=None, normalize=False):
 
+        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
+
         if gids == None:
             gids = self.load_selected_cells()
         all_traces, mean_trace, std_trace = self.get_exponentially_filtered_spiketrain_traces(gids, dt_filter=self.dt_filter, tau_filter=self.tau_filter)
@@ -184,7 +189,6 @@ class PlotAnticipation(object):
         n_data = all_traces[:, 0].size
         n_pop = len(gids)
         n_cells_per_pop = len(gids[0])
-        ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         for i_ in xrange(n_pop):
 #            print 'Population %d gids:' % i_, gids[i_]
             # compute the mean x-position of all cells in this subpopulation
@@ -193,19 +197,28 @@ class PlotAnticipation(object):
             print 'Population %d x_mean = %.3f +- %.3f' % (i_, x_mean, x_std)
 
             # compute time when stimulus is at x_mean
-            t_arrive = utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
-            shift_ = int(t_arrive * 1000./ self.dt_filter) + n_data * .5
+            t_arrive = 1000 * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
+            shift_ = int(t_arrive / self.dt_filter) + n_data * .5
             print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
             shifted_trace = np.r_[mean_trace[shift_:, i_], mean_trace[:shift_, i_]]
             aligned_traces[:, i_] = shifted_trace
+            shifted_time = np.r_[all_traces[shift_:, -1], all_traces[:shift_, -1]]
+            print 'shifted time:', shifted_time
             if normalize:
                 print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
                 for t_ in xrange(int(n_data)):
                     confidence_trace[t_, i_] = self.normalized_traces[t_, gids[i_]].sum()
+                # old & working with aligned traces, but not aligned time-axis
                 confidence_trace[:, i_] = np.r_[confidence_trace[shift_:, i_], confidence_trace[:shift_, i_]]
                 ax.plot(all_traces[:, -1], confidence_trace[:, i_], c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
+                # new test
+#                ax.plot(shifted_time, confidence_trace[:, i_], c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
+
+                ylabel = 'Confidence trace\naveraged over %d cells' % n_cells_per_pop
             else:
                 ax.plot(all_traces[:, -1], shifted_trace, c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
+                ylabel = 'Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop
+
 
         aligned_traces[:, -1] = all_traces[:, -1]
         confidence_trace[:, -1] = all_traces[:, -1]
@@ -222,11 +235,21 @@ class PlotAnticipation(object):
 
         pylab.legend()
 
-        xticks = np.arange(-self.params['t_sim'] * .5, self.params['t_sim'] * .5, 200)
+        # set the xticks to time before / after stimulus arrival
+        old_xticks = ax.get_xticks()
+        self.plot_vertical_line(ax, .5 * old_xticks[-1], 'grey')
+        xticks = np.linspace(old_xticks[0] - .5 * old_xticks[-1], old_xticks[-1] - .5 * old_xticks[-1], old_xticks.size)
+        xticks = np.array(xticks, dtype=np.int)
         ax.set_xticklabels(xticks)
-        ax.set_xlabel('Time [ms]')
+        ax.set_xlabel('Time [ms] with respect to arrival at $\\bar{x}_i$')
         ax.set_title('Response aligned to stimulus arrival at $\\bar{x}_i$')
-        ax.set_ylabel('Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop)
+        ax.set_ylabel(ylabel)
+
+    def plot_vertical_line(self, ax, x_pos, color):
+        ls = '--'
+        y_lim = ax.get_ylim()
+        ax.plot((x_pos, x_pos), (y_lim[0], y_lim[1]), ls=ls, c=color, lw=3)
+
 
     def load_selected_cells(self):
         """
@@ -317,23 +340,28 @@ if __name__ == '__main__':
 
 #    locations_to_record = [  .05 + params['motion_params'][0], \
 #                             .15 + params['motion_params'][0], \
-#                             .25 + params['motion_params'][0], \
-#                             .35 + params['motion_params'][0]]
+#                             .25 + params['motion_params'][0]]
+
+    locations_to_record = [  .10 + params['motion_params'][0], \
+                             .15 + params['motion_params'][0], \
+                             .20 + params['motion_params'][0]]
 
 #    locations_to_record = [  .10 + params['motion_params'][0], \
 #                             .20 + params['motion_params'][0], \
-#                             .30 + params['motion_params'][0], \
-#                             .40 + params['motion_params'][0]]
-    locations_to_record = [  .15 + params['motion_params'][0], \
-                             .25 + params['motion_params'][0], \
-                             .35 + params['motion_params'][0], \
-                             .45 + params['motion_params'][0]]
+#                             .30 + params['motion_params'][0]]
 
+#    locations_to_record = [  .15 + params['motion_params'][0], \
+#                             .25 + params['motion_params'][0], \
+#                             .35 + params['motion_params'][0]]
+#                             .45 + params['motion_params'][0]]
 
-    w_pos = .5
+    fn = params['data_folder'] + 'locations_recorded_from.json'
+    f = file(fn, 'w')
+    json.dump(locations_to_record, f)
+    w_pos = 3.0
     n_pop = len(locations_to_record)
-    n_cells_per_pop = 10
-    vx_record = .4 # params['motion_params'][2]
+    n_cells_per_pop = 20
+    vx_record = params['motion_params'][2]
     gids = [[] for i in xrange(n_pop)]
     for i_ in xrange(n_pop):
         gids[i_] = P.select_cells(locations_to_record[i_], vx_record, n_cells_per_pop, w_pos=w_pos)
@@ -344,11 +372,12 @@ if __name__ == '__main__':
     P.plot_selected_cells_in_tuning_space(fig_cnt=1, gids=gids, plot_all_cells=True)
 #    P.plot_selected_cells_in_tuning_space(fig_cnt=1)
 
-    output_fn = output_fn_base + 'tuning_prop.png'
+    output_fn = output_fn_base + 'tuning_prop_wpos%.2f.png' % (w_pos)
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
-    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
+    normalize = True # if True: plot the 'confidence' based on the normalized filtered spike rate
+#    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
     P.filter_and_normalize_spikes()
     P.n_fig_x = 1
     P.n_fig_y = 2

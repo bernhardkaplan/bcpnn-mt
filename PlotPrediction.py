@@ -615,7 +615,7 @@ class PlotPrediction(object):
         ax.set_xticklabels(x_bin_labels)
 
 #        max_conf = min(data.mean() + .5 * data.std(), data.max())
-        max_conf = .25 * data.max()
+        max_conf = .33 * data.max()
         print 'max_conf:', max_conf, ' data mean, std', data.mean(), data.std(), 'data max', data.max()
         norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)#, clip=True)
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)

@@ -29,6 +29,7 @@ def plot_contour_connectivity(params, gid=None):
             print 'GID %d connects to NO CELLS' % gid
             gid = None
 
+    print 'GID:', gid
     targets = utils.get_targets(d, gid)
 
     target_gids = targets[:, 1].astype(int)

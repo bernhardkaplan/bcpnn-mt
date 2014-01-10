@@ -21,6 +21,12 @@ def plot_diff_data(params1, params2, normalize=False):
     else:
         data_fn1 = params1['data_folder'] + 'not_aligned_mean_trace.dat'
         data_fn2 = params2['data_folder'] + 'not_aligned_mean_trace.dat'
+
+    # get the locations from where the membrane potentials have been recorded from
+    fn = params1['data_folder'] + 'locations_recorded_from.json'
+    f = file(fn, 'r')
+    locations = json.load(f)
+
     print 'Loading data from:', data_fn1
     mean_trace1 = np.loadtxt(data_fn1)
     print 'Loading data from:', data_fn2
@@ -35,20 +41,40 @@ def plot_diff_data(params1, params2, normalize=False):
                 'label.fontsize': 20,
                 'xtick.labelsize' : 18, 
                 'ytick.labelsize' : 18, 
-                'legend.fontsize': 16, 
+                'legend.fontsize': 14, 
                 'figure.subplot.left':.15,
                 'figure.subplot.bottom':.10,
                 'figure.subplot.right':.95,
-                'figure.subplot.top':.90, 
+                'figure.subplot.top':.85, 
                 'lines.markeredgewidth' : 0}
     pylab.rcParams.update(rcParams)
-    fig = pylab.figure(figsize=(12, 8))
+    fig = pylab.figure(figsize=(14, 10))
     ax1 = fig.add_subplot(211)
     ax2 = fig.add_subplot(212)
     n_pop = mean_trace1[0, :].size - 1
     print 'debug', mean_trace1.shape, mean_trace1[0, :] - 1
     for i_ in xrange(n_pop):
         ax1.plot(t_axis, diff_data[:, i_], c=colorlist[i_], lw=3)
+    ax1.set_ylabel('Not aligned difference')
+    
+    wsx_1, wsv_1 = params1['w_sigma_x'], params1['w_sigma_v']
+    wsx_2, wsv_2 = params2['w_sigma_x'], params2['w_sigma_v']
+    diff_title = 'Difference plot between '
+    if normalize:
+        diff_title += 'normalized traces\n'
+    else:
+        diff_title += 'not-normalized traces\n'
+    diff_title += '$\sigma_{X}^1 = %d$' % (wsx_1)
+    diff_title += '   $\sigma_{V}^1 = %d$;' % (wsv_1)
+    diff_title += '\t $\sigma_{X}^2 = %d$' % (wsx_2)
+    diff_title += '   $\sigma_{V}^2 = %d$' % (wsv_2)
+#    diff_title += '$\sigma_{X}^1 = %.2e$' % (wsx_1)
+#    diff_title += '\t $\sigma_{V}^1 = %.2e$' % (wsv_1)
+#    diff_title += '\n $\sigma_{X}^2 = %.2e$' % (wsx_2)
+#    diff_title += '\t $\sigma_{V}^2 = %.2e$' % (wsv_2)
+
+
+    ax1.set_title(diff_title)
 
     ##############################
     # plot the aligned data
@@ -68,23 +94,71 @@ def plot_diff_data(params1, params2, normalize=False):
     for i_ in xrange(n_pop):
         ax2.plot(t_axis, diff_data[:, i_], c=colorlist[i_], lw=3)
 
-    xticks = np.arange(-params1['t_sim'] * .5, params1['t_sim'] * .5, 200)
-    ax2.set_xticklabels(xticks.astype(int))
-    ax2.set_xlabel('Time [ms]')
+        # plot vertical line for stimulus arrival time
+        t_arrive = 1000. * utils.torus_distance(locations[i_], params1['motion_params'][0]) / params1['motion_params'][2]
+        plot_vertical_line(ax1, t_arrive, colorlist[i_])
+#        plot_vertical_line(ax2, 0, 'grey')
+
+#    xticks = np.arange(-params1['t_sim'] * .5, params1['t_sim'] * .5, 200)
+#    ax2.set_xticklabels(xticks.astype(int))
+
+    old_xticks = ax2.get_xticks()
+    xticks = np.linspace(old_xticks[0] - .5 * old_xticks[-1], old_xticks[-1] - .5 * old_xticks[-1], old_xticks.size)
+    xticks = np.array(xticks, dtype=np.int)
+    ax2.set_xticklabels(xticks)
+    # plot vertical bar indicating the estimated arrival time of the stimulus
+#    ax2.plot((t_axis
+
+#    ax2.set_xlabel('Time [ms]')
+    ax2.set_xlabel('Time [ms] with respect to arrival at $\\bar{x}_i$')
     ax2.set_title('Response difference aligned to stimulus arrival at $\\bar{x}_i$')
     ax2.set_ylabel('Difference between \nmean filtered spiketrains')
 
+    output_fn = 'difference_plot_wsx1_%.2e_wsv1_%.2e_wsx2_%.2e_wsv2_%.2e.png' % (wsx_1, wsv_1, wsx_2, wsv_2)
+    print 'Saving difference plot to:', output_fn
+    fig.savefig(output_fn, dpi=300)
+
     # plot both data files in one plot
-    fig2 = pylab.figure()
+    # get the information about the different traces
+    assert (len(locations) == n_pop), 'Something wrong with the locations written by PlotAnticipation and the data loaded here ... '
+
+    fig2 = pylab.figure(figsize=(14, 10))
     ax1 = fig2.add_subplot(211)
     ax2 = fig2.add_subplot(212)
+    plots, legend_txt = [], []
     for i_ in xrange(n_pop):
-        ax1.plot(t_axis, mean_trace1[:, i_], c=colorlist[i_], lw=2, alpha=.4)
-        ax1.plot(t_axis, mean_trace2[:, i_], '--', c=colorlist[i_], lw=2)
+        p, = ax1.plot(t_axis, mean_trace1[:, i_], c=colorlist[i_], lw=2, alpha=.4)
+        plots.append(p)
+        p, = ax1.plot(t_axis, mean_trace2[:, i_], '--', c=colorlist[i_], lw=2)
+        plots.append(p)
 
-        ax2.plot(t_axis, aligned_mean_trace1[:, i_], c=colorlist[i_], lw=2, alpha=.4)
-        ax2.plot(t_axis, aligned_mean_trace2[:, i_], '--', c=colorlist[i_], lw=2)
+        p, = ax2.plot(t_axis, aligned_mean_trace1[:, i_], c=colorlist[i_], lw=2, alpha=.4)
+        p, = ax2.plot(t_axis, aligned_mean_trace2[:, i_], ':', c=colorlist[i_], lw=2)
+
+        # create the legend text / plot labels
+        label_1 = '$\sigma_{X} = %d$' % (wsx_1)
+        label_1 += '\t $\sigma_{V} = %d$' % (wsv_1)
+        label_1 += '\t $\\bar{x} = %.2f$' % (locations[i_])
+        legend_txt.append(label_1)
+        label_2 = '$\sigma_{X} = %d$' % (wsx_2)
+        label_2 += '\t $\sigma_{V} = %d$' % (wsv_2)
+        label_2 += '\t $\\bar{x} = %.2f$' % (locations[i_])
+        legend_txt.append(label_2)
+
+        # plot vertical line for stimulus arrival time
+        t_arrive = 1000. * utils.torus_distance(locations[i_], params1['motion_params'][0]) / params1['motion_params'][2]
+        plot_vertical_line(ax1, t_arrive, colorlist[i_])
+        plot_vertical_line(ax2, .5 * t_axis[-1], 'grey')
+
+
     ax2.set_xticklabels(xticks)
+    ax1.legend(plots, legend_txt, loc='upper right')
+
+
+def plot_vertical_line(ax, x_pos, color):
+    ls = '--'
+    y_lim = ax.get_ylim()
+    ax.plot((x_pos, x_pos), (y_lim[0], y_lim[1]), ls=ls, c=color, lw=3)
 
 
 if __name__ == '__main__':
@@ -104,7 +178,7 @@ if __name__ == '__main__':
     print 'Loading param_posteters from', param_post_fn
     params_post = json.load(f)
 
-    normalize = False
+    normalize = True
     replot_anticipation = True
     if replot_anticipation:
         cmd = 'python PlottingScripts/PlotAnticipation.py %s' % (param_pre_fn)

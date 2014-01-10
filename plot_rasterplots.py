@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
     output_fn = params['figures_folder'] + 'rasterplot_sorted_by_tp_vstim%.1f.png' % (params['motion_params'][2])
     print "Saving to", output_fn
-    pylab.savefig(output_fn, dpi=200)
+    pylab.savefig(output_fn, dpi=400)
     #output_fn = params['figures_folder'] + 'rasterplot_sorted_by_tp.pdf'
     #print "Saving to", output_fn
     #pylab.savefig(output_fn, dpi=200)

@@ -365,11 +365,15 @@ class NetworkModel(object):
 #            print 'debug sources', sources.size
             assert (sources.size > 0)
             eta = 1e-12
-            p_to_w = np.zeros(n_src)
-            p_to_w[sources] = 1.
-#            eta = 0.
-            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
-#            w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p_to_w[sources]
+
+            # equal weights:
+            if self.params['equal_weights']:
+                p_to_w = np.zeros(n_src)
+                p_to_w[sources] = 1.
+                w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p_to_w.sum() + eta)) * p_to_w[sources]
+            else:
+                # unequal weights:
+                w = (self.params['w_tgt_in_per_cell_%s' % conn_type] / (p[sources].sum() + eta)) * p[sources]
 
 #            print 'debug p', i_, tgt, p[sources]
 #            print 'debug sources', i_, tgt, sources
@@ -794,6 +798,7 @@ if __name__ == '__main__':
         NM.spike_times_container = spike_times_container
 
     NM.connect()
+
     NM.run_sim(sim_cnt, record_v=record_v)
     NM.print_results(print_v=record_v)
 

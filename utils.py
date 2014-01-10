@@ -500,7 +500,7 @@ def set_tuning_prop_1D(params, cell_type='exc'):
     else:
         n_cells = params['n_inh']
         n_v = params['N_V_INH']
-        n_rf_x = params['N_RF_X']
+        n_rf_x = params['N_X_INH']
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
 
@@ -525,16 +525,13 @@ def set_tuning_prop_1D(params, cell_type='exc'):
             for orientation in orientations:
                 for i_cell in xrange(params['n_exc_per_mc']):
                     tuning_prop[index, 0] = (RF[i_RF] + params['sigma_RF_pos'] * rnd.randn()) % params['torus_width']
-                    tuning_prop[index, 1] = 0. # i_RF / float(n_rf_x) # y-pos
-#                    tuning_prop[index, 2] = rho * (1. + params['sigma_RF_speed'] * rnd.randn())
+                    tuning_prop[index, 1] = 0. 
                     tuning_prop[index, 2] = get_plus_minus(rnd) * rho * (1. + params['sigma_RF_speed'] * rnd.randn())
-
-                    tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
-#                    tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
+                    tuning_prop[index, 3] = 0. 
                     index += 1
 
     if index != n_cells:
-        print 'WARNING: utils.set_tuning_prop_1D mismatch between n_cells and index of tuning properties set'
+        print '\nWARNING\n: \tutils.set_tuning_prop_1D mismatch between n_cells=%d and index=%d of tuning properties set for cell type %s\n\n' % (n_cells, index, cell_type)
 
     return tuning_prop
 

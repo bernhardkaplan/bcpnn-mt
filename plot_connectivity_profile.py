@@ -651,6 +651,20 @@ def plot_connectivity_profile_2D(params):
 
 
     
+def select_gid(params):
+    try:
+        gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
+    except:
+        gid = None
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    while gid == None:
+        gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+        n_out = (d[:, 2] == gid).nonzero()
+        if n_out == 0:
+            print 'GID %d connects to NO CELLS' % gid
+            gid = None
+    return gid
+
 
 if __name__ == '__main__':
 
@@ -675,24 +689,19 @@ if __name__ == '__main__':
             f = file(param_fn, 'r')
             print 'Loading parameters from', param_fn
             params = json.load(f)
-            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
     else:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
         params = ps.params
-        try:
-            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
-        except:
-            gid = None
-
     tp = np.loadtxt(params['tuning_prop_means_fn'])
-    gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+#    gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+    gid = select_gid(params)
     print 'GID:', gid
 
     if params['n_grid_dimensions'] == 2:
-        plot_connectivity_profile_2D(params)
+        plot_connectivity_profile_2D(params, gid=gid)
     else:
         P = ConnectionPlotter(params)
-        P.plot_connectivity_profile_1D()
+        P.plot_connectivity_profile_1D(gid=gid)
 #        P.plot_connectivity_profile_1D(gid=gid)
 #    pylab.show()
