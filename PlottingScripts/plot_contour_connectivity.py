@@ -20,6 +20,7 @@ def plot_contour_connectivity(params, gid=None):
     if not os.path.exists(params['merged_conn_list_ee']):
         print 'Running merge_connlists.py...'
         os.system('python merge_connlists.py')
+    print 'Loading connection file ...'
     d = np.loadtxt(params['merged_conn_list_ee'])
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     while gid == None:
@@ -154,8 +155,15 @@ def plot_contour_connectivity(params, gid=None):
     n_levels = 200
     CS = ax.contourf(x_grid, vx_grid, z_grid, n_levels, cmap=pylab.cm.jet,
                       vmax=abs(z_grid).max(), vmin=-abs(z_grid).max())
-    ax.plot(x_tgt, vx_tgt, 'o', markeredgewidth=0, c='k', markersize=4)
-    ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=15, c='y', markeredgewidth=0, label='source')
+    
+    markersize_cell = 15
+    markersize_min = 3
+    markersize_max = 8
+    markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
+    for i_, tgt in enumerate(targets):
+        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c='k', markersize=markersizes[i_])
+#    ax.plot(x_tgt, vx_tgt, 'o', markeredgewidth=0, c='k', markersize=markersizes)
+    ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label='source')
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
     ax.set_ylabel('Preferred speed $v_x$')
