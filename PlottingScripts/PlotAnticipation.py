@@ -130,6 +130,9 @@ class PlotAnticipation(object):
         else:
             for i_ in xrange(n_pop):
                 ax.plot(all_traces[:, -1], mean_trace[:, i_], c=self.colorlist[i_], lw=3)
+                x_mean = self.tp[gids[i_], 0].mean()
+                t_arrive = 1000. * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
+                self.plot_vertical_line(ax, t_arrive, self.colorlist[i_])
             ylabel = 'Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop
         confidence_trace[:, -1] = all_traces[:, -1]
         data_fn = self.params['data_folder'] + 'not_aligned_mean_trace.dat'
@@ -342,13 +345,13 @@ if __name__ == '__main__':
 #                             .15 + params['motion_params'][0], \
 #                             .25 + params['motion_params'][0]]
 
-    locations_to_record = [  .10 + params['motion_params'][0], \
-                             .15 + params['motion_params'][0], \
-                             .20 + params['motion_params'][0]]
-
 #    locations_to_record = [  .10 + params['motion_params'][0], \
-#                             .20 + params['motion_params'][0], \
-#                             .30 + params['motion_params'][0]]
+#                             .15 + params['motion_params'][0], \
+#                             .20 + params['motion_params'][0]]
+
+    locations_to_record = [  .10 + params['motion_params'][0], \
+                             .20 + params['motion_params'][0], \
+                             .30 + params['motion_params'][0]]
 
 #    locations_to_record = [  .15 + params['motion_params'][0], \
 #                             .25 + params['motion_params'][0], \
@@ -358,9 +361,9 @@ if __name__ == '__main__':
     fn = params['data_folder'] + 'locations_recorded_from.json'
     f = file(fn, 'w')
     json.dump(locations_to_record, f)
-    w_pos = 3.0
+    w_pos = 1.0
     n_pop = len(locations_to_record)
-    n_cells_per_pop = 20
+    n_cells_per_pop = 10
     vx_record = params['motion_params'][2]
     gids = [[] for i in xrange(n_pop)]
     for i_ in xrange(n_pop):
@@ -376,8 +379,8 @@ if __name__ == '__main__':
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
-    normalize = True # if True: plot the 'confidence' based on the normalized filtered spike rate
-#    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
+#    normalize = True # if True: plot the 'confidence' based on the normalized filtered spike rate
+    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
     P.filter_and_normalize_spikes()
     P.n_fig_x = 1
     P.n_fig_y = 2

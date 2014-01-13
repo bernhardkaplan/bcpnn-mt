@@ -352,7 +352,7 @@ class ConnectionPlotter(object):
             return
 
         conn_list_fn = self.params['merged_conn_list_%s' % conn_type]
-        print 'Trying to load', conn_list_fn
+        print 'Loading ', conn_list_fn
         if not os.path.exists(conn_list_fn):
             print '\n%s NOT FOUND:' % conn_list_fn
             print '\n Calling python merge_connlists.py\n'
@@ -534,23 +534,32 @@ class ConnectionPlotter(object):
         weight_min_in = np.min(sources[:, 2])
         weight_max_in = np.max(sources[:, 2])
         markersizes_out = utils.linear_transformation(targets[:, 2] / weight_min_out, self.markersize_min, self.markersize_max)
+        max_idx = markersizes_out.argmax()
         x_min, x_max = 1., 0.0
         for j_ in xrange(len(targets)):
             tgt_gid = targets[j_, 1]
             print 'ms:', markersizes_out[j_], targets[j_, :], src_tp[tgt_gid, 0], src_tp[tgt_gid, 2]
             x_min, x_max = min(x_min, tgt_tp[tgt_gid, 0]), max(x_max, tgt_tp[tgt_gid, 0])
-            ax1.plot(tgt_tp[tgt_gid, 0], tgt_tp[tgt_gid, 2], '^', c='b', markersize=markersizes_out[j_])
-            
-        ax1.set_xlim((.9 * x_min, 1.1 * x_max))
+            if j_ == max_idx:
+                ax1.plot(tgt_tp[tgt_gid, 0], tgt_tp[tgt_gid, 2], '^', c='b', markersize=markersizes_out[j_], label='target')
+            else:
+                ax1.plot(tgt_tp[tgt_gid, 0], tgt_tp[tgt_gid, 2], '^', c='b', markersize=markersizes_out[j_])
+        ax1.set_xlim((.95 * x_min, 1.05 * x_max))
+        ax1.legend(numpoints=1)
 
         x_min, x_max = 1., 0.0
         markersizes_in= utils.linear_transformation(sources[:, 2] / weight_min_in, self.markersize_min, self.markersize_max)
+        max_idx = markersizes_in.argmax()
         for i_ in xrange(len(sources)):
             src_gid = sources[i_, 0]
             print 'ms:', markersizes_in[i_], sources[i_, :], tgt_tp[src_gid, 0], tgt_tp[src_gid, 2]
             x_min, x_max = min(x_min, src_tp[src_gid, 0]), max(x_max, src_tp[src_gid, 0])
-            ax2.plot(src_tp[src_gid, 0], src_tp[src_gid, 2], 'D', c='g', markersize=markersizes_in[i_])
-        ax2.set_xlim((.9 * x_min, 1.1 * x_max))
+            if i_ == max_idx:
+                ax2.plot(src_tp[src_gid, 0], src_tp[src_gid, 2], 'D', c='g', markersize=markersizes_in[i_], label='source')
+            else:
+                ax2.plot(src_tp[src_gid, 0], src_tp[src_gid, 2], 'D', c='g', markersize=markersizes_in[i_])
+        ax2.set_xlim((.95 * x_min, 1.05 * x_max))
+        ax2.legend(numpoints=1)
 
         # plot the cell
         ax1.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
@@ -703,5 +712,4 @@ if __name__ == '__main__':
     else:
         P = ConnectionPlotter(params)
         P.plot_connectivity_profile_1D(gid=gid)
-#        P.plot_connectivity_profile_1D(gid=gid)
 #    pylab.show()

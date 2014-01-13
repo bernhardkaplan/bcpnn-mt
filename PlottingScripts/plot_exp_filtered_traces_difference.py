@@ -178,7 +178,7 @@ if __name__ == '__main__':
     print 'Loading param_posteters from', param_post_fn
     params_post = json.load(f)
 
-    normalize = True
+    normalize = False
     replot_anticipation = True
     if replot_anticipation:
         cmd = 'python PlottingScripts/PlotAnticipation.py %s' % (param_pre_fn)

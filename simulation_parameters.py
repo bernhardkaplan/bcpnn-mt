@@ -69,8 +69,8 @@ class parameter_storage(object):
         self.params['neuron_model'] = 'IF_cond_exp'
 #        self.params['neuron_model'] = 'IF_cond_alpha'
 #        self.params['neuron_model'] = 'EIF_cond_exp_isfa_ista'
-        self.params['tau_syn_exc'] = 50.0 # 10.
-        self.params['tau_syn_inh'] = 50.0 # 20.
+        self.params['tau_syn_exc'] = 10.0 # 10.
+        self.params['tau_syn_inh'] = 10.0 # 20.
         if self.params['neuron_model'] == 'IF_cond_exp':
             self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
             self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
@@ -83,8 +83,13 @@ class parameter_storage(object):
             self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
                     'b' : 0.5, 'a':4.}
         # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
+        # v = voltage
         self.params['v_init'] = -65.                 # [mV]
         self.params['v_init_sigma'] = 10.             # [mV]
+
+        # v = speed preference
+        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
 
         # #######################
@@ -116,27 +121,27 @@ class parameter_storage(object):
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
-        self.params['delay_range'] = (0.1, 10.)
-        self.params['w_sigma_x'] = 1.0 # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 5.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['delay_range'] = (0.1, 50.)
+        self.params['w_sigma_x'] = 0.5 / self.params['v_max_tp'] # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 100. #/ self.params['v_max_tp'] # small w_sigma: tuning_properties get stronger weight when deciding on connection
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: high connection probability (independent of tuning_properties)
-        self.params['w_sigma_isotropic'] = 0.30 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
+        self.params['w_sigma_isotropic'] = 0.10 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
 
-        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
-#        self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
+#        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
+        self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 2 * self.params['w_tgt_in_per_cell_ee']
-        self.params['w_tgt_in_per_cell_ie'] = 2 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+        self.params['w_tgt_in_per_cell_ee'] = 0.15 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 1. * self.params['w_tgt_in_per_cell_ee']
+        self.params['w_tgt_in_per_cell_ie'] = 1. * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
 #        self.params['w_tgt_in_per_cell_ii'] = self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
 #        self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
 #        self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
         self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
-        self.params['w_tgt_in_per_cell_ie'] *= 10. / self.params['tau_syn_inh']
-        self.params['w_tgt_in_per_cell_ii'] *= 10. / self.params['tau_syn_inh']
+        self.params['w_tgt_in_per_cell_ie'] *= 5. / self.params['tau_syn_inh']
+        self.params['w_tgt_in_per_cell_ii'] *= 5. / self.params['tau_syn_inh']
         self.params['w_sigma_distribution'] = 0.2 # percentage of w_mean_isotropic for the sigma of the weight distribution (gaussian) when drawn for isotropic connectivity
         self.params['conn_types'] = ['ee', 'ei', 'ie', 'ii']
 
@@ -181,7 +186,7 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['neural_perception_delay'] = 50. # [ms] delay accumulated along the neural pathways during the motion perception and prediction process
+        self.params['neural_perception_delay'] = 0. # [ms] delay accumulated along the neural pathways during the motion perception and prediction process
 
         # ######
         # INPUT
@@ -199,8 +204,6 @@ class parameter_storage(object):
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
         self.params['motion_params'] = (0.1, 0.5 , 0.3, 0) # stimulus start parameters (x, y, v_x, v_y)
-        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['blur_X'], self.params['blur_V'] = .05, .05
 
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
@@ -291,10 +294,10 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'MpN_eqW%d_%s_nRF%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wsiso%.2f/' % (\
+               folder_name = 'MpN_eqW%d_%s_nRF%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wsiso%.2f_taue%d_taui%d/' % (\
                        self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], self.params['neural_perception_delay'], \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
-                       self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_isotropic'])
+                       self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_isotropic'], self.params['tau_syn_exc'], self.params['tau_syn_inh'])
 
 #            folder_name += connectivity_code
 #            folder_name += '/'
