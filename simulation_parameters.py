@@ -120,7 +120,9 @@ class parameter_storage(object):
 #        self.params['conn_conf'] = 'orientation-direction' 
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
-        self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
+        self.params['delay_scale'] = 1000.      # this determines the scaling
+        #from the latency in second (d(src, tgt) / v_src)  to the connection
+        #delay (delay_ij = latency_ij * delay_scale) in ms
         self.params['delay_range'] = (0.1, 50.) # [ms], restricts remaining connections to have delays within this range
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
