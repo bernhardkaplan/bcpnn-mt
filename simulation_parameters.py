@@ -121,7 +121,7 @@ class parameter_storage(object):
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
         self.params['delay_scale'] = 1000.      # this determines the scaling from the latency (d(src, tgt) / v_src)  to the connection delay (delay_ij = latency_ij * delay_scale)
-        self.params['delay_range'] = (0.1, 100.) # [ms], restricts remaining connections to have delays within this range
+        self.params['delay_range'] = (0.1, 50.) # [ms], restricts remaining connections to have delays within this range
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
@@ -131,7 +131,7 @@ class parameter_storage(object):
 #        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
         self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.25 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1. * self.params['w_tgt_in_per_cell_ee']
         self.params['w_tgt_in_per_cell_ie'] = 1. * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
 #        self.params['w_tgt_in_per_cell_ii'] = self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
@@ -146,7 +146,7 @@ class parameter_storage(object):
         self.params['conn_types'] = ['ee', 'ei', 'ie', 'ii']
 
 #        self.params['p_to_w'] =
-        self.params['p_ee'] = 0.02              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.04              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 8e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources

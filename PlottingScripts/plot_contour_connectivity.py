@@ -11,6 +11,8 @@ from matplotlib.mlab import griddata
 import simulation_parameters
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
+import matplotlib
+from matplotlib import cm
 
 #ps = simulation_parameters.parameter_storage()
 #params = ps.params
@@ -129,6 +131,7 @@ def plot_formula(params, d, tp, gid):
     # get target cells and connection weights
     targets = utils.get_targets(d, gid)
     weights = targets[:, 2]
+    delays = targets[:, 3]
     target_gids = targets[:, 1].astype(int)
     x_tgt = tp[target_gids, 0]
     vx_tgt = tp[target_gids, 2]
@@ -197,8 +200,14 @@ def plot_formula(params, d, tp, gid):
     markersize_min = 3
     markersize_max = 8
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
+    norm = matplotlib.mpl.colors.Normalize(vmin=delays.min(), vmax=delays.max())
+#    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
+    m.set_array(delays)
+    rgba_colors = m.to_rgba(delays)
     for i_, tgt in enumerate(targets):
-        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c='k', markersize=markersizes[i_])
+        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
+#        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c='k', markersize=markersizes[i_])
     ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label='source')
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
@@ -206,7 +215,10 @@ def plot_formula(params, d, tp, gid):
     title = 'Distribution of connection probabilities'
     title += '\n$\sigma_X = %.2f\quad\sigma_V=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
     ax.set_title(title)
-    pylab.colorbar(CS)
+    cbar_prob = fig.colorbar(CS)
+    cbar_delay = fig.colorbar(m)
+    cbar_prob.set_label('Connection probability')
+    cbar_delay.set_label('Delay [ms]')
 
 #    ylim = (vx_min, vx_max)
 #    xlim = (x_min, x_max)
@@ -260,6 +272,7 @@ if __name__ == '__main__':
 
     # determine which cell to plot
     random.seed(0)
+    tp = np.loadtxt(params['tuning_prop_means_fn'])
     while gid == None:
         gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
         n_out = (d[:, 2] == gid).nonzero()
@@ -273,9 +286,8 @@ if __name__ == '__main__':
         print 'Running merge_connlists.py...'
         os.system('python merge_connlists.py %s' % params['folder_name'])
     print 'Loading connection file ...'
-    d = np.loadtxt(params['merged_conn_list_ee'])
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
 
+    d = np.loadtxt(params['merged_conn_list_ee'])
     plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
     plot_formula(params, d, tp, gid) # plot the analytically expected weights and the actual connections in tuning space
 

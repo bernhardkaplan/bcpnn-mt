@@ -400,5 +400,5 @@ if __name__ == '__main__':
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
-    pylab.show()
+#    pylab.show()
 
