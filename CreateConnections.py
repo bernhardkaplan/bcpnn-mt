@@ -13,7 +13,7 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
     Calculates the connection probabilities for all source cells targeting one cell.
     tp_src = np.array, shape = (n_src, 4)
     tp_tgt = (x, y, u, v)
-    TODO: exp(cos(v_i, x_j - x_i) / (2*sigma_x**2))
+
     """
     if params['n_grid_dimensions'] == 2:
         return get_p_conn_motion_based_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
@@ -26,9 +26,9 @@ def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
     latency = d_ij / np.abs(tp_src[:, 2])
-    x_pred = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
+    #x_pred = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
     # normal
-#    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
+    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
     d_pred_tgt = utils.torus_distance_array(x_pred, tp_tgt[0] * np.ones(n_src))
     v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
     p = np.exp(- (d_pred_tgt**2 / (2 * w_sigma_x**2))) \
@@ -48,8 +48,8 @@ def get_p_conn_motion_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
 #    v_tuning_diff = utils.torus_distance2D_vec(tp_src[:, 2], tp_tgt[2] * np.ones(n_src), tp_src[:, 3], tp_tgt[3] * np.ones(n_src), w=np.ones(n_src), h=np.ones(n_src))
     v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2 + (tp_src[:, 3] - tp_tgt[3] * np.ones(n_src))**2
 
-    p = np.exp(- (d_pred_tgt / (2 * w_sigma_x**2))) \
-            * np.exp(- (v_tuning_diff / (2 * w_sigma_v**2)))
+    p = np.exp(- (d_pred_tgt**2 / (2 * w_sigma_x**2))) \
+            * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
     return p, latency
     
 
@@ -111,7 +111,7 @@ def get_p_conn_direction_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connecti
     
     x_cos_array = np.dot(x_diff_, v_tgt)
     x_cos_array /= np.sqrt(v_tgt_norm * x_norm)
-    p = np.exp(x_cos_array / (w_sigma_x**2)) * np.exp(v_cos_array/(w_sigma_v**2))
+    p = np.exp(x_cos_array**2 / (w_sigma_x**2)) * np.exp(v_cos_array**2/(w_sigma_v**2))
 
     if connectivity_radius < 1.0:
 #        invalid_idx = latency > connectivity_radius
@@ -124,7 +124,7 @@ def get_p_conn_direction_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connecti
 #    return p, latency
 
     # old:
-#    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(v_cos_array/(sigma_v**2))
+#    p = np.exp(-dist_prediction_tgt**2 / (2*sigma_x**2)) * np.exp(v_cos_array**2/(sigma_v**2))
 
 def get_p_conn(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     """
