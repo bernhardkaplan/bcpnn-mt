@@ -31,8 +31,8 @@ def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
 #    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
     d_pred_tgt = utils.torus_distance_array(x_pred, tp_tgt[0] * np.ones(n_src))
     v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
-    p = np.exp(- (d_pred_tgt / (2 * w_sigma_x**2))) \
-            * np.exp(- (v_tuning_diff / (2 * w_sigma_v**2)))
+    p = np.exp(- (d_pred_tgt**2 / (2 * w_sigma_x**2))) \
+            * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
     if connectivity_radius < 1.0:
         p[d_ij > connectivity_radius] = 0.
     return p, latency

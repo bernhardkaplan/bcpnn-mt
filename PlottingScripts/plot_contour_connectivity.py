@@ -200,7 +200,7 @@ def plot_formula(params, d, tp, gid):
     markersize_min = 3
     markersize_max = 8
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
-    norm = matplotlib.mpl.colors.Normalize(vmin=delays.min(), vmax=delays.max())
+    norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
 #    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
     m.set_array(delays)

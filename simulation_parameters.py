@@ -128,8 +128,8 @@ class parameter_storage(object):
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
         self.params['w_sigma_isotropic'] = 0.10 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
 
-#        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
-        self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
+        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
+        #self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
         self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1. * self.params['w_tgt_in_per_cell_ee']

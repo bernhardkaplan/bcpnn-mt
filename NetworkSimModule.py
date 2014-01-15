@@ -340,7 +340,7 @@ class NetworkModel(object):
             elif self.params['conn_conf'] == 'orientation-direction':
                 p, latency = CC.get_p_conn_direction_and_orientation_based(params, tp_src, tp_tgt[tgt, :])
             else:
-                print '\n\nERROR! Wrong connection configutation conn_conf parameter provided\nShould be direction-based, motion-based or orientation-direction\n'
+                print '\n\nERROR! Wrong connection configuration conn_conf parameter provided\nShould be direction-based, motion-based or orientation-direction\n'
                 exit(1)
 
             if conn_type[0] == conn_type[1]:
@@ -488,7 +488,7 @@ class NetworkModel(object):
                 boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
 
         p_max = utils.get_pmax(self.params['p_%s' % conn_type], self.params['w_sigma_isotropic'], conn_type)
-        connector = DistanceDependentProbabilityConnector('%f * exp(-d/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
+        connector = DistanceDependentProbabilityConnector('%f * exp(-d**2/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
                 weights=w_dist, delays=delay_dist, space=self.torus)#, n_connections=n_conn_ee)
         print 'p_max for %s' % conn_type, p_max
         prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
