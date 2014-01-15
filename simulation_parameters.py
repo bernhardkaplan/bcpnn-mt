@@ -194,7 +194,7 @@ class parameter_storage(object):
         # INPUT
         # ######
         self.params['f_max_stim'] = 1000.       # [Hz]
-        self.params['w_input_exc'] = 5.00e-3 * 10. / self.params['tau_syn_exc']    # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 5.00e-2 * 10. / self.params['tau_syn_exc']    # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
