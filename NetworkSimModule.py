@@ -606,7 +606,7 @@ class NetworkModel(object):
         for i_ in xrange(len(self.params['locations_to_record'])):
             mp_to_record = [self.params['motion_params'][0] + self.params['locations_to_record'][i_], \
                     self.params['motion_params'][1], self.params['motion_params'][2], self.params['motion_params'][3]]
-            gids_ = utils.select_well_tuned_cells_1D(self.tuning_prop_exc, mp_to_record, self.params, self.params['n_cells_to_record_per_location'])
+            gids_ = utils.select_well_tuned_cells_1D(self.tuning_prop_exc, mp_to_record, self.params['n_cells_to_record_per_location'])
             self.selected_pop_views.append(PopulationView(self.exc_pop, gids_, label='anticipation_%d' % i_))
             self.selected_pop_views[i_].record_v()
 #            self.selected_pop_views[i_].record_gsyn()

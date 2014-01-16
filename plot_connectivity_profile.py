@@ -667,7 +667,7 @@ def select_gid(params):
         gid = None
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     while gid == None:
-        gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+        gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], 1)
         n_out = (d[:, 2] == gid).nonzero()
         if n_out == 0:
             print 'GID %d connects to NO CELLS' % gid
@@ -703,7 +703,7 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()
         params = ps.params
     tp = np.loadtxt(params['tuning_prop_means_fn'])
-#    gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+#    gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], 1)
     gid = select_gid(params)
     print 'GID:', gid
 

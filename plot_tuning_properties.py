@@ -264,7 +264,7 @@ data -- tuning properties of the cells
 def plot_predictor_sequence():
     # PLOT PREDICTOR SEQUENCE
     protocol = params['motion_protocol']
-    record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params, params['n_gids_to_record'])
+    record_gids = utils.select_well_tuned_cells(d, params['mp_select_cells'], params['n_gids_to_record'])
     ax = plot_orientation_as_quiver(d[record_gids, :])
 
     random_predictor_mp = np.loadtxt(params['all_predictor_params_fn'])

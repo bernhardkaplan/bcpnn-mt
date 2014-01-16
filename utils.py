@@ -293,7 +293,7 @@ def set_receptive_fields(self, params, tuning_prop):
     return rfs
 
 
-def select_well_tuned_cells_2D_with_orientation(tp, mp, params, n_cells):
+def select_well_tuned_cells_2D_with_orientation(tp, mp, n_cells):
     """
     mp -- [x, y, vx, vy, orientation]
     """
@@ -303,7 +303,7 @@ def select_well_tuned_cells_2D_with_orientation(tp, mp, params, n_cells):
     return idx_sorted[:n_cells]
 
 
-def select_well_tuned_cells_1D(tp, mp, params, n_cells):
+def select_well_tuned_cells_1D(tp, mp, n_cells):
     """
     mp -- [x, y, vx, vy, orientation]
     """
