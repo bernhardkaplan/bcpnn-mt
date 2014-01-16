@@ -770,12 +770,7 @@ if __name__ == '__main__':
         clean_up_results_directory(params)
     if comm != None:
         comm.Barrier()
-#    w_sigma_x = float(sys.argv[1])
-#    w_sigma_v = float(sys.argv[2])
-#    params['w_sigma_x'] = w_sigma_x
-#    params['w_sigma_v'] = w_sigma_v
     ps.set_filenames()
-
 
     if pc_id == 0:
         ps.create_folders()

@@ -640,8 +640,8 @@ class PlotPrediction(object):
             y_pos_of_stim = np.zeros(self.n_bins)
             for t_bin in xrange(self.n_bins):
                 y_pos_of_stim[t_bin] = utils.get_grid_pos_1d(self.x_stim[t_bin], yticks)
-            for t_bin in xrange(self.n_bins-1):
-                ax.plot((t_bin, t_bin+1), (y_pos_of_stim[t_bin], y_pos_of_stim[t_bin+1]), ls='--', c='w', lw=3, label='$x_{stim}$')
+#            for t_bin in xrange(self.n_bins-1):
+#                ax.plot((t_bin, t_bin+1), (y_pos_of_stim[t_bin], y_pos_of_stim[t_bin+1]), ls='--', c='w', lw=3, label='$x_{stim}$')
             print '\nDEBUG\n', y_pos_of_stim
             ax.plot((0, self.n_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='w', lw=3, label='$x_{stim}$')
 

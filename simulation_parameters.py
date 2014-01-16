@@ -123,8 +123,8 @@ class parameter_storage(object):
         self.params['delay_scale'] = 1000.      # this determines the scaling
         #from the latency in second (d(src, tgt) / v_src)  to the connection
         #delay (delay_ij = latency_ij * delay_scale) in ms
-        self.params['delay_range'] = (0.1, 50.) # [ms], restricts remaining connections to have delays within this range
-        self.params['tau_prediction'] = 10. # [ms] fixed latency for neural signaling, determines preferred projection sites of neurons
+        self.params['delay_range'] = (0.1, 100.) # [ms], restricts remaining connections to have delays within this range
+        self.params['tau_prediction'] = .01 # fixed latency for neural signaling, determines preferred projection sites of neurons
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
@@ -149,23 +149,23 @@ class parameter_storage(object):
         self.params['conn_types'] = ['ee', 'ei', 'ie', 'ii']
 
 #        self.params['p_to_w'] =
-        self.params['p_ee'] = 0.02              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.01              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 8e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
 
         # exc - inh
-        self.params['p_ei'] = 0.04 #self.params['p_ee']
+        self.params['p_ei'] = 0.02 #self.params['p_ee']
         self.params['w_ei_mean'] = 0.005
         self.params['w_ei_sigma'] = 0.001
 
         # inh - exc
-        self.params['p_ie'] = 0.04 #self.params['p_ee']
+        self.params['p_ie'] = 0.02 #self.params['p_ee']
         self.params['w_ie_mean'] = 0.005
         self.params['w_ie_sigma'] = 0.001
 
         # inh - inh
-        self.params['p_ii'] = 0.04
+        self.params['p_ii'] = 0.02
         self.params['w_ii_mean'] = 0.003
         self.params['w_ii_sigma'] = 0.001
 
@@ -176,9 +176,9 @@ class parameter_storage(object):
         # ######################
         # SIMULATION PARAMETERS
         # ######################
-        self.params['seed'] = 2
+        self.params['seed'] = 3
         self.params['np_random_seed'] = self.params['seed']
-        self.params['t_sim'] = 2400.            # [ms] total simulation time
+        self.params['t_sim'] = 1600.            # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
         self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
 #        self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
@@ -189,7 +189,7 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['neural_perception_delay'] = 0. # [ms] delay accumulated along the neural pathways during the motion perception and prediction process
+        self.params['neural_perception_delay'] = 0.05 # [s] delay accumulated along the neural pathways during the motion perception and prediction process
 
         # ######
         # INPUT
@@ -298,11 +298,11 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'New_eqW%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wsiso%.2f_taue%d_taui%d_seed%d/' % (\
+               folder_name = 'New_eqW%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_taue%d_taui%d_seed%d/' % (\
                        self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], \
-                       self.params['tau_prediction'], self.params['neural_perception_delay'], \
+                       self.params['tau_prediction'] * 1000., self.params['neural_perception_delay'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
-                       self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_isotropic'], \
+                       self.params['w_sigma_x'], self.params['w_sigma_v'], 
                        self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['seed'])
 
 #            folder_name += connectivity_code
@@ -453,6 +453,7 @@ class parameter_storage(object):
         self.set_filenames()
 #        self.ParamSet = ntp.ParameterSet(self.params)
 
+
     def write_parameters_to_file(self, fn=None, params=None):
         """
         Keyword arguments:
@@ -470,6 +471,7 @@ class parameter_storage(object):
         print 'Writing parameters to: %s' % (fn)
         output_file = file(fn, 'w')
         d = json.dump(params_to_write, output_file, sort_keys=True, indent=4)
+
 
     def print_cell_numbers(self):
         print 'Excitatory cells:'

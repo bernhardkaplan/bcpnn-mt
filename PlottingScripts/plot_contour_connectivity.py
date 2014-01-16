@@ -122,12 +122,14 @@ def plot_contour_connectivity(params, d, tp, gid):
 
 
 
-def get_pconn(tp, gid, tau_prediction, x_tgt, vx_tgt, params):
+def get_pconn(params, tp, gid, x_tgt, vx_tgt):
     n_tgt = x_tgt.size
+    tau_prediction = params['tau_prediction'] / params['t_stimulus']
+    tau_shift = params['neural_perception_delay']
     # compute where the cell projects to (preferentially)
-    x_predicted = ((tp[gid, 0] + tp[gid, 2] * tau_prediction) % 1) * np.ones(n_tgt)
+    x_predicted = ((tp[gid, 0] + (tau_prediction + tau_shift) * tp[gid, 2]) % 1) * np.ones(n_tgt)
+    print 'debug', tp[gid, 0], x_predicted[0], tp[gid, 2] * (tau_prediction + tau_shift)
     d_pred_tgt = utils.torus_distance_array(x_predicted, x_tgt)
-
     z = np.exp(- d_pred_tgt**2 / (2 * params['w_sigma_x']**2)) \
             * np.exp(- ((tp[gid, 2] - vx_tgt)**2/ (2 * params['w_sigma_v']**2)))
     return z
@@ -146,7 +148,6 @@ def plot_formula(params, d, tp, gid):
     # # # # # # # # # # # # 
     # plot the formula 
     # # # # # # # # # # # # 
-    tau_prediction = params['tau_prediction']
     n_pts = 500000
     autolimit = True
     if autolimit:
@@ -178,7 +179,7 @@ def plot_formula(params, d, tp, gid):
     vx_sample = np.random.uniform(vx_min, vx_max, n_pts)
 
 
-    z = get_pconn(tp, gid, tau_prediction, x_sample, vx_sample, params)
+    z = get_pconn(params, tp, gid, x_sample, vx_sample)
     
     # compute the the formula with anisotrpy
 #    tau_perception = params['neural_perception_delay'] / params['t_stimulus']

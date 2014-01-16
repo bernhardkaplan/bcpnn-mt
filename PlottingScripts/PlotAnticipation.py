@@ -21,7 +21,8 @@ class PlotAnticipation(object):
         self.n_fig_x = 1
         self.n_fig_y = 1
 #        self.fig_size = (11.69, 8.27) #A4
-        self.fig_size = (12, 8)
+#        self.fig_size = (10, 8)
+        self.fig_size = utils.get_figsize(1200)
         self.colorlist = ['k', 'r', 'b', 'g', 'm', 'y', 'c']
 
         rcParams = { 'axes.labelsize' : 20,
@@ -325,30 +326,17 @@ def average_multiple_simulations(folder_names):
     """
     folder names 
     """
-
-    
-
-
-if __name__ == '__main__':
-
-    if len(sys.argv) == 2:
-        param_fn = sys.argv[1]
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
+    for folder in folder_names:
+        param_fn = os.path.abspath(folder) + '/Parameters/simulation_parameters.json'
         import json
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
-    elif len(sys.argv) > 2:
-        average_multiple_simulations(sys.argv[1:])
-    else:
-        print '\nPlotting the default parameters give in simulation_parameters.py\n'
-        import simulation_parameters
-        network_params = simulation_parameters.parameter_storage()
-        params = network_params.params
+    
 
-    output_fn_base = params['figures_folder'] + 'snn_anticipation_wsx%.2e_wsv%.2e_' % (params['w_sigma_x'], params['w_sigma_v'])
-
+def plot_anticipation(params):
+    """
+    """
     P = PlotAnticipation(params)
     # determine where to look for an anticipation signal
     start_location = 0.08   # distance from the start point of motion
@@ -373,8 +361,8 @@ if __name__ == '__main__':
 
     P.create_fig()
     P.plot_selected_cells_in_tuning_space(fig_cnt=1, gids=gids, plot_all_cells=True)
-#    P.plot_selected_cells_in_tuning_space(fig_cnt=1)
 
+    output_fn_base = params['figures_folder'] + 'snn_anticipation_wsx%.2e_wsv%.2e_' % (params['w_sigma_x'], params['w_sigma_v'])
     output_fn = output_fn_base + 'tuning_prop_wpos%.2f.png' % (w_pos)
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
@@ -391,6 +379,29 @@ if __name__ == '__main__':
     output_fn = output_fn_base + 'mean_exp_traces.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
+
+
+if __name__ == '__main__':
+
+    if len(sys.argv) == 2:
+        param_fn = sys.argv[1]
+        if os.path.isdir(param_fn):
+            param_fn += '/Parameters/simulation_parameters.json'
+        import json
+        f = file(param_fn, 'r')
+        print 'Loading parameters from', param_fn
+        params = json.load(f)
+        plot_anticipation(params)
+    elif len(sys.argv) > 2:
+        average_multiple_simulations(sys.argv[1:])
+    else:
+        print '\nPlotting the default parameters give in simulation_parameters.py\n'
+        import simulation_parameters
+        network_params = simulation_parameters.parameter_storage()
+        params = network_params.params
+        plot_anticipation(params)
+
+    
 
 #    pylab.show()
 
