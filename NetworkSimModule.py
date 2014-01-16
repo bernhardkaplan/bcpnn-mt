@@ -348,7 +348,7 @@ class NetworkModel(object):
                 p[tgt], latency[tgt] = 0., 0.
 
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
-            print latency, latency.mean()#, np.nonzero(self.params['delay_range'][0] >  np.nonzero(self.params['delay_range'][0] > latency * self.params['delay_scale'] >  self.params['delay_range'][1] + latency * self.params['delay_scale'] > self.params['delay_range'][1])
+            #print latency, latency.mean()#, np.nonzero(self.params['delay_range'][0] >  np.nonzero(self.params['delay_range'][0] > latency * self.params['delay_scale'] >  self.params['delay_range'][1] + latency * self.params['delay_scale'] > self.params['delay_range'][1])
             invalid_idx = np.nonzero(latency * self.params['delay_scale'] > self.params['delay_range'][1])[0]
 #            invalid_idx = np.nonzero(latency * self.params['delay_scale'] > (self.params['delay_range'][1] + self.params['neural_perception_delay']))[0]
 #            print 'invalid_idx', latency.mean(), latency.mean() * self.params['delay_scale']
@@ -385,6 +385,8 @@ class NetworkModel(object):
 #            print 'debug w', i_, tgt, w
 
             delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+            #delays = latency[sources] * self.params['delay_scale']
+            #delays[p[sources] == 0.] = 0.
 
 #            delays = (self.params['delay_range'][1] - self.params['delay_range'][0]) * np.random.rand(sources.size) + self.params['delay_range'][0]
 
