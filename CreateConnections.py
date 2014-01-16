@@ -18,8 +18,35 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
     if params['n_grid_dimensions'] == 2:
         return get_p_conn_motion_based_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
     else:
-        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'], tau_perception=params['neural_perception_delay'] / params['t_stimulus'])
+#        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'], tau_perception=params['neural_perception_delay'] / params['t_stimulus'])
+        return get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, params['w_sigma_x'], \
+                params['w_sigma_v'], params['connectivity_radius'], tau_prediction=params['tau_prediction'])
 #        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+
+
+def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_prediction=0.05):
+    """
+    Assuming that every neuron passes on its motion information within a certain time (=tau_prediction),
+    x_predicted is computed and cells within the vicinity are connected preferentially.
+    This function operates on the target neuron's side, i.e. computations are done for all possible source cells:
+    --> From which sources should I get input?
+    """
+    n_src = tp_src[:, 0].size
+    # compute where the source cells predict the stimulus to be after tau_prediction [s]
+    x_predicted = (tp_src[:, 0] + tau_prediction * tp_src[:, 2]) % 1.
+    # calculate the distance between the predicted position and the target cell
+    d_pred_tgt = utils.torus_distance_array(x_predicted, tp_tgt[0] * np.ones(n_src))
+    # take the preferred speeds into account 
+    v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
+    p = np.exp(- d_pred_tgt**2 / (2 * w_sigma_x**2)) \
+            * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
+
+    d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
+    latency = d_ij / np.abs(tp_src[:, 2])
+
+    if connectivity_radius < 1.0: # actually obsolete here
+        p[d_ij > connectivity_radius] = 0.
+    return p, latency
 
 
 def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_perception=0.):
@@ -32,7 +59,7 @@ def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
     latency = d_ij / np.abs(tp_src[:, 2])
     #x_pred = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
     # normal
-    x_pred = tp_src[:, 0]  + tp_src[:, 2] * latency
+    x_pred = tp_src[:, 0] + tp_src[:, 2] * latency
     d_pred_tgt = utils.torus_distance_array(x_pred, tp_tgt[0] * np.ones(n_src))
     v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
     p = np.exp(- (d_pred_tgt**2 / (2 * w_sigma_x**2))) \
