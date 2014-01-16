@@ -130,8 +130,8 @@ class parameter_storage(object):
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
         self.params['w_sigma_isotropic'] = 0.10 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
 
-        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
-        #self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
+#        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
+        self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
         self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1. * self.params['w_tgt_in_per_cell_ee']
@@ -154,17 +154,17 @@ class parameter_storage(object):
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
 
         # exc - inh
-        self.params['p_ei'] = 0.03 #self.params['p_ee']
+        self.params['p_ei'] = 0.04 #self.params['p_ee']
         self.params['w_ei_mean'] = 0.005
         self.params['w_ei_sigma'] = 0.001
 
         # inh - exc
-        self.params['p_ie'] = 0.03 #self.params['p_ee']
+        self.params['p_ie'] = 0.04 #self.params['p_ee']
         self.params['w_ie_mean'] = 0.005
         self.params['w_ie_sigma'] = 0.001
 
         # inh - inh
-        self.params['p_ii'] = 0.03
+        self.params['p_ii'] = 0.04
         self.params['w_ii_mean'] = 0.003
         self.params['w_ii_sigma'] = 0.001
 
@@ -194,7 +194,7 @@ class parameter_storage(object):
         # INPUT
         # ######
         self.params['f_max_stim'] = 1000.       # [Hz]
-        self.params['w_input_exc'] = 5.00e-2 * 10. / self.params['tau_syn_exc']    # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 6.00e-3 * 10. / self.params['tau_syn_exc']    # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
         # MOTION STIMULUS
