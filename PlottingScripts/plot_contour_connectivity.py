@@ -317,4 +317,4 @@ if __name__ == '__main__':
 #    plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
     plot_formula(params, d, tp, gid) # plot the analytically expected weights and the actual connections in tuning space
 
-    pylab.show()
+#    pylab.show()

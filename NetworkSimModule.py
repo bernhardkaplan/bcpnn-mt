@@ -779,7 +779,7 @@ if __name__ == '__main__':
         comm.Barrier()
     sim_cnt = 0
 
-    max_neurons_to_record = 15800
+    max_neurons_to_record = 10000
     if params['n_cells'] > max_neurons_to_record:
         load_files = False
         record_v = False
