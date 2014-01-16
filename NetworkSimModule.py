@@ -350,11 +350,12 @@ class NetworkModel(object):
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
             print latency, latency.mean()#, np.nonzero(self.params['delay_range'][0] >  np.nonzero(self.params['delay_range'][0] > latency * self.params['delay_scale'] >  self.params['delay_range'][1] + latency * self.params['delay_scale'] > self.params['delay_range'][1])
             invalid_idx = np.nonzero(latency * self.params['delay_scale'] > self.params['delay_range'][1])[0]
+#            invalid_idx = np.nonzero(latency * self.params['delay_scale'] > (self.params['delay_range'][1] + self.params['neural_perception_delay']))[0]
 #            print 'invalid_idx', latency.mean(), latency.mean() * self.params['delay_scale']
-            print 'DEBUG: # of neurons with a too long latency = ', invalid_idx.size, 'total number of source = ', tp_src.size
+            print 'DEBUG: # of neurons with a too long latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
             p[invalid_idx] = 0.
             invalid_idx = np.nonzero(latency * self.params['delay_scale'] < self.params['delay_range'][0])[0]
-            print 'DEBUG: # of neurons with a too short latency = ', invalid_idx.size, 'total number of source = ', tp_src.size
+            print 'DEBUG: # of neurons with a too short latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
             p[invalid_idx] = 0.
 
             sorted_indices = np.argsort(p)

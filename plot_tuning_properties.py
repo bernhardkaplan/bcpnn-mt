@@ -426,7 +426,7 @@ def plot_tuning_space(params):
 if __name__ == '__main__':
 
     if len(sys.argv) > 1:
-        param_fn = argv[1]
+        param_fn = sys.argv[1]
         if os.path.isdir(param_fn):
             param_fn += '/Parameters/simulation_parameters.json'
         print 'Trying to load parameters from', param_fn

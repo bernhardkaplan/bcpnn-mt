@@ -21,18 +21,17 @@ def plot_contour_connectivity(params, d, tp, gid):
     targets = utils.get_targets(d, gid)
     target_gids = targets[:, 1].astype(int)
     weights = targets[:, 2]
+    delays = targets[:, 3]
     x_tgt = tp[target_gids, 0]
     vx_tgt = tp[target_gids, 2]
 
     autolimit = True
-    print 'x_tgt min max', x_tgt.min(), x_tgt.max()
-    print 'vx_tgt min max', vx_tgt.min(), vx_tgt.max()
     if autolimit:
-        x_min, x_max = .8 * x_tgt.min(), 1.1 * x_tgt.max()
+        x_min, x_max = .9 * x_tgt.min(), 1.1 * x_tgt.max()
         if np.sign(vx_tgt.min()) == -1:
-            vx_min = 1.5 * vx_tgt.min()
+            vx_min = 1.1 * vx_tgt.min()
         else:
-            vx_min = .5 * vx_tgt.min()
+            vx_min = .9 * vx_tgt.min()
         vx_max = 1.3 * vx_tgt.max()
     else:
         ylim = (-3.5, 4)
@@ -44,8 +43,6 @@ def plot_contour_connectivity(params, d, tp, gid):
     dvx = 0.04 * (vx_max - vx_min)
     x_grid, vx_grid = np.mgrid[slice(x_min, x_max, dx), 
                     slice(vx_min, vx_max, dvx)]
-    print 'x_grid[0, :]', x_grid[:, 0]
-    print 'vx_grid[0, :]', vx_grid[0, :]
 
     x_edges = x_grid[:, 0]
     vx_edges = vx_grid[0, :]
@@ -53,7 +50,6 @@ def plot_contour_connectivity(params, d, tp, gid):
     for i_, w in enumerate(weights):
         x0, v0 = x_tgt[i_], vx_tgt[i_]
         (x_, y_) = utils.get_grid_pos(x0, v0, x_edges, vx_edges)
-    #    print 'w %.3e x0 %.2e vx %.2e, x_ %d y_ %d' % (w, x0, v0, x_, y_)
         z_data[x_, y_] += w
 
 
@@ -69,32 +65,36 @@ def plot_contour_connectivity(params, d, tp, gid):
 #                'figure.subplot.top':.90, 
                 'lines.markeredgewidth' : 0}
     pylab.rcParams.update(rcParams)
-    fig = pylab.figure(figsize=(10, 10))
+    fig = pylab.figure(figsize=(14, 10))
     ax = fig.add_subplot(111)
 
-#    z_data = z_data[:-1, :-1]
     z_data = z_data
-    #levels = MaxNLocator(nbins=15).tick_values(z_data.min(), z_data.max())
     cmap = pylab.get_cmap('jet')
-#    ax.contourf(x_grid[:-1, :-1] + dx / 2.,
-#                vx_grid[:-1, :-1] + dvx / 2., z_data, 30, \
-#                  cmap=cmap)
     n_levels = 200
     CS = ax.contourf(x_grid + dx / 2.,
                 vx_grid + dvx / 2., z_data, n_levels, \
                   cmap=cmap)
-    pylab.colorbar(CS)
 
     # use weights as dot sizes
     markersize_cell = 15
-    markersize_min = 3
-    markersize_max = 8
+    markersize_min = 4
+    markersize_max = 10
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
+    norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
+#    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
+    m.set_array(delays)
+    rgba_colors = m.to_rgba(delays)
     for i_, tgt in enumerate(targets):
-        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c='k', markersize=markersizes[i_])
-#    ax.plot(x_tgt, vx_tgt, 'o', markeredgewidth=0, c='k', markersize=4)
+        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
     ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label='source')
     ax.legend(numpoints=1)
+
+    # set colorbars and labels
+    cbar_prob = fig.colorbar(CS)
+    cbar_delay = fig.colorbar(m)
+    cbar_prob.set_label('Connection probability')
+    cbar_delay.set_label('Delay [ms]')
 
     # autoscale figure limits
     if autolimit:
@@ -106,8 +106,6 @@ def plot_contour_connectivity(params, d, tp, gid):
         xlim = (0.6, 0.72)
         output_fig = params['figures_folder'] + 'contour_connectivity_%d_wsx%.2e_wsv%.2e.png' % (gid, params['w_sigma_x'], params['w_sigma_v'])
 
-#    print 'x_grid[:-1, :-1]', x_grid[:-1, :-1]
-#    print 'vx_grid[:-1, :-1]', vx_grid[:-1, :-1]
     ylim = (.5 * vx_edges[1], vx_edges[-2])
     xlim = (x_edges[1], x_edges[-2])
     ax.set_ylim(ylim)
@@ -149,10 +147,6 @@ def plot_formula(params, d, tp, gid):
             vx_min = .5 * vx_tgt.min()
         vx_max = 1.3 * vx_tgt.max()
     else:
-#        ylim = (-3.5, 4)
-#        xlim = (0.0, 1.0)
-#        x_min, x_max = xlim[0], xlim[1]
-#        vx_min, vx_max = ylim[0], ylim[1]
         x_min, x_max = 0., 1.
         vx_min, vx_max = -2, 2.
 
@@ -161,8 +155,6 @@ def plot_formula(params, d, tp, gid):
     dvx = 0.04 * (vx_max - vx_min)
     x_sample = np.random.uniform(x_min, x_max, n_pts)
     vx_sample = np.random.uniform(vx_min, vx_max, n_pts)
-#    x_sample = np.linspace(x_min+dx, x_max, n_pts)
-#    vx_sample = np.linspace(vx_min+dvx, vx_max, n_pts)
 
     # compute the the formula with anisotrpy
     tau_perception = params['neural_perception_delay'] / params['t_stimulus']
@@ -178,6 +170,7 @@ def plot_formula(params, d, tp, gid):
         # apply connection radius
         latency = d_ij / np.abs(tp[gid, 2])
         invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
+#        invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
         z[invalid_idx] = 0.
 
 
@@ -187,7 +180,7 @@ def plot_formula(params, d, tp, gid):
     z_grid = griddata(x_sample, vx_sample, z, x_grid, vx_grid, interp='linear')
     n_levels = 200
 
-    fig = pylab.figure(figsize=(10, 10))
+    fig = pylab.figure(figsize=(14, 10))
     ax = fig.add_subplot(111)
     CS = ax.contourf(x_grid, vx_grid, z_grid, n_levels, cmap=pylab.cm.jet,
                       vmax=abs(z_grid).max(), vmin=-abs(z_grid).max())
@@ -197,8 +190,8 @@ def plot_formula(params, d, tp, gid):
     # # # # # # # # # # # # 
     # use weights as dot sizes
     markersize_cell = 15
-    markersize_min = 3
-    markersize_max = 8
+    markersize_min = 4
+    markersize_max = 10
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
     norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
 #    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
@@ -207,7 +200,10 @@ def plot_formula(params, d, tp, gid):
     rgba_colors = m.to_rgba(delays)
     for i_, tgt in enumerate(targets):
         ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
-#        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c='k', markersize=markersizes[i_])
+
+    # check where other cells are situated
+    ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=0, c='k', markersize=1)
+
     ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label='source')
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
@@ -220,10 +216,9 @@ def plot_formula(params, d, tp, gid):
     cbar_prob.set_label('Connection probability')
     cbar_delay.set_label('Delay [ms]')
 
+    ylim = (vx_grid[1], vx_grid[-1])
 #    ylim = (vx_min, vx_max)
-#    xlim = (x_min, x_max)
-    ylim = (vx_grid[1], vx_grid[-2])
-    xlim = (x_grid[1], x_grid[-2])
+    xlim = (x_grid[1], x_grid[-1])
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
 
@@ -239,8 +234,6 @@ def plot_formula(params, d, tp, gid):
 
 if __name__ == '__main__':
 
-#    print 'Running merge_connlists.py...'
-#    os.system('python merge_connlists.py')
     np.random.seed(0)
     if len(sys.argv) > 1:
         if sys.argv[1].isdigit():
