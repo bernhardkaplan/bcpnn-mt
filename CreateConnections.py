@@ -23,6 +23,10 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
 
 
 def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_perception=0.):
+    """
+    Calculate the connection probabilities between all source cells in the network
+    and one single target cell (assigned to the process).
+    """
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
     latency = d_ij / np.abs(tp_src[:, 2])

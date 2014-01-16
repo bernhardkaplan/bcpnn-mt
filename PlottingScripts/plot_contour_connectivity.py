@@ -160,9 +160,20 @@ def plot_formula(params, d, tp, gid):
     tau_perception = params['neural_perception_delay'] / params['t_stimulus']
     d_ij = utils.torus_distance_array(x_sample, tp[gid, 0] * np.ones(n_pts))
     latency = d_ij / np.abs(tp[gid, 2])
-    x_pred = tp[gid, 0] + tp[gid, 2] * (latency + tau_perception) # with delay-compensation
+#    x_pred = tp[gid, 0] + tp[gid, 2] * (latency + tau_perception) # with delay-compensation
+    x_pred = tp[gid, 0] + tp[gid, 2] * latency
     d_pred_tgt = utils.torus_distance_array(x_pred, x_sample)
-    z = np.exp(- (d_pred_tgt)**2 / (2 * params['w_sigma_x']**2)) \
+    cnt = 0
+    n_test = n_pts
+    for i in xrange(n_test):
+        if d_pred_tgt[i] == 0:
+            cnt += 1
+#        else:
+#            check_condition = np.sign(vx_sample[i]) * np.sign((x_sample[i] - tp[gid, 0]))
+#            print '%.3f\t%.3f\t%.3f\t%d\t%d\t%d' % (d_pred_tgt[i], x_sample[i], vx_sample[i], np.sign(vx_sample[i]), np.sign((x_sample[i] - tp[gid, 0])), check_condition)
+    print 'Number of d_pred_tgt == 0:', cnt, float(cnt) / n_test
+
+    z = np.exp(- d_pred_tgt**2 / (2 * params['w_sigma_x']**2)) \
             * np.exp(- ((tp[gid, 2] - vx_sample)**2/ (2 * params['w_sigma_v']**2)))
 
     clip_formula_at_connradius = True
@@ -253,21 +264,20 @@ if __name__ == '__main__':
             f = file(param_fn, 'r')
             print 'Loading parameters from', param_fn
             params = json.load(f)
-            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
     else:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
         params = ps.params
-        try:
-            gid = np.int(np.loadtxt(params['gids_to_record_fn'])[0])
-        except:
-            gid = None
 
     # determine which cell to plot
     random.seed(0)
     tp = np.loadtxt(params['tuning_prop_means_fn'])
+    d = np.loadtxt(params['merged_conn_list_ee'])
+    mp_for_cell_sampling = [0.2, 0., .5, 0.]
+    gid = None
     while gid == None:
-        gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+#        gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
+        gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
         n_out = (d[:, 2] == gid).nonzero()
         if n_out == 0:
             print 'GID %d connects to NO CELLS' % gid
@@ -280,8 +290,7 @@ if __name__ == '__main__':
         os.system('python merge_connlists.py %s' % params['folder_name'])
     print 'Loading connection file ...'
 
-    d = np.loadtxt(params['merged_conn_list_ee'])
     plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
     plot_formula(params, d, tp, gid) # plot the analytically expected weights and the actual connections in tuning space
 
-#    pylab.show()
+    pylab.show()

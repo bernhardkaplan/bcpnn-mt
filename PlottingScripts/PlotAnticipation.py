@@ -321,9 +321,17 @@ class PlotAnticipation(object):
 
 
 
+def average_multiple_simulations(folder_names):
+    """
+    folder names 
+    """
+
+    
+
+
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
         param_fn = sys.argv[1]
         if os.path.isdir(param_fn):
             param_fn += '/Parameters/simulation_parameters.json'
@@ -331,6 +339,8 @@ if __name__ == '__main__':
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
+    elif len(sys.argv) > 2:
+        average_multiple_simulations(sys.argv[1:])
     else:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
         import simulation_parameters
@@ -340,38 +350,20 @@ if __name__ == '__main__':
     output_fn_base = params['figures_folder'] + 'snn_anticipation_wsx%.2e_wsv%.2e_' % (params['w_sigma_x'], params['w_sigma_v'])
 
     P = PlotAnticipation(params)
+    # determine where to look for an anticipation signal
+    start_location = 0.08   # distance from the start point of motion
+    location_sampling_interval = 0.025
+    n_locations_to_check = 3
+    n_cells_per_pop = 20    # each /virtual/ electrode measures from this many cells
+    w_pos = 10 # when determining which cells to sample, this determines how much more important the position is compared to the speed in the tuning space
 
-#    locations_to_record = [  .05 + params['motion_params'][0], \
-#                             .10 + params['motion_params'][0], \
-#                             .15 + params['motion_params'][0]]
-
-#    locations_to_record = [  .05 + params['motion_params'][0], \
-#                             .15 + params['motion_params'][0], \
-#                             .25 + params['motion_params'][0]]
-
-#    locations_to_record = [  .10 + params['motion_params'][0], \
-#                             .15 + params['motion_params'][0], \
-#                             .20 + params['motion_params'][0]]
-
-#    locations_to_record = [  .10 + params['motion_params'][0], \
-#                             .20 + params['motion_params'][0], \
-#                             .30 + params['motion_params'][0]]
-
-
-#    locations_to_record = [  .15 + params['motion_params'][0], \
-#                             .25 + params['motion_params'][0], \
-#                             .35 + params['motion_params'][0]]
-#                             .45 + params['motion_params'][0]]
-
-    locations_to_record = [ (i * 0.05) + .15 + params['motion_params'][0] for i in xrange(3)]
-
+    locations_to_record = [ (i * location_sampling_interval) + start_location + params['motion_params'][0] for i in xrange(n_locations_to_check)]
     print 'Locations to record from:', locations_to_record
     fn = params['data_folder'] + 'locations_recorded_from.json'
     f = file(fn, 'w')
     json.dump(locations_to_record, f)
-    w_pos = 5.0
+    # if w_pos > 1: spatial sampling, if w_pos < 1: preferred speed decides
     n_pop = len(locations_to_record)
-    n_cells_per_pop = 20
     vx_record = params['motion_params'][2]
     gids = [[] for i in xrange(n_pop)]
     for i_ in xrange(n_pop):
