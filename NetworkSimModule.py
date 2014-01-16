@@ -331,7 +331,7 @@ class NetworkModel(object):
         n_src_cells_per_neuron = int(round(self.params['p_%s' % conn_type] * n_src))
         (delay_min, delay_max) = self.params['delay_range']
         local_connlist = np.zeros((n_src_cells_per_neuron * len(tgt_cells), 4))
-
+        # we connect the source population (tp_src) to each target neuron in the target population (tgt_cells)
         for i_, tgt in enumerate(tgt_cells):
             if self.params['conn_conf'] == 'direction-based':
                 p, latency = CC.get_p_conn_direction_based(params, tp_src, tp_tgt[tgt, :])
@@ -349,19 +349,18 @@ class NetworkModel(object):
 
             # random delays? --> np.permutate(latency) or latency[sources] * self.params['delay_scale'] * np.rand
             #print latency, latency.mean()#, np.nonzero(self.params['delay_range'][0] >  np.nonzero(self.params['delay_range'][0] > latency * self.params['delay_scale'] >  self.params['delay_range'][1] + latency * self.params['delay_scale'] > self.params['delay_range'][1])
-            invalid_idx = np.nonzero(latency * self.params['delay_scale'] > self.params['delay_range'][1])[0]
-#            invalid_idx = np.nonzero(latency * self.params['delay_scale'] > (self.params['delay_range'][1] + self.params['neural_perception_delay']))[0]
-#            print 'invalid_idx', latency.mean(), latency.mean() * self.params['delay_scale']
-            print 'DEBUG: # of neurons with a too long latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
-            p[invalid_idx] = 0.
             invalid_idx = np.nonzero(latency * self.params['delay_scale'] < self.params['delay_range'][0])[0]
             print 'DEBUG: # of neurons with a too short latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
-            p[invalid_idx] = 0.
+            p[invalid_idx], latency[invalid_idx] = 0., 0.
+            invalid_idx = np.nonzero(latency * self.params['delay_scale'] > self.params['delay_range'][1])[0]
+            print 'DEBUG: # of neurons with a too long latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
+            p[invalid_idx], latency[invalid_idx] = 0., 0.
 
-            sorted_indices = np.argsort(p)
+            sorted_indices = np.argsort(p) # from smallest to biggest probability
             if conn_type[0] == 'e':
                 sources = sorted_indices[-n_src_cells_per_neuron:]
             else: # source = inhibitory
+                # laurent: I am not sure this is the correct way to connect inhibitory - but we use isotropic, right?
                 if conn_type[0] == conn_type[1]:
                     sources = sorted_indices[1:n_src_cells_per_neuron+1]  # shift indices to avoid self-connection, because p_ii = .0
                 else:
@@ -370,7 +369,6 @@ class NetworkModel(object):
 #            print 'debug sources', sources.size
             assert (sources.size > 0)
             eta = 1e-12
-
             # equal weights:
             if self.params['equal_weights']:
                 p_to_w = np.zeros(n_src)
@@ -394,6 +392,7 @@ class NetworkModel(object):
             conn_list = np.array((sources, tgt * np.ones(n_src_cells_per_neuron), w, delays))
             local_connlist[i_ * n_src_cells_per_neuron : (i_ + 1) * n_src_cells_per_neuron, :] = conn_list.transpose()
             connector = FromListConnector(conn_list.transpose())
+            # laurent: here there is something I do not get: you are still connecting tg_src to tgt, but you issue a connector to the whole population... isn't there an indentation issue?
             prj = Projection(src_pop, tgt_pop, connector)
             self.projections[conn_type].append(prj)
 
