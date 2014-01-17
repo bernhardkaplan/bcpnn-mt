@@ -122,19 +122,43 @@ def plot_contour_connectivity(params, d, tp, gid):
 
 
 
-def get_pconn(params, tp, gid, x_tgt, vx_tgt):
+def get_pconn_source_perspective(params, tp, src_gid, x_tgt, vx_tgt):
+    """To which cells should src_gid connect to?"""
     n_tgt = x_tgt.size
     tau_prediction = params['tau_prediction'] / params['t_stimulus']
     tau_shift = params['neural_perception_delay']
     # compute where the cell projects to (preferentially)
-    x_predicted = ((tp[gid, 0] + (tau_prediction + tau_shift) * tp[gid, 2]) % 1) * np.ones(n_tgt)
-    print 'debug', tp[gid, 0], x_predicted[0], tp[gid, 2] * (tau_prediction + tau_shift)
+    x_predicted = ((tp[src_gid, 0] + (tau_prediction + tau_shift) * tp[src_gid, 2]) % 1) * np.ones(n_tgt)
+    print 'debug', tp[src_gid, 0], x_predicted[0], tp[src_gid, 2] * (tau_prediction + tau_shift)
     d_pred_tgt = utils.torus_distance_array(x_predicted, x_tgt)
     z = np.exp(- d_pred_tgt**2 / (2 * params['w_sigma_x']**2)) \
-            * np.exp(- ((tp[gid, 2] - vx_tgt)**2/ (2 * params['w_sigma_v']**2)))
+            * np.exp(- ((tp[src_gid, 2] - vx_tgt)**2/ (2 * params['w_sigma_v']**2)))
     return z
 
-def plot_formula(params, d, tp, gid):
+
+def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
+    """
+    From which cells does cell gid get input from?
+    This is as the simulation code works.
+    """
+
+    n_src = x_src.size
+    tau_prediction = params['tau_prediction'] / params['t_stimulus']
+    tau_shift = params['neural_perception_delay']
+    x_predicted = (x_src + (tau_prediction + tau_shift) * vx_src) % 1.
+    # calculate the distance between the predicted position and the target cell
+    d_pred_tgt = utils.torus_distance_array(x_predicted, tp[gid, 0] * np.ones(n_src))
+    # take the preferred speeds into account 
+    v_tuning_diff = vx_src - tp[gid, 2] * np.ones(n_src)
+    z = np.exp(- d_pred_tgt**2 / (2 * params['w_sigma_x']**2)) \
+            * np.exp(- (v_tuning_diff**2 / (2 * params['w_sigma_v']**2)))
+    # latency is computed based on src-tgt distance only --- not taking the tau_shift and tau_prediction into account
+#    d_ij = utils.torus_distance_array(tp[:, 0], tp[gid, 0] * np.ones(n_src))
+#    latency = d_ij / np.abs(vx_src)
+    return z
+
+
+def plot_formula(params, d, tp, gid, plot_source_perspective=False):
 
     print 'Plotting connectivity formula as contour plot ...'
     # get target cells and connection weights
@@ -179,7 +203,13 @@ def plot_formula(params, d, tp, gid):
     vx_sample = np.random.uniform(vx_min, vx_max, n_pts)
 
 
-    z = get_pconn(params, tp, gid, x_sample, vx_sample)
+    if plot_source_perspective:
+        z = get_pconn_source_perspective(params, tp, gid, x_sample, vx_sample)
+        cell_label = 'source'
+    else:
+        # plot as the simulation code works
+        z = get_pconn_target_perspective(params, tp, gid, x_sample, vx_sample)
+        cell_label = 'target'
     
     clip_formula_at_connradius = False
     if clip_formula_at_connradius:
@@ -224,7 +254,8 @@ def plot_formula(params, d, tp, gid):
     # check where other cells are situated
     ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=1, c='k', markersize=markersize_others)
 
-    ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label='source')
+    
+    ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label=cell_label)
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
     ax.set_ylabel('Preferred speed $v_x$')
@@ -279,13 +310,13 @@ if __name__ == '__main__':
         params = ps.params
 
     # determine which cell to plot
+    plot_source_perspective = False # if False --> it's like the simulation code
     random.seed(0)
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     d = np.loadtxt(params['merged_conn_list_ee'])
-    mp_for_cell_sampling = [0.1, 0.5, 0.5, 0.]
+    mp_for_cell_sampling = [0.2, 0.5, 0.5, 0.]
     gid = None
     while gid == None:
-#        gid = utils.select_well_tuned_cells_1D(tp, params['motion_params'], params, 1)
         gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
         n_out = (d[:, 2] == gid).nonzero()
         if n_out == 0:
@@ -300,6 +331,6 @@ if __name__ == '__main__':
     print 'Loading connection file ...'
 
 #    plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
-    plot_formula(params, d, tp, gid) # plot the analytically expected weights and the actual connections in tuning space
+    plot_formula(params, d, tp, gid, plot_source_perspective=plot_source_perspective) # plot the analytically expected weights and the actual connections in tuning space
 
-#    pylab.show()
+    pylab.show()
