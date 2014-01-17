@@ -30,7 +30,7 @@ class parameter_storage(object):
         self.params['N_RF'] = 200# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
-        self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
+        self.params['N_V'], self.params['N_theta'] = 40, 1# resolution in velocity norm and direction
         self.params['n_orientation'] = 1 # only for compatitibility with code borrowed from  v1-anticipation branch
        
         if self.params['n_grid_dimensions'] == 2:

@@ -49,12 +49,16 @@ def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_
     p = np.exp(- d_pred_tgt**2 / (2 * w_sigma_x**2)) \
             * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
 
+    # laurent: here I think it is wrong: now that you fixed the latency, you
+    # should use it. 
     # latency is computed based on src-tgt distance only --- not taking the tau_shift and tau_prediction into account
-    d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
-    latency = d_ij / np.abs(tp_src[:, 2])
+    # d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
+    # latency = d_ij / np.abs(tp_src[:, 2])
+    latrency = tau_prediction * np.ones(n_src)
 
-    if connectivity_radius < 1.0: # if needed for some reason
-        p[d_ij > connectivity_radius] = 0.
+    # obsolete
+    #if connectivity_radius < 1.0: # if needed for some reason
+        #p[d_ij > connectivity_radius] = 0.
     return p, latency
 
 
@@ -66,15 +70,16 @@ def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
     n_src = tp_src[:, 0].size
     d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
     latency = d_ij / np.abs(tp_src[:, 2])
-    #x_pred = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
+    #x_predicted = tp_src[:, 0]  + tp_src[:, 2] * (latency + tau_perception) # with delay-compensation
     # normal
-    x_pred = tp_src[:, 0] + tp_src[:, 2] * latency
-    d_pred_tgt = utils.torus_distance_array(x_pred, tp_tgt[0] * np.ones(n_src))
-    v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))**2
-    p = np.exp(- (d_pred_tgt**2 / (2 * w_sigma_x**2))) \
+    x_predicted = tp_src[:, 0] + tp_src[:, 2] * latency
+    d_pred_tgt = utils.torus_distance_array(x_predicted, tp_tgt[0] * np.ones(n_src))
+    v_tuning_diff = (tp_src[:, 2] - tp_tgt[2] * np.ones(n_src))
+    p = np.exp(- d_pred_tgt**2 / (2 * w_sigma_x**2)) \
             * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
-    if connectivity_radius < 1.0:
-        p[d_ij > connectivity_radius] = 0.
+    # obsolete
+    #if connectivity_radius < 1.0: # if needed for some reason
+        #p[d_ij > connectivity_radius] = 0.
     return p, latency
 
 def get_p_conn_motion_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):

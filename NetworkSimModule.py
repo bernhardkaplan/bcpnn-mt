@@ -789,6 +789,8 @@ if __name__ == '__main__':
         record_v = False
         save_input_files = not load_files
 
+    save_input_files = True
+
     NM = NetworkModel(ps.params, comm)
     NM.setup(times=times)
     NM.create(input_created)
