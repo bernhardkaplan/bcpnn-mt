@@ -54,7 +54,7 @@ def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_
     # latency is computed based on src-tgt distance only --- not taking the tau_shift and tau_prediction into account
     # d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
     # latency = d_ij / np.abs(tp_src[:, 2])
-    latrency = tau_prediction * np.ones(n_src)
+    latency = tau_prediction * np.ones(n_src)
 
     # obsolete
     #if connectivity_radius < 1.0: # if needed for some reason
