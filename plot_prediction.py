@@ -172,8 +172,8 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
         data_fn = params['exc_spiketimes_fn_merged'] + '.ras'
 
     plotter = P.PlotPrediction(params, data_fn)
-    pylab.rcParams['axes.labelsize'] = 14
-    pylab.rcParams['axes.titlesize'] = 16
+    pylab.rcParams['axes.labelsize'] = 20
+    pylab.rcParams['axes.titlesize'] = 24
     if plotter.no_spikes:
         return
 
@@ -184,24 +184,29 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
     # fig 1:  neuronal level
     output_fn_base = '%s%s_vx%.2f_wsigmaX_%.2f_wsigmaV%.2f_delayMax%d_connRadius%.2f_wee%.2f' % (params['prediction_fig_fn_base'], params['connectivity_code'], \
             params['motion_params'][2], params['w_sigma_x'], params['w_sigma_v'], params['delay_range'][1], params['connectivity_radius'], params['w_tgt_in_per_cell_ee'])
-    plotter.create_fig()  # create an empty figure
-    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
+
+#    plotter.create_fig()  # create an empty figure
+#    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
     plotter.n_fig_x = 1
     plotter.n_fig_y = 1
+
 #    plotter.plot_rasterplot('exc', 1)
 #    output_fn = output_fn_base + '_rp_exc.png'
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=300)
 
-    plotter.create_fig()  # create an empty figure
-    plotter.plot_rasterplot('inh', 1)
-    output_fn = output_fn_base + '_rp_inh.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
+#    plotter.create_fig()  # create an empty figure
+#    plotter.plot_rasterplot('inh', 1)
+#    output_fn = output_fn_base + '_rp_inh.png'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=300)
 
-    pylab.subplots_adjust(left=0.13, bottom=0.22, right=0.90, top=0.95, wspace=0.3, hspace=.3)
+    pylab.subplots_adjust(left=0.13, bottom=0.12, right=0.90, top=0.95, wspace=0.3, hspace=.3)
     plotter.create_fig()  # create an empty figure
-    plotter.plot_x_grid_vs_time(1)
+    xgrid_title = '%s connectivity: ' % (params['connectivity_ee'].capitalize())
+    if params['connectivity_ee'] == 'anisotropic':
+        xgrid_title += ' $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
+    plotter.plot_x_grid_vs_time(1, title=xgrid_title)
     output_fn = output_fn_base + '_grid_x.png'
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
@@ -213,35 +218,34 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
     pylab.savefig(output_fn, dpi=300)
 
     # poplation level, short time-scale
-    plotter.n_fig_x = 1
-    plotter.n_fig_y = 2
-    plotter.create_fig()
-    pylab.rcParams['legend.fontsize'] = 12
-    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.3)
-    plotter.plot_vx_estimates(1)
-    plotter.plot_vdiff(2)
-    output_fn = output_fn_base + '_v-estimates.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
+#    plotter.n_fig_x = 1
+#    plotter.n_fig_y = 2
+#    plotter.create_fig()
+#    pylab.rcParams['legend.fontsize'] = 12
+#    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.3)
+#    plotter.plot_vx_estimates(1)
+#    plotter.plot_vdiff(2)
+#    output_fn = output_fn_base + '_v-estimates.png'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=300)
 
 
-    plotter.create_fig()
-    plotter.plot_x_estimates(1)
-    plotter.plot_xdiff(2)
-    output_fn = output_fn_base + '_x-estimates.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
+#    plotter.create_fig()
+#    plotter.plot_x_estimates(1)
+#    plotter.plot_xdiff(2)
+#    output_fn = output_fn_base + '_x-estimates.png'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=300)
 
-    # fig 4
-    plotter.n_fig_x = 1
-    plotter.n_fig_y = 2
-    plotter.create_fig()  # create an empty figure
-    plotter.plot_network_activity('exc', 1)
-    plotter.plot_network_activity('inh', 2)
-    output_fn = output_fn_base + '_network_activity.png'
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
-    plotter.save_data()
+#    plotter.n_fig_x = 1
+#    plotter.n_fig_y = 2
+#    plotter.create_fig()  # create an empty figure
+#    plotter.plot_network_activity('exc', 1)
+#    plotter.plot_network_activity('inh', 2)
+#    output_fn = output_fn_base + '_network_activity.png'
+#    print 'Saving figure to:', output_fn
+#    pylab.savefig(output_fn, dpi=300)
+#    plotter.save_data()
 
 
 if __name__ == '__main__':

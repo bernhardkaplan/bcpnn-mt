@@ -456,11 +456,11 @@ class PlotPrediction(object):
 
     def create_fig(self):
         print "plotting ...."
-        rcParams = { 'axes.labelsize' : 20,
-                    'axes.titlesize'  : 20,
+        rcParams = { 'axes.labelsize' : 22,
+                    'axes.titlesize'  : 24,
                     'label.fontsize': 20,
-                    'xtick.labelsize' : 18, 
-                    'ytick.labelsize' : 18, 
+                    'xtick.labelsize' : 20, 
+                    'ytick.labelsize' : 20, 
                     'legend.fontsize': 16, 
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
@@ -569,12 +569,12 @@ class PlotPrediction(object):
         self.data_to_store['vy_grid.dat'] = {'data' : vy_grid, 'edges': v_edges}
 
 
-    def plot_x_grid_vs_time(self, fig_cnt=1, ylabel=None):
+    def plot_x_grid_vs_time(self, fig_cnt=1, ylabel=None, title=''):
         print 'plot_x_grid_vs_time ...'
         xlabel = 'Time [ms]'
         if ylabel == None:
             ylabel = '$x_{predicted}$'
-        title = ''#$x_{predicted}$ binned vs time'
+#        title = ''#$x_{predicted}$ binned vs time'
         x_grid, x_edges = self.bin_estimates(self.x_grid, index=0)
         self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt, plot_stim=True)
         self.data_to_store['xpos_grid.dat'] = {'data' : x_grid, 'edges': x_edges}
@@ -615,7 +615,7 @@ class PlotPrediction(object):
         ax.set_xticklabels(x_bin_labels)
 
 #        max_conf = min(data.mean() + .5 * data.std(), data.max())
-        max_conf = .33 * data.max()
+        max_conf = .5 * data.max()
         print 'max_conf:', max_conf, ' data mean, std', data.mean(), data.std(), 'data max', data.max()
         norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)#, clip=True)
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)

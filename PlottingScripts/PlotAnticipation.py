@@ -25,12 +25,16 @@ class PlotAnticipation(object):
         self.fig_size = utils.get_figsize(1200)
         self.colorlist = ['k', 'r', 'b', 'g', 'm', 'y', 'c']
 
-        rcParams = { 'axes.labelsize' : 20,
-                    'axes.titlesize'  : 20,
-                    'label.fontsize': 20,
-                    'xtick.labelsize' : 18, 
-                    'ytick.labelsize' : 18, 
-                    'legend.fontsize': 16, 
+        rcParams = { 'axes.labelsize' : 24,
+                    'axes.titlesize'  : 24,
+                    'label.fontsize': 24,
+                    'xtick.labelsize' : 20, 
+                    'ytick.labelsize' : 20, 
+                    'legend.fontsize': 20, 
+                    'figure.subplot.left':.15,
+                    'figure.subplot.bottom':.08,
+                    'figure.subplot.right':.95,
+                    'figure.subplot.top':.92, 
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
         self.tp = np.loadtxt(self.params['tuning_prop_means_fn'])
@@ -42,7 +46,7 @@ class PlotAnticipation(object):
         """
         Filter all spike trains with exponentials and for each time step divide by the sum.
         """
-        print 'Filtering and normalizing all spike traces ... '
+        print 'PlotAnticipation: Filtering and normalizing all spike traces ... '
         spike_fn = self.params['exc_spiketimes_fn_merged'] + '.ras'
         all_spikes = np.loadtxt(spike_fn)
         gids = [range(self.params['n_exc'])]
@@ -92,7 +96,7 @@ class PlotAnticipation(object):
                 time_axis, d = utils.extract_trace(volt_data, gid)
                 all_data[:, i_ * n_cells_per_pop + j_] = d
                 ax.plot(time_axis, d, c=self.colorlist[i_], alpha=0.2)
-            print 'Computing mean voltages for population %d / %d' % (i_, n_pop)
+            print 'PlotAnticipation: Computing mean voltages for population %d / %d' % (i_, n_pop)
             idx_0 = i_ * n_cells_per_pop
             idx_1 = (i_ + 1) * n_cells_per_pop
             for t_ in xrange(int(n_data)):
@@ -116,35 +120,44 @@ class PlotAnticipation(object):
         n_data = all_traces[:, 0].size
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
 
+        y_max = 0.
         if normalize:
             assert (self.normalized_traces != None), 'Call filter_and_normalize_spikes before!'
             for i_ in xrange(n_pop):
-                print 'Computing mean trace for population %d / %d' % (i_, n_pop)
                 for t_ in xrange(int(n_data)):
                     confidence_trace[t_, i_] = self.normalized_traces[t_, gids[i_]].sum()
-                ax.plot(all_traces[:, -1], confidence_trace[:, i_], c=self.colorlist[i_], lw=3)
-                # compute the estimated stimulus arrival time and plot a vertical bar there
+                y_data = confidence_trace[:, i_]
+                y_max = max(y_max, y_data.max())
                 x_mean = self.tp[gids[i_], 0].mean()
-                t_arrive = 1000. * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
-                self.plot_vertical_line(ax, t_arrive, self.colorlist[i_])
+                ax.plot(all_traces[:, -1], y_data, c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
+
             ylabel = 'Confidence trace\naveraged over %d cells' % n_cells_per_pop
         else:
             for i_ in xrange(n_pop):
-                ax.plot(all_traces[:, -1], mean_trace[:, i_], c=self.colorlist[i_], lw=3)
+                y_data = mean_trace[:, i_]
                 x_mean = self.tp[gids[i_], 0].mean()
-                t_arrive = 1000. * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
-                self.plot_vertical_line(ax, t_arrive, self.colorlist[i_])
+                ax.plot(all_traces[:, -1], y_data, c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
             ylabel = 'Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop
+
+        # compute the estimated stimulus arrival time and plot a vertical bar there
+        for i_ in xrange(n_pop):
+            x_mean = self.tp[gids[i_], 0].mean()
+            t_arrive = 1000. * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
+            self.plot_vertical_line(ax, t_arrive, self.colorlist[i_], ymax=y_max)
         confidence_trace[:, -1] = all_traces[:, -1]
         data_fn = self.params['data_folder'] + 'not_aligned_mean_trace.dat'
-        print 'Saving data to:', data_fn
+#        print 'Saving data to:', data_fn
         np.savetxt(data_fn, mean_trace)
 
         data_fn = self.params['data_folder'] + 'not_aligned_confidence_trace.dat'
-        print 'Saving data to:', data_fn
+#        print 'Saving data to:', data_fn
         np.savetxt(data_fn, confidence_trace)
 #        ax.set_xlabel('Time [ms]')
-        ax.set_title('Not aligned to stimulus')
+        title = '%s connectivity: ' % (self.params['connectivity_ee'].capitalize())
+        if self.params['connectivity_ee'] == 'anisotropic':
+            title += ' $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (self.params['w_sigma_x'], self.params['w_sigma_v'])
+        title += '\nResponse not aligned to stimulus'
+        ax.set_title(title)
         ax.set_ylabel(ylabel)
 
 
@@ -166,7 +179,7 @@ class PlotAnticipation(object):
                 t_vec, filter_spike_train = utils.filter_spike_train(st, dt=dt_filter, tau=tau_filter, t_max=self.params['t_sim'])
                 all_traces[:, idx] = filter_spike_train
                 idx += 1
-            print 'Computing mean trace for population %d / %d' % (i_, n_pop)
+#            print 'Computing mean trace for population %d / %d' % (i_, n_pop)
             idx_0 = i_ * n_cells_per_pop
             idx_1 = (i_ + 1) * n_cells_per_pop
             for t_ in xrange(int(n_data)):
@@ -198,18 +211,18 @@ class PlotAnticipation(object):
             # compute the mean x-position of all cells in this subpopulation
             x_mean = self.tp[gids[i_], 0].mean()
             x_std = self.tp[gids[i_], 0].std()
-            print 'Population %d x_mean = %.3f +- %.3f' % (i_, x_mean, x_std)
+#            print 'Population %d x_mean = %.3f +- %.3f' % (i_, x_mean, x_std)
 
             # compute time when stimulus is at x_mean
             t_arrive = 1000 * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
             shift_ = int(t_arrive / self.dt_filter) + n_data * .5
-            print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
+#            print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
             shifted_trace = np.r_[mean_trace[shift_:, i_], mean_trace[:shift_, i_]]
             aligned_traces[:, i_] = shifted_trace
             shifted_time = np.r_[all_traces[shift_:, -1], all_traces[:shift_, -1]]
-            print 'shifted time:', shifted_time
+#            print 'shifted time:', shifted_time
             if normalize:
-                print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
+#                print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
                 for t_ in xrange(int(n_data)):
                     confidence_trace[t_, i_] = self.normalized_traces[t_, gids[i_]].sum()
                 # old & working with aligned traces, but not aligned time-axis
@@ -228,11 +241,11 @@ class PlotAnticipation(object):
         confidence_trace[:, -1] = all_traces[:, -1]
 
         data_fn = self.params['data_folder'] + 'aligned_mean_trace.dat'
-        print 'Saving data to:', data_fn
+#        print 'Saving data to:', data_fn
         np.savetxt(data_fn, aligned_traces)
 
         data_fn = self.params['data_folder'] + 'aligned_confidence_trace.dat'
-        print 'Saving data to:', data_fn
+#        print 'Saving data to:', data_fn
         np.savetxt(data_fn, confidence_trace)
 #        data_fn = self.params['data_folder'] + 'aligned_std_trace.dat'
 #        np.savetxt(data_fn, std_trace)
@@ -249,10 +262,13 @@ class PlotAnticipation(object):
         ax.set_title('Response aligned to stimulus arrival at $\\bar{x}_i$')
         ax.set_ylabel(ylabel)
 
-    def plot_vertical_line(self, ax, x_pos, color):
+    def plot_vertical_line(self, ax, x_pos, color, ymax=None):
         ls = '--'
-        y_lim = ax.get_ylim()
-        ax.plot((x_pos, x_pos), (y_lim[0], y_lim[1]), ls=ls, c=color, lw=3)
+        ylim = ax.get_ylim()
+        ymin = ylim[0]
+        if ymax == None:
+            ymax = ylim[1]
+        ax.plot((x_pos, x_pos), (ymin, ymax), ls=ls, c=color, lw=3)
 
 
     def load_selected_cells(self):
@@ -267,7 +283,7 @@ class PlotAnticipation(object):
             f = file(pop_info_fn, 'r')
             info = json.load(f)
             gids_subpop = info['gids']
-            print 'Population %d gids:' % i_, gids
+#            print 'Population %d gids:' % i_, gids
             gids[i_] = gids_subpop
         return gids
 
@@ -334,13 +350,14 @@ def average_multiple_simulations(folder_names):
         params = json.load(f)
         plot_anticipation(params) 
 
+
 def plot_anticipation(params):
     """
     """
     P = PlotAnticipation(params)
     # determine where to look for an anticipation signal
-    start_location = 0.08   # distance from the start point of motion
-    location_sampling_interval = 0.025
+    start_location = 0.10   # distance from the start point of motion
+    location_sampling_interval = 0.05
     n_locations_to_check = 3
     n_cells_per_pop = 20    # each /virtual/ electrode measures from this many cells
     w_pos = 10 # when determining which cells to sample, this determines how much more important the position is compared to the speed in the tuning space
@@ -357,7 +374,7 @@ def plot_anticipation(params):
     for i_ in xrange(n_pop):
         gids[i_] = P.select_cells(locations_to_record[i_], vx_record, n_cells_per_pop, w_pos=w_pos)
         gids[i_].sort()
-        print 'Pop %d:' % i_, gids[i_]
+#        print 'Pop %d:' % i_, gids[i_]
 
     P.create_fig()
     P.plot_selected_cells_in_tuning_space(fig_cnt=1, gids=gids, plot_all_cells=True)
@@ -401,7 +418,5 @@ if __name__ == '__main__':
         params = network_params.params
         plot_anticipation(params)
 
-    
-
-#    pylab.show()
+    pylab.show()
 

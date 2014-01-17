@@ -62,7 +62,7 @@ def plot_contour_connectivity(params, d, tp, gid):
                 'figure.subplot.left':.10,
                 'figure.subplot.bottom':.08,
                 'figure.subplot.right':.95,
-                'figure.subplot.top':.92, 
+                'figure.subplot.top':.90, 
                 'lines.markeredgewidth' : 0}
     pylab.rcParams.update(rcParams)
     fig = pylab.figure(figsize=(14, 10))
@@ -168,10 +168,12 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
         connections = utils.get_targets(d, gid)
         connection_gids = connections[:, 1].astype(int)
         print 'Cell %d is projecting to: ' % gid, connection_gids
+        title = 'Distribution of outward connection probabilities'
     else:
         connections = utils.get_sources(d, gid)
         connection_gids = connections[:, 0].astype(int)
         print 'Cell %d is receiving input from: ' % gid, connection_gids
+        title = 'Distribution of incoming connection probabilities'
     weights = connections[:, 2]
     delays = connections[:, 3]
     x_conn = tp[connection_gids, 0]
@@ -258,9 +260,9 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
     norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
     # cmap == bone: large delays -- bright, short delays -- black
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # cmap == binary: large delays -- black, short delays -- white
-    m.set_array(delays)
-    rgba_colors = m.to_rgba(delays)
+    delay_map = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # cmap == binary: large delays -- black, short delays -- white
+    delay_map.set_array(delays)
+    rgba_colors = delay_map.to_rgba(delays)
     for i_, tgt in enumerate(connections):
         ax.plot(x_conn[i_], vx_conn[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
 
@@ -269,20 +271,20 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
 
     # plot the center of mass for all connections
     cms = utils.get_connection_center_of_mass(connection_gids, weights, tp)
-    print 'CMS:', cms
+    print 'CMS-x:', cms[0], 'cell x-pos:', tp[gid, 0]
+    print 'CMS-vx:', cms[1], 'cell vx:', tp[gid, 2]
     ax.plot(cms[0], cms[1], 'D', markersize=np.int(markersize_cell/2 + 1), c='g', markeredgewidth=0, label='Connection center-of-mass')
     
     ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label=cell_label)
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
     ax.set_ylabel('Preferred speed $v_x$')
-    title = 'Distribution of connection probabilities'
     title += '\n$\sigma_X = %.2f\quad\sigma_V=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
     ax.set_title(title)
     cbar_prob = fig.colorbar(CS)
-    cbar_delay = fig.colorbar(m)
     cbar_prob.set_label('Connection probability')
-    cbar_delay.set_label('Delay [ms]')
+#    cbar_delay = fig.colorbar(delay_map)
+#    cbar_delay.set_label('Delay [ms]')
 
 #    ylim = (vx_min, vx_max)
     ylim = (vx_grid[1], vx_grid[-1])
@@ -327,7 +329,7 @@ if __name__ == '__main__':
         params = ps.params
 
     # determine which cell to plot
-    plot_source_perspective = False # if False --> it's like the simulation code
+    plot_source_perspective = True # if False --> it's like the simulation code
     random.seed(0)
     tp = np.loadtxt(params['tuning_prop_means_fn'])
     # load the data and merge files before if necessary
@@ -339,8 +341,9 @@ if __name__ == '__main__':
     n_cells_to_plot = 1
     gid = None
     dx = .1
+    x_start = 0.3 
     for i_ in xrange(n_cells_to_plot):
-        mp_for_cell_sampling = [0.1 + dx * i_, 0.5, 0.5, 0.]
+        mp_for_cell_sampling = [x_start + dx * i_, 0.5, 0.5, 0.]
         gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
         print 'GID:', gid
         n_out = (d[:, 2] == gid).nonzero()
