@@ -59,10 +59,10 @@ def plot_contour_connectivity(params, d, tp, gid):
                 'xtick.labelsize' : 18, 
                 'ytick.labelsize' : 18, 
                 'legend.fontsize': 16, 
-                'figure.subplot.left':.15,
-#                'figure.subplot.bottom':.10,
-#                'figure.subplot.right':.95,
-#                'figure.subplot.top':.90, 
+                'figure.subplot.left':.10,
+                'figure.subplot.bottom':.08,
+                'figure.subplot.right':.95,
+                'figure.subplot.top':.92, 
                 'lines.markeredgewidth' : 0}
     pylab.rcParams.update(rcParams)
     fig = pylab.figure(figsize=(14, 10))
@@ -158,16 +158,28 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
     return z
 
 
+
+
 def plot_formula(params, d, tp, gid, plot_source_perspective=False):
 
     print 'Plotting connectivity formula as contour plot ...'
     # get target cells and connection weights
-    targets = utils.get_targets(d, gid)
-    weights = targets[:, 2]
-    delays = targets[:, 3]
-    target_gids = targets[:, 1].astype(int)
-    x_tgt = tp[target_gids, 0]
-    vx_tgt = tp[target_gids, 2]
+    if plot_source_perspective:
+        connections = utils.get_targets(d, gid)
+        connection_gids = connections[:, 1].astype(int)
+        print 'Cell %d is projecting to: ' % gid, connection_gids
+    else:
+        connections = utils.get_sources(d, gid)
+        connection_gids = connections[:, 0].astype(int)
+        print 'Cell %d is receiving input from: ' % gid, connection_gids
+    weights = connections[:, 2]
+    delays = connections[:, 3]
+    x_conn = tp[connection_gids, 0]
+    vx_conn = tp[connection_gids, 2]
+
+    print 'DEBUG weights:', weights
+    print 'DEBUG x_conn:', x_conn
+    print 'DEBUG vx_conn:', vx_conn
 
     # # # # # # # # # # # # 
     # plot the formula 
@@ -175,26 +187,15 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     n_pts = 500000
     autolimit = True
     if autolimit:
-#        x_min, x_max = .8 * x_tgt.min(), 1.2 * x_tgt.max()
-#        x_min = min(.7 * tp[gid, 0], np.min(.7 * x_tgt))
-#        x_max = max(1.2 * tp[gid, 0], np.max(1.2 * x_tgt))
         x_min, x_max = .0, 1.
-        vx_min = min(.7 * tp[gid, 2], np.min(.7 * vx_tgt))
-        vx_max = max(1.2 * tp[gid, 2], np.max(1.2 * vx_tgt))
+        vx_min = min(.7 * tp[gid, 2], np.min(.7 * vx_conn))
+        vx_max = max(1.2 * tp[gid, 2], np.max(1.2 * vx_conn))
 
 
         print 'x_min', x_min
         print 'x_max', x_max
         print 'vx_min', vx_min
         print 'vx_max', vx_max
-
-#        if np.sign(vx_tgt.min()) == -1:
-#            vx_min = 1.5 * vx_tgt.min()
-#        else:
-#            vx_min = .5 * vx_tgt.min()
-#        vx_max = 1.3 * vx_tgt.max()
-#    else:
-#        x_min, x_max = 0., 1.
 
 
     dx = 0.04 * (x_max - x_min)
@@ -205,11 +206,11 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
 
     if plot_source_perspective:
         z = get_pconn_source_perspective(params, tp, gid, x_sample, vx_sample)
-        cell_label = 'source'
+        cell_label = 'source GID=%d' % (gid)
     else:
         # plot as the simulation code works
         z = get_pconn_target_perspective(params, tp, gid, x_sample, vx_sample)
-        cell_label = 'target'
+        cell_label = 'target GID=%d' % (gid)
     
     clip_formula_at_connradius = False
     if clip_formula_at_connradius:
@@ -229,13 +230,25 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     z_grid = griddata(x_sample, vx_sample, z, x_grid, vx_grid, interp='linear')
     n_levels = 300
 
+    rcParams = { 'axes.labelsize' : 20,
+                'axes.titlesize'  : 20,
+                'label.fontsize': 20,
+                'xtick.labelsize' : 18, 
+                'ytick.labelsize' : 18, 
+                'legend.fontsize': 16, 
+                'figure.subplot.left':.15,
+#                'figure.subplot.bottom':.10,
+#                'figure.subplot.right':.95,
+#                'figure.subplot.top':.90, 
+                'lines.markeredgewidth' : 0}
+    pylab.rcParams.update(rcParams)
     fig = pylab.figure(figsize=(14, 10))
     ax = fig.add_subplot(111)
     CS = ax.contourf(x_grid, vx_grid, z_grid, n_levels, cmap=pylab.cm.jet,
                       vmax=abs(z_grid).max(), vmin=-abs(z_grid).max())
     
     # # # # # # # # # # # # 
-    # plot the target cells
+    # plot the connected cells
     # # # # # # # # # # # # 
     # use weights as dot sizes
     markersize_cell = 15
@@ -248,12 +261,16 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # cmap == binary: large delays -- black, short delays -- white
     m.set_array(delays)
     rgba_colors = m.to_rgba(delays)
-    for i_, tgt in enumerate(targets):
-        ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
+    for i_, tgt in enumerate(connections):
+        ax.plot(x_conn[i_], vx_conn[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
 
     # check where other cells are situated
     ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=1, c='k', markersize=markersize_others)
 
+    # plot the center of mass for all connections
+    cms = utils.get_connection_center_of_mass(connection_gids, weights, tp)
+    print 'CMS:', cms
+    ax.plot(cms[0], cms[1], 'D', markersize=np.int(markersize_cell/2 + 1), c='g', markeredgewidth=0, label='Connection center-of-mass')
     
     ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label=cell_label)
     ax.legend(numpoints=1)
@@ -313,24 +330,26 @@ if __name__ == '__main__':
     plot_source_perspective = False # if False --> it's like the simulation code
     random.seed(0)
     tp = np.loadtxt(params['tuning_prop_means_fn'])
-    d = np.loadtxt(params['merged_conn_list_ee'])
-    mp_for_cell_sampling = [0.2, 0.5, 0.5, 0.]
-    gid = None
-    while gid == None:
-        gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
-        n_out = (d[:, 2] == gid).nonzero()
-        if n_out == 0:
-            print 'GID %d connects to NO CELLS' % gid
-            gid = None
-    print 'GID:', gid
-
     # load the data and merge files before if necessary
     if not os.path.exists(params['merged_conn_list_ee']):
         print 'Running merge_connlists.py...'
         os.system('python merge_connlists.py %s' % params['folder_name'])
     print 'Loading connection file ...'
+    d = np.loadtxt(params['merged_conn_list_ee'])
+    n_cells_to_plot = 1
+    gid = None
+    dx = .1
+    for i_ in xrange(n_cells_to_plot):
+        mp_for_cell_sampling = [0.1 + dx * i_, 0.5, 0.5, 0.]
+        gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
+        print 'GID:', gid
+        n_out = (d[:, 2] == gid).nonzero()
+        if n_out == 0:
+            print 'GID %d connects to NO CELLS' % gid
+            gid = None
+        else:
+            plot_formula(params, d, tp, gid, plot_source_perspective=plot_source_perspective) # plot the analytically expected weights and the actual connections in tuning space
 
 #    plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
-    plot_formula(params, d, tp, gid, plot_source_perspective=plot_source_perspective) # plot the analytically expected weights and the actual connections in tuning space
 
     pylab.show()

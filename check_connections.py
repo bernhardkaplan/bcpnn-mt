@@ -8,17 +8,27 @@ class CheckConnections(object):
 
     def __init__(self, params):
         self.params = params
+        self.conn_data = {}
+        self.conn_data_loaded = {'ee': False, 'ei': False, 'ie': False, 'ii':False}
+
+    def get_conn_data(self, conn_type):
+        if self.conn_data_loaded[conn_type] == False:
+            fn = self.params['merged_conn_list_%s' % conn_type]
+            if not os.path.exists(fn):
+                print 'Merging connections for ', conn_type
+                os.system('python merge_connlists.py %s' % self.params['params_fn_json'])
+            print 'Loading connections from:', fn
+            d = np.loadtxt(fn)
+            self.conn_data[conn_type] = d
+            self.conn_data_loaded[conn_type] = True
+        else:
+            d = self.conn_data[conn_type]
+        return d
 
     def count_neurons_without_outgoing_connections(self, conn_type='ee'):
 
-        fn = self.params['merged_conn_list_%s' % conn_type]
-        if not os.path.exists(fn):
-            print 'Merging connections for ', conn_type
-            os.system('python merge_connlists.py %s' % self.params['params_fn_json'])
-        print 'Loading connections from:', fn
-        d = np.loadtxt(fn)
-
         (n_src, n_tgt, syn_type) = utils.resolve_src_tgt(conn_type, self.params)
+        d = self.get_conn_data(conn_type)
 
         # No offse is needed, becase cells are stored NOT by GID in conn_list, but by the index within the population
         n_without_tgt = 0
@@ -30,6 +40,31 @@ class CheckConnections(object):
         print 'Number of cells without outgoing %s connections: %d' % (conn_type, n_without_tgt)
 
 
+
+    def check_anisotropy(self, conn_type='ee'):
+        """
+        Calculates the mean difference between outward connections and source cell position.
+        """
+
+        d = self.get_conn_data(conn_type)
+        (n_src, n_tgt, tp_src, tp_tgt) = utils.resolve_src_tgt_with_tp(conn_type, self.params)
+        n_src = 1000
+        mean_diff = np.zeros(n_src)
+        np.random.seed(0)
+        for i_src in xrange(n_src):
+            src_gid = np.random.randint(0, n_src)
+            target_conn_data = utils.get_targets(d, src_gid)
+            connections = utils.get_targets(d, src_gid)
+            connection_gids = connections[:, 1].astype(int)
+            weights = connections[:, 2]
+            cms = utils.get_connection_center_of_mass(connection_gids, weights, tp_tgt)
+#            diff_x = utils.torus_distance(tp_src[src_gid, 0] - cms[0])
+            diff_x = tp_src[src_gid, 0] - cms[0]
+            diff_x *= np.sign(tp_src[src_gid, 2])
+            # if negative --> wrong direction of connectivity, diff_x will be negative
+            mean_diff[src_gid] = diff_x
+            print 'src_gid %d\tx_src = %.3f\tcms_x = %.3f\tvx = %.3f\tx - cms[0] = %.3f' % (src_gid, tp_src[src_gid, 0], cms[0], tp_src[src_gid, 2], diff_x)
+        print 'mean difference between source cell position and cms_x = %.2e +- %.2e' % (mean_diff.mean(), mean_diff.std())
 
 
 
@@ -51,4 +86,5 @@ if __name__ == '__main__':
         params = network_params.params
 
     CC = CheckConnections(params)
-    CC.count_neurons_without_outgoing_connections(conn_type='ee')
+#    CC.count_neurons_without_outgoing_connections(conn_type='ee')
+    CC.check_anisotropy(conn_type='ee')

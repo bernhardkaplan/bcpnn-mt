@@ -124,7 +124,7 @@ class parameter_storage(object):
         #from the latency in second (d(src, tgt) / v_src)  to the connection
         #delay (delay_ij = latency_ij * delay_scale) in ms
         self.params['delay_range'] = (0.1, 5000.) # [ms], restricts remaining connections to have delays within this range
-        self.params['tau_prediction'] = .01 # fixed latency for neural signaling, determines preferred projection sites of neurons
+        self.params['tau_prediction'] = .10 # fixed latency for neural signaling, determines preferred projection sites of neurons
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
@@ -189,7 +189,7 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['neural_perception_delay'] = 0.05 # [s] delay accumulated along the neural pathways during the motion perception and prediction process
+        self.params['neural_perception_delay'] = 0.10 # [s] delay accumulated along the neural pathways during the motion perception and prediction process
 
         # ######
         # INPUT

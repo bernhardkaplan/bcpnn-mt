@@ -797,6 +797,16 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
     else:
         return nspikes
 
+
+def get_connection_center_of_mass(connection_gids, weights, tp):
+    cms = [0., 0.] 
+    tp_conn = tp[connection_gids, :]
+    M = np.sum(weights)
+    cms[0] = np.sum(tp_conn[:, 0] * weights) / M
+    cms[1] = np.sum(tp_conn[:, 2] * weights) / M
+    return cms
+
+
 def get_sources(conn_list, target_gid):
     idx = conn_list[:, 1] == target_gid
     sources = conn_list[idx, :]
