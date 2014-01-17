@@ -181,32 +181,17 @@ def plot_formula(params, d, tp, gid):
 
     z = get_pconn(params, tp, gid, x_sample, vx_sample)
     
-    # compute the the formula with anisotrpy
-#    tau_perception = params['neural_perception_delay'] / params['t_stimulus']
-#    d_ij = utils.torus_distance_array(x_sample, tp[gid, 0] * np.ones(n_pts))
-#    latency = d_ij / np.abs(tp[gid, 2])
-#    x_pred = tp[gid, 0] + tp[gid, 2] * latency
-#    d_pred_tgt = utils.torus_distance_array(x_pred, x_sample)
-#    cnt = 0
-#    n_test = n_pts
-#    for i in xrange(n_test):
-#        if d_pred_tgt[i] == 0:
-#            cnt += 1
-#        else:
-#            check_condition = np.sign(vx_sample[i]) * np.sign((x_sample[i] - tp[gid, 0]))
-#            print '%.3f\t%.3f\t%.3f\t%d\t%d\t%d' % (d_pred_tgt[i], x_sample[i], vx_sample[i], np.sign(vx_sample[i]), np.sign((x_sample[i] - tp[gid, 0])), check_condition)
-#    print 'Number of d_pred_tgt == 0:', cnt, float(cnt) / n_test
-#    z = np.exp(- d_pred_tgt**2 / (2 * params['w_sigma_x']**2)) \
-#            * np.exp(- ((tp[gid, 2] - vx_sample)**2/ (2 * params['w_sigma_v']**2)))
-
     clip_formula_at_connradius = False
     if clip_formula_at_connradius:
         # apply connection radius
         latency = d_ij / np.abs(tp[gid, 2])
         invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
-#        invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
+        invalid_idx = np.nonzero(latency * params['delay_scale'] < params['delay_range'][0])[0]
+        print 'DEBUG: # of neurons with a too short latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
         z[invalid_idx] = 0.
-
+        invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
+        print 'DEBUG: # of neurons with a too long latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
+        z[invalid_idx] = 0.
 
     x_grid = np.arange(x_min, x_max, dx) 
     vx_grid = np.arange(vx_min, vx_max, dvx)
@@ -229,8 +214,8 @@ def plot_formula(params, d, tp, gid):
     markersize_others = 1
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
     norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
-#    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
+    # cmap == bone: large delays -- bright, short delays -- black
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # cmap == binary: large delays -- black, short delays -- white
     m.set_array(delays)
     rgba_colors = m.to_rgba(delays)
     for i_, tgt in enumerate(targets):

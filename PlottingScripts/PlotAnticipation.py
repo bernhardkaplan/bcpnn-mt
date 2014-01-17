@@ -332,7 +332,7 @@ def average_multiple_simulations(folder_names):
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
-    
+        plot_anticipation(params) 
 
 def plot_anticipation(params):
     """
