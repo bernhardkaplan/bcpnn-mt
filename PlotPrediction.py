@@ -296,8 +296,10 @@ class PlotPrediction(object):
             # position
 #            t = i * self.time_binsize + .5 * self.time_binsize
             t = (i + n_delay_bins) * self.time_binsize + .5 * self.time_binsize
-            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
-            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
+#            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
+#            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
+            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus'] + mp[2] * self.params['neural_perception_delay']) % w# be sure that this works the same as utils.get_input is called!
+            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus'] + mp[3] * self.params['neural_perception_delay']) % h # be sure that this works the same as utils.get_input is called!
             self.x_stim[i] = stim_pos_x
             self.y_stim[i] = stim_pos_y
             x_pred = self.x_confidence_binned[:, i] * self.x_tuning

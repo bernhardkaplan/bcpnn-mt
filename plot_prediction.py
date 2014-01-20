@@ -195,11 +195,11 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
 #    print 'Saving figure to:', output_fn
 #    pylab.savefig(output_fn, dpi=300)
 
-#    plotter.create_fig()  # create an empty figure
-#    plotter.plot_rasterplot('inh', 1)
-#    output_fn = output_fn_base + '_rp_inh.png'
-#    print 'Saving figure to:', output_fn
-#    pylab.savefig(output_fn, dpi=300)
+    plotter.create_fig()  # create an empty figure
+    plotter.plot_rasterplot('inh', 1)
+    output_fn = output_fn_base + '_rp_inh.png'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=300)
 
     pylab.subplots_adjust(left=0.13, bottom=0.12, right=0.90, top=0.95, wspace=0.3, hspace=.3)
     plotter.create_fig()  # create an empty figure
@@ -218,34 +218,35 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
     pylab.savefig(output_fn, dpi=300)
 
     # poplation level, short time-scale
-#    plotter.n_fig_x = 1
-#    plotter.n_fig_y = 2
-#    plotter.create_fig()
-#    pylab.rcParams['legend.fontsize'] = 12
-#    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.3)
-#    plotter.plot_vx_estimates(1)
-#    plotter.plot_vdiff(2)
-#    output_fn = output_fn_base + '_v-estimates.png'
-#    print 'Saving figure to:', output_fn
-#    pylab.savefig(output_fn, dpi=300)
+    plotter.n_fig_x = 1
+    plotter.n_fig_y = 2
+    plotter.create_fig()
+    pylab.rcParams['legend.fontsize'] = 12
+    pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.3)
+    plotter.plot_vx_estimates(1)
+    plotter.plot_vdiff(2)
+    output_fn = output_fn_base + '_v-estimates.png'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=300)
 
 
-#    plotter.create_fig()
-#    plotter.plot_x_estimates(1)
-#    plotter.plot_xdiff(2)
-#    output_fn = output_fn_base + '_x-estimates.png'
-#    print 'Saving figure to:', output_fn
-#    pylab.savefig(output_fn, dpi=300)
+    plotter.create_fig()
+    plotter.plot_x_estimates(1)
+    plotter.plot_xdiff(2)
+    output_fn = output_fn_base + '_x-estimates.png'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=300)
 
-#    plotter.n_fig_x = 1
-#    plotter.n_fig_y = 2
-#    plotter.create_fig()  # create an empty figure
-#    plotter.plot_network_activity('exc', 1)
-#    plotter.plot_network_activity('inh', 2)
-#    output_fn = output_fn_base + '_network_activity.png'
-#    print 'Saving figure to:', output_fn
-#    pylab.savefig(output_fn, dpi=300)
-#    plotter.save_data()
+    # fig 4
+    plotter.n_fig_x = 1
+    plotter.n_fig_y = 2
+    plotter.create_fig()  # create an empty figure
+    plotter.plot_network_activity('exc', 1)
+    plotter.plot_network_activity('inh', 2)
+    output_fn = output_fn_base + '_network_activity.png'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=300)
+    plotter.save_data()
 
 
 if __name__ == '__main__':
