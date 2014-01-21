@@ -53,12 +53,12 @@ def plot_contour_connectivity(params, d, tp, gid):
         z_data[x_, y_] += w
 
 
-    rcParams = { 'axes.labelsize' : 20,
-                'axes.titlesize'  : 20,
-                'label.fontsize': 20,
-                'xtick.labelsize' : 18, 
-                'ytick.labelsize' : 18, 
-                'legend.fontsize': 16, 
+    rcParams = { 'axes.labelsize' : 24,
+                'axes.titlesize'  : 24,
+                'label.fontsize': 24,
+                'xtick.labelsize' : 24, 
+                'ytick.labelsize' : 24, 
+                'legend.fontsize': 20, 
                 'figure.subplot.left':.10,
                 'figure.subplot.bottom':.08,
                 'figure.subplot.right':.95,
@@ -118,7 +118,7 @@ def plot_contour_connectivity(params, d, tp, gid):
     ax.set_title(title)
 
     print 'Saving figure to:', output_fig
-    pylab.savefig(output_fig, dpi=300)
+    pylab.savefig(output_fig, dpi=200)
 
 
 
@@ -297,7 +297,7 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     else:
         output_fig = params['figures_folder'] + 'connection_probabilities_%d_wsx%.2e_wsv%.2e.png' % (gid, params['w_sigma_x'], params['w_sigma_v'])
     print 'Saving figure to:', output_fig
-    pylab.savefig(output_fig, dpi=300)
+    pylab.savefig(output_fig, dpi=200)
 
 
 
@@ -355,4 +355,4 @@ if __name__ == '__main__':
 
 #    plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
 
-    pylab.show()
+#    pylab.show()
