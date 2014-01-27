@@ -19,7 +19,6 @@ import utils
 import simulation_parameters
 
 import pyNN.hardware.brainscales as sim
-import pyNN
 import pyNN.space as space
 from pyNN.utility import Timer # for measuring the times to connect etc.
 print 'pyNN.version: ', pyNN.__version__
@@ -115,14 +114,14 @@ class NetworkModel(object):
         #     S E T U P       #
         # # # # # # # # # # # #
         (delay_min, delay_max) = self.params['delay_range']
-        setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=self.params['seed'])
-        rng_v = NumpyRNG(seed = sim_cnt*3147 + self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
-        self.rng_conn = NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
+        sim.setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=self.params['seed'])
+        rng_v = sim.NumpyRNG(seed = sim_cnt*3147 + self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
+        self.rng_conn = sim.NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 
         # # # # # # # # # # # # # # # # # # # # # # # # #
         #     R A N D O M    D I S T R I B U T I O N S  #
         # # # # # # # # # # # # # # # # # # # # # # # # #
-        self.v_init_dist = RandomDistribution('normal',
+        self.v_init_dist = sim.RandomDistribution('normal',
                 (self.params['v_init'], self.params['v_init_sigma']),
                 rng=rng_v,
                 constrain='redraw',
@@ -144,14 +143,14 @@ class NetworkModel(object):
         """
         # choose the neuron model
         if self.params['neuron_model'] == 'IF_cond_exp':
-            self.exc_pop = Population(self.params['n_exc'], IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = Population(self.params['n_inh'], IF_cond_exp, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], IF_cond_exp, self.params['cell_params_inh'], label="inh_pop")
         elif self.params['neuron_model'] == 'IF_cond_alpha':
-            self.exc_pop = Population(self.params['n_exc'], IF_cond_alpha, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = Population(self.params['n_inh'], IF_cond_alpha, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], IF_cond_alpha, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], IF_cond_alpha, self.params['cell_params_inh'], label="inh_pop")
         elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.exc_pop = Population(self.params['n_exc'], EIF_cond_exp_isfa_ista, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = Population(self.params['n_inh'], EIF_cond_exp_isfa_ista, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], EIF_cond_exp_isfa_ista, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], EIF_cond_exp_isfa_ista, self.params['cell_params_inh'], label="inh_pop")
         else:
             print '\n\nUnknown neuron model:\n\t', self.params['neuron_model']
         self.local_idx_exc = get_local_indices(self.exc_pop, offset=0)
@@ -391,9 +390,9 @@ class NetworkModel(object):
 #            w = np.minimum(np.maximum(w, self.params['w_min']), self.params['w_max'])  # map the weights into a certain range
             conn_list = np.array((sources, tgt * np.ones(n_src_cells_per_neuron), w, delays))
             local_connlist[i_ * n_src_cells_per_neuron : (i_ + 1) * n_src_cells_per_neuron, :] = conn_list.transpose()
-            connector = FromListConnector(conn_list.transpose())
+            connector = sim.FromListConnector(conn_list.transpose())
             # laurent: here there is something I do not get: you are still connecting tg_src to tgt, but you issue a connector to the whole population... isn't there an indentation issue?
-            prj = Projection(src_pop, tgt_pop, connector)
+            prj = sim.Projection(src_pop, tgt_pop, connector)
             self.projections[conn_type].append(prj)
 
         if self.debug_connectivity:
@@ -482,22 +481,22 @@ class NetworkModel(object):
         w_mean = w_tgt_in / (self.params['p_%s' % conn_type] * n_max_conn / n_tgt)
         w_sigma = self.params['w_sigma_distribution'] * w_mean
 
-        w_dist = RandomDistribution('normal',
+        w_dist = sim.RandomDistribution('normal',
                 (w_mean, w_sigma),
                 rng=self.rng_conn,
                 constrain='redraw',
                 boundaries=(0, w_mean * 10.))
-        delay_dist = RandomDistribution('normal',
+        delay_dist = sim.RandomDistribution('normal',
                 (self.params['standard_delay'], self.params['standard_delay_sigma']),
                 rng=self.rng_conn,
                 constrain='redraw',
                 boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
 
         p_max = utils.get_pmax(self.params['p_%s' % conn_type], self.params['w_sigma_isotropic'], conn_type)
-        connector = DistanceDependentProbabilityConnector('%f * exp(-d**2/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
+        connector = sim.DistanceDependentProbabilityConnector('%f * exp(-d**2/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
                 weights=w_dist, delays=delay_dist, space=self.torus)#, n_connections=n_conn_ee)
         print 'p_max for %s' % conn_type, p_max
-        prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
+        prj = sim.Projection(src_pop, tgt_pop, connector, target=syn_type)
         self.projections[conn_type].append(prj)
         if self.debug_connectivity:
             prj.saveConnections(self.params['conn_list_%s_fn_base' % conn_type] + '.dat', gather=True)
@@ -524,20 +523,20 @@ class NetworkModel(object):
         w_mean = self.params['w_tgt_in_per_cell_%s' % conn_type] / (n_src * self.params['p_%s' % conn_type])
         w_sigma = self.params['w_sigma_distribution'] * w_sigma
 
-        weight_distr = RandomDistribution('normal',
+        weight_distr = sim.RandomDistribution('normal',
                 (w_mean, w_sigma),
                 rng=self.rng_conn,
                 constrain='redraw',
                 boundaries=(0, w_mean * 10.))
 
-        delay_dist = RandomDistribution('normal',
+        delay_dist = sim.RandomDistribution('normal',
                 (self.params['standard_delay'], self.params['standard_delay_sigma']),
                 rng=self.rng_conn,
                 constrain='redraw',
                 boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
 
-        connector= FastFixedProbabilityConnector(self.params['p_%s' % conn_type], weights=weight_distr, delays=delay_dist)
-        prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
+        connector= sim.FastFixedProbabilityConnector(self.params['p_%s' % conn_type], weights=weight_distr, delays=delay_dist)
+        prj = sim.Projection(src_pop, tgt_pop, connector, target=syn_type)
 
         conn_list_fn = self.params['conn_list_%s_fn_base' % conn_type] + '%d.dat' % (self.pc_id)
         print 'Saving random %s connections to %s' % (conn_type, conn_list_fn)
@@ -606,7 +605,7 @@ class NetworkModel(object):
             mp_to_record = [self.params['motion_params'][0] + self.params['locations_to_record'][i_], \
                     self.params['motion_params'][1], self.params['motion_params'][2], self.params['motion_params'][3]]
             gids_ = utils.select_well_tuned_cells_1D(self.tuning_prop_exc, mp_to_record, self.params['n_cells_to_record_per_location'])
-            self.selected_pop_views.append(PopulationView(self.exc_pop, gids_, label='anticipation_%d' % i_))
+            self.selected_pop_views.append(sim.PopulationView(self.exc_pop, gids_, label='anticipation_%d' % i_))
             self.selected_pop_views[i_].record_v()
 #            self.selected_pop_views[i_].record_gsyn()
 
@@ -631,9 +630,9 @@ class NetworkModel(object):
 #        else:
 
         if record_v:
-            self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
+            self.exc_pop_view = sim.PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
             self.exc_pop_view.record_v()
-            self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
+            self.inh_pop_view = sim.PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
             if self.params['anticipatory_mode']:
                 self.place_electrode()
             else:
