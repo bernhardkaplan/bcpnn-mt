@@ -18,6 +18,7 @@ import CreateConnections as CC
 import utils
 import simulation_parameters
 
+import pyNN
 import pyNN.hardware.brainscales as sim
 import pyNN.space as space
 from pyNN.utility import Timer # for measuring the times to connect etc.
