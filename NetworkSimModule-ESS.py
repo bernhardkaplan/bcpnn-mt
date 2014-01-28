@@ -116,8 +116,10 @@ class NetworkModel(object):
         # # # # # # # # # # # #
         (delay_min, delay_max) = self.params['delay_range']
         sim.setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=self.params['seed'])
-        rng_v = sim.NumpyRNG(seed = sim_cnt*3147 + self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
-        self.rng_conn = sim.NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
+        rng_v = sim.NativeRNG(seed = sim_cnt*3147 + self.params['seed'])
+        #rng_v = sim.NumpyRNG(seed = sim_cnt*3147 + self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
+        self.rng_conn = sim.NativeRNG(seed = self.params['seed'])
+        #self.rng_conn = sim.NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 
         # # # # # # # # # # # # # # # # # # # # # # # # #
         #     R A N D O M    D I S T R I B U T I O N S  #
@@ -144,14 +146,14 @@ class NetworkModel(object):
         """
         # choose the neuron model
         if self.params['neuron_model'] == 'IF_cond_exp':
-            self.exc_pop = sim.Population(self.params['n_exc'], IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = sim.Population(self.params['n_inh'], IF_cond_exp, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], sim.IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], sim.IF_cond_exp, self.params['cell_params_inh'], label="inh_pop")
         elif self.params['neuron_model'] == 'IF_cond_alpha':
-            self.exc_pop = sim.Population(self.params['n_exc'], IF_cond_alpha, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = sim.Population(self.params['n_inh'], IF_cond_alpha, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], sim.IF_cond_alpha, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], sim.IF_cond_alpha, self.params['cell_params_inh'], label="inh_pop")
         elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.exc_pop = sim.Population(self.params['n_exc'], EIF_cond_exp_isfa_ista, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = sim.Population(self.params['n_inh'], EIF_cond_exp_isfa_ista, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], sim.EIF_cond_exp_isfa_ista, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], sim.EIF_cond_exp_isfa_ista, self.params['cell_params_inh'], label="inh_pop")
         else:
             print '\n\nUnknown neuron model:\n\t', self.params['neuron_model']
         self.local_idx_exc = get_local_indices(self.exc_pop, offset=0)
@@ -172,8 +174,8 @@ class NetworkModel(object):
         if not input_created:
             self.spike_times_container = [ [] for i in xrange(len(self.local_idx_exc))]
 
-        self.exc_pop.initialize('v', self.v_init_dist)
-        self.inh_pop.initialize('v', self.v_init_dist)
+        #self.exc_pop.initialize('v', self.v_init_dist)
+        #self.inh_pop.initialize('v', self.v_init_dist)
         self.times['t_create'] = self.timer.diff()
 
 
@@ -271,8 +273,8 @@ class NetworkModel(object):
             print "Connecting input spiketrains..."
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
-            ssa = create(SpikeSourceArray, {'spike_times': spike_times})
-            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
+            ssa = sim.create(sim.SpikeSourceArray, {'spike_times': spike_times})
+            sim.connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
         self.times['connect_input'] = self.timer.diff()
 
 
@@ -433,7 +435,7 @@ class NetworkModel(object):
             for i in xrange(len(p_)):
 #                        w[i] = max(self.params['w_min'], min(w[i], self.params['w_max']))
                 delay = min(max(l_[i], delay_min), delay_max)  # map the delay into the valid range
-                connect(self.exc_pop[non_zero_idx[i]], self.exc_pop[tgt], w[i], delay=delay, synapse_type='excitatory')
+                sim.connect(self.exc_pop[non_zero_idx[i]], self.exc_pop[tgt], w[i], delay=delay, synapse_type='excitatory')
                 if self.debug_connectivity:
                     output += '%d\t%d\t%.2e\t%.2e\n' % (non_zero_idx[i], tgt, w[i], delay) #                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], latency[sources[i]], p[sources[i]])
 
@@ -575,25 +577,25 @@ class NetworkModel(object):
         for tgt in self.local_idx_exc:
             #new
             if (self.params['simulator'] == 'nest'): # for nest one can use the optimized Poisson generator
-                noise_exc = create(native_cell_type('poisson_generator'), {'rate' : self.params['f_exc_noise']})
-                noise_inh = create(native_cell_type('poisson_generator'), {'rate' : self.params['f_inh_noise']})
+                noise_exc = sim.create(native_cell_type('poisson_generator'), {'rate' : self.params['f_exc_noise']})
+                noise_inh = sim.create(native_cell_type('poisson_generator'), {'rate' : self.params['f_inh_noise']})
             else:
-                noise_exc = create(SpikeSourcePoisson, {'rate' : self.params['f_exc_noise']})
-                noise_inh = create(SpikeSourcePoisson, {'rate' : self.params['f_inh_noise']})
-            connect(noise_exc, self.exc_pop[tgt], weight=self.params['w_exc_noise'], synapse_type='excitatory', delay=1.)
-            connect(noise_inh, self.exc_pop[tgt], weight=self.params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
+                noise_exc = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_exc_noise']})
+                noise_inh = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_inh_noise']})
+            sim.connect(noise_exc, self.exc_pop[tgt], weight=self.params['w_exc_noise'], synapse_type='excitatory', delay=1.)
+            sim.connect(noise_inh, self.exc_pop[tgt], weight=self.params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
 
         if self.pc_id == 0:
             print "Connecting noise - inh ... "
         for tgt in self.local_idx_inh:
             if (self.params['simulator'] == 'nest'): # for nest one can use the optimized Poisson generator
-                noise_exc = create(native_cell_type('poisson_generator'), {'rate' : self.params['f_exc_noise']})
-                noise_inh = create(native_cell_type('poisson_generator'), {'rate' : self.params['f_inh_noise']})
+                noise_exc = sim.create(native_cell_type('poisson_generator'), {'rate' : self.params['f_exc_noise']})
+                noise_inh = sim.create(native_cell_type('poisson_generator'), {'rate' : self.params['f_inh_noise']})
             else:
-                noise_exc = create(SpikeSourcePoisson, {'rate' : self.params['f_exc_noise']})
-                noise_inh = create(SpikeSourcePoisson, {'rate' : self.params['f_inh_noise']})
-            connect(noise_exc, self.inh_pop[tgt], weight=self.params['w_exc_noise'], synapse_type='excitatory', delay=1.)
-            connect(noise_inh, self.inh_pop[tgt], weight=self.params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
+                noise_exc = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_exc_noise']})
+                noise_inh = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_inh_noise']})
+            sim.connect(noise_exc, self.inh_pop[tgt], weight=self.params['w_exc_noise'], synapse_type='excitatory', delay=1.)
+            sim.connect(noise_inh, self.inh_pop[tgt], weight=self.params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
         self.times['connect_noise'] = self.timer.diff()
 
 
