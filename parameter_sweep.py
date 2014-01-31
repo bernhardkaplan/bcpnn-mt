@@ -35,7 +35,8 @@ def prepare_simulation(folder_name, params):
 def run_simulation(params):
     # specify your run command (mpirun -np X, python, ...)
     parameter_filename = params['params_fn_json']
-    run_command = 'mpirun -np 8 python NetworkSimModule.py %s' % parameter_filename
+#     run_command = 'mpirun -np 8 python NetworkSimModule.py %s' % parameter_filename
+    run_command = 'python NetworkSimModule.py %s' % parameter_filename
     print 'Running:\n\t%s' % (run_command)
     os.system(run_command)
 
@@ -45,8 +46,8 @@ if __name__ == '__main__':
     params = ps.params
 
     # define the parameter range you'd like to sweep
-    param_range = [0.1, 0.2, 0.5]
-    param_name = 'w_sigma_x' # must 
+    param_range = [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
+    param_name = 'w_sigma_v' # must 
 
     for i_, p in enumerate(param_range):
 
