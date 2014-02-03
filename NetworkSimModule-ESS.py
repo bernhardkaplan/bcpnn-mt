@@ -482,20 +482,22 @@ class NetworkModel(object):
         w_mean = w_tgt_in / (self.params['p_%s' % conn_type] * n_max_conn / n_tgt)
         w_sigma = self.params['w_sigma_distribution'] * w_mean
 
-        w_dist = sim.RandomDistribution('normal',
-                (w_mean, w_sigma),
-                rng=self.rng_conn,
-                constrain='redraw',
-                boundaries=(0, w_mean * 10.))
-        delay_dist = sim.RandomDistribution('normal',
-                (self.params['standard_delay'], self.params['standard_delay_sigma']),
-                rng=self.rng_conn,
-                constrain='redraw',
-                boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
+#        w_dist = sim.RandomDistribution('normal',
+#                (w_mean, w_sigma),
+#                rng=self.rng_conn,
+#                constrain='redraw',
+#                boundaries=(0, w_mean * 10.))
+#        delay_dist = sim.RandomDistribution('normal',
+#                (self.params['standard_delay'], self.params['standard_delay_sigma']),
+#                rng=self.rng_conn,
+#                constrain='redraw',
+#                boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
+        w_dist_hw = w_mean
+        delay_dist_hw = self.params['delay_range'][0]
 
         p_max = utils.get_pmax(self.params['p_%s' % conn_type], self.params['w_sigma_isotropic'], conn_type)
         connector = sim.DistanceDependentProbabilityConnector('%f * exp(-d**2/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
-                weights=w_dist, delays=delay_dist, space=self.torus)#, n_connections=n_conn_ee)
+                weights=w_mean, delays=delay_dist_hw, space=self.torus)#, n_connections=n_conn_ee)
         print 'p_max for %s' % conn_type, p_max
         prj = sim.Projection(src_pop, tgt_pop, connector, target=syn_type)
         self.projections[conn_type].append(prj)
