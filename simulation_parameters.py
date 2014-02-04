@@ -19,7 +19,7 @@ class parameter_storage(object):
             self.params = self.load_params_from_file(fn)
 
     def set_default_params(self):
-        self.params['simulator'] = 'nest' # 'brian' #
+        self.params['simulator'] = 'hw_ess' # 'brian' #
 
         # new parameter make distinguishment between one / two dimensional model easy
         self.params['n_grid_dimensions'] = 1
@@ -27,7 +27,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 50# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 100# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -134,7 +134,7 @@ class parameter_storage(object):
 #        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
         self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-        self.params['w_tgt_in_per_cell_ee'] = 0.10 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.15 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1. * self.params['w_tgt_in_per_cell_ee']
         self.params['w_tgt_in_per_cell_ie'] = 1. * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
 #        self.params['w_tgt_in_per_cell_ii'] = self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
@@ -148,6 +148,7 @@ class parameter_storage(object):
         self.params['w_sigma_distribution'] = 0.2 # percentage of w_mean_isotropic for the sigma of the weight distribution (gaussian) when drawn for isotropic connectivity
         self.params['conn_types'] = ['ee', 'ei', 'ie', 'ii']
 
+        self.params['w_range_hw'] = (0.004516379807692308, 0.04589923076923077)
 #        self.params['p_to_w'] =
         self.params['p_ee'] = 0.005              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
@@ -155,17 +156,17 @@ class parameter_storage(object):
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
 
         # exc - inh
-        self.params['p_ei'] = 0.02 #self.params['p_ee']
+        self.params['p_ei'] = 0.01 #self.params['p_ee']
         self.params['w_ei_mean'] = 0.005
         self.params['w_ei_sigma'] = 0.001
 
         # inh - exc
-        self.params['p_ie'] = 0.02 #self.params['p_ee']
+        self.params['p_ie'] = 0.01 #self.params['p_ee']
         self.params['w_ie_mean'] = 0.005
         self.params['w_ie_sigma'] = 0.001
 
         # inh - inh
-        self.params['p_ii'] = 0.02
+        self.params['p_ii'] = 0.01
         self.params['w_ii_mean'] = 0.003
         self.params['w_ii_sigma'] = 0.001
 

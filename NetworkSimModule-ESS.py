@@ -44,7 +44,7 @@ def get_local_indices(pop, offset=0):
     """
     list_of_locals = []
     for tgt_id in pop.all():
-        tgt = int(tgt_id) - offset - 1 # IDs are 1 aligned
+        tgt = int(tgt_id) - offset # IDs are 1 aligned
         if pop.is_local(tgt_id) and (tgt < pop.size):
             list_of_locals.append(tgt)
     return list_of_locals
@@ -190,7 +190,7 @@ class NetworkModel(object):
         self.connect_populations('ei')
         self.connect_populations('ie')
         self.connect_populations('ii')
-        self.connect_noise()
+        #self.connect_noise()
         self.times['t_calc_conns'] = self.timer.diff()
         if self.comm != None:
             self.comm.Barrier()
@@ -494,17 +494,18 @@ class NetworkModel(object):
 #                rng=self.rng_conn,
 #                constrain='redraw',
 #                boundaries=(self.params['delay_range'][0], self.params['delay_range'][1]))
-        w_dist_hw = w_mean
+        w_dist_hw = min(self.params['w_range_hw'][1], max(w_mean, self.params['w_range_hw'][0]))
+        print '\nDEBUG, w_dist_hw:', w_dist_hw
         delay_dist_hw = self.params['delay_range'][0]
 
         p_max = utils.get_pmax(self.params['p_%s' % conn_type], self.params['w_sigma_isotropic'], conn_type)
         connector = sim.DistanceDependentProbabilityConnector('%f * exp(-d**2/(2*%f**2))' % (p_max, params['w_sigma_isotropic']), allow_self_connections=False, \
-                weights=w_mean, delays=delay_dist_hw, space=self.torus)#, n_connections=n_conn_ee)
+                weights=w_dist_hw, delays=delay_dist_hw, space=self.torus)#, n_connections=n_conn_ee)
         print 'p_max for %s' % conn_type, p_max
         prj = sim.Projection(src_pop, tgt_pop, connector, target=syn_type)
         self.projections[conn_type].append(prj)
-        if self.debug_connectivity:
-            prj.saveConnections(self.params['conn_list_%s_fn_base' % conn_type] + '.dat', gather=True)
+        #if self.debug_connectivity:
+            #prj.saveConnections(self.params['conn_list_%s_fn_base' % conn_type] + '.dat', gather=True)
 
 
     def connect_random(self, conn_type):
@@ -584,8 +585,10 @@ class NetworkModel(object):
             else:
                 noise_exc = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_exc_noise']})
                 noise_inh = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_inh_noise']})
-            sim.connect(noise_exc, self.exc_pop[tgt], weight=self.params['w_exc_noise'], synapse_type='excitatory', delay=1.)
-            sim.connect(noise_inh, self.exc_pop[tgt], weight=self.params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
+            w_exc_hw = min(self.params['w_range_hw'][1], max(self.params['w_exc_noise'], self.params['w_range_hw'][0]))
+            w_inh_hw = min(self.params['w_range_hw'][1], max(self.params['w_inh_noise'], self.params['w_range_hw'][0]))
+            sim.connect(noise_exc, self.exc_pop[tgt], weight=w_exc_hw, synapse_type='excitatory', delay=1.)
+            sim.connect(noise_inh, self.exc_pop[tgt], weight=w_inh_hw, synapse_type='inhibitory', delay=1.)
 
         if self.pc_id == 0:
             print "Connecting noise - inh ... "
@@ -596,8 +599,10 @@ class NetworkModel(object):
             else:
                 noise_exc = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_exc_noise']})
                 noise_inh = sim.create(sim.SpikeSourcePoisson, {'rate' : self.params['f_inh_noise']})
-            sim.connect(noise_exc, self.inh_pop[tgt], weight=self.params['w_exc_noise'], synapse_type='excitatory', delay=1.)
-            sim.connect(noise_inh, self.inh_pop[tgt], weight=self.params['w_inh_noise'], synapse_type='inhibitory', delay=1.)
+            w_exc_hw = min(self.params['w_range_hw'][1], max(self.params['w_exc_noise'], self.params['w_range_hw'][0]))
+            w_inh_hw = min(self.params['w_range_hw'][1], max(self.params['w_inh_noise'], self.params['w_range_hw'][0]))
+            sim.connect(noise_exc, self.inh_pop[tgt], weight=w_exc_hw, synapse_type='excitatory', delay=1.)
+            sim.connect(noise_inh, self.inh_pop[tgt], weight=w_inh_hw, synapse_type='inhibitory', delay=1.)
         self.times['connect_noise'] = self.timer.diff()
 
 
@@ -654,7 +659,7 @@ class NetworkModel(object):
         # # # # # # # # # # # # # #
         if self.pc_id == 0:
             print "Running simulation ... "
-        run(self.params['t_sim'])
+        sim.run(self.params['t_sim'])
         self.times['t_sim'] = self.timer.diff()
 
     def print_results(self, print_v=True):
@@ -789,7 +794,7 @@ if __name__ == '__main__':
         record_v = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False
         record_v = False
         save_input_files = not load_files
 
