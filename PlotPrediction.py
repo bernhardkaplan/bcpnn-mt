@@ -619,7 +619,7 @@ class PlotPrediction(object):
 #        max_conf = min(data.mean() + .5 * data.std(), data.max())
         max_conf = .5 * data.max()
         print 'max_conf:', max_conf, ' data mean, std', data.mean(), data.std(), 'data max', data.max()
-        norm = matplotlib.mpl.colors.Normalize(vmin=0, vmax=max_conf)#, clip=True)
+        norm = matplotlib.colors.Normalize(vmin=0, vmax=max_conf)#, clip=True)
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
         m.set_array(np.arange(0., max_conf, 0.01))
         cb = pylab.colorbar(m, orientation='horizontal', aspect=40, anchor=(.5, .0))
