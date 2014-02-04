@@ -608,7 +608,7 @@ class NetworkModel(object):
         self.anticipatory_record = True
 
 
-    def run_sim(self, sim_cnt, record_v=True):
+    def run_sim(self, sim_cnt, dorecord_v=True):
 
         # # # # # # # # # # # #
         #     R E C O R D     #
@@ -620,7 +620,7 @@ class NetworkModel(object):
             n_rnd_cells_to_record = 2
 #        else:
 
-        if record_v:
+        if dorecord_v:
             self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
             self.exc_pop_view.record_v()
             self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
@@ -772,11 +772,11 @@ if __name__ == '__main__':
     max_neurons_to_record = 10000
     if params['n_cells'] > max_neurons_to_record:
         load_files = False
-        record_v = False
+        dorecord_v = False
         save_input_files = False
     else: # choose yourself
         load_files = False#True
-        record_v = False
+        dorecord_v = False
         save_input_files = not load_files
 
     print 'DEBUG load_files = ', load_files
@@ -794,8 +794,9 @@ if __name__ == '__main__':
 
     NM.connect()
 
-    NM.run_sim(sim_cnt, record_v=record_v)
-    NM.print_results(print_v=record_v)
+    print 'DEBUG dorecord_v = ', dorecord_v
+    NM.run_sim(sim_cnt, dorecord_v=dorecord_v)
+    NM.print_results(print_v=dorecord_v)
 
     """
     The following scripts should only be called, if you are not running on a cluster...
