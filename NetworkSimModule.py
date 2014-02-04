@@ -614,10 +614,10 @@ class NetworkModel(object):
         #     R E C O R D     #
         # # # # # # # # # # # #
         record_exc = True
-#        if os.path.exists(self.params['gids_to_record_fn']):
-#            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
-#            record_exc = True
-#            n_rnd_cells_to_record = 2
+        if os.path.exists(self.params['gids_to_record_fn']):
+            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
+            record_exc = True
+            n_rnd_cells_to_record = 2
 #        else:
 
         if record_v:
@@ -775,11 +775,12 @@ if __name__ == '__main__':
         record_v = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
+        load_files = False#True
         record_v = False
         save_input_files = not load_files
 
-    save_input_files = True
+    print 'DEBUG load_files = ', load_files
+#     save_input_files = True
 
     NM = NetworkModel(ps.params, comm)
     exec("from pyNN.%s import *" % NM.params['simulator'])

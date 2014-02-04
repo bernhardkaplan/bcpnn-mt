@@ -19,7 +19,8 @@ class parameter_storage(object):
             self.params = self.load_params_from_file(fn)
 
     def set_default_params(self):
-        self.params['simulator'] = 'hw_ess' # 'brian' #
+        # self.params['simulator'] = 'hw_ess' # 'brian' #
+        self.params['simulator'] = 'nest' # 'brian' #
 
         # new parameter make distinguishment between one / two dimensional model easy
         self.params['n_grid_dimensions'] = 1
