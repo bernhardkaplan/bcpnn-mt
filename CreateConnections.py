@@ -100,7 +100,6 @@ def get_p_conn_motion_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
     p = np.exp(- (d_pred_tgt**2 / (2 * w_sigma_x**2))) \
             * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
     return p, latency
-    
 
 def get_p_conn_direction_based(params, tp_src, tp_tgt):
     """

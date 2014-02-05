@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     # define the parameter range you'd like to sweep
     param_range = [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
-    param_name = 'w_sigma_v' # must 
+    param_name = 'w_sigma_x' # must
 
     for i_, p in enumerate(param_range):
 
