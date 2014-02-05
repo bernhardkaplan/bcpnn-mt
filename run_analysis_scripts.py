@@ -26,7 +26,7 @@ if len(sys.argv) == 2:
     print 'Loading parameters from', param_fn
     params = json.load(f)
     run_analysis(params)
-else:
+elif len(sys.argv) > 2:
     for i_, param_fn in enumerate(sys.argv[1:]):
         print '\n\n=========================\nAnalysis %d / %d begins\n==================================\n\n' % (i_ + 1, len(sys.argv[1:]))
         if os.path.isdir(param_fn):
@@ -36,3 +36,9 @@ else:
         params = json.load(f)
         run_analysis(params)
         print '\n\n=========================\nAnalysis %d / %d ends \n==================================\n\n' % (i_ + 1, len(sys.argv[1:]))
+else:
+    import simulation_parameters
+    ps = simulation_parameters.parameter_storage()#fn)
+    params = ps.params
+    print 'Analysing results from the default folder:', params['folder_name']
+    run_analysis(params)
