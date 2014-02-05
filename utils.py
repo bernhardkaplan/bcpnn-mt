@@ -182,7 +182,7 @@ def get_plus_minus(rnd):
     return (rnd.randint(-1, 1) + .5) * 2
 
 
-def get_input_delay(tuning_prop, params, t, motion_params=None, delay=.05, motion='dot'):
+def get_input_delay(tuning_prop, params, t, motion_params=None, delay=.00, motion='dot'):
     t -= delay
     if motion_params == None:
         motion_params = params['motion_params']

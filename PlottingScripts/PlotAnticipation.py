@@ -419,5 +419,5 @@ if __name__ == '__main__':
         params = network_params.params
         plot_anticipation(params)
 
-    pylab.show()
+#    pylab.show()
 
