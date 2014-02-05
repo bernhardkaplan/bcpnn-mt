@@ -1,5 +1,5 @@
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import pylab
 import numpy as np
 import simulation_parameters
@@ -503,6 +503,10 @@ class PlotPrediction(object):
         for cell in xrange(int(len(spiketimes))):
             ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=1)
 
+        if show_blank:
+            self.plot_blank(ax)
+        self.plot_start_stop(ax)
+
         ylim = ax.get_ylim()
         if cell_type == 'exc':
             ax.set_ylim((0, self.params['n_exc']))
@@ -513,10 +517,6 @@ class PlotPrediction(object):
         ax.set_title('Rasterplot of %s neurons' % cell_type)
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('Neuron GID')
-
-        if show_blank:
-            self.plot_blank(ax)
-        self.plot_start_stop(ax)
 
     def plot_network_activity(self, cell_type, fig_cnt=1):
 
@@ -637,6 +637,7 @@ class PlotPrediction(object):
         cb.set_label('Prediction confidence')
         if show_blank:
             self.plot_blank_on_cmap(cax, txt='blank')
+        self.plot_start_stop(ax)
 
         if plot_stim:
             ax = cax.axes
@@ -647,6 +648,8 @@ class PlotPrediction(object):
 #                ax.plot((t_bin, t_bin+1), (y_pos_of_stim[t_bin], y_pos_of_stim[t_bin+1]), ls='--', c='w', lw=3, label='$x_{stim}$')
             print '\nDEBUG\n', y_pos_of_stim
             ax.plot((0, self.n_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='w', lw=3, label='$x_{stim}$')
+            n_delay_bins = self.params['sensory_delay'] / self.time_binsize
+            ax.plot((n_delay_bins, self.n_bins + n_delay_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='k', lw=3, label='$x_{delay}$')
 
 
     def plot_xdiff(self, fig_cnt=1, show_blank=None):
@@ -721,6 +724,7 @@ class PlotPrediction(object):
         ax.set_xticks(range(self.n_bins)[::2])
         ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         pylab.colorbar(self.cax)
+        self.plot_start_stop(ax)
 
     def plot_nspikes_binned_normalized(self):
 
@@ -734,6 +738,7 @@ class PlotPrediction(object):
         ax.set_xticks(range(self.n_bins)[::2])
         ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         pylab.colorbar(self.cax)
+        self.plot_start_stop(ax)
 
 
     def plot_vx_confidence_binned(self):
@@ -756,6 +761,7 @@ class PlotPrediction(object):
         ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         ax.set_xlim(0, self.params['t_sim'])
         pylab.colorbar(self.cax)
+        self.plot_start_stop(ax)
 
 
 
@@ -778,6 +784,7 @@ class PlotPrediction(object):
         ax.set_xticks(range(self.n_bins)[::2])
         ax.set_xticklabels(['%d' %i for i in self.time_bins[::2]])
         ax.set_xlim(0, self.params['t_sim'])
+        self.plot_start_stop(ax)
         pylab.colorbar(self.cax)
 
     def plot_x_estimates(self, fig_cnt=1, show_blank=None):
@@ -912,6 +919,7 @@ class PlotPrediction(object):
         self.plot_start_stop(ax)
         output_data = np.array((self.t_axis, self.theta_avg))
         self.data_to_store['theta_linear_vs_time.dat'] = {'data' : output_data}
+        self.plot_start_stop(ax)
 
 
     def plot_fullrun_estimates_vx(self, fig_cnt=1):

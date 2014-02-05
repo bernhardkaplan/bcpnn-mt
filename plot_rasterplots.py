@@ -89,7 +89,7 @@ def plot_output_spikes_sorted_in_space(ax, cell_type, shift=0., m='o', c='g', so
         crop = .8
         ylim = (crop * tp[:, sort_idx].min(), crop * tp[:, sort_idx].max())
     ylen = (abs(ylim[0] - ylim[1]))
-    print '\n', 'sort_idx', sort_idx, ylim, 
+    print '\n', 'sort_idx', sort_idx, ylim,
     for i in xrange(n_cells):
         cell = sorted_idx[i]
         if sort_idx == 0:
@@ -114,7 +114,7 @@ def plot_spikes(ax, fn, n_cells):
     for cell in xrange(int(len(spiketimes))):
         ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=2)
 
-def plot_start_stop(self, ax, c='r'):
+def plot_start_stop(params, ax, c='r'):
     ylim = ax.get_ylim()
     ax.plot((self.params['t_start'], self.params['t_start']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
     ax.plot((self.params['t_start'] + self.params['t_stimulus'], self.params['t_start'] + self.params['t_stimulus']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
@@ -180,13 +180,14 @@ if __name__ == '__main__':
 
 
     # x-position
-    plot_input_spikes_sorted_in_space(ax1, c='b', sort_idx=0, ms=3) 
-    plot_output_spikes_sorted_in_space(ax1, 'exc', c='k', sort_idx=0, ms=3) 
+    plot_input_spikes_sorted_in_space(ax1, c='b', sort_idx=0, ms=3)
+    plot_output_spikes_sorted_in_space(ax1, 'exc', c='k', sort_idx=0, ms=3)
     plot_vertical_blank(params, ax1)
+    plot_start_stop(params, ax)
 
     # sorted by velocity in direction x / y
     #plot_input_spikes_sorted_in_space(ax2, c='b', sort_idx=2, ms=3)
-    #plot_output_spikes_sorted_in_space(ax2, 'exc', c='k', sort_idx=2, ms=3) 
+    #plot_output_spikes_sorted_in_space(ax2, 'exc', c='k', sort_idx=2, ms=3)
 
 
     #plot_spikes(ax3, fn_exc, params['n_exc'])

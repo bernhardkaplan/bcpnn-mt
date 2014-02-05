@@ -33,7 +33,6 @@ class parameter_storage(object):
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
         self.params['n_orientation'] = 1 # only for compatitibility with code borrowed from  v1-anticipation branch
-       
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf']))
@@ -116,11 +115,11 @@ class parameter_storage(object):
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
 
-        self.params['conn_conf'] = 'motion-based' 
+        self.params['conn_conf'] = 'motion-based'
 #        self.params['conn_conf'] = 'direction-based'
-#        self.params['conn_conf'] = 'orientation-direction' 
+#        self.params['conn_conf'] = 'orientation-direction'
         # when the initial connections are derived on the cell's tuning properties, these two values are used
-        self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v 
+        self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v
         self.params['delay_scale'] = 1000.      # this determines the scaling
         #from the latency in second (d(src, tgt) / v_src)  to the connection
         #delay (delay_ij = latency_ij * delay_scale) in ms
@@ -131,7 +130,7 @@ class parameter_storage(object):
         self.params['w_sigma_v'] = 100. # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
-        self.params['w_sigma_isotropic'] = 0.20 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective 
+        self.params['w_sigma_isotropic'] = 0.20 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective
 
 #        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
         self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
@@ -300,7 +299,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'NewWithDelay_eqW%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+               folder_name = 'Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
                        self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], \
                        self.params['tau_prediction'] * 1000., self.params['sensory_delay'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
