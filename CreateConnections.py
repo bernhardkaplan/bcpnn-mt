@@ -7,7 +7,7 @@ import time
 
 def get_p_conn_motion_based(params, tp_src, tp_tgt):
     """
-    Motion-based connectivity 
+    Motion-based connectivity
     -------------------------
 
     Calculates the connection probabilities for all source cells targeting one cell.
@@ -20,15 +20,19 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
     else:
 #        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'], tau_perception=params['neural_perception_delay'] / params['t_stimulus'])
         return get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, params['w_sigma_x'], \
-                params['w_sigma_v'], params['connectivity_radius'], tau_prediction=params['tau_prediction'], tau_shift=params['neural_perception_delay'])
+                                                        params['w_sigma_v'], params['connectivity_radius'], \
+                                                        tau_prediction=params['tau_prediction'], \
+                                                        tau_shift=params['neural_perception_delay'])
 #        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
 
 
 def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_prediction=0.05, tau_shift=0.):
     """
-    Assuming that every neuron passes on its motion information within a certain time (=tau_prediction),
-    x_predicted is computed and cells within the vicinity are connected preferentially.
-    This function operates on the target neuron's side, i.e. computations are done for all possible source cells:
+    Assuming thati --within the cortiacal sheet--- every neuron passes on its
+    motion information within a certain time (=tau_prediction), x_predicted is
+    computed and cells within the vicinity are connected preferentially.  This
+    function operates on the target neuron's side, i.e. computations are done
+    for all possible source cells:
     --> From which sources should I get input?
 
     Arguments:
@@ -36,7 +40,7 @@ def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_
     tp_tgt -- [x, y, vx, vy] tuning properties of target cell
     w_sigma_x, w_sigma_v -- connectivity parameters, floats
     connectivity_radius -- != 1. if connectivity needs to be spatially constrained
-    tau_prediction -- [s] NOT [ms]! time for a message to travel to the next cell 
+    tau_prediction -- [s] NOT [ms]! time for a message to travel to the next cell
     tau_shift -- [s] to compensate for delays, the message can be shifted further forward by this time in [s]
     """
     n_src = tp_src[:, 0].size
@@ -44,13 +48,13 @@ def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_
     x_predicted = (tp_src[:, 0] + (tau_prediction + tau_shift) * tp_src[:, 2]) % 1.
     # calculate the distance between the predicted position and the target cell
     d_pred_tgt = utils.torus_distance_array(x_predicted, tp_tgt[0] * np.ones(n_src))
-    # take the preferred speeds into account 
+    # take the preferred speeds into account
     v_tuning_diff = tp_src[:, 2] - tp_tgt[2] * np.ones(n_src)
     p = np.exp(- d_pred_tgt**2 / (2 * w_sigma_x**2)) \
             * np.exp(- (v_tuning_diff**2 / (2 * w_sigma_v**2)))
 
     # laurent: here I think it is wrong: now that you fixed the latency, you
-    # should use it. 
+    # should use it.
     # latency is computed based on src-tgt distance only --- not taking the tau_shift and tau_prediction into account
     # d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
     # latency = d_ij / np.abs(tp_src[:, 2])

@@ -125,7 +125,7 @@ class parameter_storage(object):
         #from the latency in second (d(src, tgt) / v_src)  to the connection
         #delay (delay_ij = latency_ij * delay_scale) in ms
         self.params['delay_range'] = (0.1, 50.) # [ms], restricts remaining connections to have delays within this range
-        self.params['tau_prediction'] = .005 # fixed latency for neural signaling, determines preferred projection sites of neurons
+        self.params['tau_prediction'] = .005 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 100. # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
@@ -182,15 +182,15 @@ class parameter_storage(object):
         self.params['np_random_seed'] = self.params['seed']
         self.params['t_sim'] = 1600.            # [ms] total simulation time
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_blank'] = 0.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
+        self.params['t_blank'] = 0.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
         self.params['t_before_blank'] = self.params['t_start'] + 400. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
         self.params['tuning_prop_seed'] = self.params['seed']     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = self.params['seed']
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['neural_perception_delay'] = 0.10 # [s] delay accumulated along the neural pathways during the motion perception and prediction process
+        self.params['neural_perception_delay'] = 0.10 # [s] delay accumulated along the neural pathways during the motion perception and prediction process (tau_shift)
 
         # ######
         # INPUT
