@@ -46,13 +46,14 @@ if __name__ == '__main__':
     params = ps.params
 
     # define the parameter range you'd like to sweep
-    param_range = [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
-    param_name = 'w_sigma_v' # must 
-
+    import sys
+    param_name = sys.argv[1] #'w_sigma_x' # must
+    import numpy as np
+    param_range = ps.params[param_name] * np.logspace(-2, 2, 7) # [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
     for i_, p in enumerate(param_range):
 
         # choose how you want to name your results folder
-        folder_name = "ParamSweep_%.2f" % p
+        folder_name = "ParamSweep_%.2f_%s" % (p, param_name)
         if folder_name[-1] != '/':
             folder_name += '/'
         params[param_name] = p

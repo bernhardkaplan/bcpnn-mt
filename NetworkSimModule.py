@@ -18,10 +18,13 @@ import CreateConnections as CC
 import utils
 import simulation_parameters
 
+# import NEST before MPI
+exec("from pyNN.nest import *")
 import pyNN
 import pyNN.space as space
 from pyNN.utility import Timer # for measuring the times to connect etc.
 print 'pyNN.version: ', pyNN.__version__
+
 try:
 #    I_fail_because_I_do_not_want_to_use_MPI
     from mpi4py import MPI
@@ -33,7 +36,6 @@ except:
     USE_MPI = False
     pc_id, n_proc, comm = 0, 1, None
     print "MPI not used"
-times['time_to_import'] = time.time() - t0
 
 
 def get_local_indices(pop, offset=0):
@@ -206,7 +208,8 @@ class NetworkModel(object):
             time = np.arange(0, self.params['t_sim'], dt)
             blank_idx = np.arange(1./dt * self.params['t_before_blank'], 1. / dt * (self.params['t_before_blank'] + self.params['t_blank']))
             before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt)
-            blank_idx = np.concatenate((blank_idx, before_stim_idx))
+            after_stim_idx = np.arange(self.params['t_start']+self.params['t_stimulus'] * 1./dt, len(time))
+            blank_idx = np.concatenate((before_stim_idx, blank_idx, after_stim_idx))
 
 
             my_units = self.local_idx_exc
@@ -214,14 +217,18 @@ class NetworkModel(object):
             L_input = np.zeros((n_cells, time.shape[0]))
 
             # get the input signal
-            print 'Calculating input signal'
+            print 'Calculating analog input signal knowing each cell prefered tuning '
             for i_time, time_ in enumerate(time):
 #                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
-                L_input[:, i_time] = utils.get_input_delay(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
+                # def get_input(tuning_prop, params, t, motion_params=None, delay=0., contrast=.9, motion='dot'):
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, \
+                                                    time_/self.params['t_stimulus'], \
+                                                    delay=self.params['sensory_delay'], \
+                                                    delay_compensation=self.params['compensated_delay'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
-                    print "t:", time_
-#                    print 'L_input[:, %d].max()', L_input[:, i_time].max()
+                    print "t:", time_, ' \t - \t ',
+                    print 'L_input[:, %d].max()', L_input[:, i_time].max()
             # blanking
             for i_time in blank_idx:
 #                L_input[:, i_time] = 0.
@@ -259,10 +266,11 @@ class NetworkModel(object):
         """
         if self.pc_id == 0:
             print "Connecting input spiketrains..."
+        delay = self.params['sensory_delay'] * 1000. # pyNN talks in [ms]
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
             ssa = create(SpikeSourceArray, {'spike_times': spike_times})
-            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
+            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory', delay=delay)
         self.times['connect_input'] = self.timer.diff()
 
 
@@ -608,19 +616,19 @@ class NetworkModel(object):
         self.anticipatory_record = True
 
 
-    def run_sim(self, sim_cnt, record_v=True):
+    def run_sim(self, sim_cnt, dorecord_v=True):
 
         # # # # # # # # # # # #
         #     R E C O R D     #
         # # # # # # # # # # # #
         record_exc = True
-#        if os.path.exists(self.params['gids_to_record_fn']):
-#            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
-#            record_exc = True
-#            n_rnd_cells_to_record = 2
+        if os.path.exists(self.params['gids_to_record_fn']):
+            gids_to_record = np.loadtxt(self.params['gids_to_record_fn'], dtype='int')[:self.params['n_gids_to_record']]
+            record_exc = True
+            n_rnd_cells_to_record = 2
 #        else:
 
-        if record_v:
+        if dorecord_v:
             self.exc_pop_view = PopulationView(self.exc_pop, gids_to_record, label='good_exc_neurons')
             self.exc_pop_view.record_v()
             self.inh_pop_view = PopulationView(self.inh_pop, np.random.randint(0, self.params['n_inh'], self.params['n_gids_to_record']), label='random_inh_neurons')
@@ -772,17 +780,17 @@ if __name__ == '__main__':
     max_neurons_to_record = 10000
     if params['n_cells'] > max_neurons_to_record:
         load_files = False
-        record_v = False
+        dorecord_v = False
         save_input_files = False
     else: # choose yourself
-        load_files = True
-        record_v = False
+        load_files = False#True
+        dorecord_v = False
         save_input_files = not load_files
 
-    save_input_files = True
+    print 'DEBUG load_files = ', load_files
+#     save_input_files = True
 
     NM = NetworkModel(ps.params, comm)
-    exec("from pyNN.%s import *" % NM.params['simulator'])
     NM.setup(times=times)
     NM.create(input_created)
     if not input_created:
@@ -793,8 +801,9 @@ if __name__ == '__main__':
 
     NM.connect()
 
-    NM.run_sim(sim_cnt, record_v=record_v)
-    NM.print_results(print_v=record_v)
+    print 'DEBUG dorecord_v = ', dorecord_v
+    NM.run_sim(sim_cnt, dorecord_v=dorecord_v)
+    NM.print_results(print_v=dorecord_v)
 
     """
     The following scripts should only be called, if you are not running on a cluster...
