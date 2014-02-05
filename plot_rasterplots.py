@@ -47,7 +47,7 @@ def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms
                 y_pos = (tp[cell, sort_idx]) / ylen * (abs(ylim[0] - ylim[1]))
             n_input_spikes[i, 0] = nspikes
             n_input_spikes[i, 1] = cell
-            ax.plot(spiketimes, y_pos * np.ones(nspikes) + shift, m, color=c, alpha=.3, markersize=2)
+            ax.plot(np.mod(spiketimes + params['sensory_delay']*1000, params['t_sim']*1000), y_pos * np.ones(nspikes) + shift, m, color=c, alpha=.3, markersize=ms)
         # else: this cell gets no input, because not well tuned
 #        ax.plot(spiketimes, i * np.ones(nspikes) + shift, m, color=c, markersize=2)
 #    print 'nspikes:', n_input_spikes[-10:, 0]
