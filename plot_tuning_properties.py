@@ -63,7 +63,7 @@ def plot_tuning_prop_2D(params):
 
     cell_type = 'exc'
 
-    if re_calculate: # load 
+    if recalculate_tp: # load 
         print '\nCalculating the tuning prop'
         ps.create_folders()
         d = utils.set_tuning_prop(params, mode='hexgrid', cell_type=cell_type)        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
@@ -357,7 +357,7 @@ def plot_spatial_and_direction_tuning_2D():
     fig.savefig(output_fn, dpi=200)
 
 
-def plot_tuning_prop_1D(params, re_calculate):
+def plot_tuning_prop_1D(params, recalculate_tp):
     rcParams = { 'axes.labelsize' : 18,
                 'label.fontsize': 20,
                 'xtick.labelsize' : 16,
@@ -370,7 +370,7 @@ def plot_tuning_prop_1D(params, re_calculate):
     cell_type = 'exc'
     #cell_type = 'inh'
 
-    if re_calculate: # load
+    if recalculate_tp: # load
         print '\nCalculating the tuning prop'
         ps.create_folders()
         d = utils.set_tuning_prop(params, mode='hexgrid', cell_type=cell_type) # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
@@ -433,14 +433,14 @@ if __name__ == '__main__':
         import json
         f = file(param_fn, 'r')
         params = json.load(f)
-        re_calculate = False
+        recalculate_tp = True
 
     else:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
         # load simulation parameters
         ps = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
         params = ps.load_params()                       # params stores cell numbers, etc as a dictionary
-        re_calculate = True # could be False, too, if you want
+        recalculate_tp = True # could be False, too, if you want
 
 
     rcParams = { 'axes.labelsize' : 18,
@@ -456,6 +456,6 @@ if __name__ == '__main__':
     if params['n_grid_dimensions'] == 2:
         plot_tuning_prop_2D(params)
     else:
-        plot_tuning_prop_1D(params, re_calculate)
+        plot_tuning_prop_1D(params, recalculate_tp)
         plot_tuning_space(params)
     pylab.show()

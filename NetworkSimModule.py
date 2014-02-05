@@ -18,10 +18,13 @@ import CreateConnections as CC
 import utils
 import simulation_parameters
 
+# import NEST before MPI
+exec("from pyNN.nest import *")
 import pyNN
 import pyNN.space as space
 from pyNN.utility import Timer # for measuring the times to connect etc.
 print 'pyNN.version: ', pyNN.__version__
+
 try:
 #    I_fail_because_I_do_not_want_to_use_MPI
     from mpi4py import MPI
@@ -33,7 +36,6 @@ except:
     USE_MPI = False
     pc_id, n_proc, comm = 0, 1, None
     print "MPI not used"
-times['time_to_import'] = time.time() - t0
 
 
 def get_local_indices(pop, offset=0):
@@ -259,10 +261,11 @@ class NetworkModel(object):
         """
         if self.pc_id == 0:
             print "Connecting input spiketrains..."
+        delay = self.params['neural_perception_delay'] * self.params['t_stimulus']
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
             ssa = create(SpikeSourceArray, {'spike_times': spike_times})
-            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
+            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory', delay=delay)
         self.times['connect_input'] = self.timer.diff()
 
 
@@ -783,7 +786,6 @@ if __name__ == '__main__':
 #     save_input_files = True
 
     NM = NetworkModel(ps.params, comm)
-    exec("from pyNN.%s import *" % NM.params['simulator'])
     NM.setup(times=times)
     NM.create(input_created)
     if not input_created:
