@@ -16,7 +16,7 @@ import os
 import json
 import CreateConnections as CC
 import utils
-import simulation_parameters
+import simulation_parameters_ESS as simulation_parameters
 
 import pyNN
 import pyNN.hardware.brainscales as sim
@@ -115,19 +115,21 @@ class NetworkModel(object):
         #     S E T U P       #
         # # # # # # # # # # # #
         (delay_min, delay_max) = self.params['delay_range']
-        sim.setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=self.params['seed'])
-        rng_v = sim.NumpyRNG(seed = sim_cnt*3147 + self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
-        self.rng_conn = sim.NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
+        #sim.setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=self.params['seed'])
+        sim.setup( realizedConnectionMatrixFile = self.params['realized_conn_file'], \
+                    lostConnectionMatrixFile=self.params['lost_conn_file'], \
+                    rng_seeds_seed=self.params['seed'], \
+                    useSystemSim=True, \
+                    ess_params = {
+                        'perfectSynapseTrafo':True,\
+                        'weightDistortion': 0.2,\
+                        'hardwareSetup' : self.params['hardware_setup']}
+                  )
+        self.rng_conn = pyNN.random.NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 
         # # # # # # # # # # # # # # # # # # # # # # # # #
         #     R A N D O M    D I S T R I B U T I O N S  #
         # # # # # # # # # # # # # # # # # # # # # # # # #
-        self.v_init_dist = sim.RandomDistribution('normal',
-                (self.params['v_init'], self.params['v_init_sigma']),
-                rng=rng_v,
-                constrain='redraw',
-                boundaries=(-80, -60))
-
         self.times['t_setup'] = self.timer.diff()
         self.times['t_calc_conns'] = 0
         if self.comm != None:
@@ -143,15 +145,13 @@ class NetworkModel(object):
             create the Populations and initialize the membrane potentials
         """
         # choose the neuron model
+        assert (self.params['neuron_model'] != 'IF_cond_alpha'), 'Wrong neuron model for ESS'
         if self.params['neuron_model'] == 'IF_cond_exp':
-            self.exc_pop = sim.Population(self.params['n_exc'], IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = sim.Population(self.params['n_inh'], IF_cond_exp, self.params['cell_params_inh'], label="inh_pop")
-        elif self.params['neuron_model'] == 'IF_cond_alpha':
-            self.exc_pop = sim.Population(self.params['n_exc'], IF_cond_alpha, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = sim.Population(self.params['n_inh'], IF_cond_alpha, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], sim.IF_cond_exp, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], sim.IF_cond_exp, self.params['cell_params_inh'], label="inh_pop")
         elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.exc_pop = sim.Population(self.params['n_exc'], EIF_cond_exp_isfa_ista, self.params['cell_params_exc'], label='exc_cells')
-            self.inh_pop = sim.Population(self.params['n_inh'], EIF_cond_exp_isfa_ista, self.params['cell_params_inh'], label="inh_pop")
+            self.exc_pop = sim.Population(self.params['n_exc'], sim.EIF_cond_exp_isfa_ista, self.params['cell_params_exc'], label='exc_cells')
+            self.inh_pop = sim.Population(self.params['n_inh'], sim.EIF_cond_exp_isfa_ista, self.params['cell_params_inh'], label="inh_pop")
         else:
             print '\n\nUnknown neuron model:\n\t', self.params['neuron_model']
         self.local_idx_exc = get_local_indices(self.exc_pop, offset=0)
@@ -172,8 +172,6 @@ class NetworkModel(object):
         if not input_created:
             self.spike_times_container = [ [] for i in xrange(len(self.local_idx_exc))]
 
-        self.exc_pop.initialize('v', self.v_init_dist)
-        self.inh_pop.initialize('v', self.v_init_dist)
         self.times['t_create'] = self.timer.diff()
 
 
@@ -226,8 +224,8 @@ class NetworkModel(object):
             # get the input signal
             print 'Calculating input signal'
             for i_time, time_ in enumerate(time):
-#                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
-                L_input[:, i_time] = utils.get_input_delay(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
+                #L_input[:, i_time] = utils.get_input_delay(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
                     print "t:", time_
@@ -271,8 +269,8 @@ class NetworkModel(object):
             print "Connecting input spiketrains..."
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
-            ssa = create(SpikeSourceArray, {'spike_times': spike_times})
-            connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
+            ssa = sim.create(sim.SpikeSourceArray, {'spike_times': spike_times})
+            sim.connect(ssa, self.exc_pop[unit], self.params['w_input_exc'], synapse_type='excitatory')
         self.times['connect_input'] = self.timer.diff()
 
 
@@ -729,7 +727,7 @@ class NetworkModel(object):
         self.times['t_print'] = self.timer.diff()
         if self.pc_id == 0:
             print "calling pyNN.end() ...."
-        end()
+        sim.end()
         self.times['t_end'] = self.timer.diff()
 
         if self.pc_id == 0:
@@ -822,17 +820,9 @@ if __name__ == '__main__':
         comm.Barrier()
     sim_cnt = 0
 
-    max_neurons_to_record = 10000
-    if params['n_cells'] > max_neurons_to_record:
-        load_files = False
-        record_v = False
-        save_input_files = False
-    else: # choose yourself
-        load_files = False
-        record_v = False
-        save_input_files = not load_files
-
-    save_input_files = True
+    load_files = True
+    record_v = False
+    save_input_files = False
 
     NM = NetworkModel(ps.params, comm)
     NM.setup(times=times)
@@ -848,27 +838,10 @@ if __name__ == '__main__':
     NM.run_sim(sim_cnt, record_v=record_v)
     NM.print_results(print_v=record_v)
 
-    """
-    The following scripts should only be called, if you are not running on a cluster...
-    if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
-        import plot_prediction as pp
-        pp.plot_prediction(params)
-
-        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
-
-    if pc_id == 1 or not(USE_MPI):
-        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
-        for conn_type in ['ee', 'ei', 'ie', 'ii']:
-            os.system('python plot_weight_and_delay_histogram.py %s %s' % (conn_type, ps.params['folder_name']))
-
-    if pc_id == 1 or not(USE_MPI):
-        os.system('python analyse_connectivity.py %s' % ps.params['folder_name'])
-    """
     if comm != None:
         comm.Barrier()
 
-    if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
+    if pc_id == 0:
         import plot_prediction as pp
 
         if params['n_grid_dimensions'] == 2:
