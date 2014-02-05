@@ -25,7 +25,7 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
                                                         tau_shift=params['sensory_delay'])
 #        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
 
-def get_p_conn_isotropic( params, tp_src, tp_tgt[tgt, :]):
+def get_p_conn_isotropic( params, tp_src, tp_tgt):
     if params['n_grid_dimensions'] == 2:
         return get_p_conn_isotropic_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
     else:
