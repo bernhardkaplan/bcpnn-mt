@@ -279,7 +279,7 @@ class PlotPrediction(object):
         w, h = self.params['torus_width'], self.params['torus_height']
 
         # introduce neural delay
-        n_delay_bins = self.params['neural_perception_delay'] / self.time_binsize
+        n_delay_bins = self.params['sensory_delay'] / self.time_binsize
         for i in xrange(self.n_bins):
 
             # 1) momentary vote
@@ -298,8 +298,8 @@ class PlotPrediction(object):
             t = (i + n_delay_bins) * self.time_binsize + .5 * self.time_binsize
 #            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
 #            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
-            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus'] + mp[2] * self.params['neural_perception_delay']) % w# be sure that this works the same as utils.get_input is called!
-            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus'] + mp[3] * self.params['neural_perception_delay']) % h # be sure that this works the same as utils.get_input is called!
+            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus'] + mp[2] * self.params['sensory_delay']) % w# be sure that this works the same as utils.get_input is called!
+            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus'] + mp[3] * self.params['sensory_delay']) % h # be sure that this works the same as utils.get_input is called!
             self.x_stim[i] = stim_pos_x
             self.y_stim[i] = stim_pos_y
             x_pred = self.x_confidence_binned[:, i] * self.x_tuning

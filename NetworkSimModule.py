@@ -261,7 +261,7 @@ class NetworkModel(object):
         """
         if self.pc_id == 0:
             print "Connecting input spiketrains..."
-        delay = self.params['neural_perception_delay'] * self.params['t_stimulus']
+        delay = self.params['sensory_delay'] * 1000. # pyNN talks in [ms]
         for i_, unit in enumerate(self.local_idx_exc):
             spike_times = self.spike_times_container[i_]
             ssa = create(SpikeSourceArray, {'spike_times': spike_times})

@@ -191,7 +191,7 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['neural_perception_delay'] = 0.10 # [s] delay accumulated along the neural pathways during the motion perception and prediction process (tau_shift)
+        self.params['sensory_delay'] = 0.10 # [s] delay accumulated along the thalamo-cortical pathways
 
         # ######
         # INPUT
