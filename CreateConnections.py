@@ -25,6 +25,27 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
                                                         tau_shift=params['sensory_delay'])
 #        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
 
+def get_p_conn_isotropic( params, tp_src, tp_tgt):
+    if params['n_grid_dimensions'] == 2:
+        return get_p_conn_isotropic_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+    else:
+        return get_p_conn_isotropic_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+
+def get_p_conn_isotropic_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius):
+
+    n_src = tp_src[:, 0].size
+
+    # calculate the distance between target cell and sources
+    d_ij = utils.torus_distance_array(tp_src[:, 0], tp_tgt[0] * np.ones(n_src))
+    return p, latency
+
+
+
+def get_p_conn_isotropic_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius):
+
+    d_ij = utils.torus_distance2D(tp_src[0], tp_tgt[0], tp_src[1], tp_tgt[1])
+    return p, latency
+
 
 def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_prediction=0.05, tau_shift=0.):
     """
@@ -260,67 +281,6 @@ def get_p_conn_direction_and_orientation_based(tp_src, tp_tgt, w_sigma_x, w_sigm
     
     return p, d_ij
 #    return p, latency
-
-
-
-
-
-
-
-def compute_weights_convergence_constrained(tuning_prop, params, comm=None):
-    """
-    This function computes for each target the X % of source cells which have the highest
-    connection probability to the target cell.
-
-    Arguments:
-        tuning_prop: 2 dimensional array with shape (n_cells, 4)
-            tp[:, 0] : x-position
-            tp[:, 1] : y-position
-            tp[:, 2] : u-position (speed in x-direction)
-            tp[:, 3] : v-position (speed in y-direction)
-    """
-    if comm != None:
-        pc_id, n_proc = comm.rank, comm.size
-        comm.barrier()
-    else:
-        pc_id, n_proc = 0, 1
-    gid_min, gid_max = utils.distribute_n(params['n_exc'], n_proc, pc_id)
-    sigma_x, sigma_v = params['w_sigma_x'], params['w_sigma_v'] # small sigma values let p and w shrink
-    (delay_min, delay_max) = params['delay_range']
-    output_fn = params['conn_list_ee_conv_constr_fn_base'] + 'pid%d.dat' % (pc_id)
-    print "Proc %d computes initial weights for gids (%d, %d) to file %s" % (pc_id, gid_min, gid_max, output_fn)
-    conn_file = open(output_fn, 'w')
-    my_cells = range(gid_min, gid_max)
-    n_src_cells = round(params['p_ee'] * params['n_exc']) # number of sources per target neuron
-    output = np.zeros((len(my_cells), n_src_cells+1), dtype='int')
-    weights = np.zeros((len(my_cells), n_src_cells+1), dtype='int')
-
-    output = ''
-    cnt = 0
-    for tgt in my_cells:
-        p = np.zeros(params['n_exc'])
-        latency = np.zeros(params['n_exc'])
-        for src in xrange(params['n_exc']):
-            if (src != tgt):
-                p[src], latency[src] = get_p_conn(tuning_prop[src, :], tuning_prop[tgt, :], sigma_x, sigma_v, self.params['connectivity_radius'])
-        sorted_indices = np.argsort(p)
-        sources = sorted_indices[-params['n_src_cells_per_neuron']:] 
-        w = params['w_tgt_in'] / p[sources].sum() * p[sources]
-#        w = utils.linear_transformation(w, params['w_min'], params['w_max'])
-        for i in xrange(len(sources)):
-#            w[i] = max(params['w_min'], min(w[i], params['w_max']))
-            src = sources[i]
-            delay = min(max(latency[src], delay_min), delay_max)  # map the delay into the valid range
-            d_ij = utils.euclidean(tuning_prop[src, :], tuning_prop[tgt, :])
-            output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (src, tgt, w[i], delay, d_ij)
-            cnt += 1
-
-    print 'PID %d Writing %d connections to file: %s' % (pc_id, cnt, output_fn)
-    conn_file.write(output)
-    conn_file.close()
-
-    if (comm != None):
-        comm.barrier()
 
 
 

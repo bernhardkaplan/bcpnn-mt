@@ -228,7 +228,7 @@ class NetworkModel(object):
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
                     print "t:", time_, ' \t - \t ',
-                    print 'L_input[:, %d].max()', L_input[:, i_time].max()
+                    print 'L_input[:, %d].max()' % (L_input[:, i_time].max())
             # blanking
             for i_time in blank_idx:
 #                L_input[:, i_time] = 0.
