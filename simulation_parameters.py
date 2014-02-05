@@ -127,7 +127,7 @@ class parameter_storage(object):
         self.params['tau_prediction'] = .005 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
 
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 100. # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
         self.params['w_sigma_isotropic'] = 0.20 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective
@@ -237,7 +237,7 @@ class parameter_storage(object):
         # NOISE
         # ######
         self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 2000# [Hz] 
+        self.params['f_exc_noise'] = 2000# [Hz]
         self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
         self.params['f_inh_noise'] = 2000# [Hz]
 

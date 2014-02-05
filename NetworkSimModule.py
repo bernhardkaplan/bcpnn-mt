@@ -219,11 +219,13 @@ class NetworkModel(object):
             print 'Calculating input signal'
             for i_time, time_ in enumerate(time):
 #                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
-                L_input[:, i_time] = utils.get_input_delay(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
+                # def get_input(tuning_prop, params, t, motion_params=None, delay=0., contrast=.9, motion='dot'):
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, \
+                                                    time_/self.params['t_stimulus'], delay=self.params['sensory_delay'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
-                    print "t:", time_
-#                    print 'L_input[:, %d].max()', L_input[:, i_time].max()
+                    print "t:", time_, ' \t - \t ',
+                    print 'L_input[:, %d].max()', L_input[:, i_time].max()
             # blanking
             for i_time in blank_idx:
 #                L_input[:, i_time] = 0.

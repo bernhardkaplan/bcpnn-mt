@@ -183,7 +183,7 @@ if __name__ == '__main__':
     plot_input_spikes_sorted_in_space(ax1, c='b', sort_idx=0, ms=3)
     plot_output_spikes_sorted_in_space(ax1, 'exc', c='k', sort_idx=0, ms=3)
     plot_vertical_blank(params, ax1)
-    plot_start_stop(params, ax)
+    plot_start_stop(params, ax1)
 
     # sorted by velocity in direction x / y
     #plot_input_spikes_sorted_in_space(ax2, c='b', sort_idx=2, ms=3)

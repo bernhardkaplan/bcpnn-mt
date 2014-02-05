@@ -53,7 +53,7 @@ if __name__ == '__main__':
     for i_, p in enumerate(param_range):
 
         # choose how you want to name your results folder
-        folder_name = "ParamSweep_%.2f" % p
+        folder_name = "ParamSweep_%.2f_%s" % (p, param_name)
         if folder_name[-1] != '/':
             folder_name += '/'
         params[param_name] = p

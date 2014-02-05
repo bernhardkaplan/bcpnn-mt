@@ -45,7 +45,8 @@ def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_
     """
     n_src = tp_src[:, 0].size
     # compute where the source cells predict the stimulus to be after tau_prediction [s]
-    x_predicted = (tp_src[:, 0] + (tau_prediction + tau_shift) * tp_src[:, 2]) % 1.
+#  tau_shift should not happen here...   x_predicted = (tp_src[:, 0] + (tau_prediction + tau_shift) * tp_src[:, 2]) % 1.
+    x_predicted = (tp_src[:, 0] + (tau_prediction) * tp_src[:, 2]) % 1.
     # calculate the distance between the predicted position and the target cell
     d_pred_tgt = utils.torus_distance_array(x_predicted, tp_tgt[0] * np.ones(n_src))
     # take the preferred speeds into account
