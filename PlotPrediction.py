@@ -93,7 +93,7 @@ class PlotPrediction(object):
         fig_height = fig_width*golden_mean      # height in inches
         fig_size =  [fig_width,fig_height]
         params = {#'backend': 'png',
-                  'titel.fontsize': 24,
+                  'title.fontsize': 24,
                   'axes.labelsize': 24,
                   'legend.fontsize': 14,
 #                  'text.fontsize': 10,
@@ -200,11 +200,11 @@ class PlotPrediction(object):
         cos = np.zeros(n)
 
         if range_0_1:
-            sin = confidence_vec * np.sin(tuning_vec * 2 * np.pi - np.pi) 
+            sin = confidence_vec * np.sin(tuning_vec * 2 * np.pi - np.pi)
             cos = confidence_vec * np.cos(tuning_vec * 2 * np.pi - np.pi)
             avg = .5 * (np.arctan2(sin.sum(), cos.sum()) / np.pi + 1.)
         else: # range_-1_1
-            sin = confidence_vec * np.sin(tuning_vec * np.pi) 
+            sin = confidence_vec * np.sin(tuning_vec * np.pi)
             cos = confidence_vec * np.cos(tuning_vec * np.pi)
             avg = np.arctan2(sin.sum(), cos.sum()) / np.pi
 
@@ -219,13 +219,13 @@ class PlotPrediction(object):
          On which time scale shall the prediction work?
          There are (at least) 3 different ways to do it:
            Very short time-scale:
-           1) Compute the prediction for each time bin - based on the activitiy in the respective time bin 
+           1) Compute the prediction for each time bin - based on the activitiy in the respective time bin
            Short time-scale:
            2) Compute the prediction for each time bin based on all activity in the past
            3) Non-linear 'voting' based on 1)
            Long time-scale:
            3) Compute the prediction based on the the activity of the whole run - not time dependent
-           4) Non-linear 'voting' based on 3) 
+           4) Non-linear 'voting' based on 3)
         """
         print 'Computing v estimates...'
         mp = self.params['motion_params']
@@ -233,13 +233,13 @@ class PlotPrediction(object):
         self.x_stim = np.zeros(self.n_bins) # stimulus positions binned
         self.y_stim = np.zeros(self.n_bins)
         # momentary result, based on the activity in one time bin
-        self.x_avg = np.zeros(self.n_bins) 
+        self.x_avg = np.zeros(self.n_bins)
         self.y_avg = np.zeros(self.n_bins)
         self.xdiff_avg = np.zeros(self.n_bins)  # stores |x_predicted(t) - x_stimulus(t)|
-        self.vx_avg = np.zeros(self.n_bins) 
+        self.vx_avg = np.zeros(self.n_bins)
         self.vy_avg = np.zeros(self.n_bins)
         self.vdiff_avg = np.zeros(self.n_bins)  # stores |v_predicted(t) - v_stimulus(t)|
-        # ---> gives theta_avg 
+        # ---> gives theta_avg
 
         # based on the activity in several time bins
         self.x_moving_avg = np.zeros((self.n_bins, 2))
@@ -260,16 +260,16 @@ class PlotPrediction(object):
         trace_length_in_bins = int(round(self.trace_length / self.time_binsize))
         # ---> gives theta_moving_avg
 
-        # # # # # # # # # # # # # # # # # # # # # # 
-        # L O C A T I O N     P R E D I C T I O N 
-        # # # # # # # # # # # # # # # # # # # # # # 
+        # # # # # # # # # # # # # # # # # # # # # #
+        # L O C A T I O N     P R E D I C T I O N #
+        # # # # # # # # # # # # # # # # # # # # # #
         self.x_confidence_binned = self.nspikes_binned_normalized[self.sorted_indices_x]
         self.y_confidence_binned = self.nspikes_binned_normalized[self.sorted_indices_y]
         x_prediction_trace = np.zeros((self.n_cells, self.n_bins, 2))    # _trace: prediction based on the momentary and past activity (moving average, and std) --> trace_length
         y_prediction_trace = np.zeros((self.n_cells, self.n_bins, 2))    # _trace: prediction based on the momentary and past activity (moving average, and std) --> trace_length
-        # # # # # # # # # # # # # # # # # # # # # # 
-        # S P E E D    P R E D I C T I O N 
-        # # # # # # # # # # # # # # # # # # # # # # 
+        # # # # # # # # # # # # # # # # # # #
+        # S P E E D    P R E D I C T I O N  #
+        # # # # # # # # # # # # # # # # # # #
         self.vx_confidence_binned = self.nspikes_binned_normalized[self.sorted_indices_vx]
         self.vy_confidence_binned = self.nspikes_binned_normalized[self.sorted_indices_vy]
         vx_prediction_trace = np.zeros((self.n_cells, self.n_bins, 2))    # _trace: prediction based on the momentary and past activity (moving average, and std) --> trace_length
@@ -384,7 +384,7 @@ class PlotPrediction(object):
             self.vy_non_linear[i] = self.get_average_of_circular_quantity(vy_exp, self.vy_tuning, xv='v')
             self.vdiff_non_linear[i] = np.sqrt((mp[2]- self.vx_non_linear[i])**2 + (mp[3]- self.vy_non_linear[i])**2)
 
-        # in the first step the trace can not have a standard deviation --> avoid NANs 
+        # in the first step the trace can not have a standard deviation --> avoid NANs
         self.x_moving_avg[0, 0] = np.sum(self.x_confidence_binned[self.sorted_indices_x, 0] * self.x_tuning)
         self.y_moving_avg[0, 0] = np.sum(self.y_confidence_binned[self.sorted_indices_y, 0] * self.y_tuning)
         self.x_moving_avg[0, 1] = 0
@@ -461,9 +461,9 @@ class PlotPrediction(object):
         rcParams = { 'axes.labelsize' : 22,
                     'axes.titlesize'  : 24,
                     'label.fontsize': 20,
-                    'xtick.labelsize' : 20, 
-                    'ytick.labelsize' : 20, 
-                    'legend.fontsize': 16, 
+                    'xtick.labelsize' : 20,
+                    'ytick.labelsize' : 20,
+                    'legend.fontsize': 16,
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
 
@@ -502,7 +502,7 @@ class PlotPrediction(object):
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         for cell in xrange(int(len(spiketimes))):
             ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=1)
-            
+
         ylim = ax.get_ylim()
         if cell_type == 'exc':
             ax.set_ylim((0, self.params['n_exc']))
@@ -516,6 +516,7 @@ class PlotPrediction(object):
 
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
     def plot_network_activity(self, cell_type, fig_cnt=1):
 
@@ -622,7 +623,7 @@ class PlotPrediction(object):
         norm = matplotlib.colors.Normalize(vmin=0, vmax=max_conf)#, clip=True)
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)
         m.set_array(np.arange(0., max_conf, 0.01))
-        cb = pylab.colorbar(m, orientation='horizontal', aspect=40, anchor=(.5, .0))
+        cb = pylab.colorbar(m, orientation='horizontal', aspect=40)#, anchor=(.5, .0))
         cax = ax.pcolormesh(data, vmin=0., vmax=max_conf)
 
         ticklabels = cb.ax.get_xticklabels()
@@ -665,6 +666,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
         print 'xdiff_avg.sum:', self.xdiff_avg.sum()
         output_data = np.zeros((self.t_axis.size, 4))
@@ -674,7 +676,6 @@ class PlotPrediction(object):
         output_data[:, 3] = self.xdiff_non_linear
         output_fn = self.params['xdiff_vs_time_fn']
         self.data_to_store[output_fn] = {'data' : output_data}
-    
 
     def plot_vdiff(self, fig_cnt=1, show_blank=None):
         if show_blank == None:
@@ -697,6 +698,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
         print 'vdiff_avg.sum:', self.vdiff_avg.sum()
         output_data = np.zeros((self.t_axis.size, 4))
@@ -706,7 +708,6 @@ class PlotPrediction(object):
         output_data[:, 3] = self.vdiff_non_linear
         output_fn = self.params['vdiff_vs_time_fn']
         self.data_to_store[output_fn] = {'data' : output_data}
-    
 
     def plot_nspikes_binned(self):
 
@@ -801,6 +802,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
 
     def plot_y_estimates(self, fig_cnt=1, show_blank=None):
@@ -826,6 +828,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
 
 
@@ -852,6 +855,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
         output_data = np.array((self.t_axis, self.vx_avg))
         self.data_to_store['vx_linear_vs_time.dat'] = {'data' : output_data}
@@ -880,6 +884,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
+        self.plot_start_stop(ax)
 
         output_data = np.array((self.t_axis, self.vy_avg))
         self.data_to_store['vy_linear_vs_time.dat'] = {'data' : output_data}
@@ -904,7 +909,7 @@ class PlotPrediction(object):
         ax.set_xlim((0, self.params['t_sim']))
         if show_blank:
             self.plot_blank(ax)
-
+        self.plot_start_stop(ax)
         output_data = np.array((self.t_axis, self.theta_avg))
         self.data_to_store['theta_linear_vs_time.dat'] = {'data' : output_data}
 
@@ -1024,6 +1029,12 @@ class PlotPrediction(object):
         ax.set_title(title)
 #        pylab.axis([l-0.1*dx, r+0.1*dx, b-0.1*dy, t+0.1*dy])
 #        pylab.show()
+
+    def plot_start_stop(self, ax, c='r'):
+        ylim = ax.get_ylim()
+        ax.plot((self.params['t_start'], self.params['t_start']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+        ax.plot((self.params['t_start'] + self.params['t_stimulus'], self.params['t_start'] + self.params['t_stimulus']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+        ax.set_ylim(ylim)
 
     def plot_blank(self, ax, c='k'):
         ylim = ax.get_ylim()

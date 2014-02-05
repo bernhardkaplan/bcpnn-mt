@@ -29,7 +29,7 @@ if d.size > 0:
     nspikes = utils.get_nspikes(params['exc_spiketimes_fn_merged'] + '.ras', n_cells=params['n_exc'])
     spiking_cells = np.nonzero(nspikes)[0]
     fired_spikes = nspikes[spiking_cells]
-   
+    
     print 'tnspikes\tGID\tmin_dist_to_stim\ttp'
     for i in xrange(n_cells):
         gid = idx[i]
