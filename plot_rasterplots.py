@@ -45,7 +45,7 @@ def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms
                 y_pos = (tp[cell, sort_idx] % 1.) / ylen * (abs(ylim[0] - ylim[1]))
             else:
                 y_pos = (tp[cell, sort_idx]) / ylen * (abs(ylim[0] - ylim[1]))
-            n_input_spikes[i, 0] = nspikes 
+            n_input_spikes[i, 0] = nspikes
             n_input_spikes[i, 1] = cell
             ax.plot(spiketimes, y_pos * np.ones(nspikes) + shift, m, color=c, alpha=.3, markersize=2)
         # else: this cell gets no input, because not well tuned
@@ -114,18 +114,27 @@ def plot_spikes(ax, fn, n_cells):
     for cell in xrange(int(len(spiketimes))):
         ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=2)
 
-def plot_vertical_blank(params, ax):
+def plot_start_stop(self, ax, c='r'):
+    ylim = ax.get_ylim()
+    ax.plot((self.params['t_start'], self.params['t_start']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+    ax.plot((self.params['t_start'] + self.params['t_stimulus'], self.params['t_start'] + self.params['t_stimulus']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+    ax.plot((self.params['t_start'] + self.params['sensory_delay'], self.params['t_start'] + self.params['sensory_delay']), (ylim[0], ylim[1]), ls='-.', c=c, lw=2)
+    ax.set_ylim(ylim)
+
+
+def plot_vertical_blank(params, ax, c='k'):
     t0 = params['t_before_blank']
     t1 = t0 + params['t_blank']
     ylim = ax.get_ylim()
-    ax.plot((t0, t0), (ylim[0], ylim[1]), ls='--', c='k', lw=2)
-    ax.plot((t1, t1), (ylim[0], ylim[1]), ls='--', c='k', lw=2)
+    ax.plot((t0, t0), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+    ax.plot((t1, t1), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+    ax.set_ylim(ylim)
 
 if __name__ == '__main__':
     rcP= { 'axes.labelsize' : 24,
                 'label.fontsize': 24,
-                'xtick.labelsize' : 24, 
-                'ytick.labelsize' : 24, 
+                'xtick.labelsize' : 24,
+                'ytick.labelsize' : 24,
                 'axes.titlesize'  : 32,
                 'legend.fontsize': 9}
 

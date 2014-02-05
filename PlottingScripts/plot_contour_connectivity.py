@@ -126,7 +126,7 @@ def get_pconn_source_perspective(params, tp, src_gid, x_tgt, vx_tgt):
     """To which cells should src_gid connect to?"""
     n_tgt = x_tgt.size
     tau_prediction = params['tau_prediction'] / params['t_stimulus']
-    tau_shift = params['neural_perception_delay']
+    tau_shift = params['sensory_delay']
     # compute where the cell projects to (preferentially)
     x_predicted = ((tp[src_gid, 0] + (tau_prediction + tau_shift) * tp[src_gid, 2]) % 1) * np.ones(n_tgt)
     print 'debug', tp[src_gid, 0], x_predicted[0], tp[src_gid, 2] * (tau_prediction + tau_shift)
@@ -144,7 +144,7 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
 
     n_src = x_src.size
     tau_prediction = params['tau_prediction'] / params['t_stimulus']
-    tau_shift = params['neural_perception_delay']
+    tau_shift = params['sensory_delay']
     x_predicted = (x_src + (tau_prediction + tau_shift) * vx_src) % 1.
     # calculate the distance between the predicted position and the target cell
     d_pred_tgt = utils.torus_distance_array(x_predicted, tp[gid, 0] * np.ones(n_src))

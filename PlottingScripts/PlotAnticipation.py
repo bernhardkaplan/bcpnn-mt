@@ -215,7 +215,7 @@ class PlotAnticipation(object):
 
             # compute time when stimulus is at x_mean
             t_arrive = 1000 * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
-            t_arrive -= self.params['neural_perception_delay'] * 1000.
+            t_arrive -= self.params['sensory_delay'] * 1000.
             shift_ = int(t_arrive / self.dt_filter) + n_data * .5
 #            print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
             shifted_trace = np.r_[mean_trace[shift_:, i_], mean_trace[:shift_, i_]]
