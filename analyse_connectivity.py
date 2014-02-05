@@ -371,6 +371,8 @@ class ConnectivityAnalyser(object):
     def create_connectivity(self, conn_type):
         """
         This function (re-) creates the network connectivity.
+
+        WARNING: deprecated, use get_p_conn according to flags in params!!!
         """
 
         # distribute the cell ids among involved processes
@@ -398,9 +400,15 @@ class ConnectivityAnalyser(object):
             for src in xrange(n_src):
                 if conn_type[0] == conn_type[1]: # no self-connection
                     if (src != tgt):
-                        p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+                        # TODO
+                        print '\nNot implemented ... \n'
+                        exit(1)
+#                        p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
                 else: # different populations --> same indices mean different cells, no check for src != tgt
-                    p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+                        # TODO
+                        print '\nNot implemented ... \n'
+                        exit(1)
+#                    p[src], latency[src] = CC.get_p_conn(self.tp_src[src, :], self.tp_tgt[tgt, :], params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
             # sort connection probabilities and select remaining connections
             sorted_indices = np.argsort(p)
             if conn_type[0] == 'e':
