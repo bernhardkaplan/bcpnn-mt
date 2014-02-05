@@ -116,9 +116,9 @@ def plot_spikes(ax, fn, n_cells):
 
 def plot_start_stop(params, ax, c='r'):
     ylim = ax.get_ylim()
-    ax.plot((self.params['t_start'], self.params['t_start']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
-    ax.plot((self.params['t_start'] + self.params['t_stimulus'], self.params['t_start'] + self.params['t_stimulus']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
-    ax.plot((self.params['t_start'] + self.params['sensory_delay'], self.params['t_start'] + self.params['sensory_delay']), (ylim[0], ylim[1]), ls='-.', c=c, lw=2)
+    ax.plot((params['t_start'], params['t_start']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+    ax.plot((params['t_start'] + params['t_stimulus'], params['t_start'] + params['t_stimulus']), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
+    ax.plot((params['t_start'] + params['sensory_delay'], params['t_start'] + params['sensory_delay']), (ylim[0], ylim[1]), ls='-.', c=c, lw=2)
     ax.set_ylim(ylim)
 
 

@@ -208,7 +208,8 @@ class NetworkModel(object):
             time = np.arange(0, self.params['t_sim'], dt)
             blank_idx = np.arange(1./dt * self.params['t_before_blank'], 1. / dt * (self.params['t_before_blank'] + self.params['t_blank']))
             before_stim_idx = np.arange(0, self.params['t_start'] * 1./dt)
-            blank_idx = np.concatenate((blank_idx, before_stim_idx))
+            after_stim_idx = np.arange(self.params['t_start']+self.params['t_stimulus'] * 1./dt, len(time))
+            blank_idx = np.concatenate((before_stim_idx, blank_idx, after_stim_idx))
 
 
             my_units = self.local_idx_exc
@@ -216,12 +217,14 @@ class NetworkModel(object):
             L_input = np.zeros((n_cells, time.shape[0]))
 
             # get the input signal
-            print 'Calculating input signal'
+            print 'Calculating analog input signal knowing each cell prefered tuning '
             for i_time, time_ in enumerate(time):
 #                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
                 # def get_input(tuning_prop, params, t, motion_params=None, delay=0., contrast=.9, motion='dot'):
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, \
-                                                    time_/self.params['t_stimulus'], delay=self.params['sensory_delay'])
+                                                    time_/self.params['t_stimulus'], \
+                                                    delay=self.params['sensory_delay'], \
+                                                    delay_compensation=self.params['compensated_delay'])
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 500 == 0):
                     print "t:", time_, ' \t - \t ',
