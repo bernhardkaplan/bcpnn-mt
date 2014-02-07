@@ -351,7 +351,7 @@ class parameter_storage(object):
                             self.params['movie_folder'], \
                             self.params['tmp_folder'], \
                             self.params['data_folder'], \
-                            self.params['input_folder']] 
+                            self.params['input_folder']]
 
         self.params['params_fn_json'] = '%ssimulation_parameters.json' % (self.params['parameters_folder'])
 

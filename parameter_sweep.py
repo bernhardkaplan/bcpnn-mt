@@ -32,7 +32,7 @@ def prepare_simulation(folder_name, params, cleanup=False):
     print 'Ready for simulation:\n\t%s' % (ps.params['params_fn_json'])
 
 
-def run_simulation(params, folder_name):
+def run_simulation(folder_name, params):
     # specify your run command (mpirun -np X, python, ...)
     parameter_filename = params['params_fn_json']
 #     run_command = 'mpirun -np 8 python NetworkSimModule.py %s' % parameter_filename
@@ -40,23 +40,23 @@ def run_simulation(params, folder_name):
     print 'Running:\n\t%s' % (run_command)
     os.system(run_command)
 
-
 if __name__ == '__main__':
-    ps = simulation_parameters.parameter_storage()
-    params = ps.params
+#     ps = simulation_parameters.parameter_storage()
+#     params = ps.params
 
     # define the parameter range you'd like to sweep
     import sys
     param_name = sys.argv[1] #'w_sigma_x' # must
     import numpy as np
-    param_range = ps.params[param_name] * np.logspace(-1, 1, 5) # [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
+    param_range = np.logspace(-1, 1, 5) # [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
     for i_, p in enumerate(param_range):
-
         # choose how you want to name your results folder
         folder_name = "ParamSweep_%.2f_%s" % (p, param_name)
         if folder_name[-1] != '/':
             folder_name += '/'
-        params[param_name] = p
+        ps = simulation_parameters.parameter_storage()
+        params = ps.params
+        params[param_name] = ps.params[param_name] * p
         prepare_simulation(folder_name, params)
-        run_simulation(params, folder_name)
+        run_simulation(folder_name, params)
 
