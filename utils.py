@@ -1287,11 +1287,11 @@ def resolve_src_tgt_with_tp(conn_type, params):
     return (n_src, n_tgt, tp_src, tp_tgt)
 
 
-
 def convert_to_url(fn):
     p = os.path.realpath('.')
     s = 'file://%s/%s' % (p, fn)
     return s
+
 
 def get_figsize(fig_width_pt, portrait=True):
     """
