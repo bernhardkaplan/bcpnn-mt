@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 import json
 import numpy as np
 import numpy.random as rnd
@@ -190,8 +192,8 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['sensory_delay'] = 0.10 # [s] real, physical delay accumulated along the thalamo-cortical pathways
-        self.params['compensated_delay'] = 0.10 # [s] assumed sensory delay
+        self.params['sensory_delay'] = 0.05 # [s] real, physical delay accumulated along the thalamo-cortical pathways
+        self.params['compensated_delay'] = 0.05 # [s] assumed sensory delay
 
         # ######
         # INPUT

@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Simple network with a Poisson spike source projecting to populations of of IF_cond_exp neurons
 
@@ -787,7 +789,7 @@ if __name__ == '__main__':
         dorecord_v = False
         save_input_files = not load_files
 
-    print 'DEBUG load_files = ', load_files
+#     print 'DEBUG load_files = ', load_files
 #     save_input_files = True
 
     NM = NetworkModel(ps.params, comm)
@@ -801,7 +803,7 @@ if __name__ == '__main__':
 
     NM.connect()
 
-    print 'DEBUG dorecord_v = ', dorecord_v
+#     print 'DEBUG dorecord_v = ', dorecord_v
     NM.run_sim(sim_cnt, dorecord_v=dorecord_v)
     NM.print_results(print_v=dorecord_v)
 
