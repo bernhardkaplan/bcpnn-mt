@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 import json
 import numpy as np
 import numpy.random as rnd
@@ -190,8 +192,8 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['sensory_delay'] = 0.10 # [s] real, physical delay accumulated along the thalamo-cortical pathways
-        self.params['compensated_delay'] = 0.10 # [s] assumed sensory delay
+        self.params['sensory_delay'] = 0.05 # [s] real, physical delay accumulated along the thalamo-cortical pathways
+        self.params['compensated_delay'] = 0.05 # [s] assumed sensory delay
 
         # ######
         # INPUT
@@ -300,7 +302,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+               folder_name = 'ParamSweep/Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
                        self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], \
                        self.params['tau_prediction'] * 1000., self.params['sensory_delay'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
@@ -349,7 +351,7 @@ class parameter_storage(object):
                             self.params['movie_folder'], \
                             self.params['tmp_folder'], \
                             self.params['data_folder'], \
-                            self.params['input_folder']] 
+                            self.params['input_folder']]
 
         self.params['params_fn_json'] = '%ssimulation_parameters.json' % (self.params['parameters_folder'])
 

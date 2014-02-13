@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Simple network with a Poisson spike source projecting to populations of of IF_cond_exp neurons
 
@@ -17,6 +19,7 @@ import json
 import CreateConnections as CC
 import utils
 import simulation_parameters
+from parameter_sweep import prepare_simulation
 
 # import NEST before MPI
 exec("from pyNN.nest import *")
@@ -725,7 +728,6 @@ def clean_up_results_directory(params):
 
 
 
-
 if __name__ == '__main__':
 
     input_created = False
@@ -760,35 +762,25 @@ if __name__ == '__main__':
         print 'Loading parameters from', param_fn
         ps = simulation_parameters.parameter_storage(param_fn)
         params = ps.params
+        prepare_sim = False
     else:
         ps = simulation_parameters.parameter_storage()#fn)
         params = ps.params
+        prepare_sim = True
+
 
     if pc_id == 0:
         clean_up_results_directory(params)
     if comm != None:
         comm.Barrier()
-    ps.set_filenames()
 
-    if pc_id == 0:
-        ps.create_folders()
-        ps.write_parameters_to_file()
-    if comm != None:
-        comm.Barrier()
+    if prepare_sim:
+        prepare_simulation(folder_name, params, clean_up=True)
+
     sim_cnt = 0
-
-    max_neurons_to_record = 10000
-    if params['n_cells'] > max_neurons_to_record:
-        load_files = False
-        dorecord_v = False
-        save_input_files = False
-    else: # choose yourself
-        load_files = False#True
-        dorecord_v = False
-        save_input_files = not load_files
-
-    print 'DEBUG load_files = ', load_files
-#     save_input_files = True
+    load_files = False#True
+    dorecord_v = False
+    save_input_files = not load_files
 
     NM = NetworkModel(ps.params, comm)
     NM.setup(times=times)
@@ -801,7 +793,7 @@ if __name__ == '__main__':
 
     NM.connect()
 
-    print 'DEBUG dorecord_v = ', dorecord_v
+#     print 'DEBUG dorecord_v = ', dorecord_v
     NM.run_sim(sim_cnt, dorecord_v=dorecord_v)
     NM.print_results(print_v=dorecord_v)
 
@@ -838,4 +830,4 @@ if __name__ == '__main__':
         os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
         os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
-        os.system('ristretto %s' % (ps.params['figures_folder']))
+#        os.system('ristretto %s' % (ps.params['figures_folder']))
