@@ -338,20 +338,22 @@ if __name__ == '__main__':
         os.system('python merge_connlists.py %s' % params['folder_name'])
     print 'Loading connection file ...'
     d = np.loadtxt(params['merged_conn_list_ee'])
-    n_cells_to_plot = 1
     gid = None
-    dx = .1
+    i_, dx = 0, .05
     x_start = 0.3 
-    for i_ in xrange(n_cells_to_plot):
-        mp_for_cell_sampling = [x_start + dx * i_, 0.5, 0.5, 0.]
+    while gid == None:
+        mp_for_cell_sampling = [(x_start + dx * i_) % 1., 0.0, 0.5, 0.]
         gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
-        print 'GID:', gid
-        n_out = (d[:, 2] == gid).nonzero()
-        if n_out == 0:
+        connections = utils.get_targets(d, gid)
+        connection_gids = connections[:, 1].astype(int)
+        print 'GID:', gid, i_, mp_for_cell_sampling
+
+        if len(connection_gids) == 0:
             print 'GID %d connects to NO CELLS' % gid
             gid = None
         else:
             plot_formula(params, d, tp, gid, plot_source_perspective=plot_source_perspective) # plot the analytically expected weights and the actual connections in tuning space
+        i_ += 1
 
 #    plot_contour_connectivity(params, d, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
 

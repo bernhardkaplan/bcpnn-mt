@@ -4,7 +4,6 @@ Simple network with a Poisson spike source projecting to populations of of IF_co
 on the cluster:
     frioul_batch -M "[['w_tgt_in_per_cell_ee', 'w_tgt_in_per_cell_ee', 'w_tgt_in_per_cell_ee'],[0.4, 0.8, 1.2]]" 'python NetworkSimModuleNoColumns.py'
 
-
 """
 import time
 times = {}
@@ -820,9 +819,9 @@ if __name__ == '__main__':
         comm.Barrier()
     sim_cnt = 0
 
-    load_files = True
+    load_files = False
     record_v = False
-    save_input_files = False
+    save_input_files = not load_files
 
     NM = NetworkModel(ps.params, comm)
     NM.setup(times=times)
@@ -853,5 +852,5 @@ if __name__ == '__main__':
         os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
         os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
-        os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
-        os.system('ristretto %s' % (ps.params['figures_folder']))
+        #os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
+        #os.system('ristretto %s' % (ps.params['figures_folder']))
