@@ -225,7 +225,7 @@ class NetworkModel(object):
 #                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, time_/self.params['t_stimulus'])
                 # def get_input(tuning_prop, params, t, motion_params=None, delay=0., contrast=.9, motion='dot'):
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, \
-                                                    time_/self.params['t_stimulus'], \
+                                                    time_/1000., \
                                                     delay=self.params['sensory_delay'], \
                                                     delay_compensation=self.params['compensated_delay'])
                 L_input[:, i_time] *= self.params['f_max_stim']
@@ -778,7 +778,7 @@ if __name__ == '__main__':
         prepare_simulation(folder_name, params, clean_up=True)
 
     sim_cnt = 0
-    load_files = False#True
+    load_files = False
     dorecord_v = False
     save_input_files = not load_files
 
@@ -817,17 +817,17 @@ if __name__ == '__main__':
     if comm != None:
         comm.Barrier()
 
-    if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
-        import plot_prediction as pp
+#    if pc_id == 0 and params['n_cells'] < max_neurons_to_record:
+    import plot_prediction as pp
 
-        if params['n_grid_dimensions'] == 2:
-            pp.plot_prediction_2D(params)
-        else:
-            pp.plot_prediction_1D(params)
+    if params['n_grid_dimensions'] == 2:
+        pp.plot_prediction_2D(params)
+    else:
+        pp.plot_prediction_1D(params)
 
-        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-        os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
-        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
-        os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
-        os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
+    os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
+    os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
+    os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+    os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
+    os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
 #        os.system('ristretto %s' % (ps.params['figures_folder']))
