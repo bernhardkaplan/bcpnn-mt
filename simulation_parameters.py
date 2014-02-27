@@ -22,9 +22,9 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = False
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        #self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['Cluster'] = True
 
         # ###################
         # HEXGRID PARAMETERS
@@ -45,7 +45,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 16# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -215,11 +215,11 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
-        # is one speed is trained, it is presented starting from on this number of different locations
+        # if one speed is trained, it is presented starting from this number on different locations
         # for 1-D this is irrelevant and can be set to 1
         self.params['n_stim_per_direction'] = 1 
         self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
