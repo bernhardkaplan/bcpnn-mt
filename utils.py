@@ -9,6 +9,20 @@ from scipy.spatial import distance
 import copy
 
 
+
+def load_spiketimes(params, cell_type):
+
+    fn = params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
+    if not os.path.exists(fn):
+        merge_files(params['%s_spike_times_fn_base' % (cell_type)], params['%s_spike_times_fn_merged' % cell_type])
+    n_cells = params['n_%s' % cell_type]
+    nspikes, spiketimes = get_nspikes(fn, n_cells, get_spiketrains=True)
+    np.savetxt(params['%s_nspikes_fn_merged' % cell_type] + '.dat', nspikes)
+    idx = np.nonzero(nspikes)[0]
+    np.savetxt(params['%s_nspikes_nonzero_fn' % cell_type], np.array((idx, nspikes[idx])).transpose())
+    return spiketimes, nspikes
+
+
 def filter_spike_train(spikes, dt=1., tau=30., t_max=None):
     """
     spikes: list or array of spikes
@@ -775,6 +789,7 @@ def get_spiketimes(all_spikes, gid, gid_idx=0, time_idx=1):
         spiketimes = all_spikes[idx_, time_idx]
         return spiketimes
 
+
 def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
     """
     Returns an array with the number of spikes fired by each cell.
@@ -796,10 +811,13 @@ def get_nspikes(spiketimes_fn_merged, n_cells=0, get_spiketrains=False):
         nspikes[int(d[1])] = 1
         spiketrains[int(d[1])] = [d[0]]
     else:
-        for i in xrange(d[:, 0].size):
-            spiketrains[int(d[i, 1])].append(d[i, 0])
+#        for i in xrange(d[:, 0].size):
+#            spiketrains[int(d[i, 1])].append(d[i, 0])
         for gid in xrange(n_cells):
-            nspikes[gid] = len(spiketrains[gid])
+            idx = d[:, 1] == gid
+            spiketrains[gid] = d[idx, 0]
+            nspikes[gid] = d[idx, 0].size
+
     if get_spiketrains:
         return nspikes, spiketrains
     else:
@@ -1148,8 +1166,28 @@ def linear_transformation(x, y_min, y_max):
         x_max = x_min * 1.0001
     return (y_min + (y_max - y_min) / (x_max - x_min) * (x - x_min))
 
-def merge_files(input_fn_base, output_fn):
 
+def merge_connlists(params, verbose=True):
+    if verbose:
+        print 'utils.merge_connlists: '
+    for conn_type in ['ee', 'ei', 'ie', 'ii']:
+        # E -> E 
+        tmp_fn = 'delme_tmp_%d' % (np.random.randint(0, 1e8))
+        cat_cmd = 'cat %s* > %s' % (params['conn_list_%s_fn_base' % conn_type], tmp_fn)
+        sort_cmd = 'sort -gk 1 -gk 2 %s > %s' % (tmp_fn, params['merged_conn_list_%s' % conn_type])
+        rm_cmd = 'rm %s' % (tmp_fn)
+        if verbose:
+            print cat_cmd
+        os.system(cat_cmd)
+        if verbose:
+            print sort_cmd
+        os.system(sort_cmd)
+        if verbose:
+            print rm_cmd
+        os.system(rm_cmd)
+
+
+def merge_files(input_fn_base, output_fn):
     cmd = 'cat %s* > %s' % (input_fn_base, output_fn)
     os.system(cmd)
 

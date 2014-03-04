@@ -486,7 +486,6 @@ class PlotPrediction(object):
             nspikes, self.exc_spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
             spiketimes = self.exc_spiketimes
             np.savetxt(self.params['exc_nspikes_fn_merged'] + '.dat', np.array((range(n_cells), nspikes)).transpose())
-
             idx = np.nonzero(nspikes)[0]
             np.savetxt(self.params['exc_nspikes_nonzero_fn'], np.array((idx, nspikes[idx])).transpose())
 

@@ -775,10 +775,10 @@ if __name__ == '__main__':
         comm.Barrier()
 
     if prepare_sim:
-        prepare_simulation(folder_name, params, clean_up=True)
+        prepare_simulation(ps, params['folder_name'], params, cleanup=True)
 
     sim_cnt = 0
-    load_files = False
+    load_files = True
     dorecord_v = False
     save_input_files = not load_files
 
@@ -825,9 +825,12 @@ if __name__ == '__main__':
     else:
         pp.plot_prediction_1D(params)
 
-    os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
-    os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
-    os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
-    os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
-    os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
+    if pc_id == 0:
+        os.system('python plot_rasterplots.py %s' % ps.params['folder_name'])
+        os.system('python plot_weight_and_delay_histogram.py %s' % ps.params['folder_name'])
+        os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
+        os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
+        os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
+
+#    if pc_id == 1:
 #        os.system('ristretto %s' % (ps.params['figures_folder']))

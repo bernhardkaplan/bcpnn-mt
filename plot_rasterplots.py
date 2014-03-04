@@ -52,9 +52,9 @@ def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms
 #        ax.plot(spiketimes, i * np.ones(nspikes) + shift, m, color=c, markersize=2)
 #    print 'nspikes:', n_input_spikes[-10:, 0]
 #    print 'gids:', n_input_spikes[-10:, 1]
+#    print 'input spikes:', n_input_spikes[idx, 0]
+#    print 'gids :', n_input_spikes[idx, 1]
     idx = n_input_spikes[:, 0].nonzero()[0]
-    print 'input spikes:', n_input_spikes[idx, 0]
-    print 'gids :', n_input_spikes[idx, 1]
 
     if sort_idx == 0:
         ylabel_txt ='Neurons sorted by $x$-pos'

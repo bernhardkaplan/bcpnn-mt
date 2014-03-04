@@ -7,6 +7,7 @@ with which the simulation script NetworkSimModule is to be called.
 """
 import os
 import simulation_parameters
+import numpy as np
 
 def clean_up_results_directory(params):
     filenames = [params['exc_nspikes_fn_merged'], \
@@ -18,14 +19,16 @@ def clean_up_results_directory(params):
                 params['merged_conn_list_ee'], \
                 params['merged_conn_list_ei'], \
                 params['merged_conn_list_ie'], \
-                params['merged_conn_list_ii']]
+                params['merged_conn_list_ii'], \
+                params['figures_folder']]
     for fn in filenames:
         cmd = 'rm %s*' % (fn)
         print 'Removing %s' % (cmd)
         os.system(cmd)
 
-def prepare_simulation(folder_name, params, cleanup=False):
-    if cleanup: clean_up_results_directory(params) # optional
+def prepare_simulation(ps, folder_name, params, cleanup=False):
+    if cleanup: 
+        clean_up_results_directory(params) # optional
     ps.set_filenames(folder_name)
     ps.create_folders()
     ps.write_parameters_to_file()
@@ -57,10 +60,12 @@ if __name__ == '__main__':
 
     # define the parameter range you'd like to sweep
     import sys
-    param_name = sys.argv[1] #'w_sigma_x' # must
-    import numpy as np
+#    param_name = sys.argv[1] #'w_sigma_x' # must
+    param_name = 'w_tgt_in_per_cell_ie'
 #    param_range = np.logspace(-1, 1, 5) # [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
-    param_range = [0.4, .6]
+    param_range = [1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 2.5]
+#    param_name = 'tau_prediction'
+#    param_range = [.05, .04, .03, .02, .01, .005]
 
     ps = simulation_parameters.parameter_storage()
     main_folder = 'ESS_ParamSweep'
@@ -69,16 +74,25 @@ if __name__ == '__main__':
     for i_, p in enumerate(param_range):
         # choose how you want to name your results folder
         params = ps.params
+#        params['delay_range'][1] = p * 1000.
+#        params[param_name] = p
+        params['w_tgt_in_per_cell_ie'] = p * params['w_tgt_in_per_cell_ee'] / params['fraction_inh_cells']
+
+        # "file name is too long"
+        folder_name = 'ESS_ParamSweep/Delay_%s%.2e/' % (param_name, params[param_name])
+#        folder_name = 'ESS_ParamSweep/Delay_tauPred%d_delayMax%d_wee%.2e_seed%d/' % (\
+#               params['tau_prediction'] * 1000., 
+
 #        folder_name = "%s/Data_for_%s_%.2f" % (main_folder, param_name, p)
-        folder_name = 'ESS_ParamSweep/Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
-               params['equal_weights'], params['connectivity_code'], params['N_RF'], \
-               params['tau_prediction'] * 1000., params['sensory_delay'] * 1000., \
-               params['delay_range'][1], params['p_ee'], params['w_tgt_in_per_cell_ee'], \
-               params['w_sigma_x'], params['w_sigma_v'], params['w_sigma_isotropic'], \
-               params['tau_syn_exc'], params['tau_syn_inh'], params['seed'])
+#        folder_name = 'ESS_ParamSweep/Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+#               params['equal_weights'], params['connectivity_code'], params['N_RF'], \
+#               params['tau_prediction'] * 1000., params['sensory_delay'] * 1000., \
+#               params['delay_range'][1], params['p_ee'], params['w_tgt_in_per_cell_ee'], \
+#               params['w_sigma_x'], params['w_sigma_v'], params['w_sigma_isotropic'], \
+#               params['tau_syn_exc'], params['tau_syn_inh'], params['seed'])
         if folder_name[-1] != '/':
             folder_name += '/'
         params[param_name] = ps.params[param_name] * p
-        prepare_simulation(folder_name, params)
+        prepare_simulation(ps, folder_name, params)
         run_simulation(folder_name, params, USE_MPI)
 
