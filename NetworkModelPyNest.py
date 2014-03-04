@@ -561,6 +561,7 @@ class NetworkModel(object):
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
 
+        w_debug = np.zeros(self.conn_mat_training.shape)
         # connect the minicolumns according to their weight after training
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -580,11 +581,15 @@ class NetworkModel(object):
                         w = self.conn_mat_training[src_pop_idx, tgt_pop_idx]
                         if w != 0:
                             w_ = self.transform_weight(w)
+                            w_debug[src_pop_idx, tgt_pop_idx] = w_
 #                            print 'debug', src_pop, tgt_pop, w_, self.params['delay_ee_global']
                             nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast')
                             nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_slow')
+        debug_fn = self.params['connections_folder'] + 'w_conn_ee_debug.txt'
+        print 'Saving debug connection matrix to:', debug_fn
+        np.savetxt(output_fn, w_debug)
     
     def load_training_weights(self):
         fn = self.training_params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat'

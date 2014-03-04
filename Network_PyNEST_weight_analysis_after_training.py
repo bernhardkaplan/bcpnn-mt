@@ -106,8 +106,8 @@ class WeightAnalyser(object):
     def get_weight_matrix(self, plot=True, output_fn=None):
         w = np.zeros((self.params['n_exc'], self.params['n_exc']))
         for tgt in xrange(self.params['n_exc']):
-            if self.adj_list.has_key(str(tgt)):
-                src_weight_array = np.array(self.adj_list[str(tgt)])
+            if self.adj_list.has_key(str(tgt + 1)):
+                src_weight_array = np.array(self.adj_list[str(tgt + 1)])
 #                exit(1)
 #                srcs, weights = self.adj_list[str(tgt)]
                 for i_ in xrange(src_weight_array[:, 0].size):

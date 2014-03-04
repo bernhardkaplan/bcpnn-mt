@@ -23,7 +23,7 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' # 'brian' #
 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        #self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
 
         # ###################
@@ -150,8 +150,8 @@ class parameter_storage(object):
         self.params['w_ee_local'] = 5.
 
         # exc - exc: global
-        self.params['w_ee_global_max'] = 25.
-        self.params['w_ei_global_max'] = 5.
+        self.params['w_ee_global_max'] = 20.
+        self.params['w_ei_global_max'] = 10.
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh

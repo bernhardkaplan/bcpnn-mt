@@ -164,7 +164,7 @@ if __name__ == '__main__':
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
-    tracking = True
+    tracking = False
     if tracking:
         run_tracking(params, NM)
     else:
