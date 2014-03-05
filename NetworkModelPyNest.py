@@ -589,7 +589,7 @@ class NetworkModel(object):
                                     model='exc_exc_global_slow')
         debug_fn = self.params['connections_folder'] + 'w_conn_ee_debug.txt'
         print 'Saving debug connection matrix to:', debug_fn
-        np.savetxt(output_fn, w_debug)
+        np.savetxt(debug_fn, w_debug)
     
     def load_training_weights(self):
         fn = self.training_params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat'

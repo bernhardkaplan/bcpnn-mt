@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
 
         # ###################
@@ -344,8 +344,8 @@ class parameter_storage(object):
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim_%d-%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
-                        self.params['n_cycles'], self.params['n_speeds'], \
+                folder_name = 'TestSim_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
+                        self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'])
             folder_name += '/'
