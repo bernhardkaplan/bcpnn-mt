@@ -141,10 +141,10 @@ class parameter_storage(object):
 #        self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
 #        self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
 #        self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
-        self.params['w_tgt_in_per_cell_ee'] = 0.5 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 0.8 * self.params['w_tgt_in_per_cell_ee']
+        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 1.0 * self.params['w_tgt_in_per_cell_ee']
         self.params['w_tgt_in_per_cell_ie'] = 1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
-        self.params['w_tgt_in_per_cell_ii'] = self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+        self.params['w_tgt_in_per_cell_ii'] = 1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ie'] *= 5. / self.params['tau_syn_inh']
@@ -154,7 +154,7 @@ class parameter_storage(object):
 
         self.params['w_range_hw'] = (0.004516379807692308, 0.04589923076923077)
 #        self.params['p_to_w'] =
-        self.params['p_ee'] = 0.02              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.005              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 8e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
@@ -185,9 +185,9 @@ class parameter_storage(object):
         self.params['np_random_seed'] = 0
 #        self.params['np_random_seed'] = self.params['seed']
         self.params['t_sim'] = 1600.            # [ms] total simulation time
-        self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
+        self.params['t_stimulus'] = 1400.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
-        self.params['t_blank'] = 200.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
+        self.params['t_blank'] = 400.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
         self.params['t_before_blank'] = self.params['t_start'] + 400. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
         self.params['tuning_prop_seed'] = self.params['seed']     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = self.params['seed']

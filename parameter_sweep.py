@@ -61,38 +61,42 @@ if __name__ == '__main__':
     # define the parameter range you'd like to sweep
     import sys
 #    param_name = sys.argv[1] #'w_sigma_x' # must
-    param_name = 'w_tgt_in_per_cell_ie'
+#    param_name = 'w_tgt_in_per_cell_ei'
 #    param_range = np.logspace(-1, 1, 5) # [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
-    param_range = [1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 2.5]
 #    param_name = 'tau_prediction'
-#    param_range = [.05, .04, .03, .02, .01, .005]
-
+#    param_range = [.025, .02, .015, 0.01, .005]
+    param_name = 'w_tgt_in_per_cell_ee'
+#    param_range = np.linspace(0.15, 0.25, 5)
+    param_range = [0.15, 0.175, 0.20]
+#    param_range = [0.8, .7, .6, .5, .4]
     ps = simulation_parameters.parameter_storage()
     main_folder = 'ESS_ParamSweep'
     if not os.path.exists(main_folder):
         os.system('mkdir %s' % main_folder)
-    for i_, p in enumerate(param_range):
-        # choose how you want to name your results folder
-        params = ps.params
-#        params['delay_range'][1] = p * 1000.
-#        params[param_name] = p
-        params['w_tgt_in_per_cell_ie'] = p * params['w_tgt_in_per_cell_ee'] / params['fraction_inh_cells']
 
-        # "file name is too long"
-        folder_name = 'ESS_ParamSweep/Delay_%s%.2e/' % (param_name, params[param_name])
-#        folder_name = 'ESS_ParamSweep/Delay_tauPred%d_delayMax%d_wee%.2e_seed%d/' % (\
-#               params['tau_prediction'] * 1000., 
+    for tau_prediction in [0.002, 0.005]:
+        for i_, p in enumerate(param_range):
+            # choose how you want to name your results folder
+            params = ps.params
+            params['tau_prediction'] = tau_prediction
+    #        params['w_tgt_in_per_cell_ei'] = p * params['w_tgt_in_per_cell_ee']
+    #        params['delay_range'][1] = p * 1000.
+            params[param_name] = p
 
-#        folder_name = "%s/Data_for_%s_%.2f" % (main_folder, param_name, p)
-#        folder_name = 'ESS_ParamSweep/Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
-#               params['equal_weights'], params['connectivity_code'], params['N_RF'], \
-#               params['tau_prediction'] * 1000., params['sensory_delay'] * 1000., \
-#               params['delay_range'][1], params['p_ee'], params['w_tgt_in_per_cell_ee'], \
-#               params['w_sigma_x'], params['w_sigma_v'], params['w_sigma_isotropic'], \
-#               params['tau_syn_exc'], params['tau_syn_inh'], params['seed'])
-        if folder_name[-1] != '/':
-            folder_name += '/'
-        params[param_name] = ps.params[param_name] * p
-        prepare_simulation(ps, folder_name, params)
-        run_simulation(folder_name, params, USE_MPI)
+            # "file name is too long"
+            folder_name = 'ESS_ParamSweep/TauP%.3f_%s%.2e/' % (tau_prediction, param_name, p)
+    #        folder_name = 'ESS_ParamSweep/Delay_tauPred%d_delayMax%d_wee%.2e_seed%d/' % (\
+    #               params['tau_prediction'] * 1000., 
+
+    #        folder_name = "%s/Data_for_%s_%.2f" % (main_folder, param_name, p)
+    #        folder_name = 'ESS_ParamSweep/Delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+    #               params['equal_weights'], params['connectivity_code'], params['N_RF'], \
+    #               params['tau_prediction'] * 1000., params['sensory_delay'] * 1000., \
+    #               params['delay_range'][1], params['p_ee'], params['w_tgt_in_per_cell_ee'], \
+    #               params['w_sigma_x'], params['w_sigma_v'], params['w_sigma_isotropic'], \
+    #               params['tau_syn_exc'], params['tau_syn_inh'], params['seed'])
+            if folder_name[-1] != '/':
+                folder_name += '/'
+            prepare_simulation(ps, folder_name, params)
+            run_simulation(folder_name, params, USE_MPI)
 
