@@ -7,7 +7,8 @@ import pylab
 import json
 import utils
 import numpy as np
-
+import simulation_parameters
+import plot_rasterplots as plot_rp
 
 class PlotInformationDiffusion(object):
     """
@@ -21,19 +22,21 @@ class PlotInformationDiffusion(object):
         self.n_fig_y = 1
 #        self.fig_size = (11.69, 8.27) #A4
 #        self.fig_size = (10, 8)
-        self.fig_size = utils.get_figsize(800, portrait=False)
+        self.fig_size = utils.get_figsize(1200, portrait=False)
         self.colorlist = ['k', 'r', 'b', 'g', 'm', 'y', 'c']
         self.markerlist = ['.', 'D', '+', 's', '^', '>', 'd']
-        rcParams = { 'axes.labelsize' : 24,
-                    'axes.titlesize'  : 24,
-                    'label.fontsize': 24,
-                    'xtick.labelsize' : 20, 
-                    'ytick.labelsize' : 20, 
-                    'legend.fontsize': 20, 
+        rcParams = { 'axes.labelsize' : 20,
+                    'axes.titlesize'  : 22,
+                    'label.fontsize': 20,
+                    'xtick.labelsize' : 18, 
+                    'ytick.labelsize' : 18, 
+                    'legend.fontsize': 18, 
                     'figure.subplot.left':.15,
                     'figure.subplot.bottom':.15,
                     'figure.subplot.right':.90,
                     'figure.subplot.top':.90, 
+                    'figure.subplot.hspace':.40, 
+                    'figure.subplot.wspace':.30, 
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
         self.tp = np.loadtxt(self.params['tuning_prop_means_fn'])
@@ -42,8 +45,8 @@ class PlotInformationDiffusion(object):
         # for plotting within the same ranges
         self.x_min, self.x_max = 10.0, 0.
         self.vx_min, self.vx_max = 10.0, 0.
-        self.n_bins = 50
-        self.x_range = (-.3, .3)
+        self.n_bins = 40
+        self.x_range = (-.30, .30)
 
     def load_spike_data(self):
 
@@ -254,10 +257,22 @@ class PlotInformationDiffusion(object):
 
         # plot connectivity histograms for the gids
         fig2 = pylab.figure(figsize=self.fig_size)
-        ax1 = fig2.add_subplot(221)
-        ax2 = fig2.add_subplot(222)
-        ax3 = fig2.add_subplot(223)
-        ax4 = fig2.add_subplot(224)
+        title = 'n_exc=%d, p_ee=%.1e, w_ee=%.1e, w_ei=%.1e, w_ie=%.1e' % \
+                (self.params['n_exc'], self.params['p_ee'], \
+                self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
+                self.params['w_tgt_in_per_cell_ie'])
+        output_filename = 'CondAnisotropy_%d_%.1e_%.1e_%.1e_%.1e.png' % \
+                (self.params['n_exc'], self.params['p_ee'], \
+                self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
+                self.params['w_tgt_in_per_cell_ie'])
+#        pylab.subplots_adjust(hspace=0.4)
+#        pylab.subplots_adjust(wspace=0.4)
+        ax1 = fig2.add_subplot(231)
+        ax2 = fig2.add_subplot(232)
+        ax3 = fig2.add_subplot(233)
+        ax4 = fig2.add_subplot(234)
+        ax5 = fig2.add_subplot(235)
+        ax6 = fig2.add_subplot(236)
 
         # gather the in and out going data for all gids
         for i_, gid in enumerate(gids):
@@ -303,35 +318,94 @@ class PlotInformationDiffusion(object):
             g_out_inh_hist_mean[i_bin, 0] = g_out_inh_hist[:, i_bin].mean()
             g_out_inh_hist_mean[i_bin ,1] = g_out_inh_hist[:, i_bin].std()
 
+        # difference exc - inh conductance
+        g_in_diff = g_in_exc_hist_mean[:, 0] + g_in_inh_hist_mean[:, 0]
+        g_out_diff = g_out_exc_hist_mean[:, 0] + g_out_inh_hist_mean[:, 0]
+
+        # compute anisotropy of conductance flux
+        negative_idx = (xbins < 0).nonzero()[0].tolist()
+        positive_idx = (xbins > 0).nonzero()[0].tolist()
+        negative_idx.reverse()
+        positive_idx.pop() # remove the last element because x_bins has one element more than the cond values
+        negative_idx.pop() # remove one to have the same length
+
+        print 'debug size negative positive idx:', len(negative_idx), len(positive_idx), negative_idx, positive_idx
+#        max_idx = min(negative_idx.size, positive_idx.size)
+        print 'debug xbins[neg idx]', xbins[negative_idx]
+        print 'debug xbins[pos idx]', xbins[positive_idx]
+        g_anisotropic = g_out_diff[positive_idx] - g_out_diff[negative_idx]
+        print 'g_anisotropic:', g_anisotropic
 
         bin_width = (xbins[1] - xbins[0]) / 2.
         # plot 1 
-        plots = []
         p1 = ax1.bar(xbins[:-1], w_in_exc_hist_mean[:, 0], yerr=w_in_exc_hist_mean[:, 1], width=bin_width, color='b')
         p2 = ax1.bar(xbins[:-1] + bin_width, w_out_exc_hist_mean[:, 0], yerr=w_out_exc_hist_mean[:, 1], width=bin_width, color='r')
-        ax1_info_b = '$w_{in}^{exc}$'
-        ax1_info_r = '$w_{out}^{exc}$'
-        ax1.legend([p1[0], p2[0]], [ax1_info_b, ax1_info_r], loc='upper right')
+        ax1_info_p1 = '$w_{in}^{exc}$'
+        ax1_info_p2 = '$w_{out}^{exc}$'
+        ax1.legend([p1[0], p2[0]], [ax1_info_p1, ax1_info_p2], loc='upper right')
+        ax1.set_ylabel('Exc weights')
+        ax1.set_ylim((0, ax1.get_ylim()[1]))
 
         # plot 2: exc conductances in / out
         p1 = ax2.bar(xbins[:-1], g_in_exc_hist_mean[:, 0], yerr=g_in_exc_hist_mean[:, 1], width=bin_width, color='b')
         p2 = ax2.bar(xbins[:-1] + bin_width, g_out_exc_hist_mean[:, 0], yerr=g_out_exc_hist_mean[:, 1], width=bin_width, color='r')
-        ax2_info_b = '$g_{in}^{exc}$'
-        ax2_info_r = '$g_{out}^{exc}$'
-        ax2.legend([p1[0], p2[0]], [ax2_info_b, ax2_info_r], loc='upper right')
+        ax2_info_p1 = '$g_{in}^{exc}$'
+        ax2_info_p2 = '$g_{out}^{exc}$'
+        ax2.legend([p1[0], p2[0]], [ax2_info_p1, ax2_info_p2], loc='upper right')
+        ax2.set_ylabel('Exc conductance')
+        ax2.set_ylim((0, ax2.get_ylim()[1]))
 
-        # plot 3: exc - inh weights incoming
-        ax3.bar(xbins[:-1], w_in_exc_hist_mean[:, 0] + w_in_inh_hist_mean[:, 0], width=bin_width, color='g')
-        ax3.bar(xbins[:-1] + bin_width, w_out_exc_hist_mean[:, 0] + w_out_inh_hist_mean[:, 0], width=bin_width, color='g')
-        ax3_info = '$w_{in}^{exc} - w_{in}^{inh}$'
-        ax3.set_title(ax3_info)
+        # plot 4: exc - inh weights incoming
+        p1 = ax4.bar(xbins[:-1], w_in_exc_hist_mean[:, 0] + w_in_inh_hist_mean[:, 0], width=bin_width, color='b')
+        p2 = ax4.bar(xbins[:-1] + bin_width, w_out_exc_hist_mean[:, 0] + w_out_inh_hist_mean[:, 0], width=bin_width, color='r')
+        ax4_info_p1 = '$w_{in}^{exc} + w_{in}^{inh}$'
+        ax4_info_p2 = '$w_{out}^{exc} + w_{out}^{inh}$'
+        ax4.legend([p1[0], p2[0]], [ax4_info_p1, ax4_info_p2], loc='upper right')
+        ax4.set_ylabel('Exc+Inh weights')
+#        ax4_info = '$w_{in}^{exc} - w_{in}^{inh}$'
+#        ax4.set_title(ax4_info)
 
-        # plot 3: exc - inh conductances incoming
-        ax4.bar(xbins[:-1], g_in_exc_hist_mean[:, 0] + g_in_inh_hist_mean[:, 0], width=bin_width, color='g')
-        ax4.bar(xbins[:-1] + bin_width, g_out_exc_hist_mean[:, 0] + g_out_inh_hist_mean[:, 0], width=bin_width, color='g')
-        ax4_info = '$g_{in}^{exc} - g_{in}^{inh}$'
-        ax4.set_title(ax4_info)
+        # plot 5: exc - inh conductances incoming
+#        g_in_diff = g_in_exc_hist_mean[:, 0] + g_in_inh_hist_mean[:, 0]
+#        p1 = ax5.bar(xbins[:-1], g_in_exc_hist_mean[:, 0] + g_in_inh_hist_mean[:, 0], width=bin_width, color='b')
+#        p2 = ax5.bar(xbins[:-1] + bin_width, g_out_exc_hist_mean[:, 0] + g_out_inh_hist_mean[:, 0], width=bin_width, color='r')
+        p1 = ax5.bar(xbins[:-1], g_in_diff, width=bin_width, color='b')
+        p2 = ax5.bar(xbins[:-1] + bin_width,  g_out_diff, width=bin_width, color='r')
+#        ax5_info = '$g_{in}^{exc} - g_{in}^{inh}$'
+#        ax5.set_title(ax5_info)
+        ax5_info_p1 = '$g_{in}^{exc} + g_{in}^{inh}$'
+        ax5_info_p2 = '$g_{out}^{exc} + g_{out}^{inh}$'
+        ax5.legend([p1[0], p2[0]], [ax5_info_p1, ax5_info_p2], loc='upper right')
+        ax5.set_ylabel('Exc+Inh conductance')
+        
 
+        # plot 6 : anisotropy of conductance
+        bin_width = (xbins[1] - xbins[0])
+        p1 = ax6.bar(xbins[positive_idx], g_anisotropic, width=bin_width, color='g')
+        ax6.set_title('Conductance difference anisotropy')
+        ax6.set_ylabel('Conductance')
+        ax6.set_xlabel('Forward direction')
+
+
+        # plot 3: rasterplot with blank
+        plot_rp.plot_input_spikes_sorted_in_space(self.params, self.tp, ax3, c='b', sort_idx=0, ms=3)
+        plot_rp.plot_output_spikes_sorted_in_space(self.params, self.tp, ax3, 'exc', c='k', sort_idx=0, ms=3)
+        plot_rp.plot_vertical_blank(params, ax3)
+        plot_rp.plot_start_stop(params, ax3)
+        xticks = [0, 500, 1000, 1500]
+        ax3.set_xticks(xticks)
+        ax3.set_xticklabels(['%d' % i for i in xticks])
+        ax3.set_yticklabels(['', '.2', '.4', '.6', '.8', '1.0'])
+        ax3.set_xlabel('Time [ms]')
+        ax3.set_xlim((0, params['t_sim']))
+
+        ax1.set_xlim(self.x_range)
+        ax2.set_xlim(self.x_range)
+        ax4.set_xlim(self.x_range)
+        ax5.set_xlim(self.x_range)
+        print 'Saving to:', self.params['figures_folder'] + output_filename
+        ax2.set_title(title)
+        pylab.savefig(output_filename, dpi=300)
 #            ax2.bar(bins[:-1] + i_ * bin_width, x_cnt_tgt, width=bin_width, color=self.colorlist[i_ % len(self.colorlist)])
 
 #        bin_width = (bins[1] - bins[0]) / 2.
@@ -343,30 +417,25 @@ class PlotInformationDiffusion(object):
 if __name__ == '__main__':
 
     if len(sys.argv) == 2:
-        param_fn = sys.argv[1]
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
-        import json
-        f = file(param_fn, 'r')
-        print 'Loading parameters from', param_fn
-        params = json.load(f)
+        folder_name = sys.argv[1]
+        params = utils.load_params(folder_name)
     else:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
-        import simulation_parameters
         network_params = simulation_parameters.parameter_storage()
         params = network_params.params
 
     PID = PlotInformationDiffusion(params)
 
     # select cells 
-    n_cells = 10
-    x_tgt = params['motion_params'][0] + .5 * params['motion_params'][2] * params['t_before_blank'] / 1000.
+    n_cells = 20
+    x_tgt = params['motion_params'][0] + .8 * params['motion_params'][2] * params['t_before_blank'] / 1000.
 
 #    x_tgt = .3 + params['motion_params'][2] * params['t_before_blank'] / 1000.
     gids = PID.select_cells(x_tgt, params['motion_params'][2], n_cells=n_cells, w_pos=.5)
     print 'x_tgt:', x_tgt
 #    print 'gids', gids
     print 'x_pos', PID.tp[gids, 0]
+    print 'vx', PID.tp[gids, 2]
 
     PID.load_spike_data()
 #    PID.create_fig()
@@ -378,5 +447,5 @@ if __name__ == '__main__':
     PID.plot_conductance_flow_histograms(gids)
 #    PID.get_w_in(gids[0], 'exc')
 
-    pylab.show()
+#    pylab.show()
 

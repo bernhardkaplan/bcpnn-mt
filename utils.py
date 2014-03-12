@@ -7,8 +7,17 @@ import numpy.random as rnd
 import os
 from scipy.spatial import distance
 import copy
+import simulation_parameters
 
 
+def load_params(folder_name):
+    folder_name = os.path.abspath(folder_name) + '/'
+    param_fn = folder_name + 'Parameters/simulation_parameters.json'
+    print 'Loading parameters from', param_fn
+    network_params = simulation_parameters.parameter_storage(param_fn)
+    network_params.set_filenames(folder_name)
+    params = network_params.params
+    return params
 
 def load_spiketimes(params, cell_type):
 

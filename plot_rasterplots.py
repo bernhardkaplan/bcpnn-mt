@@ -24,7 +24,7 @@ def plot_input_spikes(ax, shift=0, m='o', c='k', ms=2):
         ax.plot(spiketimes, cell * np.ones(nspikes) + shift, m, color=c, alpha=.3, markersize=ms)
 
 
-def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms=2):
+def plot_input_spikes_sorted_in_space(params, tp, ax, shift=0., m='o', c='g', sort_idx=0, ms=2):
     n_cells = params['n_exc']
     sorted_idx = tp[:, sort_idx].argsort()
 
@@ -77,7 +77,7 @@ def plot_input_spikes_sorted_in_space(ax, shift=0., m='o', c='g', sort_idx=0, ms
 #    ax.set_yticklabels(y_ticklabels)
 
 
-def plot_output_spikes_sorted_in_space(ax, cell_type, shift=0., m='o', c='g', sort_idx=0, ms=2):
+def plot_output_spikes_sorted_in_space(params, tp, ax, cell_type, shift=0., m='o', c='g', sort_idx=0, ms=2):
     n_cells = params['n_%s' % cell_type]
     fn = params['%s_spiketimes_fn_merged' % cell_type] + '.ras'
     nspikes, spiketimes = utils.get_nspikes(fn, n_cells, get_spiketrains=True)
@@ -139,13 +139,8 @@ if __name__ == '__main__':
                 'legend.fontsize': 9}
 
     if len(sys.argv) > 1:
-        param_fn = sys.argv[1]
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
-        import json
-        f = file(param_fn, 'r')
-        print 'Loading parameters from', param_fn
-        params = json.load(f)
+        folder_name = sys.argv[1]
+        params = utils.load_params(folder_name)
 
     else:
         print '\nPlotting the default parameters given in simulation_parameters.py\n'
@@ -180,8 +175,8 @@ if __name__ == '__main__':
 
 
     # x-position
-    plot_input_spikes_sorted_in_space(ax1, c='b', sort_idx=0, ms=3)
-    plot_output_spikes_sorted_in_space(ax1, 'exc', c='k', sort_idx=0, ms=3)
+    plot_input_spikes_sorted_in_space(params, tp, ax1, c='b', sort_idx=0, ms=3)
+    plot_output_spikes_sorted_in_space(params, tp, ax1, 'exc', c='k', sort_idx=0, ms=3)
     plot_vertical_blank(params, ax1)
     plot_start_stop(params, ax1)
 
