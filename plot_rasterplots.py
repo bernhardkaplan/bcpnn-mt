@@ -89,7 +89,6 @@ def plot_output_spikes_sorted_in_space(params, tp, ax, cell_type, shift=0., m='o
         crop = .8
         ylim = (crop * tp[:, sort_idx].min(), crop * tp[:, sort_idx].max())
     ylen = (abs(ylim[0] - ylim[1]))
-    print '\n', 'sort_idx', sort_idx, ylim,
     for i in xrange(n_cells):
         cell = sorted_idx[i]
         if sort_idx == 0:

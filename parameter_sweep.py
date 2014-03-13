@@ -67,14 +67,16 @@ if __name__ == '__main__':
 #    param_range = [.025, .02, .015, 0.01, .005]
     param_name = 'w_tgt_in_per_cell_ee'
 #    param_range = np.linspace(0.15, 0.25, 5)
-    param_range = [0.15, 0.175, 0.20]
+    param_range = [0.25, 0.3]
+#    param_range = [0.15, 0.20, 0.25, 0.30, 0.35, 0.4]
+#    param_range = [0.325, 0.35, 0.375, 0.4]
 #    param_range = [0.8, .7, .6, .5, .4]
     ps = simulation_parameters.parameter_storage()
-    main_folder = 'ESS_ParamSweep'
+    main_folder = 'ESS_ParamSweep_taurefrac2'
     if not os.path.exists(main_folder):
         os.system('mkdir %s' % main_folder)
 
-    for tau_prediction in [0.002, 0.005]:
+    for tau_prediction in [0.001, 0.002]:
         for i_, p in enumerate(param_range):
             # choose how you want to name your results folder
             params = ps.params
@@ -84,7 +86,9 @@ if __name__ == '__main__':
             params[param_name] = p
 
             # "file name is too long"
-            folder_name = 'ESS_ParamSweep/TauP%.3f_%s%.2e/' % (tau_prediction, param_name, p)
+            w_ei = 1.
+            w_ie = .5
+            folder_name = '%s/TauP%.3f_%s%.2e_wei%.1f_wie%.1f/' % (main_folder, tau_prediction, param_name, p, w_ei, w_ie)
     #        folder_name = 'ESS_ParamSweep/Delay_tauPred%d_delayMax%d_wee%.2e_seed%d/' % (\
     #               params['tau_prediction'] * 1000., 
 

@@ -257,12 +257,12 @@ class PlotInformationDiffusion(object):
 
         # plot connectivity histograms for the gids
         fig2 = pylab.figure(figsize=self.fig_size)
-        title = 'n_exc=%d, p_ee=%.1e, w_ee=%.1e, w_ei=%.1e, w_ie=%.1e' % \
-                (self.params['n_exc'], self.params['p_ee'], \
+        title = '$\\tau_{pred}=%.3f$ n_exc=%d, p_ee=%.1e, w_ee=%.1e, w_ei=%.1e, w_ie=%.1e' % \
+                (self.params['tau_prediction'], self.params['n_exc'], self.params['p_ee'], \
                 self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
                 self.params['w_tgt_in_per_cell_ie'])
-        output_filename = 'CondAnisotropy_%d_%.1e_%.1e_%.1e_%.1e.png' % \
-                (self.params['n_exc'], self.params['p_ee'], \
+        output_filename = 'CondAnisotropy_%.1e_%d_%.1e_%.1e_%.1e_%.1e.png' % \
+                (self.params['tau_prediction'], self.params['n_exc'], self.params['p_ee'], \
                 self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
                 self.params['w_tgt_in_per_cell_ie'])
 #        pylab.subplots_adjust(hspace=0.4)
@@ -406,6 +406,7 @@ class PlotInformationDiffusion(object):
         print 'Saving to:', self.params['figures_folder'] + output_filename
         ax2.set_title(title)
         pylab.savefig(output_filename, dpi=300)
+        pylab.savefig(self.params['figures_folder']+output_filename, dpi=300)
 #            ax2.bar(bins[:-1] + i_ * bin_width, x_cnt_tgt, width=bin_width, color=self.colorlist[i_ % len(self.colorlist)])
 
 #        bin_width = (bins[1] - bins[0]) / 2.
@@ -427,8 +428,8 @@ if __name__ == '__main__':
     PID = PlotInformationDiffusion(params)
 
     # select cells 
-    n_cells = 20
-    x_tgt = params['motion_params'][0] + .8 * params['motion_params'][2] * params['t_before_blank'] / 1000.
+    n_cells = 30
+    x_tgt = params['motion_params'][0] + .6 * params['motion_params'][2] * params['t_before_blank'] / 1000.
 
 #    x_tgt = .3 + params['motion_params'][2] * params['t_before_blank'] / 1000.
     gids = PID.select_cells(x_tgt, params['motion_params'][2], n_cells=n_cells, w_pos=.5)

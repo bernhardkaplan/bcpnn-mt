@@ -30,7 +30,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 400# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 600# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -74,15 +74,15 @@ class parameter_storage(object):
         self.params['tau_syn_exc'] = 5.0 # 10.
         self.params['tau_syn_inh'] = 5.0 # 20.
         if self.params['neuron_model'] == 'IF_cond_exp':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
         elif self.params['neuron_model'] == 'IF_cond_alpha':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
         elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
+            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
                     'b' : 0.5, 'a':4.}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
+            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
                     'b' : 0.5, 'a':4.}
         # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
         # v = voltage
@@ -143,7 +143,7 @@ class parameter_storage(object):
 #        self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
         self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 1.0 * self.params['w_tgt_in_per_cell_ee']
-        self.params['w_tgt_in_per_cell_ie'] = 1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+        self.params['w_tgt_in_per_cell_ie'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
         self.params['w_tgt_in_per_cell_ii'] = 1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
@@ -154,7 +154,7 @@ class parameter_storage(object):
 
         self.params['w_range_hw'] = (0.004516379807692308, 0.04589923076923077)
 #        self.params['p_to_w'] =
-        self.params['p_ee'] = 0.005              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.01              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 8e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
