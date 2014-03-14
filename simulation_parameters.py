@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        #self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
 
         # ###################
@@ -38,14 +38,14 @@ class parameter_storage(object):
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
             self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
-            self.params['n_rf_x'] = 10
+            self.params['n_rf_x'] = 20
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
         self.params['n_v'] = 10
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 16# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -150,8 +150,8 @@ class parameter_storage(object):
         self.params['w_ee_local'] = 5.
 
         # exc - exc: global
-        self.params['w_ee_global_max'] = 20.
-        self.params['w_ei_global_max'] = 10.
+        self.params['w_ee_global_max'] = 4.
+        self.params['w_ei_global_max'] = 15.
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh
@@ -215,7 +215,7 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 10 # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
@@ -226,7 +226,8 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        self.params['test_stim_range'] = (2, 3)
+        #self.params['test_stim_range'] = (2, 3)
+        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
@@ -253,7 +254,7 @@ class parameter_storage(object):
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
             self.params['t_blank'] = 200
-        self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_before_blank'] = self.params['t_start'] + 600.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
@@ -268,7 +269,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 150.0   # should be as the maximum output rate (with inhibitory feedback)
 #        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
-        self.params['taup_bcpnn'] = 50000.
+        self.params['taup_bcpnn'] = min(50000., self.params['t_sim'])
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_init_val'] = epsilon
 #        self.params['bcpnn_init_val'] = 1e-6
@@ -310,16 +311,17 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-#        self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
-#        self.params['f_exc_noise'] = 2000# [Hz] 
-#        self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
-#        self.params['f_inh_noise'] = 2000# [Hz]
+        #self.params['w_exc_noise'] = 2. # [nS] mean value for noise ---< columns
+        #self.params['f_exc_noise'] = 1000# [Hz] 
+        #self.params['w_inh_noise'] = 2. # [nS] mean value for noise ---< columns
+        #self.params['f_inh_noise'] = 1000# [Hz]
 
         # no noise:
         self.params['w_exc_noise'] = 1e-5          # [uS] mean value for noise ---< columns
         self.params['f_exc_noise'] = 1# [Hz]
         self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
         self.params['f_inh_noise'] = 1# [Hz]
+
 
     def set_vx_tau_transformation_params(self, vmin, vmax):
         tau_max, tau_min = self.params['tau_zi_max'], self.params['tau_zi_min']
@@ -344,10 +346,10 @@ class parameter_storage(object):
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
+                folder_name = 'TestSim_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d_weegmax%.2e_wei%.2e' % ( \
                         self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
-                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'])
+                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], self.params['w_ei_global_max'])
             folder_name += '/'
 
             self.params['folder_name'] = folder_name
