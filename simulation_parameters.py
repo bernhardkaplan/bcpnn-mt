@@ -226,7 +226,6 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        #self.params['test_stim_range'] = (2, 3)
         self.params['test_stim_range'] = (0, self.params['n_training_stim'])
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
