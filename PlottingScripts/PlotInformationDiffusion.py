@@ -257,10 +257,13 @@ class PlotInformationDiffusion(object):
 
         # plot connectivity histograms for the gids
         fig2 = pylab.figure(figsize=self.fig_size)
-        title = '$\\tau_{pred}=%.3f$ n_exc=%d, p_ee=%.1e, w_ee=%.1e, w_ei=%.1e, w_ie=%.1e' % \
-                (self.params['tau_prediction'], self.params['n_exc'], self.params['p_ee'], \
-                self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
-                self.params['w_tgt_in_per_cell_ie'])
+#        title = '$\\tau_{pred}=%.3f$ n_exc=%d, p_ee=%.1e, w_ee=%.1e, w_ei=%.1e, w_ie=%.1e' % \
+#                (self.params['tau_prediction'], self.params['n_exc'], self.params['p_ee'], \
+#                self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
+#                self.params['w_tgt_in_per_cell_ie'])
+
+        title = '$\\tau_{pred}=%.3f$ n_exc=%d' % \
+                (self.params['tau_prediction'], self.params['n_exc'])
         output_filename = 'CondAnisotropy_%.1e_%d_%.1e_%.1e_%.1e_%.1e.png' % \
                 (self.params['tau_prediction'], self.params['n_exc'], self.params['p_ee'], \
                 self.params['w_tgt_in_per_cell_ee'], self.params['w_tgt_in_per_cell_ei'], \
@@ -340,28 +343,31 @@ class PlotInformationDiffusion(object):
         # plot 1 
         p1 = ax1.bar(xbins[:-1], w_in_exc_hist_mean[:, 0], yerr=w_in_exc_hist_mean[:, 1], width=bin_width, color='b')
         p2 = ax1.bar(xbins[:-1] + bin_width, w_out_exc_hist_mean[:, 0], yerr=w_out_exc_hist_mean[:, 1], width=bin_width, color='r')
-        ax1_info_p1 = '$w_{in}^{exc}$'
-        ax1_info_p2 = '$w_{out}^{exc}$'
+        ax1_info_p1 = '$w_{in}^{exc}$ [uS]'
+        ax1_info_p2 = '$w_{out}^{exc}$ [uS]'
         ax1.legend([p1[0], p2[0]], [ax1_info_p1, ax1_info_p2], loc='upper right')
         ax1.set_ylabel('Exc weights')
         ax1.set_ylim((0, ax1.get_ylim()[1]))
+        ax1.set_xlabel('Source (target) neuron pos')
 
         # plot 2: exc conductances in / out
         p1 = ax2.bar(xbins[:-1], g_in_exc_hist_mean[:, 0], yerr=g_in_exc_hist_mean[:, 1], width=bin_width, color='b')
         p2 = ax2.bar(xbins[:-1] + bin_width, g_out_exc_hist_mean[:, 0], yerr=g_out_exc_hist_mean[:, 1], width=bin_width, color='r')
-        ax2_info_p1 = '$g_{in}^{exc}$'
-        ax2_info_p2 = '$g_{out}^{exc}$'
+        ax2_info_p1 = '$g_{in}^{exc}$ [uS]'
+        ax2_info_p2 = '$g_{out}^{exc}$ [uS]'
         ax2.legend([p1[0], p2[0]], [ax2_info_p1, ax2_info_p2], loc='upper right')
         ax2.set_ylabel('Exc conductance')
         ax2.set_ylim((0, ax2.get_ylim()[1]))
+        ax2.set_xlabel('Source (target) neuron pos')
 
         # plot 4: exc - inh weights incoming
         p1 = ax4.bar(xbins[:-1], w_in_exc_hist_mean[:, 0] + w_in_inh_hist_mean[:, 0], width=bin_width, color='b')
         p2 = ax4.bar(xbins[:-1] + bin_width, w_out_exc_hist_mean[:, 0] + w_out_inh_hist_mean[:, 0], width=bin_width, color='r')
-        ax4_info_p1 = '$w_{in}^{exc} + w_{in}^{inh}$'
-        ax4_info_p2 = '$w_{out}^{exc} + w_{out}^{inh}$'
+        ax4_info_p1 = '$w_{in}^{exc} + w_{in}^{inh}$ [uS]'
+        ax4_info_p2 = '$w_{out}^{exc} + w_{out}^{inh}$ [uS]'
         ax4.legend([p1[0], p2[0]], [ax4_info_p1, ax4_info_p2], loc='upper right')
         ax4.set_ylabel('Exc+Inh weights')
+        ax4.set_xlabel('Source (target) neuron pos')
 #        ax4_info = '$w_{in}^{exc} - w_{in}^{inh}$'
 #        ax4.set_title(ax4_info)
 
@@ -373,19 +379,22 @@ class PlotInformationDiffusion(object):
         p2 = ax5.bar(xbins[:-1] + bin_width,  g_out_diff, width=bin_width, color='r')
 #        ax5_info = '$g_{in}^{exc} - g_{in}^{inh}$'
 #        ax5.set_title(ax5_info)
-        ax5_info_p1 = '$g_{in}^{exc} + g_{in}^{inh}$'
-        ax5_info_p2 = '$g_{out}^{exc} + g_{out}^{inh}$'
+        ax5_info_p1 = '$g_{in}^{exc} - g_{in}^{inh}$ [uS]'
+        ax5_info_p2 = '$g_{out}^{exc} - g_{out}^{inh} [uS]$'
         ax5.legend([p1[0], p2[0]], [ax5_info_p1, ax5_info_p2], loc='upper right')
         ax5.set_ylabel('Exc+Inh conductance')
+        ax5.set_xlabel('Source (target) neuron pos')
         
 
         # plot 6 : anisotropy of conductance
         bin_width = (xbins[1] - xbins[0])
         p1 = ax6.bar(xbins[positive_idx], g_anisotropic, width=bin_width, color='g')
-        ax6.set_title('Conductance difference anisotropy')
-        ax6.set_ylabel('Conductance')
+        xticks = np.arange(0, max(xbins[positive_idx]), 0.1)
+#        xticks = np.arange(min(xbins[positive_idx]), max(xbins[positive_idx]), 0.1)
+        ax6.set_xticks(xticks)
+        ax6.set_title('Conductance anisotropy')
+        ax6.set_ylabel('Conductance difference')
         ax6.set_xlabel('Forward direction')
-
 
         # plot 3: rasterplot with blank
         plot_rp.plot_input_spikes_sorted_in_space(self.params, self.tp, ax3, c='b', sort_idx=0, ms=3)
@@ -404,9 +413,9 @@ class PlotInformationDiffusion(object):
         ax4.set_xlim(self.x_range)
         ax5.set_xlim(self.x_range)
         print 'Saving to:', self.params['figures_folder'] + output_filename
-        ax2.set_title(title)
-        pylab.savefig(output_filename, dpi=300)
-        pylab.savefig(self.params['figures_folder']+output_filename, dpi=300)
+        ax3.set_title(title)
+        pylab.savefig(output_filename, dpi=200)
+        pylab.savefig(self.params['figures_folder']+output_filename, dpi=200)
 #            ax2.bar(bins[:-1] + i_ * bin_width, x_cnt_tgt, width=bin_width, color=self.colorlist[i_ % len(self.colorlist)])
 
 #        bin_width = (bins[1] - bins[0]) / 2.

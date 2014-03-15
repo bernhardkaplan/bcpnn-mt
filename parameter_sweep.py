@@ -65,30 +65,40 @@ if __name__ == '__main__':
 #    param_range = np.logspace(-1, 1, 5) # [0.01, 0.1, 0.2, 0.3, 0.4,  0.5, 1.0, 100.]
 #    param_name = 'tau_prediction'
 #    param_range = [.025, .02, .015, 0.01, .005]
+#    param_name = 'w_tgt_in_per_cell_ee'
     param_name = 'w_tgt_in_per_cell_ee'
 #    param_range = np.linspace(0.15, 0.25, 5)
-    param_range = [0.25, 0.3]
-#    param_range = [0.15, 0.20, 0.25, 0.30, 0.35, 0.4]
+#    param_range = [0.1]#, .4, .6, .8, 1.]
+    param_range = [0.15, 0.2, 0.25, 0.30]
 #    param_range = [0.325, 0.35, 0.375, 0.4]
 #    param_range = [0.8, .7, .6, .5, .4]
     ps = simulation_parameters.parameter_storage()
-    main_folder = 'ESS_ParamSweep_taurefrac2'
+    w_ii = 0.5
+    main_folder = 'ESS_ParamSweep_wii%.1f' % w_ii
     if not os.path.exists(main_folder):
         os.system('mkdir %s' % main_folder)
 
-    for tau_prediction in [0.001, 0.002]:
+#    for tau_prediction in [0.05, 0.02, 0.01, 0.005, 0.002, 0.001]:
+    for tau_prediction in [0.010, 0.002, 0.001]:
         for i_, p in enumerate(param_range):
             # choose how you want to name your results folder
             params = ps.params
             params['tau_prediction'] = tau_prediction
+
+#            w_ee = 0.20
+            w_ei = .75
+            w_ie = 0.1
+#            params['w_tgt_in_per_cell_ee'] = w_ee
+            params[param_name] = p
+            w_ee = params['w_tgt_in_per_cell_ee']
+            params['w_tgt_in_per_cell_ei'] = w_ei * w_ee / params['fraction_inh_cells']
+            params['w_tgt_in_per_cell_ie'] = w_ie * params['w_tgt_in_per_cell_ee'] / params['fraction_inh_cells']
+            params['w_tgt_in_per_cell_ii'] = w_ii * params['w_tgt_in_per_cell_ee'] / params['fraction_inh_cells']
     #        params['w_tgt_in_per_cell_ei'] = p * params['w_tgt_in_per_cell_ee']
     #        params['delay_range'][1] = p * 1000.
-            params[param_name] = p
 
             # "file name is too long"
-            w_ei = 1.
-            w_ie = .5
-            folder_name = '%s/TauP%.3f_%s%.2e_wei%.1f_wie%.1f/' % (main_folder, tau_prediction, param_name, p, w_ei, w_ie)
+            folder_name = '%s/TauP%.3f_%s%.2e_wei%.1f_wee%.2f_wii%.1f/' % (main_folder, tau_prediction, param_name, p, w_ei, w_ee, w_ii)
     #        folder_name = 'ESS_ParamSweep/Delay_tauPred%d_delayMax%d_wee%.2e_seed%d/' % (\
     #               params['tau_prediction'] * 1000., 
 

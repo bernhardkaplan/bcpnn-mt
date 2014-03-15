@@ -1,11 +1,14 @@
 import matplotlib
+import os, sys, inspect
+# use this if you want to include modules from a subforder
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../")))
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
 #matplotlib.use('Agg')
 import numpy as np
 import utils
 import random
 import pylab
-import sys
-import os
 import simulation_parameters
 from matplotlib import cm
 import json
@@ -691,13 +694,7 @@ if __name__ == '__main__':
             print 'Loading parameters from', param_fn
             params = json.load(f)
         else:
-            param_fn = sys.argv[1]
-            if os.path.isdir(param_fn):
-                param_fn += '/Parameters/simulation_parameters.json'
-            import json
-            f = file(param_fn, 'r')
-            print 'Loading parameters from', param_fn
-            params = json.load(f)
+            params = utils.load_params(sys.argv[1])
     else:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()

@@ -12,6 +12,11 @@ class parameter_storage(object):
     """
 
     def __init__(self, fn=None):
+        """
+        fn -- (string) can be the .json file name storing an existing parameter dictionary
+              or the FOLDER which holds the .json file in the FOLDER/Parameters/simulation_parameters.json
+        """
+
 
         if fn == None:
             self.params = {}
@@ -30,7 +35,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 600# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 400# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -74,15 +79,15 @@ class parameter_storage(object):
         self.params['tau_syn_exc'] = 5.0 # 10.
         self.params['tau_syn_inh'] = 5.0 # 20.
         if self.params['neuron_model'] == 'IF_cond_exp':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
         elif self.params['neuron_model'] == 'IF_cond_alpha':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
+            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
         elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
+            self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
                     'b' : 0.5, 'a':4.}
-            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':2.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
+            self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70., \
                     'b' : 0.5, 'a':4.}
         # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
         # v = voltage
@@ -137,14 +142,14 @@ class parameter_storage(object):
 #        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
         self.params['equal_weights'] = False # if True, connection weights are all equal and w_sigma_ determine only connection probability
         # for anisotropic connections each target cell receives a defined sum of incoming connection weights
-#        self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
-#        self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
-#        self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
-#        self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
-        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 1.0 * self.params['w_tgt_in_per_cell_ee']
-        self.params['w_tgt_in_per_cell_ie'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
-        self.params['w_tgt_in_per_cell_ii'] = 1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+        self.params['w_tgt_in_per_cell_ee'] = 0.30 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
+        self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
+#        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
+#        self.params['w_tgt_in_per_cell_ei'] = 1.0 * self.params['w_tgt_in_per_cell_ee']
+#        self.params['w_tgt_in_per_cell_ie'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+#        self.params['w_tgt_in_per_cell_ii'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ie'] *= 5. / self.params['tau_syn_inh']
@@ -184,11 +189,11 @@ class parameter_storage(object):
         self.params['seed'] = 12345
         self.params['np_random_seed'] = 0
 #        self.params['np_random_seed'] = self.params['seed']
-        self.params['t_sim'] = 1600.            # [ms] total simulation time
-        self.params['t_stimulus'] = 1400.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_start'] = 200.           # [ms] Time before stimulus starts
-        self.params['t_blank'] = 400.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
-        self.params['t_before_blank'] = self.params['t_start'] + 400. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
+        self.params['t_sim'] = 1700.            # [ms] total simulation time
+        self.params['t_stimulus'] = 1500.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
+        self.params['t_start'] = 250.           # [ms] Time before stimulus starts
+        self.params['t_blank'] = 250.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
+        self.params['t_before_blank'] = self.params['t_start'] + 500. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
         self.params['tuning_prop_seed'] = self.params['seed']     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = self.params['seed']
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
@@ -447,6 +452,9 @@ class parameter_storage(object):
 
     def load_params_from_file(self, fn):
 
+        if os.path.isdir(fn):
+            folder_name = os.path.abspath(fn) + '/'
+            fn = folder_name + 'Parameters/simulation_parameters.json'
         f = file(fn, 'r')
         print 'Loading parameters from', fn
         self.params = json.load(f)
@@ -489,6 +497,8 @@ class parameter_storage(object):
         print 'n_cells: %d\tn_exc: %d\tn_inh: %d\nn_inh / n_exc = %.3f\tn_inh / n_cells = %.3f' % (self.params['n_cells'], self.params['n_exc'], self.params['n_inh'], \
                 self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
 
+
+        
 
 class ParameterContainer(parameter_storage):
 

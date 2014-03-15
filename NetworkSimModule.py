@@ -831,6 +831,7 @@ if __name__ == '__main__':
         os.system('python plot_connectivity_profile.py %s' % ps.params['folder_name'])
         os.system('python PlottingScripts/PlotAnticipation.py %s' % ps.params['folder_name'])
         os.system('python PlottingScripts/plot_contour_connectivity.py %s' % ps.params['folder_name'])
+        os.system('python PlottingScripts/PlotInformationDiffusion.py %s' % ps.params['folder_name'])
 
 #    if pc_id == 1:
 #        os.system('ristretto %s' % (ps.params['figures_folder']))

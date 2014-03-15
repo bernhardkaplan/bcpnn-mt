@@ -10,13 +10,13 @@ import copy
 import simulation_parameters
 
 
-def load_params(folder_name):
-    folder_name = os.path.abspath(folder_name) + '/'
-    param_fn = folder_name + 'Parameters/simulation_parameters.json'
-    network_params = simulation_parameters.parameter_storage(param_fn)
-    network_params.set_filenames(folder_name)
-    params = network_params.params
-    return params
+def load_params(param_fn):
+    if os.path.isdir(param_fn):
+        param_fn = os.path.abspath(param_fn) + '/Parameters/simulation_parameters.json'
+    ps = simulation_parameters.parameter_storage(param_fn)
+    folder_name = ps.params['folder_name']
+    ps.set_filenames(folder_name)
+    return ps.params
 
 def load_spiketimes(params, cell_type):
 
