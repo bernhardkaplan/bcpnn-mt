@@ -79,7 +79,7 @@ if __name__ == '__main__':
         os.system('mkdir %s' % main_folder)
 
 #    for tau_prediction in [0.05, 0.02, 0.01, 0.005, 0.002, 0.001]:
-    for tau_prediction in [0.010, 0.002, 0.001]:
+    for tau_prediction in [0.001, 0.002, 0.010]:
         for i_, p in enumerate(param_range):
             # choose how you want to name your results folder
             params = ps.params
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     #        params['delay_range'][1] = p * 1000.
 
             # "file name is too long"
-            folder_name = '%s/TauP%.3f_%s%.2e_wei%.1f_wee%.2f_wii%.1f/' % (main_folder, tau_prediction, param_name, p, w_ei, w_ee, w_ii)
+            folder_name = '%s/TauP%.3f_nRF%d_wei%.1f_wee%.2f_wii%.1f/' % (main_folder, tau_prediction, params['N_RF'], w_ei, w_ee, w_ii)
     #        folder_name = 'ESS_ParamSweep/Delay_tauPred%d_delayMax%d_wee%.2e_seed%d/' % (\
     #               params['tau_prediction'] * 1000., 
 
