@@ -115,14 +115,16 @@ class NetworkModel(object):
         # # # # # # # # # # # #
         (delay_min, delay_max) = self.params['delay_range']
         #sim.setup(timestep=0.1, min_delay=delay_min, max_delay=delay_max, rng_seeds_seed=self.params['seed'])
-        sim.setup( realizedConnectionMatrixFile = self.params['realized_conn_file'], \
+        sim.setup( useSystemSim=True, \
+                    hardware=sim.hardwareSetup[self.params['hardware_setup']], \
+                    hardwareNeuronSize=1, \
+                    realizedConnectionMatrixFile = self.params['realized_conn_file'], \
                     lostConnectionMatrixFile=self.params['lost_conn_file'], \
                     rng_seeds_seed=self.params['seed'], \
-                    useSystemSim=True, \
                     ess_params = {
                         'perfectSynapseTrafo':True,\
-                        'weightDistortion': 0.2,\
-                        'hardwareSetup' : self.params['hardware_setup']}
+                        'weightDistortion': 0.2
+                        }
                   )
         self.rng_conn = pyNN.random.NumpyRNG(seed = self.params['seed'], parallel_safe=True) #if True, slower but does not depend on number of nodes
 
