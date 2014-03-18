@@ -11,6 +11,7 @@ def run_analysis(params):
         pp.plot_prediction_2D(params)
     else:
         pp.plot_prediction_1D(params)
+    os.system('python PlottingScripts/PlotInformationDiffusion.py %s' % (params['folder_name']))
     os.system('python plot_rasterplots.py %s' % params['folder_name'])
     os.system('python plot_weight_and_delay_histogram.py %s' % params['folder_name'])
     os.system('python plot_connectivity_profile.py %s' % params['folder_name'])
@@ -19,21 +20,12 @@ def run_analysis(params):
 #    os.system('ristretto %s' % (params['figures_folder']))
 
 if len(sys.argv) == 2:
-    param_fn = sys.argv[1]
-    if os.path.isdir(param_fn):
-        param_fn += '/Parameters/simulation_parameters.json'
-    f = file(param_fn, 'r')
-    print 'Loading parameters from', param_fn
-    params = json.load(f)
+    params = utils.load_params(sys.argv[1])
     run_analysis(params)
 elif len(sys.argv) > 2:
     for i_, param_fn in enumerate(sys.argv[1:]):
         print '\n\n=========================\nAnalysis %d / %d begins\n==================================\n\n' % (i_ + 1, len(sys.argv[1:]))
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
-        f = file(param_fn, 'r')
-        print 'Loading parameters from', param_fn
-        params = json.load(f)
+        params = utils.load_params(param_fn)
         run_analysis(params)
         print '\n\n=========================\nAnalysis %d / %d ends \n==================================\n\n' % (i_ + 1, len(sys.argv[1:]))
 else:
