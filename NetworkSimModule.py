@@ -778,7 +778,7 @@ if __name__ == '__main__':
         prepare_simulation(ps, params['folder_name'], params, cleanup=True)
 
     sim_cnt = 0
-    load_files = True
+    load_files = False
     dorecord_v = False
     save_input_files = not load_files
 
