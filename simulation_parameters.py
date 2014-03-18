@@ -35,7 +35,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 2000# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 600 # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -315,9 +315,9 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'ESS-Test_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
-                       self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], \
-                       self.params['tau_prediction'] * 1000., self.params['sensory_delay'] * 1000., \
+               folder_name = 'ESS-Test_eqD%d_%s_nRF%d_tauPred%d_randomD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+                       self.params['all_connections_have_equal_delays'], self.params['connectivity_code'], self.params['N_RF'], \
+                       self.params['tau_prediction'] * 1000., self.params['randomize_delays'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
                        self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_isotropic'], \
                        self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['seed'])
