@@ -384,6 +384,9 @@ class NetworkModel(object):
 #            print 'debug w', i_, tgt, w
 
             delays = np.minimum(np.maximum(latency[sources] * self.params['delay_scale'], delay_min), delay_max)  # map the delay into the valid range
+
+            if self.params['randomize_delays']:
+                delays = np.random.permutation(delays)
             #delays = latency[sources] * self.params['delay_scale']
             #delays[p[sources] == 0.] = 0.
 

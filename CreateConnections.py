@@ -21,10 +21,12 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
         return get_p_conn_motion_based_2D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
     else:
 #        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'], tau_perception=params['sensory_delay'] / params['t_stimulus'])
-        return get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, params['w_sigma_x'], \
-                                                        params['w_sigma_v'], params['connectivity_radius'], \
-                                                        tau_prediction=params['tau_prediction'])
-#        return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
+        if params['all_connections_have_equal_delays']:
+            return get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, params['w_sigma_x'], \
+                                                            params['w_sigma_v'], params['connectivity_radius'], \
+                                                            tau_prediction=params['tau_prediction'])
+        else:
+            return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'])
 
 def get_p_conn_isotropic( params, tp_src, tp_tgt):
     if params['n_grid_dimensions'] == 2:
@@ -99,6 +101,7 @@ def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivit
     #if connectivity_radius < 1.0: # if needed for some reason
         #p[d_ij > connectivity_radius] = 0.
     return p, latency
+
 
 def get_p_conn_motion_based_2D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0):
     n_src = tp_src[:, 0].size

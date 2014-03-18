@@ -35,7 +35,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 1000# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 2000# for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -128,10 +128,15 @@ class parameter_storage(object):
         # when the initial connections are derived on the cell's tuning properties, these two values are used
         self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v
         self.params['delay_scale'] = 1000.      # this determines the scaling
-        #from the latency in second (d(src, tgt) / v_src)  to the connection
+
+        self.params['all_connections_have_equal_delays'] = False # if True: IJCNN-paper like motion-based-prediction/anticipation, all have the same delay
+                                                                 # if False: Frontiers like distribution of conduction delays --> necessary for HW-permutation
+        self.params['randomize_delays'] = True  # if True: permutate all delays (-->ESS-like), makes only sense if set all_connections_have_equal_delays is set to False
+        #from the latency in second (d(src, tgt) / v_src)  to the connection 
         #delay (delay_ij = latency_ij * delay_scale) in ms
         self.params['tau_prediction'] = .003 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
-        self.params['delay_range'] = [0.1, self.params['tau_prediction'] * 1000.] # [ms], restricts remaining connections to have delays within this range
+        self.params['delay_range'] = [0.1, 4.4] # [ms], restricts remaining connections to have delays within this range
+#        self.params['delay_range'] = [0.1, self.params['tau_prediction'] * 1000.] # [ms], restricts remaining connections to have delays within this range
 
         self.params['w_sigma_x'] = 0.5 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.5 # small w_sigma: tuning_properties get stronger weight when deciding on connection
@@ -146,7 +151,7 @@ class parameter_storage(object):
         #self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
         #self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
         #self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
-        self.params['w_tgt_in_per_cell_ee'] = 0.14 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ee'] = 0.25 # [uS] how much input should an exc cell get from its exc source cells?
         self.params['w_tgt_in_per_cell_ei'] = 0.5 * self.params['w_tgt_in_per_cell_ee']
         self.params['w_tgt_in_per_cell_ie'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
         self.params['w_tgt_in_per_cell_ii'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
@@ -310,7 +315,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'Cluster_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+               folder_name = 'ESS-Test_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
                        self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], \
                        self.params['tau_prediction'] * 1000., self.params['sensory_delay'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
