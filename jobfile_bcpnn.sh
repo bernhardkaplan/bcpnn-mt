@@ -1,14 +1,14 @@
 # The name of the script is neuron_job
-#PBS -N spiking-bcpnn
+#PBS -N training-bcpnn-mst
 
-#PBS -l walltime=1:30:00
+#PBS -l walltime=2:30:00
 #set which time allocation should be charged for this job
 
 #(only needed if you belong to more than one time allocation)
-#PBS -A 025-12-6
+# ### PBS -A 025-12-6
 
 # Number of cores to be allocated is 24
-#PBS -l mppwidth=96
+#PBS -l mppwidth=144
 
 #PBS -e error_file_python.e
 #PBS -o output_file_python.o
@@ -26,7 +26,7 @@ module add site-python
 
 export PYTHONPATH=/pdc/vol/nest/2.2.2/lib64/python2.6/site-packages:/pdc/vol/python/packages/site-python-2.6/lib64/python2.6/site-packages:/cfs/klemming/nobackup/b/bkaplan/PythonPackages/lib64/python2.6/site-packages/
 
-aprun -n 96 python /cfs/nobackup/b/bkaplan/bcpnn-mt/main_training.py > delme_bcpnn_output_0 2>&1
+aprun -n 144 python /cfs/nobackup/b/bkaplan/bcpnn-mt/main_training.py > delme_bcpnn_output_0 2>&1
 
 echo "Stopping at `date`"
 

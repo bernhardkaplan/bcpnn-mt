@@ -9,18 +9,6 @@ from scipy.spatial import distance
 import copy
 import re
 
-
-
-def load_params(folder_name):
-    import simulation_parameters
-    folder_name = os.path.abspath(folder_name) + '/'
-    param_fn = folder_name + 'Parameters/simulation_parameters.json'
-    network_params = simulation_parameters.parameter_storage(param_fn)
-    network_params.set_filenames(folder_name)
-    params = network_params.params
-    return params
-
-
 def remove_files_from_folder(folder):
     print 'Removing all files from folder:', folder
     path =  os.path.abspath(folder)
