@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
 
         # ###################
@@ -38,10 +38,10 @@ class parameter_storage(object):
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
             self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
-            self.params['n_rf_x'] = 10
+            self.params['n_rf_x'] = 20
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 10
+        self.params['n_v'] = 15
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -50,7 +50,7 @@ class parameter_storage(object):
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+        self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
         self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
         self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
         self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
@@ -215,7 +215,7 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
@@ -268,13 +268,19 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 150.0   # should be as the maximum output rate (with inhibitory feedback)
 #        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
-        self.params['taup_bcpnn'] = 50000.
-        epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
+        self.params['taup_bcpnn'] = .5 * self.params['t_sim']
+        epsilon = 1. / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_init_val'] = epsilon
 #        self.params['bcpnn_init_val'] = 1e-6
+
+        self.params['kappa'] = 1.
+        if self.params['training_run']:
+            self.params['gain'] = 0.
+        else:
+            self.params['gain'] = 10.
         self.params['bcpnn_params'] =  {
                 'gain': 0.0, \
-                'K': 1.0,\
+                'K': self.params['kappa'], \
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
                 'tau_i': 2000., \
@@ -285,7 +291,7 @@ class parameter_storage(object):
                 'p_i': self.params['bcpnn_init_val'], \
                 'p_j': self.params['bcpnn_init_val'], \
                 'p_ij': self.params['bcpnn_init_val']**2, \
-                'weight': 1.0
+                'weight': 0.0
                 }
         # gain is set to zero in order to have no plasiticity effects while training
         # K: learning rate (how strong the p-traces get updated)

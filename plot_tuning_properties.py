@@ -53,7 +53,7 @@ else:
 
 n_cells = d[:, 0].size
 
-def plot_histogram(data, fig, xlabel='', ylabel='count', title='', n_bins=20):
+def plot_histogram(data, fig, xlabel='', ylabel='count', title='', n_bins=50):
     count, bins = np.histogram(data, bins=n_bins)
     binwidth = bins[1] - bins[0]
     ax = fig.add_subplot(111)
