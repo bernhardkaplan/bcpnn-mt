@@ -347,7 +347,7 @@ def average_multiple_simulations(folder_names):
         plot_anticipation(params) 
 
 
-def plot_anticipation(params, w_pos=1, start_location=0.10, tau_filter=20):
+def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20):
     """
     w_pos -- when determining which cells to sample, this determines how much more important the position is compared to the speed in the tuning space
     start_location -- distance from the start point of motion
@@ -357,7 +357,7 @@ def plot_anticipation(params, w_pos=1, start_location=0.10, tau_filter=20):
     P.tau_filter = tau_filter
 
     # determine where to look for an anticipation signal
-    location_sampling_interval = 0.04
+    location_sampling_interval = 0.05
     n_locations_to_check = 3
     n_cells_per_pop = 30    # each /virtual/ electrode measures from this many cells
 
@@ -391,8 +391,8 @@ def plot_anticipation(params, w_pos=1, start_location=0.10, tau_filter=20):
     P.n_fig_x = 1
     P.n_fig_y = 1
     pylab.subplots_adjust(hspace=0.25)
-    P.create_fig()
-    P.plot_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
+#    P.create_fig()
+#    P.plot_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
     P.create_fig()
     P.plot_aligned_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
 #    output_fn = output_fn_base + 'mean_exp_traces.png'
@@ -405,8 +405,8 @@ def sweep_params(params):
     sweep sampling parameters, tau_filter, start_location and weight for position
     """
 
-    for w_pos in [1, 2, 3, 4, 5, 10, 15]:
-        for tau_filter in [10, 20, 30]:
+    for w_pos in [1, 2, 5, 10, 15]:
+        for tau_filter in [20, 50, 100]:
             for start_location in [0.05, 0.10]:
                 plot_anticipation(params, w_pos=w_pos, start_location=start_location, tau_filter=tau_filter)
 

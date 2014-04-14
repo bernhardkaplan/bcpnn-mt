@@ -276,4 +276,4 @@ if __name__ == '__main__':
         else:
             plot_prediction_1D()
 
-    pylab.show()
+#    pylab.show()
