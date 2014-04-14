@@ -63,7 +63,6 @@ class NetworkModel(object):
         """
 
         self.params = params
-        self.debug_connectivity = True # should be true if you want to plot connectivity profiles etc
         self.comm = comm
         if self.comm != None:
             self.pc_id, self.n_proc = self.comm.rank, self.comm.size
@@ -317,7 +316,7 @@ class NetworkModel(object):
         return (n_src, n_tgt, src_pop, tgt_pop, tp_src, tp_tgt, tgt_cells, syn_type)
 
 
-    def connect_anisotropic(self, conn_type):
+    def connect_anisotropic(self, conn_type, debug_connectivity=True):
         """
         conn_type = ['ee', 'ei', 'ie', 'ii']
         """
@@ -326,7 +325,7 @@ class NetworkModel(object):
 
         (n_src, n_tgt, src_pop, tgt_pop, tp_src, tp_tgt, tgt_cells, syn_type) = self.resolve_src_tgt(conn_type)
 
-        if self.debug_connectivity:
+        if debug_connectivity:
             conn_list_fn = self.params['conn_list_%s_fn_base' % conn_type] + '%d.dat' % (self.pc_id)
 
         n_src_cells_per_neuron = int(round(self.params['p_%s' % conn_type] * n_src))
@@ -406,7 +405,7 @@ class NetworkModel(object):
             np.savetxt(conn_list_fn, local_connlist, fmt='%d\t%d\t%.4e\t%.4e')
 
 
-    def connect_ee_random(self):
+    def connect_ee_random(self, debug_connectivity=False):
         """
             # # # # # # # # # # # # # # # # # # # # # # # # # # # #
             #     C O N N E C T    E X C - E X C    R A N D O M   #
@@ -417,7 +416,7 @@ class NetworkModel(object):
             print 'Drawing random connections'
         sigma_x, sigma_v = self.params['w_sigma_x'], self.params['w_sigma_v']
         (delay_min, delay_max) = self.params['delay_range']
-        if self.debug_connectivity:
+        if debug_connectivity:
             conn_list_fn = self.params['conn_list_ee_fn_base'] + '%d.dat' % (self.pc_id)
             conn_file = open(conn_list_fn, 'w')
             output = ''
@@ -438,16 +437,16 @@ class NetworkModel(object):
 #                        w[i] = max(self.params['w_min'], min(w[i], self.params['w_max']))
                 delay = min(max(l_[i], delay_min), delay_max)  # map the delay into the valid range
                 connect(self.exc_pop[non_zero_idx[i]], self.exc_pop[tgt], w[i], delay=delay, synapse_type='excitatory')
-                if self.debug_connectivity:
+                if debug_connectivity:
                     output += '%d\t%d\t%.2e\t%.2e\n' % (non_zero_idx[i], tgt, w[i], delay) #                    output += '%d\t%d\t%.2e\t%.2e\t%.2e\n' % (sources[i], tgt, w[i], latency[sources[i]], p[sources[i]])
 
-        if self.debug_connectivity:
+        if debug_connectivity:
             if self.pc_id == 0:
                 print 'DEBUG writing to file:', conn_list_fn
             conn_file.write(output)
             conn_file.close()
 
-    def connect_isotropic(self, conn_type='ee'):
+    def connect_isotropic(self, conn_type='ee', debug_connectivity=False):
         """
         conn_type must be 'ee', 'ei', 'ie' or 'ii'
         Connect cells in a distant dependent manner:
@@ -480,7 +479,7 @@ class NetworkModel(object):
             w_tgt_in = params['w_tgt_in_per_cell_%s' % conn_type]
             n_max_conn = n_src * n_tgt - n_tgt
 
-        if self.debug_connectivity:
+        if debug_connectivity:
             conn_list_fn = self.params['conn_list_%s_fn_base' % conn_type] + '%d.dat' % (self.pc_id)
 
         w_mean = w_tgt_in / (self.params['p_%s' % conn_type] * n_max_conn / n_tgt)
@@ -503,7 +502,7 @@ class NetworkModel(object):
         print 'p_max for %s' % conn_type, p_max
         prj = Projection(src_pop, tgt_pop, connector, target=syn_type)
         self.projections[conn_type].append(prj)
-        if self.debug_connectivity:
+        if debug_connectivity:
             prj.saveConnections(self.params['conn_list_%s_fn_base' % conn_type] + '.dat', gather=True)
 
 
