@@ -399,7 +399,7 @@ class NetworkModel(object):
             prj = Projection(src_pop, tgt_pop, connector)
             self.projections[conn_type].append(prj)
 
-        if self.debug_connectivity:
+        if debug_connectivity:
             if self.pc_id == 0:
                 print 'DEBUG writing to file:', conn_list_fn
             np.savetxt(conn_list_fn, local_connlist, fmt='%d\t%d\t%.4e\t%.4e')
@@ -780,7 +780,7 @@ if __name__ == '__main__':
         prepare_simulation(ps, params['folder_name'], params, cleanup=True)
 
     sim_cnt = 0
-    load_files = True
+    load_files = False
     dorecord_v = False
     save_input_files = not load_files
 

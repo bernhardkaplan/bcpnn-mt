@@ -35,7 +35,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 1200 # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 2000 # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -60,7 +60,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_exc'] = self.params['N_RF_X'] * self.params['N_RF_Y'] * self.params['N_V'] * self.params['N_theta'] # number of excitatory cells per minicolumn
         self.params['n_exc_per_mc'] = 1             # only for compatitibility with code borrowed from  v1-anticipation branch
-        self.params['fraction_inh_cells'] = 0.20    # fraction of inhibitory cells in the network, only approximately!
+        self.params['fraction_inh_cells'] = 0.25    # fraction of inhibitory cells in the network, only approximately!
         # for 2-Dimensional tuning property space use sqrt(fraction_inh_cells), in n-dim tuning-property space use fraction_inh_cells**(1./n_dim)
         self.params['N_V_INH'] = int(round(np.sqrt(self.params['fraction_inh_cells']) * self.params['N_V']))
         self.params['N_X_INH'] = int(round(np.sqrt(self.params['fraction_inh_cells']) * self.params['N_RF_X']))
@@ -129,17 +129,18 @@ class parameter_storage(object):
         self.params['connectivity_radius'] = 1.00      # this determines how much the directional tuning of the src is considered when drawing connections, the connectivity_radius affects the choice w_sigma_x/v
         self.params['delay_scale'] = 1000.      # this determines the scaling
 
-        self.params['all_connections_have_equal_delays'] = False # if True: IJCNN-paper like motion-based-prediction/anticipation, all have the same delay
+        self.params['all_connections_have_equal_delays'] = False# if True: IJCNN-paper like motion-based-prediction/anticipation, all have the same delay
                                                                  # if False: Frontiers like distribution of conduction delays --> necessary for HW-permutation
-        self.params['randomize_delays'] = True  # if True: permutate all delays (-->ESS-like), makes only sense if set all_connections_have_equal_delays is set to False
+        self.params['randomize_delays'] = False# if True: permutate all delays (-->ESS-like), makes only sense if set all_connections_have_equal_delays is set to False
         #from the latency in second (d(src, tgt) / v_src)  to the connection 
         #delay (delay_ij = latency_ij * delay_scale) in ms
-        self.params['tau_prediction'] = .010 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
+        self.params['tau_prediction'] = .015 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
         self.params['delay_range'] = [0.1, 100.] # [ms], restricts remaining connections to have delays within this range
 #        self.params['delay_range'] = [0.1, self.params['tau_prediction'] * 1000.] # [ms], restricts remaining connections to have delays within this range
 
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
         self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        #self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
         self.params['w_sigma_isotropic'] = 0.10 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
@@ -195,7 +196,7 @@ class parameter_storage(object):
         self.params['np_random_seed'] = 0
 #        self.params['np_random_seed'] = self.params['seed']
         self.params['t_sim'] = 1600.            # [ms] total simulation time
-        self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
+        self.params['t_stimulus'] = 1600.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
         self.params['t_start'] = 200.           # [ms] Time before stimulus starts
         self.params['t_blank'] = 0.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
         self.params['t_before_blank'] = self.params['t_start'] + 400. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
@@ -224,7 +225,7 @@ class parameter_storage(object):
         """
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
-        self.params['motion_params'] = (0.1, 0.5 , 0.3, 0) # stimulus start parameters (x, y, v_x, v_y)
+        self.params['motion_params'] = (0.1, 0.5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['blur_X'], self.params['blur_V'] = .05, .05
 
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
@@ -316,10 +317,10 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'MBP_eqD%d_%s_nRF%d_tauPred%d_randomD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
-                       self.params['all_connections_have_equal_delays'], self.params['connectivity_code'], self.params['N_RF'], \
-                       self.params['tau_prediction'] * 1000., self.params['randomize_delays'] * 1000., \
-                       self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
+               folder_name = 'MBP_vx%.1f_eqD%d_compDelay%.2f_%s_nRF%d_tauPred%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+                       self.params['motion_params'][2], self.params['all_connections_have_equal_delays'], self.params['compensated_delay'], \
+                       self.params['connectivity_code'], self.params['N_RF'], \
+                       self.params['tau_prediction'] * 1000., self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
                        self.params['w_sigma_x'], self.params['w_sigma_v'], self.params['w_sigma_isotropic'], \
                        self.params['tau_syn_exc'], self.params['tau_syn_inh'], self.params['seed'])
 

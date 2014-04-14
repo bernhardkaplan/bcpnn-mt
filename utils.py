@@ -253,7 +253,7 @@ def get_input(tuning_prop, params, t, motion_params=None, delay=0., delay_compen
         t: time (NOT in [ms]) in the period (not restricted to 0 .. 1)
         motion: type of motion
     """
-#     t -= delay
+    #t -= delay
 
     if motion_params == None:
         motion_params = params['motion_params']
