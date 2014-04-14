@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# <nbformat>2</nbformat>
-
-# <codecell>
-
 import os, sys, inspect
 # use this if you want to include modules from a subforder
 cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../")))
@@ -22,23 +17,23 @@ class PlotAnticipation(object):
         self.n_fig_y = 1
 #        self.fig_size = (11.69, 8.27) #A4
 #        self.fig_size = (10, 8)
-        self.fig_size = utils.get_figsize(1200)
+        self.fig_size = utils.get_figsize(800, portrait=False)
         self.colorlist = ['k', 'r', 'b', 'g', 'm', 'y', 'c']
 
-        rcParams = { 'axes.labelsize' : 24,
-                    'axes.titlesize'  : 24,
-                    'label.fontsize': 24,
-                    'xtick.labelsize' : 20, 
-                    'ytick.labelsize' : 20, 
-                    'legend.fontsize': 20, 
-                    'figure.subplot.left':.15,
-                    'figure.subplot.bottom':.08,
+        rcParams = { 'axes.labelsize' : 32,
+                    'axes.titlesize'  : 32,
+                    'label.fontsize': 32,
+                    'xtick.labelsize' : 24, 
+                    'ytick.labelsize' : 24, 
+                    'legend.fontsize': 24, 
+                    'figure.subplot.left':.20,
+                    'figure.subplot.bottom':.15,
                     'figure.subplot.right':.95,
-                    'figure.subplot.top':.92, 
+                    'figure.subplot.top':.90, 
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
         self.tp = np.loadtxt(self.params['tuning_prop_means_fn'])
-        self.tau_filter = 100.
+        self.tau_filter = 30.
         self.dt_filter = 1.
         self.normalized_traces = None
 
@@ -352,16 +347,19 @@ def average_multiple_simulations(folder_names):
         plot_anticipation(params) 
 
 
-def plot_anticipation(params):
+def plot_anticipation(params, w_pos=1, start_location=0.10, tau_filter=20):
     """
+    w_pos -- when determining which cells to sample, this determines how much more important the position is compared to the speed in the tuning space
+    start_location -- distance from the start point of motion
+    tau_filter -- time constant to derive confidence traces (tau for the exponential trace)
     """
     P = PlotAnticipation(params)
+    P.tau_filter = tau_filter
+
     # determine where to look for an anticipation signal
-    start_location = 0.10   # distance from the start point of motion
-    location_sampling_interval = 0.05
+    location_sampling_interval = 0.04
     n_locations_to_check = 3
-    n_cells_per_pop = 20    # each /virtual/ electrode measures from this many cells
-    w_pos = 10 # when determining which cells to sample, this determines how much more important the position is compared to the speed in the tuning space
+    n_cells_per_pop = 30    # each /virtual/ electrode measures from this many cells
 
     locations_to_record = [ (i * location_sampling_interval) + start_location + params['motion_params'][0] for i in xrange(n_locations_to_check)]
     print 'Locations to record from:', locations_to_record
@@ -380,8 +378,10 @@ def plot_anticipation(params):
     P.create_fig()
     P.plot_selected_cells_in_tuning_space(fig_cnt=1, gids=gids, plot_all_cells=True)
 
-    output_fn_base = params['figures_folder'] + 'snn_anticipation_wsx%.2e_wsv%.2e_' % (params['w_sigma_x'], params['w_sigma_v'])
-    output_fn = output_fn_base + 'tuning_prop_wpos%.2f.png' % (w_pos)
+#    output_fn_base = params['figures_folder'] + 'snn_anticipation_wsx%.2e_wsv%.2e_taufilter%d_wpos%d_' % (params['w_sigma_x'], params['w_sigma_v'], P.tau_filter, w_pos)
+#    output_fn_base = params['figures_folder'] + 'snn_anticipation_' % %(P.tau_filter, w_pos, start_loc)
+    output_fn = params['figures_folder'] + 'snn_anticipation_tuning_prop_tau%d_wpos%d_x0%.2f.png' % (P.tau_filter, w_pos, start_location)
+#    output_fn = output_fn_base + 'tuning_prop_wpos%.2f.png' % (w_pos)
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
@@ -389,15 +389,26 @@ def plot_anticipation(params):
 #    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
     P.filter_and_normalize_spikes()
     P.n_fig_x = 1
-    P.n_fig_y = 2
+    P.n_fig_y = 1
     pylab.subplots_adjust(hspace=0.25)
     P.create_fig()
     P.plot_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
-    P.plot_aligned_exponential_spiketrains(fig_cnt=2, gids=gids, normalize=normalize)
-    output_fn = output_fn_base + 'mean_exp_traces.png'
+    P.create_fig()
+    P.plot_aligned_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
+#    output_fn = output_fn_base + 'mean_exp_traces.png'
+    output_fn = params['figures_folder'] + 'snn_anticipation_meanexptraces_tau%d_wpos%d_x0%.2f.png' % (P.tau_filter, w_pos, start_location)
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=300)
 
+def sweep_params(params):
+    """
+    sweep sampling parameters, tau_filter, start_location and weight for position
+    """
+
+    for w_pos in [1, 2, 3, 4, 5, 10, 15]:
+        for tau_filter in [10, 20, 30]:
+            for start_location in [0.05, 0.10]:
+                plot_anticipation(params, w_pos=w_pos, start_location=start_location, tau_filter=tau_filter)
 
 if __name__ == '__main__':
 
@@ -409,7 +420,8 @@ if __name__ == '__main__':
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
-        plot_anticipation(params)
+        sweep_params(params)
+#        plot_anticipation(params)
     elif len(sys.argv) > 2:
         average_multiple_simulations(sys.argv[1:])
     else:

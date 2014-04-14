@@ -35,7 +35,7 @@ class parameter_storage(object):
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 600 # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 1200 # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
         self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
@@ -77,7 +77,7 @@ class parameter_storage(object):
 #        self.params['neuron_model'] = 'IF_cond_alpha'
 #        self.params['neuron_model'] = 'EIF_cond_exp_isfa_ista'
         self.params['tau_syn_exc'] = 5.0 # 10.
-        self.params['tau_syn_inh'] = 5.0 # 20.
+        self.params['tau_syn_inh'] = 10.0 # 20.
         if self.params['neuron_model'] == 'IF_cond_exp':
             self.params['cell_params_exc'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
             self.params['cell_params_inh'] = {'cm':1.0, 'tau_refrac':1.0, 'v_thresh':-50.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-70}
@@ -134,14 +134,14 @@ class parameter_storage(object):
         self.params['randomize_delays'] = True  # if True: permutate all delays (-->ESS-like), makes only sense if set all_connections_have_equal_delays is set to False
         #from the latency in second (d(src, tgt) / v_src)  to the connection 
         #delay (delay_ij = latency_ij * delay_scale) in ms
-        self.params['tau_prediction'] = .003 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
-        self.params['delay_range'] = [0.1, 4.4] # [ms], restricts remaining connections to have delays within this range
+        self.params['tau_prediction'] = .010 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
+        self.params['delay_range'] = [0.1, 100.] # [ms], restricts remaining connections to have delays within this range
 #        self.params['delay_range'] = [0.1, self.params['tau_prediction'] * 1000.] # [ms], restricts remaining connections to have delays within this range
 
-        self.params['w_sigma_x'] = 0.5 # width of connectivity profile for pre-computed weights
-        self.params['w_sigma_v'] = 0.5 # small w_sigma: tuning_properties get stronger weight when deciding on connection
+        self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
+        self.params['w_sigma_v'] = 0.1 # small w_sigma: tuning_properties get stronger weight when deciding on connection
                                        # large w_sigma: make conn prob independent of tuning_properties
-        self.params['w_sigma_isotropic'] = 0.20 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective
+        self.params['w_sigma_isotropic'] = 0.10 # spatial reach of isotropic connectivity, should not be below 0.05 otherwise you don't get the desired p_effective
 #        self.params['w_sigma_v'] = 3.0 # small w_sigma: tuning_properties get stronger weight when deciding on connection
 
 #        self.params['equal_weights'] = True # if True, connection weights are all equal and w_sigma_ determine only connection probability
@@ -151,10 +151,10 @@ class parameter_storage(object):
         #self.params['w_tgt_in_per_cell_ei'] = 0.45 # [uS] how much input should an inh cell get from its exc source cells?
         #self.params['w_tgt_in_per_cell_ie'] = 1.60 # [uS] how much input should an exc cell get from its inh source cells?
         #self.params['w_tgt_in_per_cell_ii'] = 0.15 # [uS] how much input should an inh cell get from its source cells?
-        self.params['w_tgt_in_per_cell_ee'] = 0.25 # [uS] how much input should an exc cell get from its exc source cells?
-        self.params['w_tgt_in_per_cell_ei'] = 0.5 * self.params['w_tgt_in_per_cell_ee']
-        self.params['w_tgt_in_per_cell_ie'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
-        self.params['w_tgt_in_per_cell_ii'] = 0.5 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+        self.params['w_tgt_in_per_cell_ee'] = 0.20 # [uS] how much input should an exc cell get from its exc source cells?
+        self.params['w_tgt_in_per_cell_ei'] = 1.0 * self.params['w_tgt_in_per_cell_ee']
+        self.params['w_tgt_in_per_cell_ie'] = 1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
+        self.params['w_tgt_in_per_cell_ii'] = 0.10 #1.0 * self.params['w_tgt_in_per_cell_ee'] / self.params['fraction_inh_cells']
         self.params['w_tgt_in_per_cell_ee'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ei'] *= 5. / self.params['tau_syn_exc']
         self.params['w_tgt_in_per_cell_ie'] *= 5. / self.params['tau_syn_inh']
@@ -164,7 +164,7 @@ class parameter_storage(object):
 
         self.params['w_range_hw'] = (0.004516379807692308, 0.04589923076923077)
 #        self.params['p_to_w'] =
-        self.params['p_ee'] = 0.01              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
+        self.params['p_ee'] = 0.005              # fraction of network cells allowed to connect to each target cell, used in CreateConnections
         self.params['w_min'] = 5e-4             # When probabilities are transformed to weights, they are scaled so that the map into this range
         self.params['w_max'] = 8e-3
         self.params['n_src_cells_per_neuron'] = round(self.params['p_ee'] * self.params['n_exc']) # only excitatory sources
@@ -191,27 +191,28 @@ class parameter_storage(object):
         # ######################
         # SIMULATION PARAMETERS
         # ######################
-        self.params['seed'] = 12345
+        self.params['seed'] = 0
         self.params['np_random_seed'] = 0
 #        self.params['np_random_seed'] = self.params['seed']
-        self.params['t_sim'] = 1700.            # [ms] total simulation time
-        self.params['t_stimulus'] = 1500.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_start'] = 250.           # [ms] Time before stimulus starts
-        self.params['t_blank'] = 250.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
-        self.params['t_before_blank'] = self.params['t_start'] + 500. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
+        self.params['t_sim'] = 1600.            # [ms] total simulation time
+        self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
+        self.params['t_start'] = 200.           # [ms] Time before stimulus starts
+        self.params['t_blank'] = 0.           # [ms] duration of 'blanked' input (if zero, assumes no blank)
+        self.params['t_before_blank'] = self.params['t_start'] + 400. # [ms] time when blanking starts, i.e. t_reappear = t_before_blank + t_blank
         self.params['tuning_prop_seed'] = self.params['seed']     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = self.params['seed']
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 30
-        self.params['sensory_delay'] = 0.0001 # [s] real, physical delay accumulated along the thalamo-cortical pathways
-        self.params['compensated_delay'] = 0.0001 # [s] assumed sensory delay
+        self.params['sensory_delay'] = 0.10 # [s] real, physical delay accumulated along the thalamo-cortical pathways
+        self.params['compensated_delay'] = 0.10
 
         # ######
         # INPUT
         # ######
         self.params['f_max_stim'] = 1000.       # [Hz]
-        self.params['w_input_exc'] = 5.00e-2   # [uS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = 6.00e-3 * 10. / self.params['tau_syn_exc']    # [uS] mean value for input stimulus ---< exc_units (columns
+        #self.params['w_input_exc'] = 5.00e-2   # [uS] mean value for input stimulus ---< exc_units (columns
 #        self.params['w_input_exc'] = 6.00e-3 * 10. / self.params['tau_syn_exc']    # [uS] mean value for input stimulus ---< exc_units (columns
 
         # ###############
@@ -223,7 +224,7 @@ class parameter_storage(object):
         """
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
-        self.params['motion_params'] = (0.1, 0.5 , 0.5, 0) # stimulus start parameters (x, y, v_x, v_y)
+        self.params['motion_params'] = (0.1, 0.5 , 0.3, 0) # stimulus start parameters (x, y, v_x, v_y)
         self.params['blur_X'], self.params['blur_V'] = .05, .05
 
         self.params['anticipatory_mode'] = True # if True record selected cells to gids_to_record_fn
@@ -253,9 +254,9 @@ class parameter_storage(object):
         # NOISE
         # ######
         self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 50# [Hz]
+        self.params['f_exc_noise'] = 2000 # [Hz]
         self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
-        self.params['f_inh_noise'] = 50# [Hz]
+        self.params['f_inh_noise'] = 2000 # [Hz]
 
         # no noise:
 #        self.params['w_exc_noise'] = 1e-5          # [uS] mean value for noise ---< columns
@@ -315,7 +316,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'ESS-Test_eqD%d_%s_nRF%d_tauPred%d_randomD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+               folder_name = 'MBP_eqD%d_%s_nRF%d_tauPred%d_randomD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
                        self.params['all_connections_have_equal_delays'], self.params['connectivity_code'], self.params['N_RF'], \
                        self.params['tau_prediction'] * 1000., self.params['randomize_delays'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
@@ -503,7 +504,6 @@ class parameter_storage(object):
                 self.params['n_inh'] / float(self.params['n_exc']), self.params['n_inh'] / float(self.params['n_cells']))
 
 
-        
 
 class ParameterContainer(parameter_storage):
 
