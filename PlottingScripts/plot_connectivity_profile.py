@@ -41,9 +41,10 @@ class ConnectionPlotter(object):
         self.x_min, self.x_max = 1.0, .0
         self.y_min, self.y_max = 1.0, .0
         self.quiver_scale = 1.
-        self.markersize_cell = 10
-        self.markersize_min = 3
-        self.markersize_max = 8
+        self.markersize_cell = 15
+        self.markersize_min = 4
+        self.markersize_max = 10
+        self.labelsize=24
 
     def create_fig(self, n_plots_x, n_plots_y):
         self.n_plots_x, self.n_plots_y = n_plots_x, n_plots_y
@@ -488,7 +489,6 @@ class ConnectionPlotter(object):
         for i_ in xrange(n_tgts):
             target_gids[i_] = np.int(targets[i_, 1])
 
-
         sources = utils.get_sources(self.connection_lists[conn_type], gid)
         src_ids, src_weights, src_delays = sources[:, 1], sources[:, 2], sources[:, 3]
 
@@ -518,14 +518,14 @@ class ConnectionPlotter(object):
         fig = pylab.figure(figsize=(12,8))
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
-        ax1.set_xlabel('Receptive field center $x$', fontsize=18)
-        ax1.set_ylabel('Preferred speed $v_x$', fontsize=18)
-        ax2.set_xlabel('Receptive field center $x$', fontsize=18)
-        ax2.set_ylabel('Preferred speed $v_x$', fontsize=18)
+        ax1.set_xlabel('Receptive field center $x$', fontsize=self.labelsize)
+        ax1.set_ylabel('Preferred speed $v_x$', fontsize=self.labelsize)
+        ax2.set_xlabel('Receptive field center $x$', fontsize=self.labelsize)
+        ax2.set_ylabel('Preferred speed $v_x$', fontsize=self.labelsize)
 
         for i in xrange(src_tp[:, 0].size):
-            ax1.plot(src_tp[i, 0], src_tp[i, 2], 'o', c='k', markersize=3, alpha=.2)
-            ax2.plot(src_tp[i, 0], src_tp[i, 2], 'o', c='k', markersize=3, alpha=.2)
+            ax1.plot(src_tp[i, 0], src_tp[i, 2], 'o', c='k', markersize=self.markersize_min, alpha=.2)
+            ax2.plot(src_tp[i, 0], src_tp[i, 2], 'o', c='k', markersize=self.markersize_min, alpha=.2)
 
         ylim = ax1.get_ylim()
         ax1.set_title('Tuning property space')
@@ -580,8 +580,8 @@ class ConnectionPlotter(object):
         from plot_tuning_properties import plot_scatter_with_histograms
         fig = pylab.figure()
         axScatter, axHistx, axHisty = plot_scatter_with_histograms(tgt_tp[target_gids, 0], tgt_tp[target_gids, 2], fig, markersizes=markersizes_out)
-        axScatter.set_xlabel('Receptive field center $x$', fontsize=18)
-        axScatter.set_ylabel('Preferred speed $v_x$', fontsize=18)
+        axScatter.set_xlabel('Receptive field center $x$', fontsize=32)
+        axScatter.set_ylabel('Preferred speed $v_x$', fontsize=32)
         axScatter.plot(src_tp[gid, 0], src_tp[gid, 2], 'o', c='k', markersize=self.markersize_cell)
 
         output_fig = '%sconnectivity_profile_gid%d_wsigmaX_%.2e_wsigmaV%.2e_delayMax%d_connRadius%.2f_wee%.2e_with_histogram.png' % (self.params['figures_folder'], gid, \

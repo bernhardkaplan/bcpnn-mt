@@ -125,11 +125,12 @@ def plot_contour_connectivity(params, d, tp, gid):
 def get_pconn_source_perspective(params, tp, src_gid, x_tgt, vx_tgt):
     """To which cells should src_gid connect to?"""
     n_tgt = x_tgt.size
-    tau_prediction = params['tau_prediction'] / params['t_stimulus']
-    tau_shift = params['sensory_delay']
+    tau_prediction = params['tau_prediction'] #/ params['t_stimulus']
+    x_predicted = ((tp[src_gid, 0] + (tau_prediction) * tp[src_gid, 2]) % 1) * np.ones(n_tgt)
+#    tau_shift = params['sensory_delay']
     # compute where the cell projects to (preferentially)
-    x_predicted = ((tp[src_gid, 0] + (tau_prediction + tau_shift) * tp[src_gid, 2]) % 1) * np.ones(n_tgt)
-    print 'debug', tp[src_gid, 0], x_predicted[0], tp[src_gid, 2] * (tau_prediction + tau_shift)
+#    x_predicted = ((tp[src_gid, 0] + (tau_prediction + tau_shift) * tp[src_gid, 2]) % 1) * np.ones(n_tgt)
+#    print 'debug', tp[src_gid, 0], x_predicted[0], tp[src_gid, 2] * (tau_prediction + tau_shift)
     d_pred_tgt = utils.torus_distance_array(x_predicted, x_tgt)
     z = np.exp(- d_pred_tgt**2 / (2 * params['w_sigma_x']**2)) \
             * np.exp(- ((tp[src_gid, 2] - vx_tgt)**2/ (2 * params['w_sigma_v']**2)))
@@ -143,7 +144,7 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
     """
 
     n_src = x_src.size
-    tau_prediction = params['tau_prediction'] / params['t_stimulus']
+    tau_prediction = params['tau_prediction'] #/ params['t_stimulus']
     tau_shift = params['sensory_delay']
     x_predicted = (x_src + (tau_prediction + tau_shift) * vx_src) % 1.
     # calculate the distance between the predicted position and the target cell
@@ -179,7 +180,7 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     x_conn = tp[connection_gids, 0]
     vx_conn = tp[connection_gids, 2]
 
-    print 'DEBUG weights:', weights
+    print 'DEBUG weights:', weights, weights.sum()
     print 'DEBUG x_conn:', x_conn
     print 'DEBUG vx_conn:', vx_conn
 
@@ -189,30 +190,28 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     n_pts = 500000
     autolimit = True
     if autolimit:
-        x_min, x_max = .0, 1.
+        x_min, x_max = .0, 0.6
+#        x_min, x_max = .0, 1.
         vx_min = min(.7 * tp[gid, 2], np.min(.7 * vx_conn))
         vx_max = max(1.2 * tp[gid, 2], np.max(1.2 * vx_conn))
-
 
         print 'x_min', x_min
         print 'x_max', x_max
         print 'vx_min', vx_min
         print 'vx_max', vx_max
 
-
     dx = 0.04 * (x_max - x_min)
     dvx = 0.04 * (vx_max - vx_min)
     x_sample = np.random.uniform(x_min, x_max, n_pts)
     vx_sample = np.random.uniform(vx_min, vx_max, n_pts)
 
-
     if plot_source_perspective:
         z = get_pconn_source_perspective(params, tp, gid, x_sample, vx_sample)
-        cell_label = 'source GID=%d' % (gid)
+        cell_label = 'source GID' #=%d' % (gid)
     else:
         # plot as the simulation code works
         z = get_pconn_target_perspective(params, tp, gid, x_sample, vx_sample)
-        cell_label = 'target GID=%d' % (gid)
+        cell_label = 'target GID' #=%d' % (gid)
     
     clip_formula_at_connradius = False
     if clip_formula_at_connradius:
@@ -229,15 +228,15 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     x_grid = np.arange(x_min, x_max, dx) 
     vx_grid = np.arange(vx_min, vx_max, dvx)
     # grid the data
-    z_grid = griddata(x_sample, vx_sample, z, x_grid, vx_grid, interp='linear')
+    z_grid = griddata(x_sample, vx_sample, z, x_grid, vx_grid)#, interp='linear')
     n_levels = 300
 
-    rcParams = { 'axes.labelsize' : 20,
-                'axes.titlesize'  : 20,
+    rcParams = { 'axes.labelsize' : 32,
+                'axes.titlesize'  : 32,
                 'label.fontsize': 20,
-                'xtick.labelsize' : 18, 
-                'ytick.labelsize' : 18, 
-                'legend.fontsize': 16, 
+                'xtick.labelsize' : 24, 
+                'ytick.labelsize' : 24, 
+                'legend.fontsize': 18, 
                 'figure.subplot.left':.15,
 #                'figure.subplot.bottom':.10,
 #                'figure.subplot.right':.95,
@@ -253,7 +252,8 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     # plot the connected cells
     # # # # # # # # # # # # 
     # use weights as dot sizes
-    markersize_cell = 15
+    fontsize = 24
+    markersize_cell = 25
     markersize_min = 4
     markersize_max = 10
     markersize_others = 1
@@ -273,9 +273,9 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     cms = utils.get_connection_center_of_mass(connection_gids, weights, tp)
     print 'CMS-x:', cms[0], 'cell x-pos:', tp[gid, 0]
     print 'CMS-vx:', cms[1], 'cell vx:', tp[gid, 2]
-    ax.plot(cms[0], cms[1], 'D', markersize=np.int(markersize_cell/2 + 1), c='g', markeredgewidth=0, label='Connection center-of-mass')
+    ax.plot(cms[0], cms[1], 'D', markeredgewidth=1, markersize=np.int(markersize_cell/2 + 1), c='g', label='Connection center-of-mass')
     
-    ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label=cell_label)
+    ax.plot(tp[gid, 0], tp[gid, 2], '*', markeredgewidth=1, markersize=markersize_cell, c='y', label=cell_label)
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
     ax.set_ylabel('Preferred speed $v_x$')
@@ -336,13 +336,13 @@ if __name__ == '__main__':
     if not os.path.exists(params['merged_conn_list_ee']):
         print 'Running merge_connlists.py...'
         os.system('python merge_connlists.py %s' % params['folder_name'])
-    print 'Loading connection file ...'
+    print 'Loading connection file ...', params['merged_conn_list_ee']
     d = np.loadtxt(params['merged_conn_list_ee'])
     gid = None
     i_, dx = 0, .05
-    x_start = 0.3 
+    x_start = 0.2
     while gid == None:
-        mp_for_cell_sampling = [(x_start + dx * i_) % 1., 0.0, 0.5, 0.]
+        mp_for_cell_sampling = [(x_start + dx * i_) % 1., 0.0, 1.0, 0.]
         gid = utils.select_well_tuned_cells_1D(tp, mp_for_cell_sampling, 1)
         connections = utils.get_targets(d, gid)
         connection_gids = connections[:, 1].astype(int)
