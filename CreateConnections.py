@@ -26,8 +26,7 @@ def get_p_conn_motion_based(params, tp_src, tp_tgt):
                                                             params['w_sigma_v'], params['connectivity_radius'], \
                                                             tau_prediction=params['tau_prediction'])
         else:
-            return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], params['connectivity_radius'], \
-                    tau_prediction=params['tau_prediction'])
+            return get_p_conn_motion_based_1D(tp_src, tp_tgt, params['w_sigma_x'], params['w_sigma_v'], tau_prediction=params['tau_prediction'])
 
 def get_p_conn_isotropic( params, tp_src, tp_tgt):
     if params['n_grid_dimensions'] == 2:
@@ -83,7 +82,7 @@ def get_p_conn_motion_based_1D_fixed_latency(tp_src, tp_tgt, w_sigma_x, w_sigma_
     return p, latency
 
 
-def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, connectivity_radius=1.0, tau_prediction=0.):
+def get_p_conn_motion_based_1D(tp_src, tp_tgt, w_sigma_x, w_sigma_v, tau_prediction=0.):
     """
     Calculate the connection probabilities between all source cells in the network
     and one single target cell (assigned to the process).
