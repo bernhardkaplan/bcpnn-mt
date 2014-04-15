@@ -357,7 +357,7 @@ def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20):
     P.tau_filter = tau_filter
 
     # determine where to look for an anticipation signal
-    location_sampling_interval = 0.05
+    location_sampling_interval = 0.04
     n_locations_to_check = 3
     n_cells_per_pop = 30    # each /virtual/ electrode measures from this many cells
 
@@ -405,6 +405,7 @@ def sweep_params(params):
     sweep sampling parameters, tau_filter, start_location and weight for position
     """
 
+#    for w_pos in [1]:#, 2, 5, 10, 15]:
     for w_pos in [1, 2, 5, 10, 15]:
         for tau_filter in [20, 50, 100]:
             for start_location in [0.05, 0.10]:

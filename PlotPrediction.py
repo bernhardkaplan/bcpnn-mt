@@ -93,8 +93,8 @@ class PlotPrediction(object):
         fig_height = fig_width*golden_mean      # height in inches
         fig_size =  [fig_width,fig_height]
         params = {#'backend': 'png',
-                  'title.fontsize': 24,
-                  'axes.labelsize': 24,
+                  'title.fontsize': 32,
+                  'axes.labelsize': 32,
                   'legend.fontsize': 14,
 #                  'text.fontsize': 10,
 #                  'xtick.labelsize': 8,
@@ -458,11 +458,11 @@ class PlotPrediction(object):
 
     def create_fig(self):
         print "plotting ...."
-        rcParams = { 'axes.labelsize' : 22,
-                    'axes.titlesize'  : 24,
-                    'label.fontsize': 20,
-                    'xtick.labelsize' : 20,
-                    'ytick.labelsize' : 20,
+        rcParams = { 'axes.labelsize' : 32,
+                    'axes.titlesize'  : 32,
+                    'label.fontsize': 24,
+                    'xtick.labelsize' : 24,
+                    'ytick.labelsize' : 24,
                     'legend.fontsize': 16,
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
