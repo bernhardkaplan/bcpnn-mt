@@ -172,8 +172,8 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
         data_fn = params['exc_spiketimes_fn_merged'] + '.ras'
 
     plotter = P.PlotPrediction(params, data_fn)
-    pylab.rcParams['axes.labelsize'] = 20
-    pylab.rcParams['axes.titlesize'] = 24
+    pylab.rcParams['axes.labelsize'] = 32
+    pylab.rcParams['axes.titlesize'] = 32
     if plotter.no_spikes:
         return
 
@@ -203,9 +203,13 @@ def plot_prediction_1D(params=None, data_fn=None, inh_spikes = None):
 
     pylab.subplots_adjust(left=0.13, bottom=0.12, right=0.90, top=0.95, wspace=0.3, hspace=.3)
     plotter.create_fig()  # create an empty figure
-    xgrid_title = '%s connectivity: ' % (params['connectivity_ee'].capitalize())
-    if params['connectivity_ee'] == 'anisotropic':
-        xgrid_title += ' $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
+#    xgrid_title = '%s connectivity: ' % (params['connectivity_ee'].capitalize())
+#    if params['connectivity_ee'] == 'anisotropic':
+#        xgrid_title += ' $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
+    if params['IJCNN_code'] == 'MBP':
+        xgrid_title = 'MBP connectivity $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
+    else:
+        xgrid_title = 'PBP connectivity $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
     plotter.plot_x_grid_vs_time(1, title=xgrid_title)
     output_fn = output_fn_base + '_grid_x.png'
     print 'Saving figure to:', output_fn

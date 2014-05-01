@@ -8,6 +8,10 @@ import os
 import copy
 import simulation_parameters
 
+def distance(x,y):   
+    # alternative: np.linalg.norm(a-b)
+    return np.sqrt(np.sum((x - y)**2))
+
 
 def load_params(param_fn):
     if os.path.isdir(param_fn):

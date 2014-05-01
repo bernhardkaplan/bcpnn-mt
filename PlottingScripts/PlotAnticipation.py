@@ -148,7 +148,7 @@ class PlotAnticipation(object):
 #        print 'Saving data to:', data_fn
         np.savetxt(data_fn, confidence_trace)
 #        ax.set_xlabel('Time [ms]')
-        title = '%s connectivity: ' % (self.params['connectivity_ee'].capitalize())
+        title = '%s connectivity: ' % (self.params['IJCNN_code'])
         if self.params['connectivity_ee'] == 'anisotropic':
             title += ' $\sigma_{X}=%.2f \quad \sigma_{V}=%.2f$' % (self.params['w_sigma_x'], self.params['w_sigma_v'])
         title += '\nResponse not aligned to stimulus'
@@ -205,18 +205,19 @@ class PlotAnticipation(object):
 #            print 'Population %d gids:' % i_, gids[i_]
             # compute the mean x-position of all cells in this subpopulation
             x_mean = self.tp[gids[i_], 0].mean()
-            x_std = self.tp[gids[i_], 0].std()
+#            x_std = self.tp[gids[i_], 0].std()
 #            print 'Population %d x_mean = %.3f +- %.3f' % (i_, x_mean, x_std)
 
             # compute time when stimulus is at x_mean
             t_arrive = 1000 * utils.torus_distance(x_mean, self.params['motion_params'][0]) / self.params['motion_params'][2]
-            t_arrive -= self.params['sensory_delay'] * 1000.
+            t_arrive_delayed = t_arrive + self.params['sensory_delay'] * 1000.
             shift_ = int(t_arrive / self.dt_filter) + n_data * .5
-#            print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
+#            shift_delayed = int(t_arrive_delayed / self.dt_filter) + n_data * .5
+
+            print 't_arrive:', t_arrive, t_arrive_delayed, shift_
             shifted_trace = np.r_[mean_trace[shift_:, i_], mean_trace[:shift_, i_]]
             aligned_traces[:, i_] = shifted_trace
             shifted_time = np.r_[all_traces[shift_:, -1], all_traces[:shift_, -1]]
-#            print 'shifted time:', shifted_time
             if normalize:
 #                print 't_arrive:', t_arrive, shift_, self.colorlist[i_]
                 for t_ in xrange(int(n_data)):
@@ -227,7 +228,7 @@ class PlotAnticipation(object):
                 # new test
 #                ax.plot(shifted_time, confidence_trace[:, i_], c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
 
-                ylabel = 'Confidence trace\naveraged over %d cells' % n_cells_per_pop
+                ylabel = 'Confidence trace \naveraged over %d cells' % n_cells_per_pop
             else:
                 ax.plot(all_traces[:, -1], shifted_trace, c=self.colorlist[i_], lw=3, label='$\\bar{x}_%d=%.2f$' % (i_, x_mean))
                 ylabel = 'Mean filtered spiketrain\naveraged over %d cells' % n_cells_per_pop
@@ -246,25 +247,34 @@ class PlotAnticipation(object):
 #        data_fn = self.params['data_folder'] + 'aligned_std_trace.dat'
 #        np.savetxt(data_fn, std_trace)
 
-        pylab.legend()
+        pylab.legend(loc='upper left')
 
         # set the xticks to time before / after stimulus arrival
         old_xticks = ax.get_xticks()
-        self.plot_vertical_line(ax, .5 * old_xticks[-1], 'grey')
-        xticks = np.linspace(old_xticks[0] - .5 * old_xticks[-1], old_xticks[-1] - .5 * old_xticks[-1], old_xticks.size)
+        t_arrival = .5 * old_xticks[-1]
+        t_arrival_delayed = t_arrival + self.params['sensory_delay'] * 1000.
+        ylim = self.plot_vertical_line(ax, t_arrival, 'grey', ls=':')
+        self.plot_vertical_line(ax, t_arrival_delayed, 'grey', ymax=ylim[1], ls='--')
+        dx = 400
+        xticks = np.linspace(old_xticks[0] - .5 * old_xticks[-1] + 400, old_xticks[-1] - .5 * old_xticks[-1] - 400, old_xticks.size)
         xticks = np.array(xticks, dtype=np.int)
         ax.set_xticklabels(xticks)
         ax.set_xlabel('Time [ms] with respect to arrival at $\\bar{x}_i$')
-        ax.set_title('Response aligned to stimulus arrival at $\\bar{x}_i$')
+        ax.set_title('%s Response aligned to stimulus arrival' % params['IJCNN_code']) 
+#        ax.set_title('%s Response aligned to stimulus arrival at $\\bar{x}_i$' % params['IJCNN_code']) 
+#        ax.set_title('Response aligned to stimulus arrival at $\\bar{x}_i$')
         ax.set_ylabel(ylabel)
+        ax.set_ylim(ylim)
+        ax.set_xlim((dx, self.params['t_sim'] - dx))
 
-    def plot_vertical_line(self, ax, x_pos, color, ymax=None):
-        ls = '--'
+
+    def plot_vertical_line(self, ax, x_pos, color, ymax=None, ls='--'):
         ylim = ax.get_ylim()
         ymin = ylim[0]
         if ymax == None:
             ymax = ylim[1]
-        ax.plot((x_pos, x_pos), (ymin, ymax), ls=ls, c=color, lw=3)
+        ax.plot((x_pos, x_pos), (ymin, ymax), ls=ls, c=color, lw=5)
+        return (ymin, ymax)
 
 
     def load_selected_cells(self):
@@ -347,7 +357,7 @@ def average_multiple_simulations(folder_names):
         plot_anticipation(params) 
 
 
-def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20):
+def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20, dx=0.05):
     """
     w_pos -- when determining which cells to sample, this determines how much more important the position is compared to the speed in the tuning space
     start_location -- distance from the start point of motion
@@ -357,7 +367,7 @@ def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20):
     P.tau_filter = tau_filter
 
     # determine where to look for an anticipation signal
-    location_sampling_interval = 0.04
+    location_sampling_interval = dx
     n_locations_to_check = 3
     n_cells_per_pop = 30    # each /virtual/ electrode measures from this many cells
 
@@ -380,10 +390,10 @@ def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20):
 
 #    output_fn_base = params['figures_folder'] + 'snn_anticipation_wsx%.2e_wsv%.2e_taufilter%d_wpos%d_' % (params['w_sigma_x'], params['w_sigma_v'], P.tau_filter, w_pos)
 #    output_fn_base = params['figures_folder'] + 'snn_anticipation_' % %(P.tau_filter, w_pos, start_loc)
-    output_fn = params['figures_folder'] + 'snn_anticipation_tuning_prop_tau%d_wpos%d_x0%.2f.png' % (P.tau_filter, w_pos, start_location)
+    output_fn = params['figures_folder'] + 'snn_anticipation_tuning_prop_%s_wpos%d_x0%.2f_dx%.2f.png' % (params['IJCNN_code'], w_pos, start_location, dx)
 #    output_fn = output_fn_base + 'tuning_prop_wpos%.2f.png' % (w_pos)
     print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
+    pylab.savefig(output_fn, dpi=200)
 
     normalize = True # if True: plot the 'confidence' based on the normalized filtered spike rate
 #    normalize = False # if True: plot the 'confidence' based on the normalized filtered spike rate
@@ -396,9 +406,10 @@ def plot_anticipation(params, w_pos=1, start_location=0.15, tau_filter=20):
     P.create_fig()
     P.plot_aligned_exponential_spiketrains(fig_cnt=1, gids=gids, normalize=normalize)
 #    output_fn = output_fn_base + 'mean_exp_traces.png'
-    output_fn = params['figures_folder'] + 'snn_anticipation_meanexptraces_tau%d_wpos%d_x0%.2f.png' % (P.tau_filter, w_pos, start_location)
+    output_fn = params['figures_folder'] + 'snn_anticipation_meanexptraces_%s_tau%d_wpos%d_x0%.2f_dx%.2f.png' % (params['IJCNN_code'], P.tau_filter, w_pos, start_location, dx)
     print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
+    pylab.savefig(output_fn, dpi=200)
+    del P
 
 def sweep_params(params):
     """
@@ -406,10 +417,12 @@ def sweep_params(params):
     """
 
 #    for w_pos in [1]:#, 2, 5, 10, 15]:
-    for w_pos in [1, 2, 5, 10, 15]:
-        for tau_filter in [20, 50, 100]:
-            for start_location in [0.05, 0.10]:
-                plot_anticipation(params, w_pos=w_pos, start_location=start_location, tau_filter=tau_filter)
+    for start_location in [0.20]:
+        for w_pos in [1]:
+            for tau_filter in [25, 30]:
+#            for tau_filter in [20, 50, 100]:
+                for dx in [0.03]:
+                    plot_anticipation(params, w_pos=w_pos, start_location=start_location, tau_filter=tau_filter, dx=dx)
 
 if __name__ == '__main__':
 
