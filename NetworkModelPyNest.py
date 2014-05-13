@@ -141,8 +141,8 @@ class NetworkModel(object):
 
         if (not 'bcpnn_synapse' in nest.Models('synapses')):
             if self.params['Cluster']:
-                nest.sr('(/cfs/klemming/nobackup/b/bkaplan/Phils_code/share/nest/sli) addpath')
-                nest.Install('/cfs/klemming/nobackup/b/bkaplan/Phils_code/lib/nest/pt_module')
+                nest.sr('(/cfs/milner/scratch/b/bkaplan/BCPNN-Module/share/nest/sli) addpath')
+                nest.Install('/cfs/milner/scratch/b/bkaplan/BCPNN-Module/lib/nest/pt_module')
             else:
                 nest.Install('pt_module')
 

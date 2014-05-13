@@ -41,7 +41,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = 20
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 15
+        self.params['n_v'] = 10
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -215,7 +215,7 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 10 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
@@ -283,7 +283,7 @@ class parameter_storage(object):
                 'K': self.params['kappa'], \
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
-                'tau_i': 2000., \
+                'tau_i': 10., \
                 'tau_j': 10.,\
                 'tau_e': 10.,\
                 'tau_p': self.params['taup_bcpnn'],\
