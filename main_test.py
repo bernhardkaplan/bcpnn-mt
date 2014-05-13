@@ -149,7 +149,6 @@ if __name__ == '__main__':
         run_tracking(params, NM)
     else:
         NM.run_sim(params['t_sim'])
-#        NM.get_weights_after_learning_cycle()
 
     t_end = time.time()
     t_diff = t_end - t_0

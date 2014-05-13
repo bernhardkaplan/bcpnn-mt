@@ -22,9 +22,10 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        #self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = True
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['Cluster'] = False
+#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+#        self.params['Cluster'] = True
 
         # ###################
         # HEXGRID PARAMETERS
@@ -226,7 +227,9 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
+#        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
+#        self.params['test_stim_range'] = (0, self.params['n_speeds'])
+        self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
