@@ -101,7 +101,7 @@ class PlotPrediction(object):
 #                  'ytick.labelsize': 8,
 #                  'text.usetex': True,
                   'figure.figsize': fig_size}
-#        pylab.rcParams.update(params)
+        pylab.rcParams.update(params)
         
 
 
@@ -232,6 +232,8 @@ class PlotPrediction(object):
 
         self.x_stim = np.zeros(self.n_bins) # stimulus positions binned
         self.y_stim = np.zeros(self.n_bins)
+        self.x_stim_delayed = np.zeros(self.n_bins) # stimulus positions binned
+        self.y_stim_delayed = np.zeros(self.n_bins)
         # momentary result, based on the activity in one time bin
         self.x_avg = np.zeros(self.n_bins)
         self.y_avg = np.zeros(self.n_bins)
@@ -298,8 +300,10 @@ class PlotPrediction(object):
             t = (i + n_delay_bins) * self.time_binsize + .5 * self.time_binsize
 #            stim_pos_x = (mp[0] + mp[2] * t / self.params['t_stimulus']) % w# be sure that this works the same as utils.get_input is called!
 #            stim_pos_y = (mp[1] + mp[3] * t / self.params['t_stimulus']) % h # be sure that this works the same as utils.get_input is called!
-            stim_pos_x = (mp[0] + mp[2] * t / 1000. + mp[2] * self.params['sensory_delay']) % w# be sure that this works the same as utils.get_input is called!
-            stim_pos_y = (mp[1] + mp[3] * t / 1000. + mp[3] * self.params['sensory_delay']) % h # be sure that this works the same as utils.get_input is called!
+            stim_pos_x = (mp[0] + mp[2] * t / 1000.) % w# be sure that this works the same as utils.get_input is called!
+            stim_pos_y = (mp[1] + mp[3] * t / 1000.) % h # be sure that this works the same as utils.get_input is called!
+            self.x_stim_delayed[i] = (mp[0] + mp[2] * (t / 1000. - self.params['sensory_delay'])) % w# be sure that this works the same as utils.get_input is called!
+            self.y_stim_delayed[i] = (mp[1] + mp[3] * (t / 1000. - self.params['sensory_delay'])) % w# be sure that this works the same as utils.get_input is called!
             self.x_stim[i] = stim_pos_x
             self.y_stim[i] = stim_pos_y
             x_pred = self.x_confidence_binned[:, i] * self.x_tuning
@@ -458,11 +462,11 @@ class PlotPrediction(object):
 
     def create_fig(self):
         print "plotting ...."
-        rcParams = { 'axes.labelsize' : 32,
-                    'axes.titlesize'  : 32,
-                    'label.fontsize': 24,
-                    'xtick.labelsize' : 24,
-                    'ytick.labelsize' : 24,
+        rcParams = { 'axes.labelsize' : 48,
+                    'axes.titlesize'  : 48,
+                    'label.fontsize': 32,
+                    'xtick.labelsize' : 32,
+                    'ytick.labelsize' : 32,
                     'legend.fontsize': 16,
                     'lines.markeredgewidth' : 0}
         pylab.rcParams.update(rcParams)
@@ -641,14 +645,18 @@ class PlotPrediction(object):
         if plot_stim:
             ax = cax.axes
             y_pos_of_stim = np.zeros(self.n_bins)
+            y_pos_of_stim_delayed = np.zeros(self.n_bins)
             for t_bin in xrange(self.n_bins):
                 y_pos_of_stim[t_bin] = utils.get_grid_pos_1d(self.x_stim[t_bin], yticks)
+                y_pos_of_stim_delayed[t_bin] = utils.get_grid_pos_1d(self.x_stim_delayed[t_bin], yticks)
 #            for t_bin in xrange(self.n_bins-1):
 #                ax.plot((t_bin, t_bin+1), (y_pos_of_stim[t_bin], y_pos_of_stim[t_bin+1]), ls='--', c='w', lw=3, label='$x_{stim}$')
-            print '\nDEBUG\n', y_pos_of_stim
-            ax.plot((0, self.n_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='w', lw=3, label='$x_{stim}$')
+#            print '\nDEBUG\n', y_pos_of_stim
+#            ax.plot((0, self.n_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='w', lw=3, label='$x_{stim}$')
+
             n_delay_bins = self.params['sensory_delay'] / self.time_binsize
-            ax.plot((n_delay_bins, self.n_bins + n_delay_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='k', lw=3, label='$x_{delay}$')
+            ax.plot((n_delay_bins, self.n_bins + n_delay_bins), (y_pos_of_stim[0], y_pos_of_stim[-1]), ls='--', c='k', lw=10, label='$x_{delay}$')
+            ax.plot((n_delay_bins, self.n_bins + n_delay_bins), (y_pos_of_stim_delayed[0], y_pos_of_stim_delayed[-1]), ls='--', c='w', lw=10, label='$x_{delay}$')
 
 
     def plot_xdiff(self, fig_cnt=1, show_blank=None):

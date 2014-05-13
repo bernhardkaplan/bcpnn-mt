@@ -279,7 +279,7 @@ def plot_formula(params, d, tp, gid, plot_source_perspective=False):
     ax.legend(numpoints=1)
     ax.set_xlabel('Receptive field position $x$')
     ax.set_ylabel('Preferred speed $v_x$')
-    title += '\n$\sigma_X = %.2f\quad\sigma_V=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
+    title += '\n%s $\sigma_X = %.2f\quad\sigma_V=%.2f$' % (params['IJCNN_code'], params['w_sigma_x'], params['w_sigma_v'])
     ax.set_title(title)
     cbar_prob = fig.colorbar(CS)
     cbar_prob.set_label('Connection probability')
