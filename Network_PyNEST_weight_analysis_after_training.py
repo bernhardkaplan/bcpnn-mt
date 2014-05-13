@@ -5,7 +5,6 @@ import re
 import json
 import utils
 import MergeSpikefiles
-import pylab
 
 
 
@@ -167,7 +166,12 @@ if __name__ == '__main__':
 #    WA.plot_nspikes_histogram()
 
     output_fn = params['conn_mat_fn_base'] + 'ee_' + str(iteration) + '.dat'
-    WA.get_weight_matrix(plot=True, output_fn=output_fn)
+    if params['Cluster']:
+        WA.get_weight_matrix(plot=False, output_fn=output_fn)
+    else:
+        import pylab
+        WA.get_weight_matrix(plot=True, output_fn=output_fn)
+
 
 
 

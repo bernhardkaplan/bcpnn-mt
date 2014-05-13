@@ -286,7 +286,7 @@ class parameter_storage(object):
                 'K': self.params['kappa'], \
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
-                'tau_i': 10., \
+                'tau_i': 100., \
                 'tau_j': 10.,\
                 'tau_e': 10.,\
                 'tau_p': self.params['taup_bcpnn'],\
