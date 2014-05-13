@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        #self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        #self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
 
         # ###################
@@ -226,7 +226,8 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
+        #self.params['test_stim_range'] = (0, self.params['n_training_stim'])
+        self.params['test_stim_range'] = (0, self.params['n_speeds'])
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
@@ -283,7 +284,7 @@ class parameter_storage(object):
                 'K': self.params['kappa'], \
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
-                'tau_i': 10., \
+                'tau_i': 100., \
                 'tau_j': 10.,\
                 'tau_e': 10.,\
                 'tau_p': self.params['taup_bcpnn'],\

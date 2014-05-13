@@ -5,7 +5,6 @@
 import numpy as np
 import numpy.random as rnd
 import os
-from scipy.spatial import distance
 import copy
 import re
 
@@ -353,9 +352,6 @@ def distribute_n(n, n_proc, pid):
         n_max = int(n_min + n_per_proc)
     return (n_min, n_max)
 
-
-def euclidean(x, y):
-    return distance.euclidean(x, y)
 
 def gauss(x, mu, sigma):
     return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
