@@ -22,16 +22,17 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = True
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['Cluster'] = False
+        self.params['sim_id'] = 'DebugDummyNrns'
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 30
+        self.params['n_rf'] = 10
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -41,20 +42,47 @@ class parameter_storage(object):
             self.params['n_rf_x'] = 10
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 10
+        self.params['n_v'] = 7
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
+        self.params['n_recorder_neurons'] = 20  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+        self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
         self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
         self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
         self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
         self.params['n_orientation'] = 1 # number of preferred orientations
+
+        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
+
+        # receptive field size parameters
+        # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
+        # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
+        # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
+#        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
+#        self.params['rf_size_y_gradient'] = .2  # receptive field size for y-pos increases with distance to .5
+#        self.params['rf_size_x_min'] = .01      # cells situated at .5 have this receptive field size
+#        self.params['rf_size_y_min'] = .01      # cells situated at .5 have this receptive field size
+        self.params['rf_size_vx_gradient'] = .3 # receptive field size for vx-pos increases with distance to 0.0
+        self.params['rf_size_vy_gradient'] = .3 #
+        self.params['rf_size_vx_min'] = .05 # cells situated at .5 have this receptive field size
+        self.params['rf_size_vy_min'] = .05 # cells situated at .5 have this receptive field size
+        # regular tuning prop
+        self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
+        self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
+        self.params['rf_size_x_min'] = 1. / self.params['n_rf_x']
+        self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
+#        self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
+#        self.params['rf_size_vy_gradient'] = .0 #
+#        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+#        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+
 
         # ###################
         # NETWORK PARAMETERS
@@ -103,8 +131,14 @@ class parameter_storage(object):
                     'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, 'tau_m': 10.0, \
                     'tau_minus': 20.0, 'tau_minus_triplet': 110.0, \
                     'n_synapses': 3, 'tau_syn': [3., 100., 15.], 'receptor_types': [0, 1, 2]}
+            self.params['cell_params_recorder_neurons'] = self.params['cell_params_exc'].copy()
+            self.params['cell_params_recorder_neurons']['V_th'] = 500. # these neurons should not spike, but only record the 'free membrane potential'
+
             self.params['v_init'] = self.params['cell_params_exc']['V_m'] + .5 * (self.params['cell_params_exc']['V_th'] - self.params['cell_params_exc']['V_m'])
             self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['V_th'] - self.params['cell_params_exc']['V_m'])
+            self.params['C_m_mean'] = self.params['cell_params_exc']['C_m']
+            self.params['C_m_sigma'] = .1 * self.params['C_m_mean']
+
         else:
             self.params['tau_syn_exc'] = 5.0 # 10.
             self.params['tau_syn_inh'] = 10.0 # 20.
@@ -197,8 +231,6 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['blur_X'], self.params['blur_V'] = .10, .10
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
@@ -215,8 +247,8 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_cycles'] = 1 # one cycle comprises training of all n_speeds
+        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
         # if one speed is trained, it is presented starting from this number on different locations
@@ -239,7 +271,7 @@ class parameter_storage(object):
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
-        self.params['t_training_stim'] = 2000.  # [ms] time each stimulus is presented
+        self.params['t_training_stim'] = 1000.  # [ms] time each stimulus is presented
         self.params['t_training_pause'] = 200.
         self.params['t_test_stim'] = self.params['t_training_stim'] + self.params['t_training_pause']
 
@@ -339,13 +371,13 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%d-%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
-                        self.params['n_cycles'], self.params['n_speeds'], \
+                folder_name = 'TrainingSim_%s_%dx%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
+                        self.params['sim_id'], self.params['n_cycles'], self.params['n_speeds'], \
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
-                        self.params['n_test_stim'], 
+                folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
+                        self.params['sim_id'], self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'])
             folder_name += '/'
@@ -439,6 +471,7 @@ class parameter_storage(object):
         # tuning properties and other cell parameter files
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder']) # for excitatory cells
         self.params['tuning_prop_inh_fn'] = '%stuning_prop_inh.prm' % (self.params['parameters_folder']) # for inhibitory cells
+        self.params['receptive_fields_exc_fn'] = self.params['parameters_folder'] + 'receptive_field_sizes_exc.txt'
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])

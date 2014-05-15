@@ -147,7 +147,7 @@ if __name__ == '__main__':
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = False
+    load_files = True
     record = False
     save_input_files = not load_files
 
@@ -156,6 +156,7 @@ if __name__ == '__main__':
     if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
     NM.setup()
+#    exit(1)
     NM.create()
     NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
     NM.connect()

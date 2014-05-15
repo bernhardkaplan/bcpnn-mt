@@ -13,6 +13,8 @@ import numpy as np
 import sys
 import os
 import utils
+import matplotlib.patches as mpatches
+from matplotlib.collections import PatchCollection
 from FigureCreator import plot_params
 pylab.rcParams.update(plot_params)
 
@@ -23,6 +25,8 @@ class Plotter(object):
         tp_fn = self.params['tuning_prop_means_fn']
         print 'Loading', tp_fn
         self.tp = np.loadtxt(tp_fn)
+        print 'Loading', self.params['receptive_fields_exc_fn']
+        self.rfs = np.loadtxt(self.params['receptive_fields_exc_fn'])
 
     def plot_tuning_prop(self):
 
@@ -53,21 +57,27 @@ class Plotter(object):
         pylab.savefig(output_fn)
 
 
+
     def plot_tuning_space(self):
 
         fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.set_xlabel('Receptive field center $x$', fontsize=18)
         ax.set_ylabel('Preferred speed', fontsize=18)
-        for i in xrange(self.tp[:, 0].size):
-            ax.plot(self.tp[i, 0], self.tp[i, 2], 'o', c='k', markersize=5)
+        patches = []
+        for gid in xrange(self.tp[:, 0].size):
+            ax.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=3)
+            ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2])
+            patches.append(ellipse)
 
+        collection = PatchCollection(patches, alpha=0.1)
+        ax.add_collection(collection)
         ylim = ax.get_ylim()
-        ax.set_title('Tuning property space')
         ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
         output_fn = self.params['figures_folder'] + 'tuning_space.png'
         print 'Saving to:', output_fn
         pylab.savefig(output_fn)
+
 
 
 if __name__ == '__main__':
