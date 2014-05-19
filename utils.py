@@ -45,37 +45,46 @@ def convert_adjacency_lists(params, iteration=0):
     """
     Convert the adjacency lists from target-indexed to source-indexed.
     """
-    fns = []
-    conn_mat_fn = params['adj_list_tgt_fn_base'] + 'AS_(\d)_(\d+).json'
-    to_match = conn_mat_fn.rsplit('/')[-1]
-    for fn in os.listdir(os.path.abspath(params['connections_folder'])):
-        m = re.match(to_match, fn)
-        if m:
-            it_ = int(m.groups()[0])
-            if it_ == iteration:
-                fn_abs_path = params['connections_folder'] +  fn
-                fns.append(fn_abs_path)
-    adj_list_tgt = {}
-    for fn in fns:
-        f = file(fn, 'r')
-        print 'utils.convert_adjacency_lists: Loading weights:', fn
-        d = json.load(f)
-        adj_list_tgt.update(d)
-    
-    adj_list_src = {}
-    for tgt in adj_list_tgt.keys():
-        for (src, w) in adj_list_tgt[tgt]:
-            if int(src) not in adj_list_src.keys():
-                adj_list_src[int(src)] = []
-            else:
-                adj_list_src[int(src)].append([int(tgt), float(w)])
+
     output_fn = params['adj_list_src_fn_base'] + 'merged.json'
-    print 'Writing source - indexed adjacency list to :', output_fn
-    f = file(output_fn, 'w')
-    json.dump(adj_list_src, f, indent=2)
-    f.flush()
-    f.close()
-    return adj_list_src
+    if os.path.exists(output_fn):
+        print 'Loading data from:', output_fn
+        f = file(output_fn, 'r')
+        d = json.load(f)
+        return d
+    else:
+        fns = []
+        conn_mat_fn = params['adj_list_tgt_fn_base'] + 'AS_(\d)_(\d+).json'
+        to_match = conn_mat_fn.rsplit('/')[-1]
+        for fn in os.listdir(os.path.abspath(params['connections_folder'])):
+            m = re.match(to_match, fn)
+            if m:
+                it_ = int(m.groups()[0])
+                if it_ == iteration:
+                    fn_abs_path = params['connections_folder'] +  fn
+                    fns.append(fn_abs_path)
+        adj_list_tgt = {}
+        for fn in fns:
+            f = file(fn, 'r')
+            print 'utils.convert_adjacency_lists: Loading weights:', fn
+            d = json.load(f)
+            adj_list_tgt.update(d)
+        
+        adj_list_src = {}
+        for tgt in adj_list_tgt.keys():
+            for (src, w) in adj_list_tgt[tgt]:
+                if int(src) not in adj_list_src.keys():
+                    adj_list_src[int(src)] = []
+                else:
+                    adj_list_src[int(src)].append([int(tgt), float(w)])
+        output_fn = params['adj_list_src_fn_base'] + 'merged.json'
+        print 'Writing source - indexed adjacency list to :', output_fn
+        f = file(output_fn, 'w')
+        json.dump(adj_list_src, f, indent=2)
+        f.flush()
+        f.close()
+        return adj_list_src
+
 
 def get_adj_list_src_indexed(params):
     return convert_adjacency_lists(params)
@@ -1397,10 +1406,9 @@ def convert_to_url(fn):
     return s
 
 
-def select_well_tuned_cells(tp, mp, params, n_cells):
-
-    w_pos = 10.
-    x_diff = (tp[:, 0] - mp[0])**2 * w_pos + (tp[:, 1] - mp[1])**2 * w_pos + (tp[:, 2] - mp[2])**2 + (tp[:, 3] - mp[3])**2 + (tp[:, 4] - mp[4])**2
+def select_well_tuned_cells(tp, mp, n_cells, w_pos=5.):
+#    w_pos = 10.
+    x_diff = (tp[:, 0] - mp[0])**2 * w_pos + (tp[:, 1] - mp[1])**2 * w_pos + (tp[:, 2] - mp[2])**2 + (tp[:, 3] - mp[3])**2# + (tp[:, 4] - mp[4])**2
     idx_sorted = np.argsort(x_diff)
     return idx_sorted[:n_cells]
     

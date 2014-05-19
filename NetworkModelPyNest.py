@@ -211,6 +211,10 @@ class NetworkModel(object):
                 self.local_idx_exc += self.get_local_indices(pop)
                 self.list_of_exc_pop[hc].append(pop)
                 self.exc_gids += pop
+        local_gids_dict = {}
+        local_gids_dict.update({gid : self.pc_id for gid in self.local_idx_exc})
+        f = file(self.params['local_gids_fn_base'] + '%d.json' % (self.pc_id), 'w')
+        json.dump(local_gids_dict, f)
 
         ##### UNSPECIFIC INHIBITORY CELLS
         for hc in xrange(self.params['n_hc']):
@@ -887,18 +891,21 @@ class NetworkModel(object):
 
         t_stop = time.time()
         self.times['t_get_weights'] = t_stop - t_start
-        self.get_weights_to_recorder_neurons()
+#        self.get_weights_to_recorder_neurons()
 
 
 
-    def get_weights_to_recorder_neurons(self):
+    def connect_recorder_neurons(self):
+
         my_adj_list = {}
-        for src_hc in xrange(self.params['n_hc']):
-            print 'get_weights_after_learning_cycle: Proc %d src_hc %d' % (self.pc_id, src_hc)
-            for src_mc in xrange(self.params['n_mc_per_hc']):
-                src_pop = self.list_of_exc_pop[src_hc][src_mc]
-                tgt_pop = self.recorder_neurons
-                conns = nest.GetConnections(src_pop, tgt_pop) # get the list of connections stored on the current MPI node
+        f = file(self.params['recorder_neurons_gid_mapping'], 'r')
+        gid_mapping = json.load(f)
+        for rec_nrn in self.recorder_neurons:
+            mirror_gid = gid_mapping[rec_nrn]
+            for src_hc in xrange(self.params['n_hc']):
+                for src_mc in xrange(self.params['n_mc_per_hc']):
+                    src_pop = self.list_of_exc_pop[src_hc][src_mc]
+                    conns = nest.GetConnections(src_pop, [mirror_gid]) # get the list of connections stored on the current MPI node
                 for c in conns:
                     cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
                     if (cp[0]['synapse_model'] == 'bcpnn_synapse'):
@@ -1010,9 +1017,24 @@ class NetworkModel(object):
             d[:, 0] = time[idx]
         np.savetxt(fn, d)
 
+
     def print_times(self):
         fn_out = self.params['tmp_folder'] + 'times.json'
         f = file(fn_out, 'w')
         json.dump(self.times, f, indent=0, ensure_ascii=True)
 
-         
+
+    def merge_local_gid_files(self):
+        print 'Updating the local_gid file ...'
+        local_gids_dict = {}
+        for pid in xrange(self.n_proc):
+            f = file(self.params['local_gids_fn_base'] + '%d.json' % (pid), 'r')
+            d = json.load(f)
+            local_gids_dict.update(d)
+
+        f = file(self.params['local_gids_merged_fn'], 'w')
+        json.dump(local_gids_dict, f, indent=1)
+        f.flush()
+
+
+

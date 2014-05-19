@@ -1,9 +1,6 @@
 """
-Simple network with a Poisson spike source projecting to populations of of IF_cond_exp neurons
-
-on the cluster:
-    frioul_batch -M "[['w_tgt_in_per_cell_ee', 'w_tgt_in_per_cell_ee', 'w_tgt_in_per_cell_ee'],[0.4, 0.8, 1.2]]" 'python NetworkSimModuleNoColumns.py'
-
+Network with hyper and minicolumns starts with all-to-all connectivity but gain=0, i.e. offline learning.
+The training parameters are defined in simulation_parameters.py
 
 """
 import time
@@ -172,9 +169,12 @@ if __name__ == '__main__':
         NM.run_sim(params['t_sim'])
         NM.get_weights_after_learning_cycle()
 
+#    utils.merge_and_sort_files(params['local_gids_fn_base'], params['local_gids_merged_fn'])
+    NM.merge_local_gid_files()
     t_end = time.time()
     t_diff = t_end - t_0
-    print 'Removing empty files ...'
-    utils.remove_empty_files(params['spiketimes_folder'])
+    if NM.pc_id == 0:
+        print 'Removing empty files ...'
+        utils.remove_empty_files(params['spiketimes_folder'])
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
 

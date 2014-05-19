@@ -139,6 +139,7 @@ if __name__ == '__main__':
 #    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True)
     NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True, training_params=training_params)
     NM.connect()
+    NM.connect_recorder_neurons()
 
     if record:
         NM.record_v_exc()

@@ -20,21 +20,28 @@ from Network_PyNEST_weight_analysis_after_training import WeightAnalyser
 #params = ps.params
 
 
-def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False):
+def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False, clim=None):
     """
     the adj_list is assumed to be the target - indexe adjacency list
     """
 
-    assert (gid in adj_list.keys()), 'ERROR: gid not found in the adjacency list provided'
-    targets_weights = np.array(adj_list[gid])
+    keys_are_int = False
+    try:
+        assert (gid in adj_list.keys()), 'ERROR: gid not found in the adjacency list provided'
+        gid_key = gid
+    except:
+        assert (str(gid) in adj_list.keys()), 'ERROR: gid not found in the adjacency list provided'
+        gid_key = str(gid)
+    targets_weights = np.array(adj_list[gid_key])
     target_gids = targets_weights[:, 0].astype(int) - 1 # - 1 because it's NEST
     weights = targets_weights[:, 1]
     delays = np.ones(weights.size)
     x_tgt = tp[target_gids, 0]
     vx_tgt = tp[target_gids, 2]
+    tp_cell = tp[gid_key, :]
 
-    autolimit = True
-    if autolimit:
+    autolimit = False
+    if autolimit == True:
         x_min, x_max = .9 * x_tgt.min(), 1.1 * x_tgt.max()
         if np.sign(vx_tgt.min()) == -1:
             vx_min = 1.1 * vx_tgt.min()
@@ -42,13 +49,15 @@ def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False):
             vx_min = .9 * vx_tgt.min()
         vx_max = 1.3 * vx_tgt.max()
     else:
-        ylim = (-3.5, 4)
+        ylim = (-.1, tp_cell[2] + 1.5)
+#        xlim = (tp_cell[0] - 1.0, tp_cell[0] + 1.0]
         xlim = (0.0, 1.0)
         x_min, x_max = xlim[0], xlim[1]
         vx_min, vx_max = ylim[0], ylim[1]
 
-    dx = 0.04 * (x_max - x_min)
-    dvx = 0.04 * (vx_max - vx_min)
+    granularity = 0.07 # should not be too small, i.e. > 0.02
+    dx = granularity * (x_max - x_min)
+    dvx = granularity * (vx_max - vx_min)
     x_grid, vx_grid = np.mgrid[slice(x_min, x_max, dx), 
                     slice(vx_min, vx_max, dvx)]
 
@@ -67,7 +76,7 @@ def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False):
                 'xtick.labelsize' : 24, 
                 'ytick.labelsize' : 24, 
                 'legend.fontsize': 20, 
-                'figure.subplot.left':.10,
+                'figure.subplot.left':.15,
                 'figure.subplot.bottom':.08,
                 'figure.subplot.right':.95,
                 'figure.subplot.top':.90, 
@@ -77,25 +86,52 @@ def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False):
     ax = fig.add_subplot(111)
 
     z_data = z_data
+
+#    if clim != None:
+#        cmap_name = 'bwr'
+#        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])#, clip=True)
+#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap_name)
+#        m.set_array(np.arange(clim[0], clim[1], 0.01))
+
     cmap = pylab.get_cmap('jet')
-    n_levels = 200
+    if clim != None:
+        levels = np.arange(clim[0], clim[1], 0.01)
+    else:
+        levels = 100
     CS = ax.contourf(x_grid + dx / 2.,
-                vx_grid + dvx / 2., z_data, n_levels, \
+                vx_grid + dvx / 2., z_data, levels, \
+                extend='both',
                   cmap=cmap)
+#    CS = ax.contourf(x_grid + dx / 2.,
+#                vx_grid + dvx / 2., z_data, n_levels, \
+#                  cmap=cmap)
 
     # use weights as dot sizes
-    markersize_cell = 15
-    markersize_min = 4
-    markersize_max = 10
+    markersize_cell = 30
+    markersize_min = 2
+    markersize_max = 12
     markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
-    norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
-#    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
-    m.set_array(delays)
-    rgba_colors = m.to_rgba(delays)
+    if plot_delay:
+        markersizes = utils.linear_transformation(delays, markersize_min, markersize_max)
+        norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
+#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
+        m.set_array(delays)
+        rgba_colors = m.to_rgba(delays)
+
+    plot_weights = not plot_delay
+    if plot_weights:
+        markersizes = utils.linear_transformation(np.abs(weights), markersize_min, markersize_max)
+        norm = matplotlib.colors.Normalize(vmin=np.abs(weights).min(), vmax=np.abs(weights).max())
+#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large weights -- bright, small weights -- black
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large weights -- black, small weights -- white
+        m.set_array(np.abs(weights))
+        rgba_colors = m.to_rgba(np.abs(weights))
+
     for i_, tgt in enumerate(target_gids):
         ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
-    ax.plot(tp[gid, 0], tp[gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=0, label='source')
+    ax.plot(tp_cell[0], tp_cell[2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source', zorder=target_gids.size + 10)
+    print 'DEBUG cell', tp_cell[0], tp_cell[2]
     ax.legend(numpoints=1)
 
     # set colorbars and labels
@@ -106,6 +142,10 @@ def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False):
         cbar_delay = fig.colorbar(m)
         cbar_delay.set_label('Delay [ms]')
 
+    if plot_weights:
+        cbar_weight = fig.colorbar(m)
+        cbar_weight.set_label('Weight [a.u.]')
+
     # autoscale figure limits
     if autolimit:
         ylim = (vx_edges[1], vx_edges[-2])
@@ -113,16 +153,17 @@ def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False):
     else:
         ylim = (-3.5, 4)
         xlim = (0.6, 0.72)
-    output_fig = params['figures_folder'] + 'contour_connectivity_gid%d.png' % (gid)
+    output_fig = params['figures_folder'] + 'contour_connectivity_gid%d_taui%d.png' % (gid, params['taui_bcpnn'])
 
-    ylim = (.5 * vx_edges[1], vx_edges[-2])
+    ylim = (.45 * vx_edges[1], vx_edges[-2])
     xlim = (x_edges[1], x_edges[-2])
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
+    print 'DEBUG xlim ylim', ax.get_xlim(), ax.get_ylim()
 
     ax.set_xlabel('Receptive field position $x$')
     ax.set_ylabel('Preferred speed $v_x$')
-    title = 'Distribution of outgoing connections for one example source cell\n'
+    title = 'Distribution of outgoing connections for \none example source cell, $\\tau_{z_{i}}= %d$ [ms]\n' % params['taui_bcpnn']
 #    title += '$\sigma_X = %.2f\quad\sigma_V=%.2f$' % (params['w_sigma_x'], params['w_sigma_v'])
     ax.set_title(title)
 
@@ -170,150 +211,13 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
 
 
 
-def plot_formula(params, d, tp, gid, plot_source_perspective=False):
-
-    print 'Plotting connectivity formula as contour plot ...'
-    # get target cells and connection weights
-    if plot_source_perspective:
-        connections = utils.get_targets(d, gid)
-        connection_gids = connections[:, 1].astype(int)
-        print 'Cell %d is projecting to: ' % gid, connection_gids
-        title = 'Distribution of outward connection probabilities'
-    else:
-        connections = utils.get_sources(d, gid)
-        connection_gids = connections[:, 0].astype(int)
-        print 'Cell %d is receiving input from: ' % gid, connection_gids
-        title = 'Distribution of incoming connection probabilities'
-    weights = connections[:, 2]
-    delays = connections[:, 3]
-    x_conn = tp[connection_gids, 0]
-    vx_conn = tp[connection_gids, 2]
-
-    print 'DEBUG weights:', weights, weights.sum()
-    print 'DEBUG x_conn:', x_conn
-    print 'DEBUG vx_conn:', vx_conn
-
-    # # # # # # # # # # # # 
-    # plot the formula 
-    # # # # # # # # # # # # 
-    n_pts = 500000
-    autolimit = True
-    if autolimit:
-        x_min, x_max = .0, 0.6
-#        x_min, x_max = .0, 1.
-        vx_min = min(.7 * tp[gid, 2], np.min(.7 * vx_conn))
-        vx_max = max(1.2 * tp[gid, 2], np.max(1.2 * vx_conn))
-
-        print 'x_min', x_min
-        print 'x_max', x_max
-        print 'vx_min', vx_min
-        print 'vx_max', vx_max
-
-    dx = 0.04 * (x_max - x_min)
-    dvx = 0.04 * (vx_max - vx_min)
-    x_sample = np.random.uniform(x_min, x_max, n_pts)
-    vx_sample = np.random.uniform(vx_min, vx_max, n_pts)
-
-    if plot_source_perspective:
-        z = get_pconn_source_perspective(params, tp, gid, x_sample, vx_sample)
-        cell_label = 'source GID' #=%d' % (gid)
-    else:
-        # plot as the simulation code works
-        z = get_pconn_target_perspective(params, tp, gid, x_sample, vx_sample)
-        cell_label = 'target GID' #=%d' % (gid)
-    
-    clip_formula_at_connradius = False
-    if clip_formula_at_connradius:
-        # apply connection radius
-        latency = d_ij / np.abs(tp[gid, 2])
-        invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
-        invalid_idx = np.nonzero(latency * params['delay_scale'] < params['delay_range'][0])[0]
-        print 'DEBUG: # of neurons with a too short latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
-        z[invalid_idx] = 0.
-        invalid_idx = np.nonzero(latency * params['delay_scale'] > params['delay_range'][1])[0]
-        print 'DEBUG: # of neurons with a too long latency = ', invalid_idx.size, 'total number of source = ', tp_src[:, 0].size
-        z[invalid_idx] = 0.
-
-    x_grid = np.arange(x_min, x_max, dx) 
-    vx_grid = np.arange(vx_min, vx_max, dvx)
-    # grid the data
-    z_grid = griddata(x_sample, vx_sample, z, x_grid, vx_grid)#, interp='linear')
-    n_levels = 300
-
-    rcParams = { 'axes.labelsize' : 32,
-                'axes.titlesize'  : 32,
-                'label.fontsize': 20,
-                'xtick.labelsize' : 24, 
-                'ytick.labelsize' : 24, 
-                'legend.fontsize': 18, 
-                'figure.subplot.left':.15,
-#                'figure.subplot.bottom':.10,
-#                'figure.subplot.right':.95,
-#                'figure.subplot.top':.90, 
-                'lines.markeredgewidth' : 0}
-    pylab.rcParams.update(rcParams)
-    fig = pylab.figure(figsize=(14, 10))
-    ax = fig.add_subplot(111)
-    CS = ax.contourf(x_grid, vx_grid, z_grid, n_levels, cmap=pylab.cm.jet,
-                      vmax=abs(z_grid).max(), vmin=-abs(z_grid).max())
-    
-    # # # # # # # # # # # # 
-    # plot the connected cells
-    # # # # # # # # # # # # 
-    # use weights as dot sizes
-    fontsize = 24
-    markersize_cell = 25
-    markersize_min = 4
-    markersize_max = 10
-    markersize_others = 1
-    markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
-    norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
-    # cmap == bone: large delays -- bright, short delays -- black
-    delay_map = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # cmap == binary: large delays -- black, short delays -- white
-    delay_map.set_array(delays)
-    rgba_colors = delay_map.to_rgba(delays)
-    for i_, tgt in enumerate(connections):
-        ax.plot(x_conn[i_], vx_conn[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
-
-    # check where other cells are situated
-    ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=1, c='k', markersize=markersize_others)
-
-    # plot the center of mass for all connections
-    cms = utils.get_connection_center_of_mass(connection_gids, weights, tp)
-    print 'CMS-x:', cms[0], 'cell x-pos:', tp[gid, 0]
-    print 'CMS-vx:', cms[1], 'cell vx:', tp[gid, 2]
-    ax.plot(cms[0], cms[1], 'D', markeredgewidth=1, markersize=np.int(markersize_cell/2 + 1), c='g', label='Connection center-of-mass')
-    
-    ax.plot(tp[gid, 0], tp[gid, 2], '*', markeredgewidth=1, markersize=markersize_cell, c='y', label=cell_label)
-    ax.legend(numpoints=1)
-    ax.set_xlabel('Receptive field position $x$')
-    ax.set_ylabel('Preferred speed $v_x$')
-    title += '\n%s $\sigma_X = %.2f\quad\sigma_V=%.2f$' % (params['IJCNN_code'], params['w_sigma_x'], params['w_sigma_v'])
-    ax.set_title(title)
-    cbar_prob = fig.colorbar(CS)
-    cbar_prob.set_label('Connection probability')
-#    cbar_delay = fig.colorbar(delay_map)
-#    cbar_delay.set_label('Delay [ms]')
-
-#    ylim = (vx_min, vx_max)
-    ylim = (vx_grid[1], vx_grid[-1])
-    xlim = (x_grid[1], x_grid[-1])
-    ax.set_ylim(ylim)
-    ax.set_xlim(xlim)
-
-    if clip_formula_at_connradius:
-        output_fig = params['figures_folder'] + 'connection_probabilities_%d_wsx%.2e_wsv%.2e_clipped.png' % (gid, params['w_sigma_x'], params['w_sigma_v'])
-    else:
-        output_fig = params['figures_folder'] + 'connection_probabilities_%d_wsx%.2e_wsv%.2e.png' % (gid, params['w_sigma_x'], params['w_sigma_v'])
-    print 'Saving figure to:', output_fig
-    pylab.savefig(output_fig, dpi=200)
-
 
 
 
 if __name__ == '__main__':
 
     np.random.seed(0)
+    gid = None
     if len(sys.argv) > 1:
         if sys.argv[1].isdigit():
             gid = int(sys.argv[1])
@@ -333,7 +237,9 @@ if __name__ == '__main__':
 
     tp = np.loadtxt(params['tuning_prop_means_fn']) #load the data and merge files before if necessary
 
-    adj_list_src_index = utils.convert_adjacency_lists(params)
+    adj_list_fn = params['adj_list_src_fn_base'] + 'merged.json'
+    if not os.path.exists(adj_list_fn):
+        adj_list_src_index = utils.convert_adjacency_lists(params)
     WA = WeightAnalyser(params)
     adj_list = WA.load_adj_lists(src_tgt='src')
 
@@ -342,8 +248,13 @@ if __name__ == '__main__':
 #    d = WA.get_weight_matrix_src_index(plot=False, output_fn=None)
     # determine which cell to plot
 #    plot_source_perspective = False
-    gid = 1
-    plot_contour_connectivity(params, adj_list, tp, gid) # connection weights laid out in the tuning space and put on a grid --> contour
+#    gid = 1
+    if gid == None:
+        mp = [0.5, 0., .5, .0]
+        gid = 1 + utils.select_well_tuned_cells(tp, mp, 1, w_pos=1.)[0]
+        print 'Plotting gid:', gid
+    clim = (-20, 20)
+    plot_contour_connectivity(params, adj_list, tp, gid, clim=clim) # connection weights laid out in the tuning space and put on a grid --> contour
 
 #    random.seed(0)
 #    if not os.path.exists(params['merged_conn_list_ee']):

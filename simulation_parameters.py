@@ -42,7 +42,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = 20
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 10
+        self.params['n_v'] = 2
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -483,6 +483,9 @@ class parameter_storage(object):
         # files for "recorder_neurons" recording the "free" membrane potential
         self.params['free_vmem_fn_base'] = 'free_vmem'
         self.params['recorder_neurons_gid_mapping'] = self.params['parameters_folder'] + 'recorder_neurons_gid_mapping.json'
+        # file storing the gid and the PID 
+        self.params['local_gids_fn_base'] = self.params['data_folder'] + 'local_gids_'
+        self.params['local_gids_merged_fn'] = self.params['data_folder'] + 'merged_local_gids.json'
 
         # tuning properties and other cell parameter files
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder']) # for excitatory cells
