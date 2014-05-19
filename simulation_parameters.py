@@ -42,7 +42,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = 10
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 7
+        self.params['n_v'] = 10
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -189,7 +189,7 @@ class parameter_storage(object):
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh
-        self.params['w_ei_unspec'] = 50.    # untrained, unspecific PYR -> Basket connections
+        self.params['w_ei_unspec'] = 5.    # untrained, unspecific PYR -> Basket connections
         self.params['p_ei_unspec'] = .75     # probability for PYR -> Basket connections
 
         # inh - exc
@@ -247,8 +247,9 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 1 # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
+#        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
         # if one speed is trained, it is presented starting from this number on different locations
@@ -271,7 +272,7 @@ class parameter_storage(object):
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
-        self.params['t_training_stim'] = 1000.  # [ms] time each stimulus is presented
+        self.params['t_training_stim'] = 1500.  # [ms] time each stimulus is presented
         self.params['t_training_pause'] = 200.
         self.params['t_test_stim'] = self.params['t_training_stim'] + self.params['t_training_pause']
 
@@ -292,7 +293,8 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
 #        self.params['n_gids_to_record'] = self.params['n_exc']
-        self.params['n_gids_to_record'] = 20
+        self.params['n_gids_to_record'] = 20    # number to be sampled across some trajectory
+        self.params['gids_to_record'] = [181, 185]  # additional gids to be recorded 
         
         
         # ########################
@@ -300,7 +302,8 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 150.0   # should be as the maximum output rate (with inhibitory feedback)
 #        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
-        self.params['taup_bcpnn'] = 50000.
+        self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
+        self.params['taui_bcpnn'] = 100.
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_init_val'] = epsilon
 #        self.params['bcpnn_init_val'] = 1e-6
@@ -309,7 +312,7 @@ class parameter_storage(object):
                 'K': 1.0,\
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
-                'tau_i': 2000., \
+                'tau_i': self.params['taui_bcpnn'], \
                 'tau_j': 10.,\
                 'tau_e': 10.,\
                 'tau_p': self.params['taup_bcpnn'],\
@@ -468,6 +471,10 @@ class parameter_storage(object):
         self.params['rasterplot_inh_spec_fig'] = '%srasterplot_inh_spec.png' % (self.params['figures_folder'])
         self.params['rasterplot_inh_unspec_fig'] = '%srasterplot_inh_unspec.png' % (self.params['figures_folder'])
 
+        # files for "recorder_neurons" recording the "free" membrane potential
+        self.params['free_vmem_fn_base'] = 'free_vmem'
+        self.params['recorder_neurons_gid_mapping'] = self.params['parameters_folder'] + 'recorder_neurons_gid_mapping.json'
+
         # tuning properties and other cell parameter files
         self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder']) # for excitatory cells
         self.params['tuning_prop_inh_fn'] = '%stuning_prop_inh.prm' % (self.params['parameters_folder']) # for inhibitory cells
@@ -500,7 +507,8 @@ class parameter_storage(object):
         self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
 
         # used for different projections ['ee', 'ei', 'ie', 'ii'] for plotting
-        self.params['adj_list_tgt_fn_base'] = '%sadj_list_tgt_index_' % (self.params['connections_folder'])
+        self.params['adj_list_tgt_fn_base'] = '%sadj_list_tgt_index_' % (self.params['connections_folder']) # key = target_gid
+        self.params['adj_list_src_fn_base'] = '%sadj_list_src_index_' % (self.params['connections_folder']) # key = source_gid
         self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder'])
         self.params['delay_mat_fn_base'] = '%sdelay_mat_' % (self.params['connections_folder'])
 
@@ -558,6 +566,7 @@ class parameter_storage(object):
         print 'Writing parameters to: %s' % (fn)
         output_file = file(self.params['params_fn_json'], 'w')
         d = json.dump(self.params, output_file, indent=0)
+        output_file.flush()
 
     def load_params_from_file(self, fn):
         """

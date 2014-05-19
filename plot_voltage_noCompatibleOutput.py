@@ -83,11 +83,12 @@ if __name__ == '__main__':
         # folder / parameter file option
         param_fn = sys.argv[1]
         if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.info'
-            import NeuroTools.parameters as NTP
-            fn_as_url = utils.convert_to_url(param_fn)
-            print 'Loading parameters from', param_fn
-            params = NTP.ParameterSet(fn_as_url)
+            params = utils.load_params(param_fn)
+#            param_fn += '/Parameters/simulation_parameters.info'
+#            import NeuroTools.parameters as NTP
+#            fn_as_url = utils.convert_to_url(param_fn)
+#            print 'Loading parameters from', param_fn
+#            params = NTP.ParameterSet(fn_as_url)
             gids = np.loadtxt(params['gids_to_record_fn'])
             gids = gids[:n_to_plot].tolist()
             fn = params['exc_volt_fn_base'] + '.v'

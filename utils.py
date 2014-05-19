@@ -7,6 +7,79 @@ import numpy.random as rnd
 import os
 import copy
 import re
+import json
+
+
+def load_params(param_fn):
+    if os.path.isdir(param_fn):
+        param_fn = os.path.abspath(param_fn) + '/Parameters/simulation_parameters.json'
+    params = json.load(file(param_fn, 'r')) 
+    return params
+
+
+def convert_adjacency_list_to_connlist(adj_list, src_tgt='tgt'):
+    """
+    src_tgt -- if 'tgt' the keys in adj_list stand for the target GID
+    """
+
+    gids_key = []
+    gids_ = []
+    weights = []
+    for gid_key in adj_list.keys():
+        for i_, (gid_, w) in enumerate(adj_list[gid_key]):
+            gids_key.append(gid_key)
+            gids_.append(gid_)
+            weights.append(w)
+    output_array = np.zeros((len(gids_), 3)) 
+    if src_tgt == 'tgt':
+        output_array[:, 1] = np.array(gids_key)
+        output_array[:, 0] = np.array(gids_)
+    else:
+        output_array[:, 0] = np.array(gids_key)
+        output_array[:, 1] = np.array(gids_)
+    output_array[:, 2] = np.array(weights)
+    return output_array
+
+
+def convert_adjacency_lists(params, iteration=0):
+    """
+    Convert the adjacency lists from target-indexed to source-indexed.
+    """
+    fns = []
+    conn_mat_fn = params['adj_list_tgt_fn_base'] + 'AS_(\d)_(\d+).json'
+    to_match = conn_mat_fn.rsplit('/')[-1]
+    for fn in os.listdir(os.path.abspath(params['connections_folder'])):
+        m = re.match(to_match, fn)
+        if m:
+            it_ = int(m.groups()[0])
+            if it_ == iteration:
+                fn_abs_path = params['connections_folder'] +  fn
+                fns.append(fn_abs_path)
+    adj_list_tgt = {}
+    for fn in fns:
+        f = file(fn, 'r')
+        print 'utils.convert_adjacency_lists: Loading weights:', fn
+        d = json.load(f)
+        adj_list_tgt.update(d)
+    
+    adj_list_src = {}
+    for tgt in adj_list_tgt.keys():
+        for (src, w) in adj_list_tgt[tgt]:
+            if int(src) not in adj_list_src.keys():
+                adj_list_src[int(src)] = []
+            else:
+                adj_list_src[int(src)].append([int(tgt), float(w)])
+    output_fn = params['adj_list_src_fn_base'] + 'merged.json'
+    print 'Writing source - indexed adjacency list to :', output_fn
+    f = file(output_fn, 'w')
+    json.dump(adj_list_src, f, indent=2)
+    f.flush()
+    f.close()
+    return adj_list_src
+
+def get_adj_list_src_indexed(params):
+    return convert_adjacency_lists(params)
+
 
 def remove_files_from_folder(folder):
     print 'Removing all files from folder:', folder
@@ -748,8 +821,8 @@ def get_sources(conn_list, target_gid):
 
 def get_targets(conn_list, source_gid):
     n = conn_list[:, 0].size 
-    source = source_gid * np.ones(n)
-    mask = conn_list[:, 0] == source
+#    source = source_gid * np.ones(n)
+    mask = (conn_list[:, 0] == source_gid).nonzero()[0]
     targets = conn_list[mask, :]
     return targets
 
@@ -792,6 +865,21 @@ def get_cond_in(nspikes, conn_list, target_gid):
 #            spiketrains[int(d[i, gid_axis])].append(d[i, time_axis])
 #    return spiketrains
 
+def find_files(folder, to_match):
+    """
+    Use re module to find files in folder and return list of files matching the 'to_match' string
+    Arguments:
+    folder -- string to folder
+    to_match -- a string (regular expression) to match all files in folder
+    """
+    assert (to_match != None), 'utils.find_files got invalid argument'
+    list_of_files = []
+    for fn in os.listdir(folder):
+        m = re.match(to_match, fn)
+        if m:
+            list_of_files.append(fn)
+    return list_of_files
+
 
 def get_filenames(folder, to_match, to_match_contains_folder=True, return_abspath=True):
     """
@@ -801,7 +889,6 @@ def get_filenames(folder, to_match, to_match_contains_folder=True, return_abspat
     to_match_contains_folder -- if to_match contains the folder in the name, the folder is seperated from the to_match string
     """
     fns = []
-
     # find files written by different processes
     if to_match_contains_folder:
         to_match = to_match.rsplit('/')[-1]
@@ -1397,4 +1484,33 @@ def get_figsize(fig_width_pt, portrait=True):
         fig_size =  (fig_width, fig_height)      # exact figsize
     return fig_size
 
+
+def get_colorlist():
+    colorlist = ['k', 'b', 'r', 'g', 'm', 'c', 'y', \
+            '#00FF99', \
+            #light green
+            '#FF6600', \
+                    #orange
+            '#CCFFFF', \
+                    #light turquoise
+            '#FF00FF', \
+                    #light pink
+            '#0099FF', \
+                    #light blue
+            '#CCFF00', \
+                    #yellow-green
+            '#D35F8D', \
+                    #mauve
+            '#808000', \
+                    #brown-green
+            '#bb99ff', \
+                    # light violet
+            '#7700ff', \
+                    # dark violet
+            '#555555', \
+                    # dark grey
+            '#999999', \
+            '#CCCCCC', \
+                    ]
+    return colorlist
 

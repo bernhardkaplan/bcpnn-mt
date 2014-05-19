@@ -1283,7 +1283,7 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes = Non
 
 if __name__ == '__main__':
 
-    stim_range = (1, 20)
+    stim_range = (0, 1)
     if len(sys.argv) > 1:
         param_fn = sys.argv[1]
         if os.path.isdir(param_fn):
@@ -1296,5 +1296,6 @@ if __name__ == '__main__':
     else:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
         plot_prediction(stim_range=stim_range)
+
 
 #    pylab.show()

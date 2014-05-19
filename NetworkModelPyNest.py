@@ -250,13 +250,9 @@ class NetworkModel(object):
         self.initialize_vmem(self.local_idx_inh_spec)
         self.initialize_vmem(self.local_idx_inh_unspec)
 
-        self.recorder_free_mem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
-        nest.SetStatus(self.recorder_free_mem, [{"to_file": True, "withtime": True, 'label' : 'free_vmem'}])
-        print 'debug', type(self.recorder_free_mem), type(self.recorder_neurons)
-        print 'debug', self.recorder_free_mem, self.recorder_neurons
-#        nest.DivergentConnect([self.recorder_free_mem], self.recorder_neurons, weight=1., delay=self.params['dt'])
-#        nest.DivergentConnect([self.recorder_free_mem], self.recorder_neurons)
-        nest.DivergentConnect(self.recorder_free_mem, self.recorder_neurons)
+        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
+        nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
+        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
 
 
@@ -522,6 +518,7 @@ class NetworkModel(object):
         rnd_gids = np.array(rnd_, dtype=int)
         gids = sorted_gids[rnd_gids]
         # gids is the neurons that are to 'copied' for recorder neurons
+        self.recorder_neuron_gid_mapping = {}
 
         print 'DEBUG recorder gids:', gids
         # 1) connect the same input to recorder neurons as to the normal neurons
@@ -536,12 +533,12 @@ class NetworkModel(object):
             nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
+            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = unit
 
-            # TODO ? use bcpnn_synapse? 
-#            for hc in xrange(self.params['n_hc']):
-#                for mc in xrange(self.params['n_mc_per_hc']):
-#                    nest.ConvergentConnect(self.list_of_exc_pop[hc][mc], [unit], weight=0., delay=self.params['delay_ee_global'])
-#            conns = nest.GetConnections([neurons[0]], [neurons[1]])
+        f = file(self.params['recorder_neurons_gid_mapping'], 'w')
+        json.dump(self.recorder_neuron_gid_mapping, f, indent=2)
+
+
 
     def create_training_input_for_cells(self, gids, with_blank):
 
@@ -843,9 +840,10 @@ class NetworkModel(object):
         n_my_conns = 0
 #        my_units = np.array(self.local_idx_exc)[:, 0] # !GIDs are 1-aligned!
         my_units = self.local_idx_exc # !GIDs are 1-aligned!
-        my_adj_list = {}
+        my_adj_list_tgt = {}
+#        my_adj_list_src = {}
         for nrn in my_units:
-            my_adj_list[nrn] = []
+            my_adj_list_tgt[nrn] = []
 
         for src_hc in xrange(self.params['n_hc']):
             print 'get_weights_after_learning_cycle: Proc %d src_hc %d' % (self.pc_id, src_hc)
@@ -865,20 +863,32 @@ class NetworkModel(object):
                                 # this does not work for some reason: 
                                 # w = cp[0]['weight'] 
                                 if (w != 0):
-                                    my_adj_list[c[1]].append((c[0], w))
+                                    my_adj_list_tgt[c[1]].append([c[0], w])
+                                # update the source-indexed adjacency list
+#                                if c[0] not in my_adj_list_src.keys():
+#                                    my_adj_list_src[c[0]] = []
+#                                else:
+#                                    my_adj_list_src[c[0]].append([c[1], w])
+                                 
                         n_my_conns += len(conns)
 
         print 'Proc %d holds %d connections' % (self.pc_id, n_my_conns)
         output_fn = self.params['adj_list_tgt_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
         print 'Saving connection list to: ', output_fn
         f = file(output_fn, 'w')
-        json.dump(my_adj_list, f, indent=0, ensure_ascii=False)
+        json.dump(my_adj_list_tgt, f, indent=2)
+        f.flush()
+
+#        output_fn = self.params['adj_list_src_fn_base'] + 'AS_%d_%d.json' % (self.iteration, self.pc_id)
+#        print 'Saving connection list to: ', output_fn
+#        f = file(output_fn, 'w')
+#        json.dump(my_adj_list_src, f, indent=2)
+#        f.flush()
 
         t_stop = time.time()
         self.times['t_get_weights'] = t_stop - t_start
-
-
         self.get_weights_to_recorder_neurons()
+
 
 
     def get_weights_to_recorder_neurons(self):
@@ -900,6 +910,11 @@ class NetworkModel(object):
                         # w = cp[0]['weight'] 
                         if (w != 0):
                             my_adj_list[c[1]].append((c[0], w))
+        output_fn = self.params['adj_list_tgt_fn_base'] + 'recorderNrns_%d_%d.json' % (self.iteration, self.pc_id)
+        print 'Saving connection list to: ', output_fn
+        f = file(output_fn, 'w')
+        json.dump(my_adj_list, f, indent=0, ensure_ascii=False)
+
 
 
 
@@ -934,17 +949,21 @@ class NetworkModel(object):
         mp_r = np.array(self.params['motion_params'])
         # cells well tuned to the normal stimulus
         selected_gids_r, pops = utils.select_well_tuned_cells_trajectory(self.tuning_prop_exc, \
-                mp_r, params, self.params['n_gids_to_record'] / 2, 1)
+                mp_r, self.params, self.params['n_gids_to_record'] / 2, 1)
         mp_l = mp_r.copy()
         # opposite direction
         mp_l[2] *= (-1.)
         # cells well tuned to the normal stimulus
         selected_gids_l, pops = utils.select_well_tuned_cells_trajectory(self.tuning_prop_exc, \
-                mp_l, params, self.params['n_gids_to_record'] / 2, 1)
+                mp_l, self.params, self.params['n_gids_to_record'] / 2, 1)
         print 'Recording cells close to mp_l', mp_l, '\nGIDS:', selected_gids_l
         print 'Recording cells close to mp_r', mp_r, '\nGIDS:', selected_gids_r
          
-        gids_to_record = np.r_[selected_gids_r, selected_gids_l]
+        if len(self.params['gids_to_record']) > 0:
+            gids_to_record = np.r_[self.params['gids_to_record'], selected_gids_r, selected_gids_l]
+        else:
+            gids_to_record = np.r_[selected_gids_r, selected_gids_l]
+
         np.savetxt(self.params['gids_to_record_fn'], gids_to_record, fmt='%d')
         voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval' :0.5})
         nest.SetStatus(voltmeter,[{"to_file": True, "withtime": True, 'label' : 'exc_volt'}])
