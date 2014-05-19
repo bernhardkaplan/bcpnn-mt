@@ -1292,10 +1292,9 @@ if __name__ == '__main__':
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
-        plot_prediction(stim_range=stim_range, params=params)
+        plot_prediction(params=params)
     else:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
-        plot_prediction(stim_range=stim_range)
-
+        plot_prediction()
 
 #    pylab.show()

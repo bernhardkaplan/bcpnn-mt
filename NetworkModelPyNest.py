@@ -159,8 +159,8 @@ class NetworkModel(object):
 
         if (not 'bcpnn_synapse' in nest.Models('synapses')):
             if self.params['Cluster']:
-                nest.sr('(/cfs/klemming/nobackup/b/bkaplan/Phils_code/share/nest/sli) addpath')
-                nest.Install('/cfs/klemming/nobackup/b/bkaplan/Phils_code/lib/nest/pt_module')
+                nest.sr('(/cfs/milner/scratch/b/bkaplan/BCPNN-Module/share/nest/sli) addpath')
+                nest.Install('/cfs/milner/scratch/b/bkaplan/BCPNN-Module/lib/nest/pt_module')
             else:
                 nest.Install('pt_module')
 
@@ -333,8 +333,8 @@ class NetworkModel(object):
                     spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
             if (save_output and self.spike_times_container[i_].size > 1):
-                output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
-                np.savetxt(output_fn, rate_of_t)
+                #output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
+                #np.savetxt(output_fn, rate_of_t)
                 output_fn = self.params['input_st_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 np.savetxt(output_fn, np.array(spike_times))
         return True
@@ -412,8 +412,8 @@ class NetworkModel(object):
                     spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
             if save_output:
-                output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
-                np.savetxt(output_fn, rate_of_t)
+                #output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
+                #np.savetxt(output_fn, rate_of_t)
                 output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
                 np.savetxt(output_fn, np.array(spike_times))
         return True

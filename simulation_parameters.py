@@ -39,7 +39,7 @@ class parameter_storage(object):
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
             self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
-            self.params['n_rf_x'] = 10
+            self.params['n_rf_x'] = 20
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
         self.params['n_v'] = 10
@@ -52,7 +52,7 @@ class parameter_storage(object):
         self.params['n_recorder_neurons'] = 20  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
+        self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
         self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
         self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
         self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
@@ -184,8 +184,8 @@ class parameter_storage(object):
         self.params['w_ee_local'] = 5.
 
         # exc - exc: global
-        self.params['w_ee_global_max'] = 15.
-        self.params['w_ei_global_max'] = 10.
+        self.params['w_ee_global_max'] = 4.
+        self.params['w_ei_global_max'] = 15.
         self.params['delay_ee_global'] = 1. # [ms]
 
         # exc - inh
@@ -259,7 +259,9 @@ class parameter_storage(object):
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
+#        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
+#        self.params['test_stim_range'] = (0, self.params['n_speeds'])
+        self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
@@ -286,7 +288,7 @@ class parameter_storage(object):
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
             self.params['t_blank'] = 200
-        self.params['t_before_blank'] = self.params['t_start'] + 400.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_before_blank'] = self.params['t_start'] + 600.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
@@ -307,9 +309,15 @@ class parameter_storage(object):
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_init_val'] = epsilon
 #        self.params['bcpnn_init_val'] = 1e-6
+
+        self.params['kappa'] = 1.
+        if self.params['training_run']:
+            self.params['gain'] = 0.
+        else:
+            self.params['gain'] = 10.
         self.params['bcpnn_params'] =  {
                 'gain': 0.0, \
-                'K': 1.0,\
+                'K': self.params['kappa'], \
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
                 'tau_i': self.params['taui_bcpnn'], \
@@ -320,7 +328,7 @@ class parameter_storage(object):
                 'p_i': self.params['bcpnn_init_val'], \
                 'p_j': self.params['bcpnn_init_val'], \
                 'p_ij': self.params['bcpnn_init_val']**2, \
-                'weight': 1.0
+                'weight': 0.0
                 }
         # gain is set to zero in order to have no plasiticity effects while training
         # K: learning rate (how strong the p-traces get updated)
@@ -345,16 +353,17 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-#        self.params['w_exc_noise'] = 4e-3 * 5. / self.params['tau_syn_exc']         # [uS] mean value for noise ---< columns
-#        self.params['f_exc_noise'] = 2000# [Hz] 
-#        self.params['w_inh_noise'] = 4e-3 * 10. / self.params['tau_syn_inh']         # [uS] mean value for noise ---< columns
-#        self.params['f_inh_noise'] = 2000# [Hz]
+        #self.params['w_exc_noise'] = 2. # [nS] mean value for noise ---< columns
+        #self.params['f_exc_noise'] = 1000# [Hz] 
+        #self.params['w_inh_noise'] = 2. # [nS] mean value for noise ---< columns
+        #self.params['f_inh_noise'] = 1000# [Hz]
 
         # no noise:
         self.params['w_exc_noise'] = 1e-5          # [uS] mean value for noise ---< columns
         self.params['f_exc_noise'] = 1# [Hz]
         self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
         self.params['f_inh_noise'] = 1# [Hz]
+
 
     def set_vx_tau_transformation_params(self, vmin, vmax):
         tau_max, tau_min = self.params['tau_zi_max'], self.params['tau_zi_min']
@@ -382,7 +391,7 @@ class parameter_storage(object):
                 folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
-                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'])
+                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], self.params['w_ei_global_max'])
             folder_name += '/'
 
             self.params['folder_name'] = folder_name

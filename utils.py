@@ -426,9 +426,6 @@ def distribute_n(n, n_proc, pid):
     return (n_min, n_max)
 
 
-#def euclidean(x, y):
-#    return distance.euclidean(x, y)
-
 def gauss(x, mu, sigma):
     return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
 
