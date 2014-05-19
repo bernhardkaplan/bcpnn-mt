@@ -81,6 +81,14 @@ def get_adj_list_src_indexed(params):
     return convert_adjacency_lists(params)
 
 
+def remove_empty_files(folder):
+    for fn in os.listdir(folder):
+        path = os.path.abspath(folder) + '/%s' % fn
+        file_size = os.path.getsize(path)
+        if file_size == 0:
+            rm_cmd = 'rm %s' % (path)
+            os.system(rm_cmd)
+
 def remove_files_from_folder(folder):
     print 'Removing all files from folder:', folder
     path =  os.path.abspath(folder)

@@ -174,5 +174,7 @@ if __name__ == '__main__':
 
     t_end = time.time()
     t_diff = t_end - t_0
+    print 'Removing empty files ...'
+    utils.remove_empty_files(params['spiketimes_folder'])
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
 
