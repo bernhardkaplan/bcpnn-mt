@@ -5,6 +5,7 @@ import re
 import json
 import utils
 import MergeSpikefiles
+import pylab
 
 
 
@@ -197,7 +198,6 @@ if __name__ == '__main__':
     if params['Cluster']:
         WA.get_weight_matrix(plot=False, output_fn=output_fn)
     else:
-        import pylab
         WA.get_weight_matrix(plot=True, output_fn=output_fn)
 
 

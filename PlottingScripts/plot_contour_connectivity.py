@@ -250,7 +250,7 @@ if __name__ == '__main__':
 #    plot_source_perspective = False
 #    gid = 1
     if gid == None:
-        mp = [0.5, 0., .5, .0]
+        mp = [0.2, 0., .5, .0]
         gid = 1 + utils.select_well_tuned_cells(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
     clim = (-20, 20)

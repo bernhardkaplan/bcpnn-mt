@@ -25,31 +25,31 @@ class parameter_storage(object):
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
 #        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = 'DebugDummyNrns'
+        self.params['sim_id'] = 'DebugPause'
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 10
+        self.params['n_rf'] = 5
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
             self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
-            self.params['n_rf_x'] = 20
+            self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 2
+        self.params['n_v'] = 3
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
         self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['n_recorder_neurons'] = 20  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
+        self.params['n_recorder_neurons'] = 30  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
@@ -58,8 +58,8 @@ class parameter_storage(object):
         self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
         self.params['n_orientation'] = 1 # number of preferred orientations
 
-        self.params['v_max_tp'] = 3.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.1  # [a.u.] minimal velocity in visual space for tuning property distribution
 
         # receptive field size parameters
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
@@ -248,13 +248,14 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
-#        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
-        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_speeds'] = 2 # self.params['n_v'] # how many different speeds are trained per cycle
+#        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
         # if one speed is trained, it is presented starting from this number on different locations
         # for 1-D this is irrelevant and can be set to 1
         self.params['n_stim_per_direction'] = 1 
+#        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
@@ -275,7 +276,8 @@ class parameter_storage(object):
         # Otherwise, the same sequence(s) would enter in several experiments.
         self.params['np_random_seed'] = 0
         self.params['t_training_stim'] = 1500.  # [ms] time each stimulus is presented
-        self.params['t_training_pause'] = 200.
+        self.params['t_training_pause'] = 300.
+        # a test stim is presented for t_training_stim - t_training_pause
         self.params['t_test_stim'] = self.params['t_training_stim'] + self.params['t_training_pause']
 
         if self.params['training_run']:
@@ -388,7 +390,7 @@ class parameter_storage(object):
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'])
             else:
-                folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d' % ( \
+                folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d_wee%.1e_wei%.1e' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], self.params['w_ei_global_max'])

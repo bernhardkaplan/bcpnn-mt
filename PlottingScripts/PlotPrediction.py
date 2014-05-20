@@ -1201,7 +1201,7 @@ class PlotPrediction(object):
 #            ax.annotate(txt, (txt_pos_x, txt_pos_y), fontsize=14, color='w')
 
 
-def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes = None):
+def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None):
     """
     Make use of the PlotPrediction class
     """
@@ -1229,6 +1229,7 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes = Non
         t_stim = params['t_training_stim']
     else:
         t_stim = params['t_test_stim']
+
     if stim_range == None:
         if params['training_run']:
             stim_range = (0, params['n_training_stim'])
@@ -1284,17 +1285,15 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes = Non
 if __name__ == '__main__':
 
     stim_range = (0, 1)
-    if len(sys.argv) > 1:
-        param_fn = sys.argv[1]
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
-        import json
-        f = file(param_fn, 'r')
-        print 'Loading parameters from', param_fn
-        params = json.load(f)
+    if len(sys.argv) == 2:
+        params = utils.load_params(sys.argv[1])
         plot_prediction(params=params)
-    else:
+    elif len(sys.argv) == 4:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
+        params = utils.load_params(sys.argv[1])
+        stim_range = (int(sys.argv[2]), int(sys.argv[3]))
+        plot_prediction(params=params, stim_range=stim_range)
+    else:
         plot_prediction()
 
 #    pylab.show()

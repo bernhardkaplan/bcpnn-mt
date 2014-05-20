@@ -399,6 +399,12 @@ class NetworkModel(object):
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
+            idx_t_start_pause = np.int(((i_stim + 1) * self.params['t_training_stim']  - self.params['t_training_pause'])/ dt) 
+            idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+            print 'Debug idx_t_start_pause', idx_t_start_pause
+            print 'Debug idx_t_stop_pause', idx_t_stop_pause
+            L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
+
 
         nprnd.seed(self.params['input_spikes_seed'])
         # create the spike trains
@@ -474,6 +480,7 @@ class NetworkModel(object):
             print 'Connecting exc - exc '
             self.connect_ee()
             self.connect_ee_testing()
+            self.connect_input_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
             print 'Connecting exc - inh specific'
@@ -529,7 +536,7 @@ class NetworkModel(object):
         if self.params['training_run']:
             spike_times_container = self.create_training_input_for_cells(gids, with_blank=False)
         else:
-            spike_times_container = self.create_test_input_for_cells(gids, with_blank=True)
+            spike_times_container = self.create_training_input_for_cells(gids, with_blank=True)
         self.recorder_stimulus = nest.Create('spike_generator', len(gids))
 
         for i_, unit in enumerate(gids):
@@ -896,6 +903,9 @@ class NetworkModel(object):
 
 
     def connect_recorder_neurons(self):
+        """
+        Must be called after the normal connect
+        """
 
         my_adj_list = {}
         f = file(self.params['recorder_neurons_gid_mapping'], 'r')
@@ -906,21 +916,21 @@ class NetworkModel(object):
                 for src_mc in xrange(self.params['n_mc_per_hc']):
                     src_pop = self.list_of_exc_pop[src_hc][src_mc]
                     conns = nest.GetConnections(src_pop, [mirror_gid]) # get the list of connections stored on the current MPI node
-                for c in conns:
-                    cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                    if (cp[0]['synapse_model'] == 'bcpnn_synapse'):
-                        pi = cp[0]['p_i']
-                        pj = cp[0]['p_j']
-                        pij = cp[0]['p_ij']
-                        w = np.log(pij / (pi * pj))
-                        # this does not work for some reason: 
-                        # w = cp[0]['weight'] 
-                        if (w != 0):
-                            my_adj_list[c[1]].append((c[0], w))
-        output_fn = self.params['adj_list_tgt_fn_base'] + 'recorderNrns_%d_%d.json' % (self.iteration, self.pc_id)
-        print 'Saving connection list to: ', output_fn
-        f = file(output_fn, 'w')
-        json.dump(my_adj_list, f, indent=0, ensure_ascii=False)
+                    print 'Debug conns', conns
+        exit(1)
+#                for c in conns:
+#                    cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+#                    if (cp[0]['synapse_model'] == 'bcpnn_synapse'):
+#                        pi = cp[0]['p_i']
+#                        pj = cp[0]['p_j']
+#                        pij = cp[0]['p_ij']
+#                        w = np.log(pij / (pi * pj))
+#                        if (w != 0):
+#                            my_adj_list[c[1]].append((c[0], w))
+#        output_fn = self.params['adj_list_tgt_fn_base'] + 'recorderNrns_%d_%d.json' % (self.iteration, self.pc_id)
+#        print 'Saving connection list to: ', output_fn
+#        f = file(output_fn, 'w')
+#        json.dump(my_adj_list, f, indent=0, ensure_ascii=False)
 
 
 
