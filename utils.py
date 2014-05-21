@@ -542,21 +542,21 @@ def set_tuning_prop_1D_regular(params, cell_type='exc'):
         n_rf_x = params['n_rf_x_inh']
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
-    v_rho = np.linspace(-v_max, v_max, num=n_v, endpoint=True)
+    v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+#    v_rho = np.linspace(-v_max, v_max, num=n_v, endpoint=True)
     RF = np.linspace(0., 1., n_rf_x, endpoint=True)
     index = 0
     tuning_prop = np.zeros((n_cells, 4))
     for i_RF in xrange(n_rf_x):
         for i_v_rho, rho in enumerate(v_rho):
             for i_in_mc in xrange(params['n_exc_per_mc']):
-                tuning_prop[index, 0] = RF[i_RF] * rnd.normal(1., params['v_noise_training'])
+                tuning_prop[index, 0] = RF[i_RF] + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
                 tuning_prop[index, 1] = 0.5 
-                tuning_prop[index, 2] = rho
+                tuning_prop[index, 2] = rho + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed'])
                 tuning_prop[index, 3] = 0. 
                 index += 1
     assert (index == n_cells), 'ERROR, index != n_cells, %d, %d' % (index, n_cells)
     return tuning_prop
-
 
 
 
