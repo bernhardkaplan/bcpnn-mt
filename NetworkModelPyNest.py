@@ -401,8 +401,8 @@ class NetworkModel(object):
 
             idx_t_start_pause = np.int(((i_stim + 1) * self.params['t_training_stim']  - self.params['t_training_pause'])/ dt) 
             idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
-            print 'Debug idx_t_start_pause', idx_t_start_pause
-            print 'Debug idx_t_stop_pause', idx_t_stop_pause
+#            print 'Debug idx_t_start_pause', idx_t_start_pause
+#            print 'Debug idx_t_stop_pause', idx_t_stop_pause
             L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
 
 
@@ -856,6 +856,8 @@ class NetworkModel(object):
         for nrn in my_units:
             my_adj_list_tgt[nrn] = []
 
+        my_pi_values = {}
+        my_pj_values = {}
         for src_hc in xrange(self.params['n_hc']):
             print 'get_weights_after_learning_cycle: Proc %d src_hc %d' % (self.pc_id, src_hc)
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -868,6 +870,8 @@ class NetworkModel(object):
                             cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
                             if (cp[0]['synapse_model'] == 'bcpnn_synapse'):
                                 pi = cp[0]['p_i']
+                                my_pi_values[c[0]] = cp[0]['p_i']
+                                my_pj_values[c[0]] = cp[0]['p_j']
                                 pj = cp[0]['p_j']
                                 pij = cp[0]['p_ij']
                                 w = np.log(pij / (pi * pj))

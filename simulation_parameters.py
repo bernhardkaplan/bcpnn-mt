@@ -32,7 +32,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 5
+        self.params['n_rf'] = 10
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -42,7 +42,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 6
+        self.params['n_v'] = 5
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
@@ -61,7 +61,7 @@ class parameter_storage(object):
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
         # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
-        self.params['regular_tuning_prop'] = True
+        self.params['regular_tuning_prop'] = False
         if self.params['regular_tuning_prop']:
             self.params['sigma_rf_pos'] = .10 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .0 # some variability in the speed of RFs
@@ -244,7 +244,7 @@ class parameter_storage(object):
         # the 'motion_params' are those that determine the stimulus
         # motion_params are used to create the test stimulus if training_run == False
         self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
-        self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
+        self.params['motion_type'] = 'dot' # should be either 'bar' or 'dot'
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
@@ -264,9 +264,9 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 2 # self.params['n_v'] # how many different speeds are trained per cycle
-#        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
+#        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training']
 
