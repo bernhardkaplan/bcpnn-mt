@@ -24,15 +24,15 @@ class parameter_storage(object):
 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
 #        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = False
-        self.params['sim_id'] = 'DebugPause'
+        self.params['Cluster'] = True
+        self.params['sim_id'] = ''#'DebugDummyNrns'
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 5
+        self.params['n_rf'] = 20
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -42,11 +42,11 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 3
+        self.params['n_v'] = 10
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 30  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -231,7 +231,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .10, .10
+        self.params['blur_X'], self.params['blur_V'] = .03, .03
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -246,10 +246,10 @@ class parameter_storage(object):
         self.params['stimuli_seed'] = 321
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
-        self.params['n_speeds'] = 2 # self.params['n_v'] # how many different speeds are trained per cycle
-#        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
+        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
+#        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_speeds'] = 2 * self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
 
         # if one speed is trained, it is presented starting from this number on different locations
@@ -296,9 +296,8 @@ class parameter_storage(object):
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
-#        self.params['n_gids_to_record'] = self.params['n_exc']
         self.params['n_gids_to_record'] = 20    # number to be sampled across some trajectory
-        self.params['gids_to_record'] = [181, 185]  # additional gids to be recorded 
+        self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
         # ########################
@@ -307,10 +306,11 @@ class parameter_storage(object):
         self.params['fmax_bcpnn'] = 150.0   # should be as the maximum output rate (with inhibitory feedback)
 #        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
         self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
-        self.params['taui_bcpnn'] = 100.
+        self.params['taui_bcpnn'] = 5.
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
-        self.params['bcpnn_init_val'] = epsilon
-#        self.params['bcpnn_init_val'] = 1e-6
+        #self.params['bcpnn_init_val'] = epsilon
+        self.params['bcpnn_init_val'] = 0.01
+        #self.params['bcpnn_init_val'] = 0.1
 
         self.params['kappa'] = 1.
         if self.params['training_run']:
@@ -385,17 +385,17 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%s_%dx%d_taui%d_taup%d_nHC%d_nMC%d' % ( \
+                folder_name = 'TrainingSim_%s_%dx%d_taui%d_taup%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_init%.1e' % ( \
                         self.params['sim_id'], self.params['n_cycles'], self.params['n_speeds'], \
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
-                        self.params['n_hc'], self.params['n_mc_per_hc'])
+                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], self.params['bcpnn_init_val'])
             else:
-                folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d_wee%.1e_wei%.1e' % ( \
+                folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d_blurXV_%.2f_%.2f_init%.1e' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
-                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], self.params['w_ei_global_max'])
+                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], \
+                        self.params['w_ei_global_max'], self.params['blur_X'], self.params['blur_V'], self.params['bcpnn_init_val'])
             folder_name += '/'
-
             self.params['folder_name'] = folder_name
         else:
             self.params['folder_name'] = folder_name
