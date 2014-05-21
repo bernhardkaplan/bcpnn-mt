@@ -92,6 +92,7 @@ class CreateStimuli(object):
                             np.log(params['v_max_training'])/np.log(params['log_scale']), num=params['n_speeds'],
                             endpoint=True, base=params['log_scale'])
 
+        starting_pos = 0.4 * np.random.rand(params['n_training_stim_per_cycle'])
         stim_cnt = 0
         stim_params = np.zeros((self.n_stim_total, 4))
         for cycle in xrange(params['n_cycles']):
@@ -99,10 +100,8 @@ class CreateStimuli(object):
                 for i_ in xrange(self.n_stim_per_direction):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
-                    x0 = np.random.rand() * .5 # select a random start point
-
                     print 'debug', self.all_starting_pos.shape, stim_cnt
-                    self.all_starting_pos[stim_cnt, 0] = x0
+                    self.all_starting_pos[stim_cnt, 0] = starting_pos[i_speed]
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
 

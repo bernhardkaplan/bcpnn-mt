@@ -251,6 +251,7 @@ class parameter_storage(object):
         self.params['n_speeds'] = 2 # self.params['n_v'] # how many different speeds are trained per cycle
 #        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
+        self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training']
 
         # if one speed is trained, it is presented starting from this number on different locations
         # for 1-D this is irrelevant and can be set to 1
