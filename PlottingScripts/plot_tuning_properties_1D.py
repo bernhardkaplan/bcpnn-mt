@@ -23,10 +23,22 @@ class Plotter(object):
     def __init__(self, params, it_max=None):
         self.params = params
         tp_fn = self.params['tuning_prop_means_fn']
-        print 'Loading', tp_fn
-        self.tp = np.loadtxt(tp_fn)
-        print 'Loading', self.params['receptive_fields_exc_fn']
-        self.rfs = np.loadtxt(self.params['receptive_fields_exc_fn'])
+        if not os.path.exists(tp_fn):
+            self.tp = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')
+        else:
+            print 'Loading', tp_fn
+            self.tp = np.loadtxt(tp_fn)
+        rfs_fn = self.params['receptive_fields_exc_fn']
+        if not os.path.exists(rfs_fn):
+            n_cells = self.params['n_exc']
+            self.rfs = np.zeros((n_cells, 4))
+            self.rfs[:, 0] = self.params['rf_size_x_gradient'] * np.abs(self.tp[:, 0] - .5) + self.params['rf_size_x_min']
+            self.rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tp[:, 1] - .5) + self.params['rf_size_y_min']
+            self.rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tp[:, 2]) + self.params['rf_size_vx_min']
+            self.rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tp[:, 3]) + self.params['rf_size_vy_min']
+        else:
+            print 'Loading', rfs_fn
+            self.rfs = np.loadtxt(self.params['receptive_fields_exc_fn'])
 
     def plot_tuning_prop(self):
 
@@ -52,9 +64,10 @@ class Plotter(object):
         cnt, bins = np.histogram(tp[:, 2], bins=20)
         ax4.bar(bins[:-1], cnt, width=bins[1]-bins[0])
 
-        output_fn = self.params['figures_folder'] + 'tuning_property_distribution.png'
-        print 'Saving to:', output_fn
-        pylab.savefig(output_fn)
+        if os.path.exists(self.params['figures_folder']):
+            output_fn = self.params['figures_folder'] + 'tuning_property_distribution.png'
+            print 'Saving to:', output_fn
+            pylab.savefig(output_fn)
 
 
 
@@ -74,9 +87,10 @@ class Plotter(object):
         ax.add_collection(collection)
         ylim = ax.get_ylim()
         ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
-        output_fn = self.params['figures_folder'] + 'tuning_space.png'
-        print 'Saving to:', output_fn
-        pylab.savefig(output_fn)
+        if os.path.exists(self.params['figures_folder']):
+            output_fn = self.params['figures_folder'] + 'tuning_space.png'
+            print 'Saving to:', output_fn
+            pylab.savefig(output_fn)
 
 
 
@@ -96,7 +110,6 @@ if __name__ == '__main__':
         param_tool = simulation_parameters.parameter_storage()
         params = param_tool.params
 
-    
     Plotter = Plotter(params)#, it_max=1)
     Plotter.plot_tuning_prop()
     Plotter.plot_tuning_space()

@@ -51,11 +51,7 @@ class parameter_storage(object):
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 30  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
-        self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
-        self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
-        self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-        self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
+        self.params['log_scale'] = 1.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
 
         self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
@@ -65,23 +61,44 @@ class parameter_storage(object):
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
         # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
-#        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
-#        self.params['rf_size_y_gradient'] = .2  # receptive field size for y-pos increases with distance to .5
-#        self.params['rf_size_x_min'] = .01      # cells situated at .5 have this receptive field size
-#        self.params['rf_size_y_min'] = .01      # cells situated at .5 have this receptive field size
-        self.params['rf_size_vx_gradient'] = .3 # receptive field size for vx-pos increases with distance to 0.0
-        self.params['rf_size_vy_gradient'] = .3 #
-        self.params['rf_size_vx_min'] = .05 # cells situated at .5 have this receptive field size
-        self.params['rf_size_vy_min'] = .05 # cells situated at .5 have this receptive field size
-        # regular tuning prop
-        self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
-        self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
-        self.params['rf_size_x_min'] = 1. / self.params['n_rf_x']
-        self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
-#        self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
-#        self.params['rf_size_vy_gradient'] = .0 #
-#        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
-#        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+        self.params['regular_tuning_prop'] = True
+        if self.params['regular_tuning_prop']:
+            self.params['sigma_rf_pos'] = .10 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .0 # some variability in the speed of RFs
+            self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
+            # regular tuning prop
+            self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
+            self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
+            self.params['rf_size_x_min'] = 1. / self.params['n_rf_x']
+            self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
+            self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
+            self.params['rf_size_vy_gradient'] = .0 #
+            self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+            self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+        else:
+            self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
+            self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
+    #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
+    #        self.params['rf_size_y_gradient'] = .2  # receptive field size for y-pos increases with distance to .5
+    #        self.params['rf_size_x_min'] = .01      # cells situated at .5 have this receptive field size
+    #        self.params['rf_size_y_min'] = .01      # cells situated at .5 have this receptive field size
+            self.params['rf_size_vx_gradient'] = .3 # receptive field size for vx-pos increases with distance to 0.0
+            self.params['rf_size_vy_gradient'] = .3 #
+            self.params['rf_size_vx_min'] = .05 # cells situated at .5 have this receptive field size
+            self.params['rf_size_vy_min'] = .05 # cells situated at .5 have this receptive field size
+            # regular tuning prop
+            self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
+            self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
+            self.params['rf_size_x_min'] = 1. / self.params['n_rf_x']
+            self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
+    #        self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
+    #        self.params['rf_size_vy_gradient'] = .0 #
+    #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+    #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+
 
 
         # ###################

@@ -482,8 +482,10 @@ def set_tuning_prop(params, mode, cell_type):
     if params['n_grid_dimensions'] == 2:
         return set_tuning_prop_2D(params, mode, cell_type)
     else:
-#        return set_tuning_prop_1D_regular(params, cell_type)
-        return set_tuning_prop_1D(params, cell_type)
+        if params['regular_tuning_prop']:
+            return set_tuning_prop_1D_regular(params, cell_type)
+        else:
+            return set_tuning_prop_1D(params, cell_type)
 
 
 def set_tuning_prop_1D(params, cell_type='exc'):
@@ -547,7 +549,7 @@ def set_tuning_prop_1D_regular(params, cell_type='exc'):
     for i_RF in xrange(n_rf_x):
         for i_v_rho, rho in enumerate(v_rho):
             for i_in_mc in xrange(params['n_exc_per_mc']):
-                tuning_prop[index, 0] = RF[i_RF]
+                tuning_prop[index, 0] = RF[i_RF] * rnd.normal(1., params['v_noise_training'])
                 tuning_prop[index, 1] = 0.5 
                 tuning_prop[index, 2] = rho
                 tuning_prop[index, 3] = 0. 
