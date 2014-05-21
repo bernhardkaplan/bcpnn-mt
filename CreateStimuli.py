@@ -85,33 +85,35 @@ class CreateStimuli(object):
         random.seed(params['stimuli_seed'] + 1)
 
         # create stimulus ranges
-        if params['log_scale']==1:
+        if params['log_scale'] == 1:
             speeds = np.linspace(params['v_min_training'], params['v_max_training'], num=params['n_speeds'], endpoint=True)
         else:
             speeds = np.logspace(np.log(params['v_min_training'])/np.log(params['log_scale']),
                             np.log(params['v_max_training'])/np.log(params['log_scale']), num=params['n_speeds'],
                             endpoint=True, base=params['log_scale'])
 
+        starting_pos = 0.4 * np.random.rand(params['n_training_stim_per_cycle'])
         stim_cnt = 0
+        stim_params = np.zeros((self.n_stim_total, 4))
         for cycle in xrange(params['n_cycles']):
             for i_speed, speed in enumerate(speeds):
                 for i_ in xrange(self.n_stim_per_direction):
                     # add noise for the speed
                     v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
-                    x0 = np.random.rand() * .5 # select a random start point
-
                     print 'debug', self.all_starting_pos.shape, stim_cnt
-                    self.all_starting_pos[stim_cnt, 0] = x0
+                    self.all_starting_pos[stim_cnt, 0] = starting_pos[i_speed]
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
 
-        stim_order = range(self.n_stim_total)
-        if random_order:
-            random.shuffle(stim_order)
-        stim_params = np.zeros((self.n_stim_total, 4))
-        stim_params[:, 0] = self.all_starting_pos[stim_order, 0]
-        stim_params[:, 1] = self.all_starting_pos[stim_order, 1]
-        stim_params[:, 2] = self.all_speeds[stim_order]
+            stim_idx_0 = params['n_speeds'] * cycle
+            stim_idx_1 = params['n_speeds'] * (cycle + 1)
+            stim_order = range(stim_idx_0, stim_idx_1)
+            if random_order:
+                random.shuffle(stim_order)
+            stim_params[stim_idx_0:stim_idx_1, 0] = self.all_starting_pos[stim_order, 0]
+            stim_params[stim_idx_0:stim_idx_1, 1] = self.all_starting_pos[stim_order, 1]
+            stim_params[stim_idx_0:stim_idx_1, 2] = self.all_speeds[stim_order]
+
         return stim_params
 #        return pos_speed_sequence[stim_order, :]
 

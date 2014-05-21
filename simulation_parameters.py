@@ -247,10 +247,11 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 10 # one cycle comprises training of all n_speeds
 #        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_speeds'] = 2 * self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
+        self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training']
 
         # if one speed is trained, it is presented starting from this number on different locations
         # for 1-D this is irrelevant and can be set to 1

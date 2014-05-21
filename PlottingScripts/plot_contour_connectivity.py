@@ -121,8 +121,12 @@ def plot_contour_connectivity(params, adj_list, tp, gid, plot_delay=False, clim=
 
     plot_weights = not plot_delay
     if plot_weights:
-        markersizes = utils.linear_transformation(np.abs(weights), markersize_min, markersize_max)
-        norm = matplotlib.colors.Normalize(vmin=np.abs(weights).min(), vmax=np.abs(weights).max())
+#        markersizes = utils.linear_transformation(np.abs(weights), markersize_min, markersize_max)
+#        norm = matplotlib.colors.Normalize(vmin=np.abs(weights).min(), vmax=np.abs(weights).max())
+
+        markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
+        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
+
 #        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large weights -- bright, small weights -- black
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large weights -- black, small weights -- white
         m.set_array(np.abs(weights))
@@ -213,30 +217,8 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
 
 
 
-
-if __name__ == '__main__':
-
-    np.random.seed(0)
-    gid = None
-    if len(sys.argv) > 1:
-        if sys.argv[1].isdigit():
-            gid = int(sys.argv[1])
-            param_fn = sys.argv[2]
-            if os.path.isdir(param_fn):
-                param_fn += '/Parameters/simulation_parameters.json'
-            import json
-            f = file(param_fn, 'r')
-            print 'Loading parameters from', param_fn
-            params = json.load(f)
-        else:
-            params = utils.load_params(sys.argv[1])
-    else:
-        import simulation_parameters
-        ps = simulation_parameters.parameter_storage()
-        params = ps.params
-
+def run_contour_plot(params):
     tp = np.loadtxt(params['tuning_prop_means_fn']) #load the data and merge files before if necessary
-
     adj_list_fn = params['adj_list_src_fn_base'] + 'merged.json'
     if not os.path.exists(adj_list_fn):
         adj_list_src_index = utils.convert_adjacency_lists(params)
@@ -249,12 +231,33 @@ if __name__ == '__main__':
     # determine which cell to plot
 #    plot_source_perspective = False
 #    gid = 1
+    gid = None
     if gid == None:
         mp = [0.2, 0., .5, .0]
         gid = 1 + utils.select_well_tuned_cells(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
-    clim = (-20, 20)
+#    clim = (-20, 20)
+    clim = None
     plot_contour_connectivity(params, adj_list, tp, gid, clim=clim) # connection weights laid out in the tuning space and put on a grid --> contour
+
+
+if __name__ == '__main__':
+
+    np.random.seed(0)
+    if len(sys.argv) == 1:
+        import simulation_parameters
+        ps = simulation_parameters.parameter_storage()
+        params = ps.params
+        run_contour_plot(params)
+    elif len(sys.argv) == 2:
+        params = utils.load_params(sys.argv[1])
+        run_contour_plot(params)
+    else:
+        for folder in sys.argv[1:]:
+            params = utils.load_params(folder)
+            run_contour_plot(params)
+
+
 
 #    random.seed(0)
 #    if not os.path.exists(params['merged_conn_list_ee']):
@@ -279,4 +282,4 @@ if __name__ == '__main__':
 #            plot_formula(params, d, tp, gid, plot_source_perspective=plot_source_perspective) # plot the analytically expected weights and the actual connections in tuning space
 #        i_ += 1
 
-    pylab.show()
+#    pylab.show()
