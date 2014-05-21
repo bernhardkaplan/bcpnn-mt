@@ -144,7 +144,7 @@ if __name__ == '__main__':
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = False
+    load_files = True
     record = True
     save_input_files = not load_files
 

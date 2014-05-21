@@ -24,7 +24,7 @@ class parameter_storage(object):
 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
 #        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['sim_id'] = ''#'DebugDummyNrns'
 
         # ###################
@@ -32,7 +32,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 20
+        self.params['n_rf'] = 10
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -42,11 +42,11 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 10
+        self.params['n_v'] = 5
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 30  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -63,8 +63,8 @@ class parameter_storage(object):
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
         self.params['regular_tuning_prop'] = True
         if self.params['regular_tuning_prop']:
-            self.params['sigma_rf_pos'] = .10 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .0 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
             # regular tuning prop
@@ -74,19 +74,22 @@ class parameter_storage(object):
             self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
             self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
             self.params['rf_size_vy_gradient'] = .0 #
-            self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
-            self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+            self.params['rf_size_vx_min'] = self.params['v_max_tp'] / self.params['n_v']
+            self.params['rf_size_vy_min'] = self.params['v_max_tp'] / self.params['n_v']
+            # when negative speeds are allowed:
+#            self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+#            self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
             self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .30 # some variability in the speed of RFs
+            self.params['sigma_rf_speed'] = .25 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
     #        self.params['rf_size_y_gradient'] = .2  # receptive field size for y-pos increases with distance to .5
     #        self.params['rf_size_x_min'] = .01      # cells situated at .5 have this receptive field size
     #        self.params['rf_size_y_min'] = .01      # cells situated at .5 have this receptive field size
-            self.params['rf_size_vx_gradient'] = .3 # receptive field size for vx-pos increases with distance to 0.0
-            self.params['rf_size_vy_gradient'] = .3 #
+            self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
+            self.params['rf_size_vy_gradient'] = .0 #
             self.params['rf_size_vx_min'] = .05 # cells situated at .5 have this receptive field size
             self.params['rf_size_vy_min'] = .05 # cells situated at .5 have this receptive field size
             # regular tuning prop
@@ -244,7 +247,7 @@ class parameter_storage(object):
         # the 'motion_params' are those that determine the stimulus
         # motion_params are used to create the test stimulus if training_run == False
         self.params['mp_select_cells'] = [.7, .5, .5, .0, np.pi / 6.0] # <-- those parameters determine from which cells v_mem should be recorded from
-        self.params['motion_type'] = 'bar' # should be either 'bar' or 'dot'
+        self.params['motion_type'] = 'dot' # should be either 'bar' or 'dot'
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
@@ -324,7 +327,7 @@ class parameter_storage(object):
         self.params['fmax_bcpnn'] = 150.0   # should be as the maximum output rate (with inhibitory feedback)
 #        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
         self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
-        self.params['taui_bcpnn'] = 5.
+        self.params['taui_bcpnn'] = 100.
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.01
