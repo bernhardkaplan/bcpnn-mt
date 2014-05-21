@@ -330,11 +330,16 @@ class NetworkModel(object):
             rate_of_t = np.array(L_input[i_, :])
             # each cell will get its own spike train stored in the following file + cell gid
             n_steps = rate_of_t.size
-            spike_times = []
-            for i in xrange(n_steps):
-                r = nprnd.rand()
-                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
-                    spike_times.append(i * dt)
+#            spike_times = []
+            r = nprnd.rand(n_steps)
+            spike_idx = (r <= (rate_of_t/1000.) * dt).nonzero()[0]
+            spike_times = spike_idx * dt
+            print 'Debug unit %d receives in total: %d spikes' % (gid, spike_times)
+
+#            for i in xrange(n_steps):
+#                r = nprnd.rand()
+#                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
+#                    spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
             if (save_output and self.spike_times_container[i_].size > 1):
                 #output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
@@ -346,7 +351,6 @@ class NetworkModel(object):
 
 
     def create_training_input(self, load_files=False, save_output=False, with_blank=False):
-
 
         if load_files:
             self.load_input()
@@ -449,7 +453,7 @@ class NetworkModel(object):
                 fn = self.params['input_rate_fn_base'] + str(gid) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 if os.path.exists(fn):
                     spike_times = np.around(np.loadtxt(fn), decimals=1)
-                    print 'debug', spike_times
+                    print 'Loaded %d spikes for cell %d' % (spike_times.size, gid)
                 else:
                     print "Missing file: ", fn
                     spike_times = np.array([])
@@ -606,9 +610,9 @@ class NetworkModel(object):
                 if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
                     spike_times.append(i * dt)
             spike_times_container[i_] = np.array(spike_times)
-            output_fn = self.params['input_rate_fn_base'] + '_recorder_' + str(unit) + '.dat'
+            output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
             np.savetxt(output_fn, rate_of_t)
-            output_fn = self.params['input_st_fn_base'] + '_recorder_' + str(unit) + '.dat'
+            output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
             np.savetxt(output_fn, np.array(spike_times))
         return spike_times_container
 

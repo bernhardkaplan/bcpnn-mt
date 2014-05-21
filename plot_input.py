@@ -51,23 +51,21 @@ if len(sys.argv) == 2:
     import simulation_parameters
     ps = simulation_parameters.parameter_storage()
     params = ps.params
-
-
 elif len(sys.argv) == 3:
     gid = int(sys.argv[1])
     import json
-    param_fn = sys.argv[2]
-    if os.path.isdir(param_fn):
-        param_fn += '/Parameters/simulation_parameters.json'
-    print '\nLoading parameters from %s\n' % (param_fn)
-    f = file(param_fn, 'r')
-    params = json.load(f)
+    params = utils.load_params(sys.argv[2])
+else:
+    import simulation_parameters
+    ps = simulation_parameters.parameter_storage()
+    params = ps.params
+    gid = 1
 
-rate_fn = params['input_rate_fn_base'] + str(gid) + '.npy'
-spike_fn = params['input_st_fn_base'] + str(gid) + '.npy'
-print 'Loading data from'
-print rate_fn
-print spike_fn
+print 'Plotting GID:', gid
+
+rate_fn = params['input_rate_fn_base'] + str(gid) + '.dat'
+spike_fn = params['input_st_fn_base'] + str(gid) + '.dat'
+print 'Loading data from', rate_fn, '\n', spike_fn
 print 'debug', params['figures_folder']
 
 #else:
@@ -78,12 +76,12 @@ print 'debug', params['figures_folder']
 #    print info
 
 
-rate = np.load(rate_fn)
+rate = np.loadtxt(rate_fn)
 #rate /= np.max(rate)
 y_min = rate.min()
 y_max = rate.max()
 
-spikes = np.load(spike_fn) # spikedata
+spikes = np.loadtxt(spike_fn) # spikedata
 
 #spikes *= 10. # because rate(t) = L(t) was created with a stepsize of .1 ms
 

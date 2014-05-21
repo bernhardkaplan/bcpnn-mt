@@ -54,7 +54,7 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
         x_min, x_max = xlim[0], xlim[1]
         vx_min, vx_max = ylim[0], ylim[1]
 
-    granularity = 0.07 # should not be too small, i.e. > 0.02
+    granularity = 0.1 # should not be too small, i.e. > 0.02
     dx = granularity * (x_max - x_min)
     dvx = granularity * (vx_max - vx_min)
     x_grid, vx_grid = np.mgrid[slice(x_min, x_max, dx), 
@@ -94,7 +94,7 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
 
     cmap = pylab.get_cmap('jet')
     if clim != None:
-        levels = np.arange(clim[0], clim[1], 0.01)
+        levels = np.arange(clim[0], clim[1], 0.005)
     else:
         levels = 100
     CS = ax.contourf(x_grid + dx / 2.,
@@ -372,7 +372,7 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
 
 
 
-def run_contour_plot_tgt_perspective(params):
+def run_contour_plot_tgt_perspective(params, mp=None):
 
     tp = np.loadtxt(params['tuning_prop_means_fn']) #load the data and merge files before if necessary
     adj_list_fn = params['adj_list_tgt_fn_base'] + 'merged.json'
@@ -390,8 +390,8 @@ def run_contour_plot_tgt_perspective(params):
 #    gid = 1
     gid = None
     if gid == None:
-        mp = [0.2, 0., .5, .0]
-        gid = 1 + utils.select_well_tuned_cells(tp, mp, 1, w_pos=1.)[0]
+#        mp = [0.2, 0., .5, .0]
+        gid = 1 + utils.select_well_tuned_cells_1D(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
 #    clim = (-20, 20)
     clim = None
@@ -400,7 +400,7 @@ def run_contour_plot_tgt_perspective(params):
 
 
 
-def run_contour_plot_src_perspective(params):
+def run_contour_plot_src_perspective(params, mp=None):
 
     tp = np.loadtxt(params['tuning_prop_means_fn']) #load the data and merge files before if necessary
     adj_list_fn = params['adj_list_src_fn_base'] + 'merged.json'
@@ -417,37 +417,37 @@ def run_contour_plot_src_perspective(params):
 #    gid = 1
     gid = None
     if gid == None:
-        mp = [0.2, 0., .5, .0]
-        gid = 1 + utils.select_well_tuned_cells(tp, mp, 1, w_pos=1.)[0]
+        gid = 1 + utils.select_well_tuned_cells_1D(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
 #    clim = (-20, 20)
     clim = None
     plot_contour_connectivity_src(params, adj_list, tp, gid, clim=clim) # connection weights laid out in the tuning space and put on a grid --> contour
 
 
-def run_contour_plot(params, source_perspective=False):
+def run_contour_plot(params, source_perspective=False, mp=None):
     if source_perspective:
-        run_contour_plot_src_perspective(params)
+        run_contour_plot_src_perspective(params, mp)
     else:
-        run_contour_plot_tgt_perspective(params)
+        run_contour_plot_tgt_perspective(params, mp)
 
 
 if __name__ == '__main__':
 
+    mp = [0.55, 0., .8, .0]
     plot_source_perspective = False
     np.random.seed(0)
     if len(sys.argv) == 1:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
         params = ps.params
-        run_contour_plot(params, source_perspective=plot_source_perspective)
+        run_contour_plot(params, source_perspective=plot_source_perspective, mp=mp)
     elif len(sys.argv) == 2:
         params = utils.load_params(sys.argv[1])
-        run_contour_plot(params, source_perspective=plot_source_perspective)
+        run_contour_plot(params, source_perspective=plot_source_perspective, mp=mp)
     else:
         for folder in sys.argv[1:]:
             params = utils.load_params(folder)
-            run_contour_plot(params, source_perspective=plot_source_perspective)
+            run_contour_plot(params, source_perspective=plot_source_perspective, mp=mp)
 
 
 

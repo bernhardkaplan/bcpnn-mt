@@ -501,7 +501,6 @@ class PlotPrediction(object):
             
         ylim = ax.get_ylim()
         ax.set_ylim((0, self.params['n_%s' % cell_type]))
-        ax.set_xlim(0, self.params['t_sim'])
         ax.set_title('Rasterplot of %s neurons' % cell_type)
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('Neuron GID')
@@ -510,6 +509,11 @@ class PlotPrediction(object):
             if time_range == None:
                 time_range = (0, self.params['t_sim'])
             self.plot_blank(ax, time_range)
+
+        if time_range != None:
+            ax.set_xlim(time_range[0], time_range[1])
+        else:
+            ax.set_xlim(0, self.params['t_sim'])
 
 
     def plot_raster_sorted(self, time_range=None, fig_cnt=1, title='', cell_type='exc', sort_idx=0):
@@ -1287,13 +1291,13 @@ if __name__ == '__main__':
     stim_range = (0, 1)
     if len(sys.argv) == 2:
         params = utils.load_params(sys.argv[1])
-        plot_prediction(params=params)
+        plot_prediction(params=params, stim_range=stim_range)
     elif len(sys.argv) == 4:
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
         params = utils.load_params(sys.argv[1])
         stim_range = (int(sys.argv[2]), int(sys.argv[3]))
         plot_prediction(params=params, stim_range=stim_range)
     else:
-        plot_prediction()
+        plot_prediction(stim_range=stim_range)
 
 #    pylab.show()

@@ -25,7 +25,7 @@ class parameter_storage(object):
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
 #        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = ''#'DebugDummyNrns'
+        self.params['sim_id'] = 'DebugInput'#'DebugDummyNrns'
 
         # ###################
         # HEXGRID PARAMETERS
@@ -49,7 +49,7 @@ class parameter_storage(object):
         self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['n_recorder_neurons'] = 30  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
+        self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 1.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
@@ -251,7 +251,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .03, .03
+        self.params['blur_X'], self.params['blur_V'] = .05, .05
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -267,7 +267,7 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
 #        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']

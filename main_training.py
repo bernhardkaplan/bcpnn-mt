@@ -113,16 +113,16 @@ def run_tracking(params, NM):
 
 if __name__ == '__main__':
 
-#    try: 
-#        from mpi4py import MPI
-#        USE_MPI = True
-#        comm = MPI.COMM_WORLD
-#        pc_id, n_proc = comm.rank, comm.size
-#        print "USE_MPI:", USE_MPI, 'pc_id, n_proc:', pc_id, n_proc
-#    except:
-#        USE_MPI = False
-#        pc_id, n_proc, comm = 0, 1, None
-#        print "MPI not used"
+    try: 
+        from mpi4py import MPI
+        USE_MPI = True
+        comm = MPI.COMM_WORLD
+        pc_id, n_proc = comm.rank, comm.size
+        print "USE_MPI:", USE_MPI, 'pc_id, n_proc:', pc_id, n_proc
+    except:
+        USE_MPI = False
+        pc_id, n_proc, comm = 0, 1, None
+        print "MPI not used"
 
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
@@ -136,15 +136,13 @@ if __name__ == '__main__':
 #        if not ((ok == '') or (ok.capitalize() == 'Y')):
 #            print 'quit'
 #            exit(1)
-#    if comm != None:
-#        comm.Barrier()
 
     # always call set_filenames to update the folder name and all depending filenames (if params are modified and folder names change due to that)!
     ps.set_filenames() 
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = True
+    load_files = False
     record = True
     save_input_files = not load_files
 
@@ -152,8 +150,12 @@ if __name__ == '__main__':
     pc_id, n_proc = NM.pc_id, NM.n_proc
     if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
+        if not load_files:
+            utils.remove_files_from_folder(params['input_folder'])
+    if comm != None:
+        comm.Barrier()
+
     NM.setup()
-#    exit(1)
     NM.create()
     NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
     NM.connect()
