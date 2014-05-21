@@ -542,7 +542,8 @@ def set_tuning_prop_1D_regular(params, cell_type='exc'):
         n_rf_x = params['n_rf_x_inh']
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
-    v_rho = np.linspace(-v_max, v_max, num=n_v, endpoint=True)
+    v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+#    v_rho = np.linspace(-v_max, v_max, num=n_v, endpoint=True)
     RF = np.linspace(0., 1., n_rf_x, endpoint=True)
     index = 0
     tuning_prop = np.zeros((n_cells, 4))
