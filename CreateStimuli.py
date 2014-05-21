@@ -85,7 +85,7 @@ class CreateStimuli(object):
         random.seed(params['stimuli_seed'] + 1)
 
         # create stimulus ranges
-        if params['log_scale']==1:
+        if params['log_scale'] == 1:
             speeds = np.linspace(params['v_min_training'], params['v_max_training'], num=params['n_speeds'], endpoint=True)
         else:
             speeds = np.logspace(np.log(params['v_min_training'])/np.log(params['log_scale']),
@@ -93,6 +93,7 @@ class CreateStimuli(object):
                             endpoint=True, base=params['log_scale'])
 
         stim_cnt = 0
+        stim_params = np.zeros((self.n_stim_total, 4))
         for cycle in xrange(params['n_cycles']):
             for i_speed, speed in enumerate(speeds):
                 for i_ in xrange(self.n_stim_per_direction):
@@ -105,13 +106,15 @@ class CreateStimuli(object):
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
 
-        stim_order = range(self.n_stim_total)
-        if random_order:
-            random.shuffle(stim_order)
-        stim_params = np.zeros((self.n_stim_total, 4))
-        stim_params[:, 0] = self.all_starting_pos[stim_order, 0]
-        stim_params[:, 1] = self.all_starting_pos[stim_order, 1]
-        stim_params[:, 2] = self.all_speeds[stim_order]
+            stim_idx_0 = params['n_speeds'] * cycle
+            stim_idx_1 = params['n_speeds'] * (cycle + 1)
+            stim_order = range(stim_idx_0, stim_idx_1)
+            if random_order:
+                random.shuffle(stim_order)
+            stim_params[stim_idx_0:stim_idx_1, 0] = self.all_starting_pos[stim_order, 0]
+            stim_params[stim_idx_0:stim_idx_1, 1] = self.all_starting_pos[stim_order, 1]
+            stim_params[stim_idx_0:stim_idx_1, 2] = self.all_speeds[stim_order]
+
         return stim_params
 #        return pos_speed_sequence[stim_order, :]
 

@@ -246,7 +246,7 @@ class parameter_storage(object):
         self.params['stimuli_seed'] = 321
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['v_noise_training'] = 0.05 # percentage of noise for each individual training speed
+        self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
         self.params['n_speeds'] = 2 # self.params['n_v'] # how many different speeds are trained per cycle
 #        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
