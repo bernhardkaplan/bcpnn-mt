@@ -61,7 +61,7 @@ class parameter_storage(object):
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
         # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
-        self.params['regular_tuning_prop'] = True
+        self.params['regular_tuning_prop'] = False
         if self.params['regular_tuning_prop']:
             self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
@@ -267,9 +267,9 @@ class parameter_storage(object):
         self.params['v_max_training'] = self.params['v_max_tp'] * .9
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 10 # one cycle comprises training of all n_speeds
-#        self.params['n_speeds'] = 1 # self.params['n_v'] # how many different speeds are trained per cycle
-        self.params['n_speeds'] = 2 * self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
+#        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training']
 
