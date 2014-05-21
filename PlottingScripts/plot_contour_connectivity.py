@@ -54,7 +54,7 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
         x_min, x_max = xlim[0], xlim[1]
         vx_min, vx_max = ylim[0], ylim[1]
 
-    granularity = 0.1 # should not be too small, i.e. > 0.02
+    granularity = 0.05 # should not be too small, i.e. > 0.02
     dx = granularity * (x_max - x_min)
     dvx = granularity * (vx_max - vx_min)
     x_grid, vx_grid = np.mgrid[slice(x_min, x_max, dx), 
@@ -68,7 +68,7 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
         (x_, y_) = utils.get_grid_pos(x0, v0, x_edges, vx_edges)
         z_data[x_, y_] += w
 
-
+    print 'debug', z_data
     rcParams = { 'axes.labelsize' : 24,
                 'axes.titlesize'  : 24,
                 'label.fontsize': 24,
@@ -84,23 +84,17 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
     fig = pylab.figure(figsize=(14, 10))
     ax = fig.add_subplot(111)
 
-    z_data = z_data
-
-#    if clim != None:
-#        cmap_name = 'bwr'
-#        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])#, clip=True)
-#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap_name)
-#        m.set_array(np.arange(clim[0], clim[1], 0.01))
-
-    cmap = pylab.get_cmap('jet')
+#    cmap = pylab.get_cmap('jet')
+    cmap = pylab.get_cmap('bwr')
     if clim != None:
-        levels = np.arange(clim[0], clim[1], 0.005)
+        levels = np.around(np.linspace(clim[0], clim[1], 200), decimals=1)
     else:
         levels = 100
     CS = ax.contourf(x_grid + dx / 2.,
                 vx_grid + dvx / 2., z_data, levels, \
                 extend='both',
                   cmap=cmap)
+
 #    CS = ax.contourf(x_grid + dx / 2.,
 #                vx_grid + dvx / 2., z_data, n_levels, \
 #                  cmap=cmap)
@@ -113,23 +107,25 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
     if plot_delay:
         markersizes = utils.linear_transformation(delays, markersize_min, markersize_max)
         norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
-        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
+#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bwr) # large delays -- black, short delays -- white
 #        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
         m.set_array(delays)
         rgba_colors = m.to_rgba(delays)
 
     plot_weights = not plot_delay
     if plot_weights:
-#        markersizes = utils.linear_transformation(np.abs(weights), markersize_min, markersize_max)
-#        norm = matplotlib.colors.Normalize(vmin=np.abs(weights).min(), vmax=np.abs(weights).max())
-
         markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
-        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
+        abs_max = max(abs(weights.min()), weights.max())
+        norm = matplotlib.colors.Normalize(vmin=-abs_max, vmax=abs_max)
+#        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
 
 #        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large weights -- bright, small weights -- black
-        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large weights -- black, small weights -- white
-        m.set_array(np.abs(weights))
-        rgba_colors = m.to_rgba(np.abs(weights))
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bwr) # large weights -- black, small weights -- white
+#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large weights -- black, small weights -- white
+#        m.set_array(np.abs(weights))
+        m.set_array(weights)
+        rgba_colors = m.to_rgba(weights)
 
     for i_, tgt in enumerate(source_gids):
         ax.plot(x_tgt[i_], vx_tgt[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
@@ -247,7 +243,8 @@ def plot_contour_connectivity_src(params, adj_list, tp, gid, plot_delay=False, c
 #        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap_name)
 #        m.set_array(np.arange(clim[0], clim[1], 0.01))
 
-    cmap = pylab.get_cmap('jet')
+#    cmap = pylab.get_cmap('jet')
+    cmap = pylab.get_cmap('bwr')
     if clim != None:
         levels = np.arange(clim[0], clim[1], 0.01)
     else:
@@ -275,14 +272,13 @@ def plot_contour_connectivity_src(params, adj_list, tp, gid, plot_delay=False, c
 
     plot_weights = not plot_delay
     if plot_weights:
-#        markersizes = utils.linear_transformation(np.abs(weights), markersize_min, markersize_max)
-#        norm = matplotlib.colors.Normalize(vmin=np.abs(weights).min(), vmax=np.abs(weights).max())
-
         markersizes = utils.linear_transformation(weights, markersize_min, markersize_max)
-        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
+        abs_max = max(abs(weights.min()), weights.max())
+        norm = matplotlib.colors.Normalize(vmin=-abs_max, vmax=abs_max)
+#        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
 
-#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large weights -- bright, small weights -- black
-        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large weights -- black, small weights -- white
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bwr) # large weights -- black, small weights -- white
+#        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large weights -- black, small weights -- white
         m.set_array(np.abs(weights))
         rgba_colors = m.to_rgba(np.abs(weights))
 
@@ -382,19 +378,12 @@ def run_contour_plot_tgt_perspective(params, mp=None):
     WA = WeightAnalyser(params)
     adj_list = WA.load_adj_lists(src_tgt='src')
 
-#    conn_list = utils.convert_adjacency_list_to_connlist(adj_list, src_tgt='tgt')
-
-#    d = WA.get_weight_matrix_src_index(plot=False, output_fn=None)
-    # determine which cell to plot
-#    plot_source_perspective = False
-#    gid = 1
     gid = None
     if gid == None:
-#        mp = [0.2, 0., .5, .0]
         gid = 1 + utils.select_well_tuned_cells_1D(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
-#    clim = (-20, 20)
-    clim = None
+    clim = (-20, 20)
+#    clim = None
     plot_contour_connectivity_tgt(params, adj_list, tp, gid, clim=clim) # connection weights laid out in the tuning space and put on a grid --> contour
 
 
@@ -419,8 +408,8 @@ def run_contour_plot_src_perspective(params, mp=None):
     if gid == None:
         gid = 1 + utils.select_well_tuned_cells_1D(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
-#    clim = (-20, 20)
-    clim = None
+    clim = (-20, 20)
+    #clim = None
     plot_contour_connectivity_src(params, adj_list, tp, gid, clim=clim) # connection weights laid out in the tuning space and put on a grid --> contour
 
 
@@ -433,7 +422,7 @@ def run_contour_plot(params, source_perspective=False, mp=None):
 
 if __name__ == '__main__':
 
-    mp = [0.55, 0., .8, .0]
+    mp = [0.2, 0., 0.5, .0]
     plot_source_perspective = False
     np.random.seed(0)
     if len(sys.argv) == 1:

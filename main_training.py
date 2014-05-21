@@ -152,13 +152,22 @@ if __name__ == '__main__':
         utils.remove_files_from_folder(params['spiketimes_folder'])
         if not load_files:
             utils.remove_files_from_folder(params['input_folder'])
+
     if comm != None:
         comm.Barrier()
 
     NM.setup()
+    if comm != None:
+        comm.Barrier()
     NM.create()
+    if comm != None:
+        comm.Barrier()
     NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
+    if comm != None:
+        comm.Barrier()
     NM.connect()
+    if comm != None:
+        comm.Barrier()
 
     if record:
         NM.record_v_exc()
@@ -169,8 +178,12 @@ if __name__ == '__main__':
         run_tracking(params, NM)
     else:
         NM.run_sim(params['t_sim'])
+        if comm != None:
+            comm.Barrier()
         NM.get_weights_after_learning_cycle()
 
+    if comm != None:
+        comm.Barrier()
 #    utils.merge_and_sort_files(params['local_gids_fn_base'], params['local_gids_merged_fn'])
     NM.merge_local_gid_files()
     t_end = time.time()
