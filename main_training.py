@@ -176,5 +176,7 @@ if __name__ == '__main__':
     if NM.pc_id == 0:
         print 'Removing empty files ...'
         utils.remove_empty_files(params['spiketimes_folder'])
+    else:
+        print 'Waiting for remove_empty_files to end ... '
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
 
