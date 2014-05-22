@@ -48,8 +48,7 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
             vx_min = .9 * vx_tgt.min()
         vx_max = 1.3 * vx_tgt.max()
     else:
-        ylim = (-.1, tp_cell[2] + 1.5)
-#        xlim = (tp_cell[0] - 1.0, tp_cell[0] + 1.0]
+        ylim = (params['v_min_tp'], params['v_max_tp'])
         xlim = (0.0, 1.0)
         x_min, x_max = xlim[0], xlim[1]
         vx_min, vx_max = ylim[0], ylim[1]
@@ -430,7 +429,7 @@ def run_contour_plot(params, source_perspective=False, mp=None):
 
 if __name__ == '__main__':
 
-    mp = [0.3, 0., 0.5, .0]
+    mp = [0.5, 0., 0.5, .0]
     plot_source_perspective = False
     np.random.seed(0)
     if len(sys.argv) == 1:
@@ -471,4 +470,4 @@ if __name__ == '__main__':
 #            plot_formula(params, d, tp, gid, plot_source_perspective=plot_source_perspective) # plot the analytically expected weights and the actual connections in tuning space
 #        i_ += 1
 
-    pylab.show()
+#    pylab.show()

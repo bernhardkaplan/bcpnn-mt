@@ -41,7 +41,7 @@ def convert_adjacency_list_to_connlist(adj_list, src_tgt='tgt'):
     return output_array
 
 
-def convert_adjacency_lists(params, iteration=0):
+def convert_adjacency_lists(params, iteration=0, verbose=False):
     """
     Convert the adjacency lists from target-indexed to source-indexed.
     """
@@ -64,9 +64,12 @@ def convert_adjacency_lists(params, iteration=0):
                     fn_abs_path = params['connections_folder'] +  fn
                     fns.append(fn_abs_path)
         adj_list_tgt = {}
+        if not verbose:
+            print 'utils.convert_adjacency_lists: Loading %d adjacency lists' % len(fns)
         for fn in fns:
             f = file(fn, 'r')
-            print 'utils.convert_adjacency_lists: Loading weights:', fn
+            if verbose:
+                print 'utils.convert_adjacency_lists: Loading weights:', fn
             d = json.load(f)
             adj_list_tgt.update(d)
         
@@ -965,7 +968,6 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
 
 
 def get_grid_pos(x0, y0, xedges, yedges):
-
     x_index, y_index = len(xedges)-1, len(yedges)-1
     for (ix, x) in enumerate(xedges[1:]):
         if x0 <= x:
