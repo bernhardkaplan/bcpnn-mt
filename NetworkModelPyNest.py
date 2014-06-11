@@ -162,7 +162,11 @@ class NetworkModel(object):
                 nest.sr('(/cfs/milner/scratch/b/bkaplan/BCPNN-Module/share/nest/sli) addpath')
                 nest.Install('/cfs/milner/scratch/b/bkaplan/BCPNN-Module/lib/nest/pt_module')
             else:
-                nest.Install('pt_module')
+                try:
+                    nest.sr('(/home/bernhard/workspace/BCPNN-Module/module-100725/sli) addpath')
+                    nest.Install('pt_module')
+                except:
+                    nest.Install('pt_module')
 
 
     def get_local_indices(self, pop):
@@ -365,6 +369,7 @@ class NetworkModel(object):
         n_cells = len(my_units)
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         time = np.arange(0, self.params['t_sim'], dt)
+        print 'L_input shape:', n_cells, time.shape[0]
         L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
 
         # get the order of training stimuli
@@ -372,6 +377,8 @@ class NetworkModel(object):
         random_order = self.params['random_training_order']
         motion_params = CS.create_motion_sequence_1D(self.params, random_order)
         np.savetxt(self.params['training_sequence_fn'], motion_params)
+#        print 'quit'
+#        exit(1)
         n_stim_total = self.params['n_training_stim']
         for i_stim in xrange(n_stim_total):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
@@ -408,7 +415,7 @@ class NetworkModel(object):
 #            print 'Debug idx_t_start_pause', idx_t_start_pause
 #            print 'Debug idx_t_stop_pause', idx_t_stop_pause
             L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
-
+        
 
         nprnd.seed(self.params['input_spikes_seed'])
         # create the spike trains

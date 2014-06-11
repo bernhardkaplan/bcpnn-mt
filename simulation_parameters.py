@@ -42,20 +42,21 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 5
+        self.params['n_v'] = 10
+        assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
-        self.params['log_scale'] = 1.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
+        self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
 
         self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.1  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
         # receptive field size parameters
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
@@ -74,24 +75,24 @@ class parameter_storage(object):
             self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
             self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
             self.params['rf_size_vy_gradient'] = .0 #
-            self.params['rf_size_vx_min'] = self.params['v_max_tp'] / self.params['n_v']
-            self.params['rf_size_vy_min'] = self.params['v_max_tp'] / self.params['n_v']
+#            self.params['rf_size_vx_min'] = self.params['v_max_tp'] / self.params['n_v']
+#            self.params['rf_size_vy_min'] = self.params['v_max_tp'] / self.params['n_v']
             # when negative speeds are allowed:
-#            self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
-#            self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+            self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
+            self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
-            self.params['sigma_rf_pos'] = .05 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .25 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
     #        self.params['rf_size_y_gradient'] = .2  # receptive field size for y-pos increases with distance to .5
     #        self.params['rf_size_x_min'] = .01      # cells situated at .5 have this receptive field size
     #        self.params['rf_size_y_min'] = .01      # cells situated at .5 have this receptive field size
-            self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
-            self.params['rf_size_vy_gradient'] = .0 #
-            self.params['rf_size_vx_min'] = .05 # cells situated at .5 have this receptive field size
-            self.params['rf_size_vy_min'] = .05 # cells situated at .5 have this receptive field size
+            self.params['rf_size_vx_gradient'] = 0.5 # receptive field size for vx-pos increases with distance to 0.0
+            self.params['rf_size_vy_gradient'] = .1 #
+            self.params['rf_size_vx_min'] = .02
+            self.params['rf_size_vy_min'] = .05 
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
@@ -264,20 +265,24 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['stimuli_seed'] = 321
-        self.params['v_max_training'] = self.params['v_max_tp'] * .9
+        self.params['v_max_training'] = self.params['v_max_tp']# * .9
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['v_noise_training'] = 0.02 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
+        self.params['training_stim_noise_v'] = 0.00 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
+        self.params['n_cycles'] = 2 # one cycle comprises training of all n_speeds
 #        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
+        assert (self.params['n_speeds'] % 2 == 0), 'n_speeds should be an even number (for equal number of negative and positive speeds)'
+        self.params['n_training_x'] = 5 # number of different starting positions per trained  speed
+
         self.params['n_theta_training'] = self.params['n_theta']
-        self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training']
+        self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training'] * self.params['n_training_x']
 
         # if one speed is trained, it is presented starting from this number on different locations
         # for 1-D this is irrelevant and can be set to 1
         self.params['n_stim_per_direction'] = 1 
 #        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
-        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
+        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
@@ -285,6 +290,10 @@ class parameter_storage(object):
 #        self.params['test_stim_range'] = (0, self.params['n_speeds'])
         self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
+        if self.params['training_run']:
+            self.params['n_stim'] = self.params['n_training_stim']
+        else:
+            self.params['n_stim'] = self.params['n_testing_stim']
 #        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
 

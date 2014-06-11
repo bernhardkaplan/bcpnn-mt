@@ -163,6 +163,7 @@ if __name__ == '__main__':
     if comm != None:
         comm.Barrier()
     NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
+#    exit(1)
     if comm != None:
         comm.Barrier()
     NM.connect()
