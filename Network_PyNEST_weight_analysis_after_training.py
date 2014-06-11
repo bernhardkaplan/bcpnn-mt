@@ -36,21 +36,29 @@ class WeightAnalyser(object):
                 if it_ == iteration:
                     fn_abs_path = self.params['connections_folder'] +  fn
                     fns.append(fn_abs_path)
-        print 'Found files:', fns
         return fns
                 
         
-    def load_adj_lists(self, src_tgt='tgt'):
+    def load_adj_lists(self, src_tgt='tgt', verbose=False):
         if src_tgt == 'tgt':
             fns = self.get_filenames()
+            if verbose:
+                print 'Weight analyser found %d files' % (len(fns))
             self.adj_list = {}
             for fn in fns:
                 f = file(fn, 'r')
-                print 'Loading weights:', fn
+                if verbose:
+                    print 'Loading weights:', fn
                 d = json.load(f)
                 self.adj_list.update(d)
         if src_tgt == 'src':
             self.adj_list = utils.convert_adjacency_lists(self.params)
+#        fn_merged = self.params['merged_adj_list_%s_index' % src_tgt_index]
+        fn_merged = self.params['adj_list_%s_fn_base' % src_tgt] + 'merged.json'
+        f = file(fn_merged, 'w')
+        if verbose:
+            print 'WeightAnalyser.load_adj_lists writes to:', fn_merged
+        json.dump(self.adj_list, f)
         return self.adj_list
 
     def get_weights_to_cell(self, tgt_gid):

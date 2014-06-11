@@ -22,17 +22,17 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = 'DebugInput'#'DebugDummyNrns'
+        self.params['sim_id'] = ''#'DebugDummyNrns'
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 10
+        self.params['n_rf'] = 20
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -339,7 +339,7 @@ class parameter_storage(object):
         self.params['taui_bcpnn'] = 100.
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
-        self.params['bcpnn_init_val'] = 0.01
+        self.params['bcpnn_init_val'] = 0.001
         #self.params['bcpnn_init_val'] = 0.1
 
         self.params['kappa'] = 1.
@@ -553,6 +553,8 @@ class parameter_storage(object):
         # used for different projections ['ee', 'ei', 'ie', 'ii'] for plotting
         self.params['adj_list_tgt_fn_base'] = '%sadj_list_tgt_index_' % (self.params['connections_folder']) # key = target_gid
         self.params['adj_list_src_fn_base'] = '%sadj_list_src_index_' % (self.params['connections_folder']) # key = source_gid
+        self.params['merged_adj_list_tgt_index'] = self.params['adj_list_tgt_fn_base'] + 'merged.json'
+        self.params['merged_adj_list_src_index'] = self.params['adj_list_src_fn_base'] + 'merged.json'
         self.params['conn_mat_fn_base'] = '%sconn_mat_' % (self.params['connections_folder'])
         self.params['delay_mat_fn_base'] = '%sdelay_mat_' % (self.params['connections_folder'])
 

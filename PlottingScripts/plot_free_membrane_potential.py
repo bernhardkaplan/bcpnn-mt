@@ -82,14 +82,16 @@ class Plotter(object):
     def collect_data(self, fn):
 
         print 'plot_free_membrane_potential plotter loads:', fn
-        d = np.loadtxt(fn)
-        gids = np.array(np.unique(d[:, 0]), dtype=int)
-        for gid in gids:
-            time_axis, volt = utils.extract_trace(d, gid)
-            self.traces[gid] = volt
-            self.y_lim_global[0] = min(self.y_lim_global[0], np.min(volt))
-            self.y_lim_global[1] = max(self.y_lim_global[1], np.max(volt))
-            self.t_axis = time_axis
+        file_size = os.path.getsize(path)
+        if file_size != 0:
+            d = np.loadtxt(fn)
+            gids = np.array(np.unique(d[:, 0]), dtype=int)
+            for gid in gids:
+                time_axis, volt = utils.extract_trace(d, gid)
+                self.traces[gid] = volt
+                self.y_lim_global[0] = min(self.y_lim_global[0], np.min(volt))
+                self.y_lim_global[1] = max(self.y_lim_global[1], np.max(volt))
+                self.t_axis = time_axis
 
 
     def plot_cells_sorted(self, ax, sort_idx=2):
