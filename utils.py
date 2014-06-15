@@ -506,7 +506,9 @@ def set_tuning_prop_1D(params, cell_type='exc'):
         n_rf_x = params['n_rf_x_inh']
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
+
     tuning_prop = np.zeros((n_cells, 5))
+    rfs = np.zeros((n_cells, 2)) # receptive field sizes
 
     if params['log_scale']==1:
         v_rho_pos = np.linspace(v_min, v_max, num=n_v / 2, endpoint=True)

@@ -47,6 +47,7 @@ class NetworkModel(object):
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
 #            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
+        exit(1)
         self.rf_sizes = self.set_receptive_fields('exc')
         np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
 
@@ -97,6 +98,7 @@ class NetworkModel(object):
         rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tuning_prop_exc[:, 1] - .5) + self.params['rf_size_y_min']
         rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tuning_prop_exc[:, 2]) + self.params['rf_size_vx_min']
         rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tuning_prop_exc[:, 3]) + self.params['rf_size_vy_min']
+
         return rfs
 
 
