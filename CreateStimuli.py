@@ -2,12 +2,13 @@ import numpy as np
 import random
 import os
 import sys
-#matplotlib.use('Agg')
+import utils
 
 
 class CreateStimuli(object):
     def __init__(self):
-        pass
+        import numpy.random as rnd
+        self.RNG = rnd
 
 
     def create_test_stim_1D(self, test_params, training_params=None):
@@ -31,8 +32,7 @@ class CreateStimuli(object):
             stim_params = np.zeros((n_stim, 4))
             all_speeds = np.zeros(n_stim)
             all_starting_pos = np.zeros((n_stim, 2))
-            import numpy.random as rnd
-            rnd.seed(test_params['stimuli_seed'])
+            self.RNG.seed(test_params['stimuli_seed'])
             random.seed(test_params['stimuli_seed'] + 1)
             # create stimulus ranges as during training
             if test_params['log_scale']==1:
@@ -44,7 +44,7 @@ class CreateStimuli(object):
 #            stim_cnt = 0
             for stim_cnt in xrange(n_stim):
                 speed = speeds[stim_cnt]
-                v0 = speed * rnd.uniform(1. - test_params['v_noise_training'], 1. + test_params['v_noise_training'])
+                v0 = utils.get_plus_minus(self.RNG) * speed * self.RNG.uniform(1. - test_params['training_stim_noise_v'], 1. + test_params['training_stim_noise_v'])
                 x0 = .25 * np.random.rand() # select a random start point between 0 - 0.25
                 all_starting_pos[stim_cnt, 0] = x0
                 all_speeds[stim_cnt] = v0
@@ -86,24 +86,41 @@ class CreateStimuli(object):
 
         # create stimulus ranges
         if params['log_scale'] == 1:
-            speeds = np.linspace(params['v_min_training'], params['v_max_training'], num=params['n_speeds'], endpoint=True)
+            speeds_pos = np.linspace(params['v_min_training'], params['v_max_training'], num=params['n_speeds'] / 2, endpoint=True)
         else:
-            speeds = np.logspace(np.log(params['v_min_training'])/np.log(params['log_scale']),
-                            np.log(params['v_max_training'])/np.log(params['log_scale']), num=params['n_speeds'],
+            speeds_pos = np.logspace(np.log(params['v_min_training'])/np.log(params['log_scale']),
+                            np.log(params['v_max_training'])/np.log(params['log_scale']), num=params['n_speeds'] / 2,
                             endpoint=True, base=params['log_scale'])
 
+
+#        starting_pos = self.RNG.rand(params['n_training_stim_per_cycle'])
+        starting_pos = np.linspace(0, 1., params['n_training_stim_per_cycle'])
+
+        n_v = params['n_speeds']
+        speeds = np.zeros(n_v)
+        speeds[:n_v/2] = speeds_pos
+        speeds[-(n_v/2):] = -speeds_pos
+
+#        for i_speed, speed in enumerate(speeds):
+#            speeds[i_speed] *= utils.get_plus_minus(self.RNG) 
+#        print '\n\n'
         stim_cnt = 0
         stim_params = np.zeros((self.n_stim_total, 4))
         for cycle in xrange(params['n_cycles']):
             for i_speed, speed in enumerate(speeds):
-                for i_ in xrange(self.n_stim_per_direction):
-                    # add noise for the speed
-                    v0 = speed * rnd.uniform(1. - params['v_noise_training'], 1. + params['v_noise_training'])
-                    self.all_starting_pos[stim_cnt, 0] = np.random.rand()
+                # add noise for the speed
+                v0 = speed * self.RNG.uniform(1. - params['training_stim_noise_v'], 1. + params['training_stim_noise_v'])
+                #v0 = speed * self.RNG.uniform(1. - test_params['training_noise_x'], 1. + test_params['training_noise_x'])
+                x_pos = np.linspace(0., 1., params['n_training_x'], endpoint=False)
+
+                for i_x in xrange(params['n_training_x']):
+#                    x0 = starting_pos[i_speed * params['n_training_x'] + i_x] + utils.get_plus_minus(self.RNG) * self.RNG.uniform(-params['training_stim_noise_x'], params['training_stim_noise_x'])
+                    x0 = x_pos[i_x] + utils.get_plus_minus(self.RNG) * self.RNG.uniform(-params['training_stim_noise_x'], params['training_stim_noise_x'])
+                    self.all_starting_pos[stim_cnt, 0] = x0 % 1.
                     self.all_speeds[stim_cnt] = v0
                     stim_cnt += 1
-            stim_idx_0 = params['n_speeds'] * cycle
-            stim_idx_1 = params['n_speeds'] * (cycle + 1)
+            stim_idx_0 = params['n_training_stim_per_cycle'] * cycle
+            stim_idx_1 = params['n_training_stim_per_cycle'] * (cycle + 1)
             stim_order = range(stim_idx_0, stim_idx_1)
             if random_order:
                 random.shuffle(stim_order)

@@ -41,7 +41,7 @@ def convert_adjacency_list_to_connlist(adj_list, src_tgt='tgt'):
     return output_array
 
 
-def convert_adjacency_lists(params, iteration=0):
+def convert_adjacency_lists(params, iteration=0, verbose=False):
     """
     Convert the adjacency lists from target-indexed to source-indexed.
     """
@@ -64,9 +64,12 @@ def convert_adjacency_lists(params, iteration=0):
                     fn_abs_path = params['connections_folder'] +  fn
                     fns.append(fn_abs_path)
         adj_list_tgt = {}
+        if not verbose:
+            print 'utils.convert_adjacency_lists: Loading %d adjacency lists' % len(fns)
         for fn in fns:
             f = file(fn, 'r')
-            print 'utils.convert_adjacency_lists: Loading weights:', fn
+            if verbose:
+                print 'utils.convert_adjacency_lists: Loading weights:', fn
             d = json.load(f)
             adj_list_tgt.update(d)
         
@@ -504,12 +507,17 @@ def set_tuning_prop_1D(params, cell_type='exc'):
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
     tuning_prop = np.zeros((n_cells, 5))
+
     if params['log_scale']==1:
-        v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+        v_rho_pos = np.linspace(v_min, v_max, num=n_v / 2, endpoint=True)
     else:
-        v_rho = np.logspace(np.log(v_min)/np.log(params['log_scale']),
-                        np.log(v_max)/np.log(params['log_scale']), num=n_v,
+        v_rho_pos = np.logspace(np.log(v_min)/np.log(params['log_scale']),
+                        np.log(v_max)/np.log(params['log_scale']), num=n_v / 2,
                         endpoint=True, base=params['log_scale'])
+    v_rho = np.zeros(n_v)
+    v_rho[:n_v/2] = v_rho_pos
+    v_rho[-(n_v/2):] = -v_rho_pos
+
     n_orientation = params['n_orientation']
     orientations = np.linspace(0, np.pi, n_orientation, endpoint=False)
     xlim = (0, params['torus_width'])
@@ -518,11 +526,14 @@ def set_tuning_prop_1D(params, cell_type='exc'):
     random_rotation_for_orientation = np.pi*rnd.rand(n_rf_x * n_v * n_orientation) * params['sigma_rf_orientation']
     for i_RF in xrange(n_rf_x):
         for i_v_rho, rho in enumerate(v_rho):
+            plus_minus = get_plus_minus(rnd) # sign for the speed
             for orientation in orientations:
                 for i_cell in xrange(params['n_exc_per_mc']):
                     tuning_prop[index, 0] = (RF[i_RF] + params['sigma_rf_pos'] * rnd.randn()) % params['torus_width']
                     tuning_prop[index, 1] = 0. # i_RF / float(n_rf_x) # y-pos 
-                    tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * rnd.randn())
+                    tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * rnd.randn()) 
+#                    tuning_prop[index, 2] = (-1) ** (i_v_rho % 2) * rho * (1. + params['sigma_rf_speed'] * rnd.randn()) 
+#                    tuning_prop[index, 2] = plus_minus * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
                     tuning_prop[index, 3] = 0. # np.sin(theta + random_rotation[index]) * rho * (1. + params['sigma_rf_speed'] * rnd.randn())
                     tuning_prop[index, 4] = (orientation + random_rotation_for_orientation[index / params['n_exc_per_mc']]) % np.pi
                     index += 1
@@ -542,8 +553,9 @@ def set_tuning_prop_1D_regular(params, cell_type='exc'):
         n_rf_x = params['n_rf_x_inh']
         v_max = params['v_max_tp']
         v_min = params['v_min_tp']
-    v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
-#    v_rho = np.linspace(-v_max, v_max, num=n_v, endpoint=True)
+#    v_rho = np.linspace(v_min, v_max, num=n_v, endpoint=True)
+    v_rho = np.linspace(-v_max, v_max, num=n_v, endpoint=True)
+
     RF = np.linspace(0., 1., n_rf_x, endpoint=True)
     index = 0
     tuning_prop = np.zeros((n_cells, 4))
@@ -965,7 +977,6 @@ def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
 
 
 def get_grid_pos(x0, y0, xedges, yedges):
-
     x_index, y_index = len(xedges)-1, len(yedges)-1
     for (ix, x) in enumerate(xedges[1:]):
         if x0 <= x:
@@ -1400,6 +1411,14 @@ def resolve_src_tgt_with_tp(conn_type, params):
 
     return (n_src, n_tgt, tp_src, tp_tgt)
 
+
+
+def get_plus_minus(rnd):
+    """
+    Returns either -1., or +1. as float.
+    rnd -- should be your numpy.random RNG
+    """
+    return (rnd.randint(-1, 1) + .5) * 2
 
 
 def convert_to_url(fn):
