@@ -23,22 +23,26 @@ class Plotter(object):
     def __init__(self, params, it_max=None):
         self.params = params
         tp_fn = self.params['tuning_prop_means_fn']
-        if not os.path.exists(tp_fn):
-            self.tp = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')
+        rfs_fn = self.params['receptive_fields_exc_fn']
+        if not (os.path.exists(tp_fn)) or not (os.path.exists(rfs_fn)):
+            print 'RECOMPUTING tuning properties'
+            self.tp, self.rfs = set_tuning_properties.set_tuning_properties(self.params)
         else:
             print 'Loading', tp_fn
             self.tp = np.loadtxt(tp_fn)
-        rfs_fn = self.params['receptive_fields_exc_fn']
-        if not os.path.exists(rfs_fn):
-            n_cells = self.params['n_exc']
-            self.rfs = np.zeros((n_cells, 4))
-            self.rfs[:, 0] = self.params['rf_size_x_gradient'] * np.abs(self.tp[:, 0] - .5) + self.params['rf_size_x_min']
-            self.rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tp[:, 1] - .5) + self.params['rf_size_y_min']
-            self.rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tp[:, 2]) + self.params['rf_size_vx_min']
-            self.rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tp[:, 3]) + self.params['rf_size_vy_min']
-        else:
             print 'Loading', rfs_fn
             self.rfs = np.loadtxt(self.params['receptive_fields_exc_fn'])
+
+        # old
+#            self.tp = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')
+#        if not os.path.exists(rfs_fn):
+#            n_cells = self.params['n_exc']
+#            self.rfs = np.zeros((n_cells, 4))
+#            self.rfs[:, 0] = self.params['rf_size_x_gradient'] * np.abs(self.tp[:, 0] - .5) + self.params['rf_size_x_min']
+#            self.rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tp[:, 1] - .5) + self.params['rf_size_y_min']
+#            self.rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tp[:, 2]) + self.params['rf_size_vx_min']
+#            self.rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tp[:, 3]) + self.params['rf_size_vy_min']
+#        else:
 
     def plot_tuning_prop(self):
 

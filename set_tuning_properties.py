@@ -55,23 +55,15 @@ def get_xpos_log_distr(params):
     x_max = .5 - params['xpos_hc_0']
     logscale = params['log_scale']
     logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2, base=logscale)
-    print 'x logscpace_pos:', logspace
+#    print 'x logscpace_pos:', logspace
     logspace = list(logspace)
     logspace.reverse()
-#    print 'logscpace_pos.reverse:', logspace
     x_lower = .5 - np.array(logspace)
-#    print 'x_rho_pos', x_lower
-    
-#    print 'x_min', x_min, 'x_max', x_max
     logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2, base=logscale)
-#    print 'log space', logspace
-#    print 'log space + .5', logspace + .5
     x_upper =  logspace + .5
-#    print 'x_rho_neg', x_rho_upper
     x_rho = np.zeros(n_x)
     x_rho[:n_x/2] = x_lower
     x_rho[n_x/2:] = x_upper
-#    exit(1)
     return x_rho
 
 
@@ -153,12 +145,16 @@ def get_relative_distance_error(rf_centers):
 
 def set_tuning_properties(params):
     tuning_prop = np.zeros((params['n_exc'], 4))
+    rfs = np.zeros((params['n_exc'], 4))
     x_pos = get_xpos_log_distr(params)
-    x_pos_exp = get_xpos_exponential_distr(params)
     v_rho = get_speed_tuning(params)
-    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
     rf_size_x = get_receptive_field_sizes_x(params, x_pos)
+    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
+    index = 0
+    for i_mc in xrange(params['n_mc_per_hc']):
+        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
     for i_hc in xrange(params['n_hc']):
+        print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], v_rho[i_mc]
             for i_exc in xrange(params['n_exc_per_mc']):
@@ -167,9 +163,12 @@ def set_tuning_properties(params):
                 tuning_prop[index, 1] = 0.5 
                 tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
                 tuning_prop[index, 3] = 0. 
-                p_cell, = ax.plot(tuning_prop[index, 0], tuning_prop[index, 2], 'o', c='k', markersize=2)
+                rfs[index, 0] = rf_size_x[i_hc]
+                rfs[index, 2] = rf_size_v[i_mc]
                 index += 1
-    return tuning_prop
+
+    return tuning_prop, rfs
+
 
 if __name__ == '__main__':
     import simulation_parameters
