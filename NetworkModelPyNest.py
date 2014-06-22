@@ -17,7 +17,7 @@ import utils
 import nest
 import CreateStimuli
 import json
-
+import set_tuning_properties
 
 class NetworkModel(object):
 
@@ -42,13 +42,15 @@ class NetworkModel(object):
         self.projections['ii'] = []
         if not load_tuning_prop:
             self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+
+            self.rf_sizes = self.set_receptive_fields('exc')
+            self.tuning_prop_exc, set_tuning_properties.set_tuning_properties(self.params)
 #            self.tuning_prop_inh = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='inh')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
 #            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
         exit(1)
-        self.rf_sizes = self.set_receptive_fields('exc')
         np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
 
         # update 

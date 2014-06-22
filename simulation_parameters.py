@@ -55,7 +55,7 @@ class parameter_storage(object):
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
 
-        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_max_tp'] = 2.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.02  # [a.u.] minimal velocity in visual space for tuning property distribution
 
         # receptive field size parameters
@@ -63,10 +63,13 @@ class parameter_storage(object):
         # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
         self.params['regular_tuning_prop'] = False
-        self.params['rf_x_center_distance'] = 0.005
+        self.params['rf_x_center_distance'] = 0.0001   
+        self.params['xpos_hc_0'] = 0.05 # the position of the first HC index (distance from the 'border')
+
+        self.params['rf_x_distribution_steepness'] = 0.4 # 'free' parameter determining the steep-ness of the exponential distribution for x-pos
         if self.params['regular_tuning_prop']:
-            self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .01 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = .001 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .001 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
             # regular tuning prop
@@ -82,8 +85,8 @@ class parameter_storage(object):
             self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
             self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
-            self.params['sigma_rf_pos'] = .001 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .01 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
