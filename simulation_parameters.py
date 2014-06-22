@@ -23,7 +23,6 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' # 'brian' #
 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        #self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
         self.params['sim_id'] = ''#'DebugDummyNrns'
 
@@ -42,12 +41,12 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 10
+        self.params['n_v'] = 20
         assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -55,17 +54,21 @@ class parameter_storage(object):
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
 
-        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_max_tp'] = 2.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.02  # [a.u.] minimal velocity in visual space for tuning property distribution
 
         # receptive field size parameters
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
         # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
         self.params['regular_tuning_prop'] = False
+        self.params['rf_x_center_distance'] = 0.0001   
+        self.params['xpos_hc_0'] = 0.05 # the position of the first HC index (distance from the 'border')
+
+        self.params['rf_x_distribution_steepness'] = 0.4 # 'free' parameter determining the steep-ness of the exponential distribution for x-pos
         if self.params['regular_tuning_prop']:
-            self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = .001 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .001 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
             # regular tuning prop
@@ -81,7 +84,7 @@ class parameter_storage(object):
             self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
             self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
-            self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+            self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
@@ -89,14 +92,14 @@ class parameter_storage(object):
     #        self.params['rf_size_y_gradient'] = .2  # receptive field size for y-pos increases with distance to .5
     #        self.params['rf_size_x_min'] = .01      # cells situated at .5 have this receptive field size
     #        self.params['rf_size_y_min'] = .01      # cells situated at .5 have this receptive field size
-            self.params['rf_size_vx_gradient'] = 0.5 # receptive field size for vx-pos increases with distance to 0.0
+            self.params['rf_size_vx_gradient'] = .5 # receptive field size for vx-pos increases with distance to 0.0
             self.params['rf_size_vy_gradient'] = .1 #
-            self.params['rf_size_vx_min'] = .02
+            self.params['rf_size_vx_min'] = .01
             self.params['rf_size_vy_min'] = .05 
             # regular tuning prop
-            self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
+            self.params['rf_size_x_gradient'] = .4  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
-            self.params['rf_size_x_min'] = 1. / self.params['n_rf_x']
+            self.params['rf_size_x_min'] = 0.01 #1. / self.params['n_rf_x']
             self.params['rf_size_y_min'] = 1. / self.params['n_rf_y']
     #        self.params['rf_size_vx_gradient'] = .0 # receptive field size for vx-pos increases with distance to 0.0
     #        self.params['rf_size_vy_gradient'] = .0 #
@@ -273,7 +276,7 @@ class parameter_storage(object):
 #        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         assert (self.params['n_speeds'] % 2 == 0), 'n_speeds should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 5 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -425,7 +428,7 @@ class parameter_storage(object):
                         self.params['sim_id'], self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], \
-                        self.params['w_ei_global_max'], self.params['blur_X'], self.params['blur_V'], self.params['bcpnn_init_val'])
+                        self.params['w_ei_global_max'])
             folder_name += '/'
             self.params['folder_name'] = folder_name
         else:

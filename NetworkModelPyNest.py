@@ -17,7 +17,7 @@ import utils
 import nest
 import CreateStimuli
 import json
-
+import set_tuning_properties
 
 class NetworkModel(object):
 
@@ -41,13 +41,14 @@ class NetworkModel(object):
         self.projections['ie'] = []
         self.projections['ii'] = []
         if not load_tuning_prop:
-            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
-#            self.tuning_prop_inh = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='inh')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+#            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+
+#            self.rf_sizes = self.set_receptive_fields('exc')
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties(self.params)
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
 #            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
-        self.rf_sizes = self.set_receptive_fields('exc')
         np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
 
         # update 
@@ -60,6 +61,7 @@ class NetworkModel(object):
 #            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
 #            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
+#        exit(1)
         # # # # # # # # # # # #
         #     S E T U P       #
         # # # # # # # # # # # #
@@ -85,19 +87,20 @@ class NetworkModel(object):
             os.system(cmd)
 
 
-    def set_receptive_fields(self, cell_type):
-        """
-        Can be called only after set_tuning_prop.
-        Receptive field sizes increase linearly depending on their relative position.
-        TODO: receptive field sizes for inhibitory neurons
-        """
-        n_cells = self.params['n_exc']
-        rfs = np.zeros((n_cells, 4))
-        rfs[:, 0] = self.params['rf_size_x_gradient'] * np.abs(self.tuning_prop_exc[:, 0] - .5) + self.params['rf_size_x_min']
-        rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tuning_prop_exc[:, 1] - .5) + self.params['rf_size_y_min']
-        rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tuning_prop_exc[:, 2]) + self.params['rf_size_vx_min']
-        rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tuning_prop_exc[:, 3]) + self.params['rf_size_vy_min']
-        return rfs
+#    def set_receptive_fields(self, cell_type):
+#        """
+#        Can be called only after set_tuning_prop.
+#        Receptive field sizes increase linearly depending on their relative position.
+#        TODO: receptive field sizes for inhibitory neurons
+#        """
+#        n_cells = self.params['n_exc']
+#        rfs = np.zeros((n_cells, 4))
+#        rfs[:, 0] = self.params['rf_size_x_gradient'] * np.abs(self.tuning_prop_exc[:, 0] - .5) + self.params['rf_size_x_min']
+#        rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tuning_prop_exc[:, 1] - .5) + self.params['rf_size_y_min']
+#        rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tuning_prop_exc[:, 2]) + self.params['rf_size_vx_min']
+#        rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tuning_prop_exc[:, 3]) + self.params['rf_size_vy_min']
+
+#        return rfs
 
 
 
