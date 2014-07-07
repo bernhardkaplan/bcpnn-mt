@@ -341,7 +341,7 @@ class NetworkModel(object):
             r = nprnd.rand(n_steps)
             spike_idx = (r <= (rate_of_t/1000.) * dt).nonzero()[0]
             spike_times = spike_idx * dt
-            print 'Debug unit %d receives in total: %d spikes' % (gid, spike_times)
+            print 'Debug unit %d receives in total: %d spikes' % (unit, spike_times.size)
 
 #            for i in xrange(n_steps):
 #                r = nprnd.rand()
@@ -550,7 +550,7 @@ class NetworkModel(object):
         if self.params['training_run']:
             spike_times_container = self.create_training_input_for_cells(gids, with_blank=False)
         else:
-            spike_times_container = self.create_training_input_for_cells(gids, with_blank=True)
+            spike_times_container = self.create_testing_input_fo(gids, with_blank=True)
         self.recorder_stimulus = nest.Create('spike_generator', len(gids))
 
         for i_, unit in enumerate(gids):

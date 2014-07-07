@@ -189,7 +189,7 @@ if __name__ == '__main__':
 
     iteration = 0
     WA = WeightAnalyser(params, iteration=iteration)
-    WA.load_adj_lists(src_tgt='tgt')
+    WA.load_adj_lists(src_tgt='tgt', verbose=True)
 
 #    WA.load_spikes()
 #    WA.get_weights_to_cell(295)
@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
 #    utils.convert_adjacency_lists(params)
     WA2 = WeightAnalyser(params, iteration=iteration)
-    WA2.load_adj_lists(src_tgt='src')
+    WA2.load_adj_lists(src_tgt='src', verbose=True)
     output_fn = params['conn_mat_fn_base'] + 'ee_src_' + str(iteration) + '.dat'
     WA2.get_weight_matrix_src_index(plot=True, output_fn=output_fn)
     pylab.show()

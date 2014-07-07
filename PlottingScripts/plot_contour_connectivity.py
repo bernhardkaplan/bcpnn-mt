@@ -232,7 +232,8 @@ def run_contour_plot_tgt_perspective(params, mp=None):
     if gid == None:
         gid = 1 + utils.select_well_tuned_cells_1D(tp, mp, 1, w_pos=1.)[0]
         print 'Plotting gid:', gid
-    clim = (-20, 20)
+    clim = (-10, 10)
+    clim = (-10, 10)
 #    clim = None
     plot_contour_connectivity_tgt(params, adj_list, tp, gid, clim=clim) # connection weights laid out in the tuning space and put on a grid --> contour
 
@@ -429,7 +430,7 @@ def run_contour_plot(params, source_perspective=False, mp=None):
 
 if __name__ == '__main__':
 
-    mp = [0.5, 0., 0.5, .0]
+    mp = [0.5, 0., 1.0, .0]
     plot_source_perspective = False
     np.random.seed(0)
     if len(sys.argv) == 1:
