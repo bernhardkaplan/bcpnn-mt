@@ -121,6 +121,8 @@ class NetworkModel(object):
                     realizedConnectionMatrixFile = self.params['realized_conn_file'], \
                     lostConnectionMatrixFile=self.params['lost_conn_file'], \
                     rng_seeds_seed=self.params['seed'], \
+                    speedupFactor=self.params['ess_speedup'], \
+                    ignoreDatabase=True, \
                     ess_params = {
                         'perfectSynapseTrafo':True,\
                         'weightDistortion': 0.2

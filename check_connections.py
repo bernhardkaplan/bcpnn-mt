@@ -48,12 +48,10 @@ class CheckConnections(object):
 
         d = self.get_conn_data(conn_type)
         (n_src, n_tgt, tp_src, tp_tgt) = utils.resolve_src_tgt_with_tp(conn_type, self.params)
-        n_src = 1000
         mean_diff = np.zeros(n_src)
         np.random.seed(0)
         for i_src in xrange(n_src):
             src_gid = np.random.randint(0, n_src)
-            target_conn_data = utils.get_targets(d, src_gid)
             connections = utils.get_targets(d, src_gid)
             connection_gids = connections[:, 1].astype(int)
             weights = connections[:, 2]
@@ -67,6 +65,19 @@ class CheckConnections(object):
         print 'mean difference between source cell position and cms_x = %.2e +- %.2e' % (mean_diff.mean(), mean_diff.std())
 
 
+
+    def get_realized_connections(self, conn_type='ee'):
+        d = self.get_conn_data(conn_type)
+        (n_src, n_tgt, tp_src, tp_tgt) = utils.resolve_src_tgt_with_tp(conn_type, self.params)
+        n_out = np.zeros(n_src)
+        for i_src in xrange(n_src):
+            connections = utils.get_targets(d, i_src)
+            n_conn = connections[:, 0].size
+            n_out[i_src] = n_conn
+
+        n_out_mean = n_out.mean()
+        n_out_std = n_out.std()
+        print 'n_out_mean:', n_out_mean, 'n_out_std:', n_out_std
 
 
 
@@ -86,5 +97,6 @@ if __name__ == '__main__':
         params = network_params.params
 
     CC = CheckConnections(params)
+    CC.get_realized_connections()
 #    CC.count_neurons_without_outgoing_connections(conn_type='ee')
-    CC.check_anisotropy(conn_type='ee')
+#    CC.check_anisotropy(conn_type='ee')

@@ -35,6 +35,7 @@ class parameter_storage(object):
 
         # new parameter make distinguishment between one / two dimensional model easy
         self.params['n_grid_dimensions'] = 1
+        self.params['ess_speedup'] = 100000
 
         # ###################
         # HEXGRID PARAMETERS
@@ -83,12 +84,12 @@ class parameter_storage(object):
         self.params['tau_syn_exc'] = 5.0 # 10.
         self.params['tau_syn_inh'] = 5.0 # 20.
         if self.params['neuron_model'] == 'IF_cond_exp':
-            self.params['cell_params_exc'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-50, 'e_rev_I':-100.}
-            self.params['cell_params_inh'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-50, 'e_rev_I':-100.}
+            self.params['cell_params_exc'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 90., 'v_reset' : -70., 'v_rest':-50, 'e_rev_I':-100.}
+            self.params['cell_params_inh'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E': self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 90., 'v_reset' : -70., 'v_rest':-50, 'e_rev_I':-100.}
         elif self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
-            self.params['cell_params_exc'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-50., \
+            self.params['cell_params_exc'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 90., 'v_reset' : -70., 'v_rest':-50., \
                     'b' : 0.5, 'a':4., 'e_rev_I':-100.}
-            self.params['cell_params_inh'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 10., 'v_reset' : -70., 'v_rest':-50., \
+            self.params['cell_params_inh'] = {'cm':0.2, 'tau_refrac':1.0, 'v_thresh':-30.0, 'tau_syn_E':self.params['tau_syn_exc'], 'tau_syn_I':self.params['tau_syn_inh'], 'tau_m' : 90., 'v_reset' : -70., 'v_rest':-50., \
                     'b' : 0.5, 'a':4., 'e_rev_I':-100.}
         # default parameters: /usr/local/lib/python2.6/dist-packages/pyNN/standardmodels/cells.py
         # v = voltage
@@ -132,6 +133,7 @@ class parameter_storage(object):
         #from the latency in second (d(src, tgt) / v_src)  to the connection
         #delay (delay_ij = latency_ij * delay_scale) in ms
         self.params['delay_range'] = (0.1, 2.) # [ms], restricts remaining connections to have delays within this range
+        self.params['all_connections_have_equal_delays'] = True # if True: IJCNN-paper like motion-based-prediction/anticipation, all have the same delay
         self.params['tau_prediction'] = .001 # [s] fixed latency for neural signaling, determines preferred projection sites of neurons
 
         self.params['w_sigma_x'] = 0.1 # width of connectivity profile for pre-computed weights
@@ -313,7 +315,7 @@ class parameter_storage(object):
             if self.params['neuron_model'] == 'EIF_cond_exp_isfa_ista':
                 folder_name = 'AdEx_a%.2e_b%.2e_' % (self.params['cell_params_exc']['a'], self.params['cell_params_exc']['b'])
             else:
-               folder_name = 'WithBlank_delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
+               folder_name = 'ESS-WithBlank_delay_%d_%s_nRF%d_tauPred%d_nD%d_delayMax%d_pee%.2e_wee%.2e_wsx%.2e_wsv%.2e_wiso%.2f_taue%d_taui%d_seed%d/' % (\
                        self.params['equal_weights'], self.params['connectivity_code'], self.params['N_RF'], \
                        self.params['tau_prediction'] * 1000., self.params['sensory_delay'] * 1000., \
                        self.params['delay_range'][1], self.params['p_ee'], self.params['w_tgt_in_per_cell_ee'], \
