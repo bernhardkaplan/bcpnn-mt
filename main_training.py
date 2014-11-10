@@ -143,7 +143,7 @@ if __name__ == '__main__':
     ps.write_parameters_to_file()
 
     load_files = False
-    record = True
+    record = False
     save_input_files = not load_files
 
     NM = NetworkModel(ps, iteration=0)

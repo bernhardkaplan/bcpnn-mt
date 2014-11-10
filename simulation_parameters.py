@@ -46,7 +46,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -272,7 +272,7 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['training_stim_noise_v'] = 0.00 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 5 # one cycle comprises training of all n_speeds
+        self.params['n_cycles'] = 4 # one cycle comprises training of all n_speeds
 #        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
         self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
         assert (self.params['n_speeds'] % 2 == 0), 'n_speeds should be an even number (for equal number of negative and positive speeds)'
