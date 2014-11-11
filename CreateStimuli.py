@@ -7,8 +7,7 @@ import utils
 
 class CreateStimuli(object):
     def __init__(self):
-        import numpy.random as rnd
-        self.RNG = rnd
+        pass
 
 
     def create_test_stim_1D(self, test_params, training_params=None):
@@ -32,7 +31,9 @@ class CreateStimuli(object):
             stim_params = np.zeros((n_stim, 4))
             all_speeds = np.zeros(n_stim)
             all_starting_pos = np.zeros((n_stim, 2))
-            self.RNG.seed(test_params['stimuli_seed'])
+            visual_stim_seed = test_params['stimuli_seed']
+            self.RNG = np.random.RandomState(visual_stim_seed)
+
             random.seed(test_params['stimuli_seed'] + 1)
             # create stimulus ranges as during training
             if test_params['log_scale']==1:
@@ -72,6 +73,8 @@ class CreateStimuli(object):
         Keyword arguments:
         random_order -- (bool) if True the sequence is shuffled
         """
+        visual_stim_seed = params['stimuli_seed']
+        self.RNG = np.random.RandomState(visual_stim_seed)
         self.n_stim_per_direction = params['n_stim_per_direction']  # direction = speed in 1-D
         self.n_stim_total = params['n_training_stim']  # = n_cycles * n_speeds * n_stim_per_direction
         

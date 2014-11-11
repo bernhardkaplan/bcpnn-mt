@@ -42,7 +42,6 @@ class NetworkModel(object):
         self.projections['ii'] = []
         if not load_tuning_prop:
 #            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
-
 #            self.rf_sizes = self.set_receptive_fields('exc')
             self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties(self.params)
         else:
@@ -331,6 +330,7 @@ class NetworkModel(object):
         nprnd.seed(self.params['input_spikes_seed'])
         # create the spike trains
         print 'Creating input spiketrains...'
+        nspikes = np.zeros((len(my_units), 2))
         for i_, unit in enumerate(my_units):
             if not (i_ % 10):
                 print 'Creating input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(my_units), float(i_) / len(my_units) * 100.)
@@ -341,18 +341,24 @@ class NetworkModel(object):
             r = nprnd.rand(n_steps)
             spike_idx = (r <= (rate_of_t/1000.) * dt).nonzero()[0]
             spike_times = spike_idx * dt
-            print 'Debug unit %d receives in total: %d spikes' % (gid, spike_times)
+            print 'Debug unit %d receives in total: %d spikes' % (i_, len(spike_times))
 
 #            for i in xrange(n_steps):
 #                r = nprnd.rand()
 #                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
 #                    spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
+            nspikes[i_, 0] = spike_times.size
+            nspikes[i_, 1] = unit
             if (save_output and self.spike_times_container[i_].size > 1):
                 #output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 #np.savetxt(output_fn, rate_of_t)
                 output_fn = self.params['input_st_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 np.savetxt(output_fn, np.array(spike_times))
+        
+        fn = self.params['input_folder'] + 'nspikes_in_pid%d.dat' % (self.pc_id)
+        np.savetxt(fn, nspikes)
+
         return True
 
 
@@ -494,7 +500,9 @@ class NetworkModel(object):
             print 'Connecting exc - exc '
             self.connect_ee()
             self.connect_ee_testing()
+            exit(1)
             self.connect_input_to_recorder_neurons()
+            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
             print 'Connecting exc - inh specific'
@@ -538,27 +546,40 @@ class NetworkModel(object):
 
     def connect_input_to_recorder_neurons(self):
 
+        # pick recorder neurons along the spatial axis --> sort the neurons according to their x-pos
         sorted_gids = np.argsort(self.tuning_prop_exc[:, 0])
+        # pick evenly spaced indices
         rnd_ = np.linspace(0, self.params['n_exc'], self.params['n_recorder_neurons'], endpoint=False)
         rnd_gids = np.array(rnd_, dtype=int)
-        gids = sorted_gids[rnd_gids]
-        # gids is the neurons that are to 'copied' for recorder neurons
+        # get the indices for the corresponding 'normal' neurons
+        gid_indices = sorted_gids[rnd_gids] 
+
+        self.recorder_stimulus = nest.Create('spike_generator', self.params['n_recorder_neurons'])
         self.recorder_neuron_gid_mapping = {}
 
-        print 'DEBUG recorder gids:', gids
+        for i_, gid in enumerate(self.recorder_neurons):
+            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = self.exc_gids[gid_indices[i_]]
+
+        print 'DEBUG recorder gids:', gid_indices
+        print 'DEBUG recorder_neuron_gid_mapping:', self.recorder_neuron_gid_mapping
+
         # 1) connect the same input to recorder neurons as to the normal neurons
         if self.params['training_run']:
             spike_times_container = self.create_training_input_for_cells(gids, with_blank=False)
         else:
             spike_times_container = self.create_training_input_for_cells(gids, with_blank=True)
-        self.recorder_stimulus = nest.Create('spike_generator', len(gids))
+#        for 
+#            spike_times_container = self.create_test_input_for_cells(gids, with_blank=True)
+            
+#            self.spike_times_container[i_] = np.array(spike_times)
 
         for i_, unit in enumerate(gids):
-            spike_times = spike_times_container[i_]
+            normal_gid = unit + 1
+            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = normal_gid
+            spike_times = self.spike_times_container[normal_gid]
             nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
-            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = unit
 
         f = file(self.params['recorder_neurons_gid_mapping'], 'w')
         json.dump(self.recorder_neuron_gid_mapping, f, indent=2)

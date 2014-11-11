@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' # 'brian' #
 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
         self.params['sim_id'] = ''#'DebugDummyNrns'
 
@@ -33,6 +33,7 @@ class parameter_storage(object):
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
         self.params['n_rf'] = 20
+#        self.params['n_rf'] = 8
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -47,7 +48,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -55,7 +56,7 @@ class parameter_storage(object):
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
 
-        self.params['v_max_tp'] = 2.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.02  # [a.u.] minimal velocity in visual space for tuning property distribution
 
         # receptive field size parameters
@@ -85,8 +86,8 @@ class parameter_storage(object):
             self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
             self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
-            self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .03 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = 0. #.02 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = 0. #.03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
@@ -447,9 +448,9 @@ class parameter_storage(object):
 
 #        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
         if self.params['training_run']:
-            self.params['input_folder'] = "InputFilesTraining/" 
+            self.params['input_folder'] = "InputFilesTraining_seed%d_nX%d_nV%d/" % (self.params['stimuli_seed'], self.params['n_training_x'], self.params['n_training_v'])
         else:
-            self.params['input_folder'] = "InputFilesTest/" 
+            self.params['input_folder'] = "InputFilesTest_seed%d/" % (self.params['stimuli_seed'])
 
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
