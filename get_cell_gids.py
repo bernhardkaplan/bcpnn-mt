@@ -38,7 +38,7 @@ if __name__ == '__main__':
     import simulation_parameters
     param_tool = simulation_parameters.parameter_storage()
     params = param_tool.params
-    tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+    tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
 
     n = 10
     gids_min, distances = get_cells_near_stim((x_pos, 0, vx, 0), tuning_prop_exc, n=n)

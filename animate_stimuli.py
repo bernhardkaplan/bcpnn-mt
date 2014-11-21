@@ -3,21 +3,21 @@ import random
 import pylab
 from matplotlib import animation
 import simulation_parameters
-import CreateStimuli
+import CreateInput
 PS = simulation_parameters.parameter_storage()
 params = PS.load_params()                       # params stores cell numbers, etc as a dictionary
 
 
 n_frames_per_stim = 2 * int(params['t_sim'] / params['t_stimulus'])
 n_theta = params['n_theta']
-n_speeds = params['n_speeds']
+n_training_v = params['n_training_v']
 n_cycles = params['n_cycles']
 n_stim_per_direction = params['n_stim_per_direction']
-n_stim_total = n_speeds * n_theta * n_cycles * n_stim_per_direction
+n_stim_total = n_training_v * n_theta * n_cycles * n_stim_per_direction
 n_frames_total = n_frames_per_stim * n_stim_total
 
 random_order = False
-CS = CreateStimuli.CreateStimuli()
+CS = CreateInput.CreateInput()
 CS.create_motion_sequence_2D(params, random_order)
 all_speeds, all_starting_pos, all_thetas = CS.get_motion_params(random_order=random_order)
 
@@ -93,7 +93,7 @@ anim_trace = animation.FuncAnimation(fig, animate_trace, init_func=init_rect,
 
 #init_rect()
 
-#n_stim_total = params['n_theta'] * params['n_speeds'] * params['n_cycles'] * params['n_stim_per_direction']
+#n_stim_total = params['n_theta'] * params['n_training_v'] * params['n_cycles'] * params['n_stim_per_direction']
 #stim_start = 0
 #stim_stop = 16
 #scale = 1

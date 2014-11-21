@@ -46,21 +46,29 @@ def get_xpos_exponential_distr(params):
     return x_pos
 
 
-def get_xpos_log_distr(params):
+def get_xpos_log_distr(params, n_x=None, x_min=None, x_max=None):
     """
     Returns the n_hc positions
     """
-    n_x = params['n_mc_per_hc']
-    x_min = params['rf_x_center_distance']
-    x_max = .5 - params['xpos_hc_0']
+    if n_x == None:
+        n_x = params['n_hc']
+    if x_min == None:
+        x_min = params['rf_x_center_distance']
+    if x_max == None:
+        x_max = .5 - params['xpos_hc_0']
     logscale = params['log_scale']
-    logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2, base=logscale)
+#    logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2, base=logscale)
+    logspace = np.logspace(np.log(x_max) / np.log(logscale), np.log(x_min) / np.log(logscale), n_x / 2, base=logscale, endpoint=False)
 #    print 'x logscpace_pos:', logspace
+#    logspace = list(logspace)
+#    logspace.reverse()
+    x_lower = .5 - np.array(logspace)
+#    logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2, base=logscale)
+    logspace = np.logspace(np.log(x_max) / np.log(logscale), np.log(x_min) / np.log(logscale), n_x / 2, base=logscale, endpoint=False)
     logspace = list(logspace)
     logspace.reverse()
-    x_lower = .5 - np.array(logspace)
-    logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2, base=logscale)
-    x_upper =  logspace + .5
+
+    x_upper =  logspace + np.array(.5)
     x_rho = np.zeros(n_x)
     x_rho[:n_x/2] = x_lower
     x_rho[n_x/2:] = x_upper
@@ -122,7 +130,7 @@ def get_receptive_field_sizes_x(params, x_pos):
     rf_size_x[:params['n_hc'] / 2] = dx_pos_half
     dx_pos_upper_half = list(dx_pos_half)
     dx_pos_upper_half.reverse()
-    print 'debug dx_pos_upper_half', dx_pos_upper_half
+    print 'debug dx_pos_upper_half', len(dx_pos_upper_half), len(rf_size_x[params['n_hc'] / 2:]), len(rf_size_x)
     rf_size_x[params['n_hc'] / 2:] = dx_pos_upper_half
     rf_size_x *= 1.5
 #    rf_size_x *= 0.8
@@ -166,15 +174,236 @@ def set_tuning_properties(params):
                 rfs[index, 0] = rf_size_x[i_hc]
                 rfs[index, 2] = rf_size_v[i_mc]
                 index += 1
-
     return tuning_prop, rfs
 
 
-if __name__ == '__main__':
-    import simulation_parameters
-    param_tool = simulation_parameters.parameter_storage()
-    params = param_tool.params
+def get_receptive_field_sizes_x_const_fovea(params, rf_x):
+    idx = np.argsort(rf_x)
+    rf_size_x = np.zeros(rf_x.size)
+    pos_idx = (rf_x[idx] > 0.5).nonzero()[0]
+    neg_idx = (rf_x[idx] < 0.5).nonzero()[0]
+    dx_pos_half = np.zeros(pos_idx.size)
+    dx_neg_half = np.zeros(neg_idx.size)
+    dx_pos_half = rf_x[idx][pos_idx][1:] - rf_x[idx][pos_idx][:-1]
+    dx_neg_half = rf_x[idx][neg_idx][1:] - rf_x[idx][neg_idx][:-1]
+    rf_size_x[:neg_idx.size-1] = dx_neg_half
+    rf_size_x[neg_idx.size] = dx_neg_half[-1]
+    if params['n_rf_x'] % 2:
+        rf_size_x[pos_idx.size+2:] = dx_pos_half # for 21
+    else:
+        rf_size_x[pos_idx.size+1:] = dx_pos_half # for 20
+    rf_size_x[pos_idx.size] = dx_pos_half[0]
+    rf_size_x[idx.size / 2 - 1] = dx_pos_half[0]
+#    rf_size_x *= params['rf_size_x_multiplicator']
+    return rf_size_x
 
+
+def set_tuning_properties_and_rfs_const_fovea(params):
+    tp = np.zeros((params['n_exc'], 4))
+    rfs = np.zeros((params['n_exc'], 4))
+    RNG = np.random.RandomState(params['tp_seed'])
+
+    n_rf_x_log = params['n_rf_x'] - params['n_rf_x_fovea']
+    xpos_log = get_xpos_log_distr(params, n_x=n_rf_x_log, x_min=0.1, x_max=0.45)
+    xpos_const = np.linspace(.5 - params['x_min_tp'], .5 + params['x_min_tp'], params['n_rf_x_fovea'])
+
+    xpos = np.zeros(params['n_rf_x'])
+    xpos[:params['n_rf_x_log'] / 2] = xpos_log[:params['n_rf_x_log'] / 2]
+    xpos[-params['n_rf_x_log'] / 2:] = xpos_log[params['n_rf_x_log'] / 2:]
+    xpos[params['n_rf_x_log'] / 2: params['n_rf_x_log'] / 2 + params['n_rf_x_fovea']]= xpos_const
+    rf_sizes_x = np.zeros(params['n_rf_x'])
+    xpos_diff = xpos[1:] - xpos[:-1]
+    n_x = xpos.size
+    xpos_diff_lower = xpos_diff[:n_x/2 - 1]
+    xpos_diff_upper = list(xpos_diff_lower)
+    xpos_diff_upper.reverse()
+    rf_sizes_x[:n_x / 2 - 1] = xpos_diff_lower
+    rf_sizes_x[n_x / 2 - 1] = xpos_diff_lower[-1]
+    rf_sizes_x[n_x / 2] = xpos_diff_upper[0]
+    rf_sizes_x[n_x / 2 + 1:] = xpos_diff_upper
+    rf_sizes_x[-1] = rf_sizes_x[0]
+
+    n_v = params['n_v']
+    v_rho_half = np.logspace(np.log(params['v_min_tp']) / np.log(params['log_scale']),\
+                             np.log(params['v_max_tp']) / np.log(params['log_scale']), num=n_v/2,
+                                endpoint=True, base=params['log_scale'])
+    v_rho_neg = list(-1. * v_rho_half)
+    v_rho_neg.reverse()
+    v_rho = np.zeros(n_v)
+    v_rho[:n_v/2] = v_rho_neg
+    v_rho[n_v/2:] = v_rho_half
+    rf_sizes_v = np.zeros(n_v)
+    v_diff = np.zeros(n_v)
+    v_diff[:-1] = v_rho[1:] - v_rho[:-1]
+    v_diff_lower = v_diff[:n_v/2 - 1]
+    v_diff_upper = list(v_diff_lower)
+    v_diff_upper.reverse()
+
+    rf_sizes_v[:n_v/2 - 1] = v_diff_lower
+    rf_sizes_v[n_v/2 - 1] = v_diff_lower[-1]
+    rf_sizes_v[n_v/2] = v_diff_upper[0]
+    rf_sizes_v[n_v/2 + 1:] = v_diff_upper
+
+    for i_hc in xrange(params['n_hc']):
+        for i_mc in xrange(n_v):
+            for i_cell in xrange(params['n_exc_per_mc']):
+                i_ = i_hc * params['n_exc_per_hc'] + i_mc * params['n_exc_per_mc'] + i_cell
+                noise_x = np.abs(xpos[i_hc] - .5) / .5 * RNG.normal(0., params['sigma_rf_pos'])
+                tp[i_, 0] = min(1., max(xpos[i_hc] + noise_x, 0.))
+                tp[i_, 1] = .5
+                tp[i_, 2] = v_rho[i_mc] * RNG.normal(1., params['sigma_rf_speed'])
+                rfs[i_, 0] = rf_sizes_x[i_hc]
+                rfs[i_, 2] = rf_sizes_v[i_mc]
+
+    return tp, rfs
+
+
+def set_tuning_prop_1D_with_const_fovea(params, cell_type='exc'):
+    if cell_type == 'exc':
+        n_cells = params['n_exc']
+        n_v = params['n_v']
+        n_rf_x = params['n_hc']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+    else:
+        n_cells = params['n_inh']
+        n_v = params['n_v_inh']
+        n_rf_x = params['n_rf_x_inh']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+    if params['log_scale']==1:
+        v_rho_half = np.linspace(v_min, v_max, num=n_v/2, endpoint=True)
+    else:
+        v_rho_half = np.logspace(np.log(v_min)/np.log(params['log_scale']),
+                        np.log(v_max)/np.log(params['log_scale']), num=n_v/2,
+                        endpoint=True, base=params['log_scale'])
+    RNG = np.random.RandomState(params['tp_seed'])
+
+    rf_sizes = np.zeros((n_cells, 4))
+    v_rho = np.zeros(n_v)
+    v_rho[:n_v/2] = -v_rho_half
+    v_rho[n_v/2:] = v_rho_half
+    
+    n_rf_x_log = params['n_rf_x'] - params['n_rf_x_fovea']
+#    RF_x_log = get_xpos_log_distr_const_fovea(params['log_scale'], n_rf_x_log, x_min=params['x_min_tp'], x_max=params['x_max_tp'])
+    RF_x_log = get_xpos_log_distr(params, n_rf_x_log, x_min=params['x_min_tp'], x_max=params['x_max_tp'])
+#    RF_x_log = get_xpos_log_distr(params, n_rf_x_log)
+    RF_x_const = np.linspace(.5 - params['x_min_tp'], .5 + params['x_min_tp'], params['n_rf_x_fovea'])
+    RF_x = np.zeros(n_rf_x)
+    idx_upper = n_rf_x_log / 2 + params['n_rf_x_fovea']
+    RF_x[:n_rf_x_log / 2] = RF_x_log[:n_rf_x_log / 2]
+    RF_x[idx_upper:] = RF_x_log[n_rf_x_log / 2:]
+    RF_x[n_rf_x_log / 2 : n_rf_x_log / 2 + params['n_rf_x_fovea']] = RF_x_const
+
+#    print '------------------------------\nDEBUG'
+#    print 'v_rho:', v_rho
+#    print 'v_rho_half:', v_rho_half
+#    print 'n_rf_x: ', n_rf_x
+#    print 'n_rf_x_log: ', n_rf_x_log
+#    print 'n_rf_x_fovea: ', params['n_rf_x_fovea']
+#    print 'RF_x_const:', RF_x_const
+#    print 'RF_x_log:', RF_x_log
+#    print 'RF_x:', RF_x
+
+    index = 0
+    tuning_prop = np.zeros((n_cells, 4))
+    rf_sizes_x = get_receptive_field_sizes_x_const_fovea(params, RF_x)
+    rf_sizes_v = get_receptive_field_sizes_v(params, v_rho)
+    for i_x in xrange(n_rf_x):
+        for i_v_rho, rho in enumerate(v_rho):
+            for i_in_mc in xrange(params['n_exc_per_mc']):
+                x = RF_x[i_x]
+#                tuning_prop[index, 0] = RF_x[i_x]
+#                tuning_prop[index, 0] += RNG.normal(.0, params['sigma_rf_pos'] / 2) # add some extra noise to the neurons representing the fovea (because if their noise is only a percentage of their distance from the center, it's too small
+#                tuning_prop[index, 0] = tuning_prop[index, 0] % 1.0
+                pm = utils.get_plus_minus(RNG)
+                tuning_prop[index, 0] = RF_x[i_x] + pm * RNG.normal(.0, params['sigma_rf_pos'])
+                tuning_prop[index, 1] = 0.5 # i_x / float(n_rf_x) # y-pos 
+#                    tuning_prop[index, 2] = (-1)**(i_v_rho % 2) * rho * (1. + params['sigma_rf_speed'] * np.random.randn())
+                tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * np.random.randn())
+                tuning_prop[index, 3] = 0. 
+                rf_sizes[index, 0] = rf_sizes_x[i_x]
+                rf_sizes[index, 2] = rf_sizes_v[i_v_rho]
+                index += 1
+
+    assert (index == n_cells), 'ERROR, index != n_cells, %d, %d' % (index, n_cells)
+#        exit(1)
+    return tuning_prop, rf_sizes
+
+
+def set_tuning_prop_1D_with_const_fovea_columns(params, cell_type='exc'):
+    if cell_type == 'exc':
+        n_cells = params['n_exc']
+        n_v = params['n_v']
+        n_rf_x = params['n_hc']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+    else:
+        n_cells = params['n_inh']
+        n_v = params['n_v_inh']
+        n_rf_x = params['n_rf_x_inh']
+        v_max = params['v_max_tp']
+        v_min = params['v_min_tp']
+    if params['log_scale']==1:
+        v_rho_half = np.linspace(v_min, v_max, num=n_v/2, endpoint=True)
+    else:
+        v_rho_half = np.logspace(np.log(v_min)/np.log(params['log_scale']),
+                        np.log(v_max)/np.log(params['log_scale']), num=n_v/2,
+                        endpoint=True, base=params['log_scale'])
+    RNG = np.random.RandomState(params['tp_seed'])
+
+    rf_sizes = np.zeros((n_cells, 4))
+    v_rho = np.zeros(n_v)
+    v_rho[:n_v/2] = -v_rho_half
+    v_rho[n_v/2:] = v_rho_half
+    
+    n_rf_x_log = params['n_rf_x'] - params['n_rf_x_fovea']
+    RF_x_log = get_xpos_log_distr(params, n_rf_x_log, x_min=params['x_min_tp'], x_max=params['x_max_tp'])
+    RF_x_const = np.linspace(.5 - params['x_min_tp'], .5 + params['x_min_tp'], params['n_rf_x_fovea'])
+    RF_x = np.zeros(n_rf_x)
+    idx_upper = n_rf_x_log / 2 + params['n_rf_x_fovea']
+    RF_x[:n_rf_x_log / 2] = RF_x_log[:n_rf_x_log / 2]
+    RF_x[idx_upper:] = RF_x_log[n_rf_x_log / 2:]
+    RF_x[n_rf_x_log / 2 : n_rf_x_log / 2 + params['n_rf_x_fovea']] = RF_x_const
+
+    print '------------------------------\nDEBUG'
+    print 'v_rho:', v_rho
+    print 'v_rho_half:', v_rho_half
+    print 'n_rf_x: ', n_rf_x
+    print 'n_rf_x_log: ', n_rf_x_log
+    print 'n_rf_x_fovea: ', params['n_rf_x_fovea']
+    print 'RF_x_const:', RF_x_const
+    print 'RF_x_log:', RF_x_log
+    print 'RF_x:', RF_x
+
+    index = 0
+    tuning_prop = np.zeros((n_cells, 4))
+    rf_sizes_x = get_receptive_field_sizes_x_const_fovea(params, RF_x)
+    rf_sizes_v = get_receptive_field_sizes_v(params, v_rho)
+    for i_RF in xrange(n_rf_x):
+        for i_v_rho, rho in enumerate(v_rho):
+            for i_in_mc in xrange(params['n_exc_per_mc']):
+                x = RF_x[i_RF]
+                tuning_prop[index, 0] = RF_x[i_RF]
+                tuning_prop[index, 0] += RNG.normal(.0, params['sigma_rf_pos'] / 2) # add some extra noise to the neurons representing the fovea (because if their noise is only a percentage of their distance from the center, it's too small
+                tuning_prop[index, 0] = tuning_prop[index, 0] % 1.0
+                tuning_prop[index, 1] = 0.5 # i_RF / float(n_rf_x) # y-pos 
+#                    tuning_prop[index, 2] = (-1)**(i_v_rho % 2) * rho * (1. + params['sigma_rf_speed'] * np.random.randn())
+                tuning_prop[index, 2] = rho * (1. + params['sigma_rf_speed'] * np.random.randn())
+                tuning_prop[index, 3] = 0. 
+                rf_sizes[index, 0] = rf_sizes_x[i_RF]
+                rf_sizes[index, 2] = rf_sizes_v[i_v_rho]
+                index += 1
+
+    assert (index == n_cells), 'ERROR, index != n_cells, %d, %d' % (index, n_cells)
+#        exit(1)
+    return tuning_prop, rf_sizes
+
+
+def plot_tuning_prop(params):
+    """
+    without constant fovea
+    """
     x_pos = get_xpos_log_distr(params)
     x_pos_exp = get_xpos_exponential_distr(params)
     v_rho = get_speed_tuning(params)
@@ -237,4 +466,61 @@ if __name__ == '__main__':
     ax.set_ylabel('Preferred speed $v_x$')
     pylab.savefig('tuning_properties.png', dpi=200)
     pylab.show()
+
+
+def plot_tuning_prop_const_fovea(params):
+
+
+    fig = pylab.figure(figsize=utils.get_figsize(800, portrait=False))
+    ax = fig.add_subplot(111)
+    tuning_prop, rf_sizes = set_tuning_prop_1D_with_const_fovea(params)
+    rf_size_x = rf_sizes[:, 0]
+    rf_size_v = rf_sizes[:, 2]
+
+    patches_ = []
+    index = 0
+    for i_mc in xrange(params['n_mc_per_hc']):
+        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+    for i_hc in xrange(params['n_hc']):
+        print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
+        for i_mc in xrange(params['n_mc_per_hc']):
+            for i_exc in xrange(params['n_exc_per_mc']):
+                p_cell, = ax.plot(tuning_prop[index, 0], tuning_prop[index, 2], 'o', c='k', markersize=2)
+                ellipse = mpatches.Ellipse((tuning_prop[index, 0], tuning_prop[index, 2]), rf_size_x[i_hc], rf_size_v[i_mc])
+                patches_.append(ellipse)
+                index += 1
+    plots = [p_cell]
+    labels = ['MC center without noise', 'Cell']
+            
+    ax.set_title('Distribution of tuning properties for learning anisotropic\nconnectivity for motion-based prediction through BCPNN')
+    ax.legend(plots, labels, numpoints=1)
+    collection = PatchCollection(patches_, alpha=0.1, facecolor='b', edgecolor=None)
+    ax.add_collection(collection)
+    pylab.show()
+
+if __name__ == '__main__':
+    import simulation_parameters
+    param_tool = simulation_parameters.parameter_storage()
+    params = param_tool.params
+
+
+
+#    plot_tuning_prop(params)
+    plot_tuning_prop_const_fovea(params)
+
+#    x_pos = get_xpos_log_distr(params)
+#    x_pos_exp = get_xpos_exponential_distr(params)
+#    v_rho = get_speed_tuning(params)
+#    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
+#    rf_size_x = get_receptive_field_sizes_x(params, x_pos)
+
+
+#    tp, rf_sizes = set_tuning_prop_1D_with_const_fovea(params, cell_type='exc')
+#    tp, rf_sizes = set_tuning_prop_1D_with_const_fovea_2(params, cell_type='exc')
+#    x_pos = tp[:, 0]
+#    v_rho = tp[:, 2]
+#    rf_size_x = rf_sizes[:, 0]
+#    rf_size_v = rf_sizes[:, 2]
+
+
 

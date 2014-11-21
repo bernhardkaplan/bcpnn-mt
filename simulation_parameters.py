@@ -20,19 +20,19 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['simulator'] = 'nest' # 'brian' #
+        self.params['simulator'] = 'nest' 
 
-#        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = ''#'DebugDummyNrns'
+        self.params['sim_id'] = 'DEBUG'
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 20
+        self.params['n_rf'] = 12
 #        self.params['n_rf'] = 8
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
@@ -43,12 +43,20 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
-        self.params['n_v'] = 20
+
+        self.params['frac_rf_x_fovea'] = 0.5 # this fraction of all n_rf_x cells will have constant (minimum) RF size
+        self.params['n_rf_x_fovea'] = np.int(np.round(self.params['frac_rf_x_fovea'] * self.params['n_rf_x']))
+        if self.params['n_rf_x_fovea'] % 2:
+            self.params['n_rf_x_fovea'] += 1
+        self.params['n_rf_x_log'] = self.params['n_rf_x'] - self.params['n_rf_x_fovea']
+        assert (self.params['n_rf_x_log'] % 2 == 0), 'ERROR: please make sure that n_rf_x_log is an even number (as n_rf_x_fovea), so please change n_hc (=n_rf_x) or frac_rf_x_fovea'
+
+        self.params['n_v'] = 10
         assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -56,8 +64,11 @@ class parameter_storage(object):
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
 
+        self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
+        self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.02  # [a.u.] minimal velocity in visual space for tuning property distribution
+
 
         # receptive field size parameters
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
@@ -86,8 +97,8 @@ class parameter_storage(object):
             self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
             self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
-            self.params['sigma_rf_pos'] = 0. #.02 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = 0. #.03 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = 0.05 #.02 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = 0.10 #.03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
@@ -205,8 +216,10 @@ class parameter_storage(object):
 #        self.params['connectivity_ii'] = 'random'
 #        self.params['connectivity_ii'] = False
         
-        # exc - exc
-        self.params['p_ee_local'] = .7
+        # exc - exc: local
+#        self.params['p_ee_local'] = .7
+        self.params['p_ee_local'] = .3
+        self.params['n_conn_ee_local'] = np.int(np.round(self.params['p_ee_local'] * (self.params['n_exc_per_mc'] ** 2 - self.params['n_exc_per_mc']))) # number of connections within one minicolumn (per minicolumn)
         self.params['w_ee_local'] = 5.
 
         # exc - exc: global
@@ -269,37 +282,49 @@ class parameter_storage(object):
         # #####################
         # TRAINING PARAMETERS
         # #####################
-        self.params['stimuli_seed'] = 321
         self.params['v_max_training'] = self.params['v_max_tp']# * .9
         self.params['v_min_training'] = self.params['v_min_tp']
+        self.params['x_max_training'] = 0.9
+        self.params['x_min_training'] = 0.1
         self.params['training_stim_noise_v'] = 0.00 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
-        self.params['n_cycles'] = 1 # one cycle comprises training of all n_speeds
-#        self.params['n_speeds'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
-        self.params['n_speeds'] = self.params['n_v'] # how many different speeds are trained per cycle
-        assert (self.params['n_speeds'] % 2 == 0), 'n_speeds should be an even number (for equal number of negative and positive speeds)'
+        self.params['training_stim_noise_x'] = 0.00 # percentage of noise for each individual training speed
+        self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
+#        self.params['n_training_v'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
+
+        self.params['n_training_v'] = 2 # how many different speeds are trained per cycle
+        #self.params['n_training_v'] = self.params['n_v'] # how many different speeds are trained per cycle
+        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
-        self.params['n_training_stim_per_cycle'] = self.params['n_speeds'] * self.params['n_theta_training'] * self.params['n_training_x']
+        self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 
         # if one speed is trained, it is presented starting from this number on different locations
         # for 1-D this is irrelevant and can be set to 1
         self.params['n_stim_per_direction'] = 1 
-#        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction']
-        self.params['n_training_stim'] = self.params['n_theta_training'] * self.params['n_cycles'] * self.params['n_speeds'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
+#        self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction']
+        self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
         self.params['random_training_order'] = True   # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
-#        self.params['test_stim_range'] = (0, self.params['n_training_stim'])
-#        self.params['test_stim_range'] = (0, self.params['n_speeds'])
+#        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
+#        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
-            self.params['n_stim'] = self.params['n_training_stim']
+            self.params['n_stim'] = self.params['n_stim_training']
         else:
             self.params['n_stim'] = self.params['n_test_stim']
-#        self.params['n_test_stim'] = self.params['n_speeds'] # number of training stimuli to be presented during testing
+
+        self.params['stim_range'] = [0, self.params['n_stim_training']] # will likely be overwritten
+        self.params['frac_training_samples_from_grid'] = .3
+        self.params['frac_training_samples_center'] = .0 # fraction of training samples drawn from the center
+        self.params['center_stim_width'] = .0 # width from which the center training samples are drawn OR if reward_based_learning: stimuli positions are sampled from .5 +- center_stim_width
+        assert (1.0 >= self.params['frac_training_samples_center'] + self.params['frac_training_samples_from_grid'])
+        # to generate the training samples, three methods are used: 1) sampling from the tuning properties, 2) sampling from a grid  3) sampling nearby the center (as these stimuli occur more frequently)
+        # then the frac_training_samples_from_grid determines how many training stimuli are taken from the grid sample
+
+#        self.params['n_test_stim'] = self.params['n_training_v'] # number of training stimuli to be presented during testing
 #        self.params['n_test_stim'] = 1
 
 
@@ -309,14 +334,17 @@ class parameter_storage(object):
         self.params['seed'] = 12345 # the master seed
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
+        self.params['visual_stim_seed'] = 123
         self.params['np_random_seed'] = 0
+        self.params['tp_seed'] = 666
         self.params['t_training_stim'] = 1500.  # [ms] time each stimulus is presented
+        self.params['t_training_max'] = 3000. # [ms]
         self.params['t_training_pause'] = 300.
         # a test stim is presented for t_training_stim - t_training_pause
         self.params['t_test_stim'] = self.params['t_training_stim'] + self.params['t_training_pause']
 
         if self.params['training_run']:
-            self.params['t_sim'] = self.params['n_training_stim'] * self.params['t_training_stim']  # [ms] total simulation time
+            self.params['t_sim'] = self.params['n_stim_training'] * self.params['t_training_stim']  # [ms] total simulation time
         else:
             self.params['t_sim'] = self.params['n_test_stim'] * self.params['t_test_stim']
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
@@ -339,7 +367,7 @@ class parameter_storage(object):
         # BCPNN SYNAPSE PARAMETERS
         # ########################
         self.params['fmax_bcpnn'] = 150.0   # should be as the maximum output rate (with inhibitory feedback)
-#        self.params['taup_bcpnn'] = self.params['n_speeds'] * self.params['t_training_stim']
+#        self.params['taup_bcpnn'] = self.params['n_training_v'] * self.params['t_training_stim']
         self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
         self.params['taui_bcpnn'] = 100.
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
@@ -402,18 +430,6 @@ class parameter_storage(object):
         self.params['f_inh_noise'] = 1# [Hz]
 
 
-    def set_vx_tau_transformation_params(self, vmin, vmax):
-        tau_max, tau_min = self.params['tau_zi_max'], self.params['tau_zi_min']
-        if self.params['tau_vx_transformation_mode'] == 'linear':
-            beta = (tau_max - tau_min * vmin / vmax) / (1. - vmin / vmax)
-            self.params['tau_vx_param1'] = beta
-            self.params['tau_vx_param2'] = (tau_min - beta) / vmax
-        else:
-            alpha = (tau_min * vmax - tau_max * vmin) / (tau_max - tau_min)
-            beta = tau_max * (alpha - vmin)
-            self.params['tau_vx_param1'] = beta
-            self.params['tau_vx_param2'] = (tau_min - beta) / vmax
-
 
     def set_folder_name(self, folder_name=None):
 
@@ -421,7 +437,7 @@ class parameter_storage(object):
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
                 folder_name = 'TrainingSim_%s_%dx%d_taui%d_taup%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_init%.1e' % ( \
-                        self.params['sim_id'], self.params['n_cycles'], self.params['n_speeds'], \
+                        self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], \
                         self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], self.params['bcpnn_init_val'])
             else:
@@ -448,9 +464,9 @@ class parameter_storage(object):
 
 #        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
         if self.params['training_run']:
-            self.params['input_folder'] = "InputFilesTraining_seed%d_nX%d_nV%d/" % (self.params['stimuli_seed'], self.params['n_training_x'], self.params['n_training_v'])
+            self.params['input_folder'] = "InputFilesTraining_seed%d_nX%d_nV%d/" % (self.params['visual_stim_seed'], self.params['n_training_x'], self.params['n_training_v'])
         else:
-            self.params['input_folder'] = "InputFilesTest_seed%d/" % (self.params['stimuli_seed'])
+            self.params['input_folder'] = "InputFilesTest_seed%d/" % (self.params['visual_stim_seed'])
 
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus
@@ -525,15 +541,16 @@ class parameter_storage(object):
         self.params['local_gids_merged_fn'] = self.params['data_folder'] + 'merged_local_gids.json'
 
         # tuning properties and other cell parameter files
-        self.params['tuning_prop_means_fn'] = '%stuning_prop_means.prm' % (self.params['parameters_folder']) # for excitatory cells
+        self.params['tuning_prop_exc_fn'] = '%stuning_prop_exc.prm' % (self.params['parameters_folder']) # for excitatory cells
         self.params['tuning_prop_inh_fn'] = '%stuning_prop_inh.prm' % (self.params['parameters_folder']) # for inhibitory cells
         self.params['receptive_fields_exc_fn'] = self.params['parameters_folder'] + 'receptive_field_sizes_exc.txt'
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
         self.params['tuning_prop_fig_inh_fn'] = '%stuning_properties_inh.png' % (self.params['figures_folder'])
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
         self.params['all_predictor_params_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
-        self.params['training_sequence_fn'] = '%straining_sequence_mp.dat' % (self.params['parameters_folder'])
-        self.params['test_sequence_fn'] = '%stest_sequence_mp.dat' % (self.params['parameters_folder'])
+        self.params['training_stimuli_fn'] = '%straining_stimuli.dat' % (self.params['parameters_folder'])
+        self.params['training_stim_durations_fn'] = '%straining_stim_durations.dat' % (self.params['parameters_folder'])
+        self.params['test_sequence_fn'] = '%stest_sequence.dat' % (self.params['parameters_folder'])
 
         self.params['prediction_fig_fn_base'] = '%sprediction_' % (self.params['figures_folder'])
 
@@ -607,17 +624,28 @@ class parameter_storage(object):
         self.set_filenames()
 #        self.ParamSet = ntp.ParameterSet(self.params)
 
-    def write_parameters_to_file(self, fn=None):
-        if not (os.path.isdir(self.params['folder_name'])):
-            print 'Creating folder:\n\t%s' % self.params['folder_name']
-            self.create_folders()
 
+    def write_parameters_to_file(self, fn=None, params_to_write=None):
+        """
+        This function must be called from 'outside' the class.
+        Keyword arguments:
+        fn -- (optional) target output filename for json dictionary
+        params -- (optional) the modified parameter dictionary that is to write
+        """
         if fn == None:
             fn = self.params['params_fn_json']
+            print 'ParameterContainer.DEBUG Writing to the default params_fn_json:', fn
+        if params_to_write == None:
+            params_to_write = self.params
+            print '\nDEBUG params_to_write is None\nParameterContainer.DEBUG params_to_write folder:', self.params['folder_name']
+        self.create_folders()
         print 'Writing parameters to: %s' % (fn)
-        output_file = file(self.params['params_fn_json'], 'w')
-        d = json.dump(self.params, output_file, indent=0)
+        output_file = file(fn, 'w')
+        d = json.dump(params_to_write, output_file, indent=2)
         output_file.flush()
+        output_file.close()
+
+
 
     def load_params_from_file(self, fn):
         """
@@ -631,47 +659,4 @@ class parameter_storage(object):
         self.params = json.load(f)
         return self.params
 
-
-class ParameterContainer(parameter_storage):
-
-    def __init__(self, fn):
-        super(ParameterContainer, self).__init__()
-        self.root_dir = os.path.dirname(fn)
-        # If the folder has been moved, all filenames need to be updated
-        self.update_values({self.params['folder_name'] : self.root_dir})
-
-    def load_params(self, fn):
-
-        f = file(fn, 'r')
-        print 'Loading parameters from', fn
-        self.params = json.load(f)
-
-    def update_values(self, kwargs):
-        for key, value in kwargs.iteritems():
-            self.params[key] = value
-
-        # update the dependent parameters
-        # --> to be implemented by another function (e.g. set_filenames())
-
-    def create_folders(self):
-        """
-        Must be called from 'outside' this class before the simulation
-        """
-        for f in self.params['folder_names']:
-            if not os.path.exists(f):
-                print 'Creating folder:\t%s' % f
-                os.system("mkdir %s" % (f))
-
-    def load_params(self):
-        """
-        return the simulation parameters in a dictionary
-        """
-        return self.ParamSet
-
-
-    def write_parameters_to_file(self, fn=None):
-        if fn == None:
-            fn = self.params['params_fn_json']
-        print 'Writing parameters to: %s' % (fn)
-        self.ParamSet.save(fn)
 

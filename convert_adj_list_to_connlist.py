@@ -14,7 +14,7 @@ class Converter(object):
         self.load_tuning_prop()
 
     def load_tuning_prop(self):
-        fn = self.params['tuning_prop_means_fn']
+        fn = self.params['tuning_prop_exc_fn']
         print 'Loading tuning properties from:', fn 
         self.tp_exc = np.loadtxt(fn)
 

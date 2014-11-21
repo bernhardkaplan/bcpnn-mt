@@ -46,41 +46,41 @@ class OneDimensionalAbstractModel(object):
 #        print 'x_pos:', x_pos.shape
 #        print 'vx:', v_rho.shape
         print 'Tuning prop ', self.tuning_prop
-        np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop)
+        np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop)
 
 
-    def create_stimuli(self, n_speeds=None, direction='forward'):
+    def create_stimuli(self, n_training_v=None, direction='forward'):
         """
         Keyword arguments:
         direction -- 'forward' means from left to right, 'backward' the opposite
         """
 
-        self.n_training_speeds = n_speeds
-        if n_speeds == None:
-            n_speeds = self.params['n_speeds']
+        self.n_training_speeds = n_training_v
+        if n_training_v == None:
+            n_training_v = self.params['n_training_v']
 
         v_max = self.params['v_max_tp']
         v_min = self.params['v_min_tp']
 
         if self.params['log_scale']==1:
-            self.v_training = np.linspace(v_min, v_max, num=n_speeds, endpoint=True)
+            self.v_training = np.linspace(v_min, v_max, num=n_training_v, endpoint=True)
         else:
             self.v_training = np.logspace(np.log(v_min)/np.log(self.params['log_scale']),
-                            np.log(v_max)/np.log(self.params['log_scale']), num=n_speeds,
+                            np.log(v_max)/np.log(self.params['log_scale']), num=n_training_v,
                             endpoint=True, base=self.params['log_scale'])
 
         if direction == 'backward':
             self.v_training *= -1.
         print 'v_training:', self.v_training 
 
-        stim_params = np.zeros((n_speeds, 2))
+        stim_params = np.zeros((n_training_v, 2))
         # stim_params[:, 0] should store the start position
         stim_params[:, 1] = self.v_training
         output_fn = self.params['training_input_folder'] + 'stimulus_parameters.dat'
         np.savetxt(output_fn, stim_params)
 
         self.t_axis = np.arange(0, self.params['t_sim'], self.params['dt_rate'])
-        self.trajectories = np.zeros((n_speeds, self.t_axis.size))
+        self.trajectories = np.zeros((n_training_v, self.t_axis.size))
         x_offset = 0
         for i_, v_ in enumerate(self.v_training):
             self.trajectories[i_, :] = v_ * self.t_axis / 1000. + x_offset
@@ -134,6 +134,6 @@ if __name__ == '__main__':
         PS.create_folders()
         PS.write_parameters_to_file()
     Model.set_tuning_properties()
-    Model.create_stimuli(n_speeds=params['N_V'], direction='forward')
+    Model.create_stimuli(n_training_v=params['N_V'], direction='forward')
     Model.get_responses()
 

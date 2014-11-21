@@ -1,11 +1,3 @@
-"""
-Simple network with a Poisson spike source projecting to populations of of IF_cond_exp neurons
-
-on the cluster:
-    frioul_batch -M "[['w_tgt_in_per_cell_ee', 'w_tgt_in_per_cell_ee', 'w_tgt_in_per_cell_ee'],[0.4, 0.8, 1.2]]" 'python NetworkSimModuleNoColumns.py'
-
-
-"""
 import time
 t0 = time.time()
 import numpy as np
@@ -15,26 +7,42 @@ import sys
 import os
 import utils
 import nest
-import CreateStimuli
+import CreateInput
 import json
 import set_tuning_properties
 
 class NetworkModel(object):
 
-    def __init__(self, param_tool, iteration=0):
+    def __init__(self, params, iteration=0, comm=None):
 
-        self.param_tool = param_tool
-        self.params = param_tool.params
+        self.params = params
         self.debug_connectivity = True
         self.iteration = 0  # the learning iteration (cycle)
         self.times = {}
         self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
         self.training_params = None # only relevant for testing 
 
+        self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
+        self.comm = comm # mpi communicator needed to broadcast nspikes between processes
+        if comm != None:
+            assert (comm.rank == self.pc_id), 'mpi4py and NEST tell me different PIDs!'
+            assert (comm.size == self.n_proc), 'mpi4py and NEST tell me different PIDs!'
+            self.comm.Barrier()
 
-    def setup(self, load_tuning_prop=False):
+    def setup(self, training_stimuli=None, load_tuning_prop=False):
 
-        print 'NetworkModel.setup'
+        CI = CreateInput.CreateInput(self.params)
+        if training_stimuli == None:
+            random_order = self.params['random_training_order']
+            training_stimuli = CI.create_motion_sequence_1D_training(self.params, random_order)
+        self.motion_params = training_stimuli
+        self.training_stim_duration = np.zeros(training_stimuli[:, 0].size)
+        for i_ in xrange(training_stimuli[:, 0].size):
+            stim_params = training_stimuli[i_, :]
+            t_exit = CI.compute_stim_time(stim_params)
+            self.training_stim_duration[i_] = min(t_exit, self.params['t_training_max'])
+        self.params['t_sim'] = self.training_stim_duration.sum()
+        print 'NetworkModel.setup preparing for %.1f [ms] simulation' % (self.params['t_sim'])
         self.projections = {}
         self.projections['ee'] = []
         self.projections['ei'] = []
@@ -43,20 +51,20 @@ class NetworkModel(object):
         if not load_tuning_prop:
 #            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
 #            self.rf_sizes = self.set_receptive_fields('exc')
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+#            set_tuning_properties(self.params)
         else:
-            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
+            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
 #            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
         np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
 
         # update 
-        self.param_tool.set_vx_tau_transformation_params(self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
-        self.params = self.param_tool.params
+        utils.set_vx_tau_transformation_params(self.params, self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
 
         if self.pc_id == 0:
-            print "Saving tuning_prop to file:", self.params['tuning_prop_means_fn']
-            np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop_exc)
+            print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
+            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
 #            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
 #            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
@@ -78,13 +86,9 @@ class NetworkModel(object):
 
         self.setup_synapse_types()
 
-        # clean spiketimes_folder:
-        if self.pc_id == 0:
-            cmd = 'rm %s* ' % self.params['spiketimes_folder']
-            os.system(cmd)
-            cmd = 'rm %s* ' % self.params['volt_folder']
-            os.system(cmd)
-
+#        self.CI = CreateInput.CreateInput(self.params)
+#        self.motion_params = self.CI.create_motion_sequence_1D_training(self.params)
+#        np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
 
 #    def set_receptive_fields(self, cell_type):
 #        """
@@ -264,6 +268,9 @@ class NetworkModel(object):
         nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
         nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
+#        if self.params['training_run']:
+#            self.create_training_input
+#        self.create_test_input(self.load_files, save_input_files, with_blank=True, training_params=training_params)
 
 
     def create_test_input(self, load_files=False, save_output=False, with_blank=False, training_params=None):
@@ -286,15 +293,15 @@ class NetworkModel(object):
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         time = np.arange(0, self.params['t_sim'], dt)
         L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
-        CS = CreateStimuli.CreateStimuli()
-        motion_params = CS.create_test_stim_1D(self.params, training_params=training_params)
-        np.savetxt(self.params['test_sequence_fn'], motion_params)
+        CI = CreateInput.CreateInput()
+        self.motion_params = CI.create_test_stim_1D(self.params, training_params=training_params)
+        np.savetxt(self.params['test_sequence_fn'], self.motion_params)
         n_stim_total = self.params['n_test_stim']
 
         stimuli = range(self.params['test_stim_range'][0], self.params['test_stim_range'][1])
         for i_stim, stim_idx in enumerate(stimuli):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            x0, v0 = motion_params[stim_idx, 0], motion_params[stim_idx, 2]
+            x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
 
             # get the input signal
             idx_t_start = np.int(i_stim * self.params['t_test_stim'] / dt)
@@ -332,27 +339,22 @@ class NetworkModel(object):
         print 'Creating input spiketrains...'
         nspikes = np.zeros((len(my_units), 2))
         for i_, unit in enumerate(my_units):
-            if not (i_ % 10):
+            if not (i_ % 20):
                 print 'Creating input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(my_units), float(i_) / len(my_units) * 100.)
             rate_of_t = np.array(L_input[i_, :])
             # each cell will get its own spike train stored in the following file + cell gid
             n_steps = rate_of_t.size
-#            spike_times = []
             r = nprnd.rand(n_steps)
             spike_idx = (r <= (rate_of_t/1000.) * dt).nonzero()[0]
             spike_times = spike_idx * dt
             print 'Debug unit %d receives in total: %d spikes' % (i_, len(spike_times))
 
-#            for i in xrange(n_steps):
-#                r = nprnd.rand()
-#                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
-#                    spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
             nspikes[i_, 0] = spike_times.size
             nspikes[i_, 1] = unit
             if (save_output and self.spike_times_container[i_].size > 1):
-                #output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
-                #np.savetxt(output_fn, rate_of_t)
+                output_fn = self.params['input_rate_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
+                np.savetxt(output_fn, rate_of_t)
                 output_fn = self.params['input_st_fn_base'] + str(unit) + '_stim%d-%d.dat' % (self.params['test_stim_range'][0], self.params['test_stim_range'][1])
                 np.savetxt(output_fn, np.array(spike_times))
         
@@ -362,8 +364,15 @@ class NetworkModel(object):
         return True
 
 
+    def compute_input(self, gids, motion_params, save_output=False, with_blank=False):
 
-    def create_training_input(self, load_files=False, save_output=False, with_blank=False):
+        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
+        time = np.arange(0, self.params['t_sim'], dt)
+        n_stim = motion_params[:, 0].size
+        raise NotImplementedError, 'to be done here or in CreateInput'
+
+
+    def create_training_input(self, my_units=None, load_files=False, save_output=False, with_blank=False):
 
         if load_files:
             self.load_input()
@@ -373,30 +382,28 @@ class NetworkModel(object):
         if self.pc_id == 0:
             print "Computing input spiketrains..."
 
-        my_units = np.array(self.local_idx_exc) - 1
-#            my_units = np.array(self.local_idx_exc)[:, 0] - 1
-        n_cells = len(my_units)
+        if my_units == None:
+            my_units = np.array(self.local_idx_exc) - 1
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-        time = np.arange(0, self.params['t_sim'], dt)
-        print 'L_input shape:', n_cells, time.shape[0]
-        L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
 
-        # get the order of training stimuli
-        CS = CreateStimuli.CreateStimuli()
-        random_order = self.params['random_training_order']
-        motion_params = CS.create_motion_sequence_1D(self.params, random_order)
-        np.savetxt(self.params['training_sequence_fn'], motion_params)
-#        print 'quit'
-#        exit(1)
-        n_stim_total = self.params['n_training_stim']
+        time = np.arange(0, self.params['t_sim'], dt)
+        n_cells = len(my_units)
+        L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
+        n_stim_total = self.params['n_stim_training']
+
         for i_stim in xrange(n_stim_total):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 2]
+            x0, v0 = self.motion_params[i_stim, 0], self.motion_params[i_stim, 2]
+
+#            self.compute_input(my_units)
 
             # get the input signal
-            idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
-            idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+            idx_t_start = np.int(self.training_stim_duration[:i_stim].sum() / dt)
+            idx_t_stop = np.int(self.training_stim_duration[:i_stim+1].sum() / dt)
+#            idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
+#            idx_t_stop = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
             idx_within_stim = 0
+            print 'debug idx_t_start stop', idx_t_start, idx_t_stop, self.training_stim_duration
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
                 x_stim = (x0 + time_ * v0) % self.params['torus_width']
@@ -406,7 +413,6 @@ class NetworkModel(object):
                     print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
                 idx_within_stim += 1
 
-        
             if with_blank:
                 start_blank = idx_t_start + 1. / dt * self.params['t_before_blank']
                 stop_blank = idx_t_start + 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
@@ -419,13 +425,14 @@ class NetworkModel(object):
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
-            idx_t_start_pause = np.int(((i_stim + 1) * self.params['t_training_stim']  - self.params['t_training_pause'])/ dt) 
-            idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
+                idx_t_start_pause = np.int((self.training_stim_duration[:i_stim+1].sum() - self.params['t_training_pause'])/ dt)
+                idx_t_start = np.int(self.training_stim_duration[:i_stim+1].sum() / dt)
+            #idx_t_start_pause = np.int(((i_stim + 1) * self.params['t_training_stim']  - self.params['t_training_pause'])/ dt) 
+            #idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_training_stim'] / dt) 
 #            print 'Debug idx_t_start_pause', idx_t_start_pause
 #            print 'Debug idx_t_stop_pause', idx_t_stop_pause
-            L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
+                L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
         
-
         nprnd.seed(self.params['input_spikes_seed'])
         # create the spike trains
         print 'Creating input spiketrains...'
@@ -442,10 +449,12 @@ class NetworkModel(object):
                     spike_times.append(i * dt)
             self.spike_times_container[i_] = np.array(spike_times)
             if save_output:
-                #output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
-                #np.savetxt(output_fn, rate_of_t)
-                output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
-                np.savetxt(output_fn, np.array(spike_times))
+                if len(spike_times) > 0:
+                    output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
+                    np.savetxt(output_fn, rate_of_t)
+                    output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
+                    print 'Saving output to:', output_fn
+                    np.savetxt(output_fn, np.array(spike_times))
         return True
     
 
@@ -487,21 +496,22 @@ class NetworkModel(object):
         self.connect_input_to_exc()
 
         if self.params['training_run']:
+            self.connect_input_to_recorder_neurons()
             print 'Connecting exc - exc'
-            self.connect_ee() # within MCs and bcpnn-all-to-all connections
+            self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
+#            self.connect_ee() # within MCs and bcpnn-all-to-all connections
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
             print 'Connecting inh - exc unspecific'
             self.connect_ie_unspecific() # normalizing inhibition
-            self.connect_input_to_recorder_neurons()
         else: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
+            self.connect_input_to_recorder_neurons()
             self.load_training_weights()
             print 'Connecting exc - exc '
             self.connect_ee()
             self.connect_ee_testing()
             exit(1)
-            self.connect_input_to_recorder_neurons()
             self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
@@ -552,31 +562,25 @@ class NetworkModel(object):
         rnd_ = np.linspace(0, self.params['n_exc'], self.params['n_recorder_neurons'], endpoint=False)
         rnd_gids = np.array(rnd_, dtype=int)
         # get the indices for the corresponding 'normal' neurons
-        gid_indices = sorted_gids[rnd_gids] 
+        gids_normal = sorted_gids[rnd_gids]
 
         self.recorder_stimulus = nest.Create('spike_generator', self.params['n_recorder_neurons'])
-        self.recorder_neuron_gid_mapping = {}
+        self.recorder_neuron_gid_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
 
         for i_, gid in enumerate(self.recorder_neurons):
-            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = self.exc_gids[gid_indices[i_]]
+            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = self.exc_gids[gids_normal[i_]] + 1 
+            print 'i_, gid recorder neuron, gid normal, exc_gids', i_, gid, gids_normal[i_], self.exc_gids [gids_normal[i_]]
 
-        print 'DEBUG recorder gids:', gid_indices
         print 'DEBUG recorder_neuron_gid_mapping:', self.recorder_neuron_gid_mapping
 
         # 1) connect the same input to recorder neurons as to the normal neurons
         if self.params['training_run']:
-            spike_times_container = self.create_training_input_for_cells(gids, with_blank=False)
+            input_spikes_for_recorder_neurons = self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=False)
         else:
-            spike_times_container = self.create_training_input_for_cells(gids, with_blank=True)
-#        for 
-#            spike_times_container = self.create_test_input_for_cells(gids, with_blank=True)
-            
-#            self.spike_times_container[i_] = np.array(spike_times)
-
-        for i_, unit in enumerate(gids):
-            normal_gid = unit + 1
-            self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = normal_gid
-            spike_times = self.spike_times_container[normal_gid]
+            input_spikes_for_recorder_neurons = self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=True)
+        
+        for i_ in xrange(self.params['n_recorder_neurons']):
+            spike_times = input_spikes_for_recorder_neurons[i_]
             nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
@@ -594,14 +598,11 @@ class NetworkModel(object):
         time = np.arange(0, self.params['t_sim'], dt)
         L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
 
-        CS = CreateStimuli.CreateStimuli()
-        random_order = self.params['random_training_order']
-        motion_params = CS.create_motion_sequence_1D(self.params, random_order)
-        np.savetxt(self.params['training_sequence_fn'], motion_params)
-        n_stim_total = self.params['n_training_stim']
+        np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
+        n_stim_total = self.params['n_stim_training']
         for i_stim in xrange(n_stim_total):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            x0, v0 = motion_params[i_stim, 0], motion_params[i_stim, 2]
+            x0, v0 = self.motion_params[i_stim, 0], self.motion_params[i_stim, 2]
 
             # get the input signal
             idx_t_start = np.int(i_stim * self.params['t_training_stim'] / dt)
@@ -648,19 +649,33 @@ class NetworkModel(object):
         return spike_times_container
 
 
+
+    def connect_ee_sparse(self):
+        """
+        Connect each minicolumn to all other minicolumns but only sparsely
+        """
+        self.connect_ee_within_one_MC()
+
+    def connect_ee_within_one_MC(self):
+        # connect cells within one MC
+#        for tgt_gid in self.local_idx_exc:
+#            hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
+#            n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
+#            source_gids = np.random.randint(gid_min, gid_max, n_src)
+#            source_gids = np.unique(source_gids)
+#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
+#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
+
+        for hc in xrange(self.params['n_hc']):
+            for mc in xrange(self.params['n_mc_per_hc']):
+                for i_ in xrange(self.params['n_conn_ee_local']):
+                    nest.Connect(self.list_of_exc_pop[hc][mc][i_], self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']], model='exc_exc_local_fast')
+                    nest.Connect(self.list_of_exc_pop[hc][mc][i_], self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']], model='exc_exc_local_slow')
+
     def connect_ee(self):
 
         initial_weight = 0.
-
-        # connect cells within one MC
-        for tgt_gid in self.local_idx_exc:
-            hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
-            n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
-            source_gids = np.random.randint(gid_min, gid_max, n_src)
-            source_gids = np.unique(source_gids)
-            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
-            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
-
+        self.connect_ee_within_one_MC()
         # setup an all-to-all connectivity
 #        for src_hc in xrange(self.params['n_hc']):
 #            for src_mc in xrange(self.params['n_mc_per_hc']):

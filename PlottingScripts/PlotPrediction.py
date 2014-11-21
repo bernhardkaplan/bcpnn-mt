@@ -117,7 +117,7 @@ class PlotPrediction(object):
     def load_motion_params(self, from_training=False):
         if self.params['training_run']:
             self.t_stim = self.params['t_training_stim']
-            self.all_motion_params = np.loadtxt(self.params['training_sequence_fn'])
+            self.all_motion_params = np.loadtxt(self.params['training_stimuli_fn'])
         else:
             self.t_stim = self.params['t_test_stim']
             self.all_motion_params = np.loadtxt(self.params['test_sequence_fn'])
