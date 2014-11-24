@@ -17,7 +17,7 @@ class ConnectionPlotter(object):
     def __init__(self, params):
         self.params = params
 
-        self.tp_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        self.tp_exc = np.loadtxt(params['tuning_prop_exc_fn'])
 #        self.tp_inh = np.loadtxt(params['tuning_prop_inh_fn'])
         self.connection_matrices = {}
         self.connection_lists = {}

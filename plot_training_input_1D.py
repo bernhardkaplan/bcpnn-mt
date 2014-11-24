@@ -9,13 +9,13 @@ class TrainingInputPlotter(object):
     def __init__(self, params):
         self.params = params
         if self.params['training_run']:
-            self.motion_params = np.loadtxt(self.params['training_sequence_fn'])
+            self.motion_params = np.loadtxt(self.params['training_stimuli_fn'])
         else:
             self.motion_params = np.loadtxt(self.params['test_sequence_fn'])
-        self.tuning_prop = np.loadtxt(self.params['tuning_prop_means_fn'])
+        self.tuning_prop = np.loadtxt(self.params['tuning_prop_exc_fn'])
         self.color_list = ['b', 'g', 'r', 'k', 'y', 'c', 'm', '#00f80f', '#deff00', '#ff00e4', '#00ffe6']
 
-    def plot_training_sequence(self):
+    def plot_training_stimuli(self):
         """
         plots the 1D training sequence
 
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     pylab.rcParams.update(rcParams)
 
     TIP = TrainingInputPlotter(params)
-    fig1 = TIP.plot_training_sequence()
+    fig1 = TIP.plot_training_stimuli()
 
     random.seed(1)
     n_gids_to_plot = 3
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     print 'gids_to_plot: ', gids_to_plot
     fig2 = TIP.plot_training_input(gids_to_plot)
 
-    output_fn1 = params['figures_folder'] + 'training_sequence_1D.png'
+    output_fn1 = params['figures_folder'] + 'training_stimuli_1D.png'
     fig1.savefig(output_fn1)
 
     pylab.show()

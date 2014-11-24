@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = False
+    load_files = True
     record = False
     save_input_files = True #not load_files
     NM = NetworkModel(ps, iteration=0)
@@ -60,8 +60,6 @@ if __name__ == '__main__':
     NM.setup()
     NM.training_params = training_params
     NM.create()
-#    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True)
-    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True, training_params=training_params)
     NM.connect()
     NM.connect_recorder_neurons()
 

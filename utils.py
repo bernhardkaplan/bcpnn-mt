@@ -10,6 +10,19 @@ import re
 import json
 
 
+def set_vx_tau_transformation_params(params, vmin, vmax):
+    tau_max, tau_min = params['tau_zi_max'], params['tau_zi_min']
+    if params['tau_vx_transformation_mode'] == 'linear':
+        beta = (tau_max - tau_min * vmin / vmax) / (1. - vmin / vmax)
+        params['tau_vx_param1'] = beta
+        params['tau_vx_param2'] = (tau_min - beta) / vmax
+    else:
+        alpha = (tau_min * vmax - tau_max * vmin) / (tau_max - tau_min)
+        beta = tau_max * (alpha - vmin)
+        params['tau_vx_param1'] = beta
+        params['tau_vx_param2'] = (tau_min - beta) / vmax
+
+
 def load_params(param_fn):
     if os.path.isdir(param_fn):
         param_fn = os.path.abspath(param_fn) + '/Parameters/simulation_parameters.json'
@@ -1286,7 +1299,7 @@ def sort_cells_by_distance_to_stimulus(n_cells, verbose=False):
     import simulation_parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     mp = params['mp_select_cells']
     indices, distances = sort_gids_by_distance_to_stimulus(tp, mp, params) # cells in indices should have the highest response to the stimulus
     print 'Motion parameters', mp
@@ -1383,14 +1396,14 @@ def resolve_src_tgt_with_tp(conn_type, params):
     """
     if conn_type == 'ee':
         n_src, n_tgt = params['n_exc'], params['n_exc']
-        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
         tp_src = tuning_prop_exc
         tp_tgt = tuning_prop_exc
         syn_type = 'excitatory'
 
     elif conn_type == 'ei':
         n_src, n_tgt = params['n_exc'], params['n_inh']
-        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
         tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
         tp_src = tuning_prop_exc
         tp_tgt = tuning_prop_inh
@@ -1398,7 +1411,7 @@ def resolve_src_tgt_with_tp(conn_type, params):
 
     elif conn_type == 'ie':
         n_src, n_tgt = params['n_inh'], params['n_exc']
-        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
         tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
         tp_src = tuning_prop_inh
         tp_tgt = tuning_prop_exc
@@ -1469,7 +1482,7 @@ def select_well_tuned_cells_trajectory(tp, mp, params, n_cells, n_pop):
 # recording parameters for anticipatory mode
 def all_anticipatory_gids(params):
     ex_cells = params['n_exc']
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     selected_gids = []
     cells = np.arange(ex_cells)
     for cell in cells:
@@ -1481,7 +1494,7 @@ def all_anticipatory_gids(params):
             
 def pop_anticipatory_gids(params):
     ex_cells = params['n_exc']
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     selected_gids = all_anticipatory_gids(params)
     pop1, pop2, pop3, pop4, pop5 = [],[],[],[],[]
     for gid in selected_gids:
@@ -1504,7 +1517,7 @@ def pop_anticipatory_gids(params):
 
 def CRF_anticipatory_gids(params, RF_xrange = np.arange(0.7,1,0.1)):
     ex_cells = params['n_exc']
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     selected_gids = all_anticipatory_gids(params)
     CRF_pop = []
     for gid in selected_gids:
@@ -1557,4 +1570,20 @@ def get_colorlist():
             '#CCCCCC', \
                     ]
     return colorlist
+
+
+def convert_to_NEST_conform_dict(json_dict):
+    testing_params = {}
+    for k in json_dict.keys():
+        if type(json_dict[k]) == type({}):
+            d = json_dict[k]
+            d_new = {}
+            for key in d.keys():
+                d_new[str(key)] = d[key]
+            testing_params[k] = d_new
+        elif type(json_dict[k]) == unicode:
+            testing_params[str(k)] = str(json_dict[k])
+        else:
+            testing_params[str(k)] = json_dict[k]
+    return testing_params
 

@@ -44,11 +44,11 @@ class NetworkModel(object):
             self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
             self.tuning_prop_inh = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='inh')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
         else:
-            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
+            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
             self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
         if self.pc_id == 0:
-            print "Saving tuning_prop to file:", self.params['tuning_prop_means_fn']
-            np.savetxt(self.params['tuning_prop_means_fn'], self.tuning_prop_exc)
+            print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
+            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
             print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
             np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
