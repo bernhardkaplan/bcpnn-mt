@@ -102,10 +102,10 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
     markersize_min = 2
     markersize_max = 12
     if plot_delay:
-#        markersizes = utils.linear_transformation(abs(weights), markersize_min, markersize_max)
-#        markersizes = utils.linear_transformation(delays, markersize_min, markersize_max)
-#        markersizes = utils.linear_transformation(np.abs(weights), 0., abs_max)
-        markersizes = utils.linear_transformation(np.abs(weights), 0, markersize_max)
+#        markersizes = utils.transform_linear(abs(weights), markersize_min, markersize_max)
+#        markersizes = utils.transform_linear(delays, markersize_min, markersize_max)
+#        markersizes = utils.transform_linear(np.abs(weights), 0., abs_max)
+        markersizes = utils.transform_linear(np.abs(weights), 0, markersize_max)
         print 'debug', markersizes, weights
         norm = matplotlib.colors.Normalize(vmin=-abs_max, vmax=abs_max)
         abs_max = max(abs(weights.min()), weights.max())
@@ -118,7 +118,7 @@ def plot_contour_connectivity_tgt(params, adj_list, tp, gid, plot_delay=False, c
 
     plot_weights = not plot_delay
     if plot_weights:
-        markersizes = utils.linear_transformation(np.abs(weights), markersize_min, markersize_max)
+        markersizes = utils.transform_linear(np.abs(weights), markersize_min, markersize_max)
 
         abs_max = max(abs(weights.min()), weights.max())
         norm = matplotlib.colors.Normalize(vmin=-abs_max, vmax=abs_max)
@@ -355,7 +355,7 @@ def plot_contour_connectivity_src(params, adj_list, tp, gid, plot_delay=False, c
     markersize_min = 2
     markersize_max = 12
     if plot_delay:
-        markersizes = utils.linear_transformation(delays, markersize_min, markersize_max)
+        markersizes = utils.transform_linear(delays, markersize_min, markersize_max)
         norm = matplotlib.colors.Normalize(vmin=delays.min(), vmax=delays.max())
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.binary) # large delays -- black, short delays -- white
 #        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.bone) # large delays -- bright, short delays -- black
@@ -364,9 +364,9 @@ def plot_contour_connectivity_src(params, adj_list, tp, gid, plot_delay=False, c
 
     plot_weights = not plot_delay
     if plot_weights:
-#        markersizes = utils.linear_transformation(abs(weights), markersize_min, markersize_max)
+#        markersizes = utils.transform_linear(abs(weights), markersize_min, markersize_max)
         abs_max = max(abs(weights.min()), weights.max())
-        markersizes = utils.linear_transformation(weights, 0., abs_max)
+        markersizes = utils.transform_linear(weights, 0., abs_max)
         print 'debug', markersizes, weights
         norm = matplotlib.colors.Normalize(vmin=-abs_max, vmax=abs_max)
 #        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())

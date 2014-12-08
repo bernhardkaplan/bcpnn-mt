@@ -196,51 +196,42 @@ class parameter_storage(object):
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
-        """
-        For each connection type ('ee', 'ei', 'ie', 'ii') choose one form of connectivity
-        """
-        self.params['connectivity_ee'] = 'anisotropic'
-#        self.params['connectivity_ee'] = 'isotropic'
-#        self.params['connectivity_ee'] = 'random'
-#        self.params['connectivity_ee'] = False
-#        self.params['connectivity_ei'] = 'anisotropic'
-        self.params['connectivity_ei'] = 'isotropic'
-#        self.params['connectivity_ei'] = 'random'
-#        self.params['connectivity_ei'] = False
-#        self.params['connectivity_ie'] = 'anisotropic'
-        self.params['connectivity_ie'] = 'isotropic'
-#        self.params['connectivity_ie'] = 'random'
-#        self.params['connectivity_ie'] = False
-#        self.params['connectivity_ii'] = 'anisotropic'
-        self.params['connectivity_ii'] = 'isotropic'
-#        self.params['connectivity_ii'] = 'random'
-#        self.params['connectivity_ii'] = False
-        
+
         # exc - exc: local
-#        self.params['p_ee_local'] = .7
-        self.params['p_ee_local'] = .3
-        self.params['n_conn_ee_local'] = np.int(np.round(self.params['p_ee_local'] * (self.params['n_exc_per_mc'] ** 2 - self.params['n_exc_per_mc']))) # number of connections within one minicolumn (per minicolumn)
-        self.params['w_ee_local'] = 5.
+        self.params['p_ee_local'] = .25
+        self.params['n_conn_ee_local_out_per_pyr'] = np.int(np.round(self.params['p_ee_local'] * self.params['n_exc_per_mc']))
+        self.params['w_ee_local'] = 5.      # [nS]
+        self.params['delay_ee_local'] = 1.  # [ms]
 
         # exc - exc: global
+        self.params['synapse_ee_global'] = 'bcpnn_synapse_ee_global'
+        self.params['p_ee_global'] = .3
         self.params['w_ee_global_max'] = 4.
-        self.params['w_ei_global_max'] = 15.
-        self.params['delay_ee_global'] = 1. # [ms]
+        self.params['delay_ee_global'] = 2. # [ms]
+        self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))
 
-        # exc - inh
+        # exc - inh: spec
+        self.params['delay_ei_spec'] = 2.   # [ms]
+
+        # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
         self.params['w_ei_unspec'] = 5.    # untrained, unspecific PYR -> Basket connections
         self.params['p_ei_unspec'] = .75     # probability for PYR -> Basket connections
+        self.params['delay_ei_unspec'] = 1.
 
-        # inh - exc
+        # inh - exc: unspecific inhibitory feedback within one hypercolumn
         self.params['w_ie_unspec'] = -200.  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .7     # probability for Basket -> PYR Basket connections
+        self.params['delay_ie_unspec'] = 1.
 
+        # ie_spec effective only after training
         self.params['w_ie_spec'] = -50.     # RSNP -> PYR, effective only after training
         self.params['p_ie_spec'] = 1.       # RSNP -> PYR
+        self.params['delay_ie_spec'] = 1.
 
         # inh - inh
         self.params['w_ii_unspec'] = 1. # untrained, unspecific Basket -> PYR connections
         self.params['p_ii_unspec'] = .7 # probability for Basket -> PYR Basket connections
+        self.params['delay_ii_unspec'] = 1.
 
         # approximately the same as in Mikael Lundqvist's work / copied from the olfaction project
 #        self.params['p_rsnp_pyr'] = 0.7
@@ -573,6 +564,8 @@ class parameter_storage(object):
         self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
 
         # used for different projections ['ee', 'ei', 'ie', 'ii'] for plotting
+        self.params['conn_list_ee_global_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
+        self.params['bias_ee_fn_base'] = '%sbias_ee_' % (self.params['connections_folder'])
         self.params['adj_list_tgt_fn_base'] = '%sadj_list_tgt_index_' % (self.params['connections_folder']) # key = target_gid
         self.params['adj_list_src_fn_base'] = '%sadj_list_src_index_' % (self.params['connections_folder']) # key = source_gid
         self.params['merged_adj_list_tgt_index'] = self.params['adj_list_tgt_fn_base'] + 'merged.json'

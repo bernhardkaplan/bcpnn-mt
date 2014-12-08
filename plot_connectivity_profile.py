@@ -104,7 +104,7 @@ class ConnectionPlotter(object):
     def plot_connections(self, tgt_ids, tgt_tp, weights, marker, color, with_directions=False, annotate=False, is_target=True): 
         """
         """
-        markersizes = utils.linear_transformation(weights, self.markersize_min, self.markersize_max)
+        markersizes = utils.transform_linear(weights, self.markersize_min, self.markersize_max)
 
         if is_target:
             quiver_style = '-'

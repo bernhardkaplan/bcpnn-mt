@@ -109,60 +109,6 @@ class NetworkModel(object):
 
 
     def setup_synapse_types(self):
-
-        # STATIC SYNAPSES 
-        # input -> exc: AMPA
-        nest.CopyModel('static_synapse', 'input_exc_fast', \
-                {'weight': self.params['w_input_exc'], 'receptor_type': 0})  # numbers must be consistent with cell_params_exc
-        # input -> exc: NMDA
-        nest.CopyModel('static_synapse', 'input_exc_slow', \
-                {'weight': self.params['w_input_exc'], 'receptor_type': 1})
-        # exc - exc local (within a minicolumn) AMPA
-        nest.CopyModel('static_synapse', 'exc_exc_local_fast', \
-                {'weight': self.params['w_ee_local'], 'receptor_type': 0})
-        # exc - exc local (within a minicolumn) NMDA
-        nest.CopyModel('static_synapse', 'exc_exc_local_slow', \
-                {'weight': self.params['w_ee_local'], 'receptor_type': 1})
-        # exc - inh unspecific (within one hypercolumn) AMPA
-        nest.CopyModel('static_synapse', 'exc_inh_unspec_fast', \
-                {'weight': self.params['w_ei_unspec'], 'receptor_type': 0})
-        # exc - inh unspecific (within one hypercolumn) NMDA
-        nest.CopyModel('static_synapse', 'exc_inh_unspec_slow', \
-                {'weight': self.params['w_ei_unspec'], 'receptor_type': 1})
-        # inh - exc unspecific (within one hypercolumn) GABA_A
-        nest.CopyModel('static_synapse', 'inh_exc_unspec_fast', \
-                {'weight': self.params['w_ie_unspec'], 'receptor_type': 2})
-        # inh - exc unspecific (within one hypercolumn) GABA_B
-#        nest.CopyModel('static_synapse', 'inh_exc_unspec_slow', \
-#                {'weight': self.params['w_ie_unspec'], 'receptor_type': 3})
-        # inh - inh unspecific (within one hypercolumn) GABA_A
-        nest.CopyModel('static_synapse', 'inh_inh_unspec_fast', \
-                {'weight': self.params['w_ii_unspec'], 'receptor_type': 2})
-        # inh - inh unspecific (within one hypercolumn) GABA_B
-#        nest.CopyModel('static_synapse', 'inh_inh_unspec_slow', \
-#                {'weight': self.params['w_ii_unspec'], 'receptor_type': 3})
-        # inh - exc global specific (between hypercolumns): GABA_A
-        nest.CopyModel('static_synapse', 'inh_exc_specific_fast', \
-                {'weight': self.params['w_ie_spec'], 'receptor_type': 2})
-        # inh - exc global specific (between hypercolumns): GABA_B
-#        nest.CopyModel('static_synapse', 'inh_exc_specific_slow', \
-#                {'weight': self.params['w_ie_spec'], 'receptor_type': 3})
-
-
-        # TRAINED SYNAPSES, weights are set according to the connection matrix
-        # exc - exc global (between hypercolumns): AMPA
-        nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
-                {'receptor_type': 0})
-        # exc - exc global (between hypercolumns): AMPA
-        nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
-                {'receptor_type': 1})
-        # exc - inh global specific (between hypercolumns): AMPA
-        nest.CopyModel('static_synapse', 'exc_inh_specific_fast', \
-                {'receptor_type': 0})
-        # exc - inh global specific (between hypercolumns): NMDA
-        nest.CopyModel('static_synapse', 'exc_inh_specific_slow', \
-                {'receptor_type': 1})
-
         if (not 'bcpnn_synapse' in nest.Models('synapses')):
             if self.params['Cluster']:
                 nest.sr('(/cfs/milner/scratch/b/bkaplan/BCPNN-Module/share/nest/sli) addpath')
@@ -174,6 +120,62 @@ class NetworkModel(object):
                 except:
                     nest.Install('pt_module')
 
+        # STATIC SYNAPSES 
+        # input -> exc: AMPA
+        nest.CopyModel('static_synapse', 'input_exc_fast', \
+                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': 0})  # numbers must be consistent with cell_params_exc
+        # input -> exc: NMDA
+        nest.CopyModel('static_synapse', 'input_exc_slow', \
+                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': 1})
+        # exc - exc local (within a minicolumn) AMPA
+        nest.CopyModel('static_synapse', 'exc_exc_local_fast', \
+                {'weight': self.params['w_ee_local'], 'delay': self.params['delay_ee_local'], 'receptor_type': 0})
+        # exc - exc local (within a minicolumn) NMDA
+        nest.CopyModel('static_synapse', 'exc_exc_local_slow', \
+                {'weight': self.params['w_ee_local'], 'delay': self.params['delay_ee_local'], 'receptor_type': 1})
+        # exc - inh unspecific (within one hypercolumn) AMPA
+        nest.CopyModel('static_synapse', 'exc_inh_unspec_fast', \
+                {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': 0})
+        # exc - inh unspecific (within one hypercolumn) NMDA
+        nest.CopyModel('static_synapse', 'exc_inh_unspec_slow', \
+                {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': 1})
+        # inh - exc unspecific (within one hypercolumn) GABA_A
+        nest.CopyModel('static_synapse', 'inh_exc_unspec_fast', \
+                {'weight': self.params['w_ie_unspec'], 'delay': self.params['delay_ie_unspec'], 'receptor_type': 2})
+        # inh - exc unspecific (within one hypercolumn) GABA_B
+#        nest.CopyModel('static_synapse', 'inh_exc_unspec_slow', \
+#                {'weight': self.params['w_ie_unspec'], 'receptor_type': 3})
+        # inh - inh unspecific (within one hypercolumn) GABA_A
+        nest.CopyModel('static_synapse', 'inh_inh_unspec_fast', \
+                {'weight': self.params['w_ii_unspec'], 'delay': self.params['delay_ii_unspec'], 'receptor_type': 2})
+        # inh - inh unspecific (within one hypercolumn) GABA_B
+#        nest.CopyModel('static_synapse', 'inh_inh_unspec_slow', \
+#                {'weight': self.params['w_ii_unspec'], 'receptor_type': 3})
+        # inh - exc global specific (between hypercolumns): GABA_A
+        nest.CopyModel('static_synapse', 'inh_exc_specific_fast', \
+                {'weight': self.params['w_ie_spec'], 'delay': self.params['delay_ie_spec'], 'receptor_type': 2})
+        # inh - exc global specific (between hypercolumns): GABA_B
+#        nest.CopyModel('static_synapse', 'inh_exc_specific_slow', \
+#                {'weight': self.params['w_ie_spec'], 'receptor_type': 3})
+
+
+        # TRAINED SYNAPSES, weights are set according to the connection matrix
+        # exc - exc global (between hypercolumns): AMPA
+        if self.params['training_run']:
+            nest.CopyModel('bcpnn_synapse', self.params['synapse_ee_global'], self.params['bcpnn_params'])
+
+
+        nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
+                {'delay': self.params['delay_ee_global'], 'receptor_type': 0})
+        # exc - exc global (between hypercolumns): AMPA
+        nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
+                {'delay': self.params['delay_ee_global'], 'receptor_type': 1})
+        # exc - inh global specific (between hypercolumns): AMPA
+        nest.CopyModel('static_synapse', 'exc_inh_specific_fast', \
+                {'delay': self.params['delay_ei_spec'], 'receptor_type': 0})
+        # exc - inh global specific (between hypercolumns): NMDA
+        nest.CopyModel('static_synapse', 'exc_inh_specific_slow', \
+                {'delay': self.params['delay_ei_spec'], 'receptor_type': 1})
 
     def get_local_indices(self, pop):
         local_nodes = []
@@ -364,12 +366,8 @@ class NetworkModel(object):
         return True
 
 
-    def compute_input(self, gids, motion_params, save_output=False, with_blank=False):
-
-        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-        time = np.arange(0, self.params['t_sim'], dt)
-        n_stim = motion_params[:, 0].size
-        raise NotImplementedError, 'to be done here or in CreateInput'
+#    def compute_input(self, gids, motion_params, save_output=False, with_blank=False):
+#        spike_trains = self.create_training_input_for_cells
 
 
     def create_training_input(self, my_units=None, load_files=False, save_output=False, with_blank=False):
@@ -496,9 +494,9 @@ class NetworkModel(object):
         self.connect_input_to_exc()
 
         if self.params['training_run']:
-            self.connect_input_to_recorder_neurons()
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
+            self.connect_input_to_recorder_neurons()
 #            self.connect_ee() # within MCs and bcpnn-all-to-all connections
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
@@ -569,15 +567,17 @@ class NetworkModel(object):
 
         for i_, gid in enumerate(self.recorder_neurons):
             self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = self.exc_gids[gids_normal[i_]] + 1 
-            print 'i_, gid recorder neuron, gid normal, exc_gids', i_, gid, gids_normal[i_], self.exc_gids [gids_normal[i_]]
+#            print 'i_, gid recorder neuron, gid normal, exc_gids', i_, gid, gids_normal[i_], self.exc_gids[gids_normal[i_]]
 
         print 'DEBUG recorder_neuron_gid_mapping:', self.recorder_neuron_gid_mapping
 
         # 1) connect the same input to recorder neurons as to the normal neurons
         if self.params['training_run']:
-            input_spikes_for_recorder_neurons = self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=False)
+            input_spikes_for_recorder_neurons = self.create_training_input_for_cells(gids_normal, with_blank=False)
+#            self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=False)
         else:
-            input_spikes_for_recorder_neurons = self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=True)
+            input_spikes_for_recorder_neurons = self.create_training_input_for_cells(gids_normal, with_blank=True)
+#            input_spikes_for_recorder_neurons = self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=True)
         
         for i_ in xrange(self.params['n_recorder_neurons']):
             spike_times = input_spikes_for_recorder_neurons[i_]
@@ -655,6 +655,9 @@ class NetworkModel(object):
         Connect each minicolumn to all other minicolumns but only sparsely
         """
         self.connect_ee_within_one_MC()
+        if self.params['training_run']:
+            self.connect_ee_training()
+
 
     def connect_ee_within_one_MC(self):
         # connect cells within one MC
@@ -668,9 +671,32 @@ class NetworkModel(object):
 
         for hc in xrange(self.params['n_hc']):
             for mc in xrange(self.params['n_mc_per_hc']):
-                for i_ in xrange(self.params['n_conn_ee_local']):
-                    nest.Connect(self.list_of_exc_pop[hc][mc][i_], self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']], model='exc_exc_local_fast')
-                    nest.Connect(self.list_of_exc_pop[hc][mc][i_], self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']], model='exc_exc_local_slow')
+                nest.RandomDivergentConnect(self.list_of_exc_pop[hc][mc], self.list_of_exc_pop[hc][mc], self.params['n_conn_ee_local_out_per_pyr'], \
+                        options={'allow_autapses': False, 'allow_multapses': False}, \
+                        model='exc_exc_local_fast')
+#                for i_ in xrange(self.params['n_conn_ee_local']):
+#                    nest.RandomDivergentConnect([self.list_of_exc_pop[hc][mc][i_]], [self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']]], model='exc_exc_local_fast')
+#                    nest.Connect([self.list_of_exc_pop[hc][mc][i_]], [self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']]], model='exc_exc_local_fast')
+#                    nest.Connect([self.list_of_exc_pop[hc][mc][i_]], [self.list_of_exc_pop[hc][mc][(i_ + 1) % self.params['n_exc_per_mc']]], model='exc_exc_local_slow')
+
+
+    def connect_ee_training(self):
+        # setup a sparse all-to-all connectivity
+
+        for i_hc_src in xrange(self.params['n_hc']):
+            for i_mc_src in xrange(self.params['n_mc_per_hc']):
+                mc_idx_src  = i_hc_src * self.params['n_mc_per_hc'] + i_mc_src
+                for i_hc_tgt in xrange(self.params['n_hc']):
+                    for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
+                        mc_idx_tgt  = i_hc_tgt * self.params['n_mc_per_hc'] + i_mc_tgt
+                        if mc_idx_src != mc_idx_tgt:
+                            nest.RandomDivergentConnect(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt], 
+                                    self.params['n_conn_ee_global_out_per_pyr'], model=self.params['synapse_ee_global'], \
+                                    options={'allow_multapses': False})
+
+
+
+
 
     def connect_ee(self):
 
@@ -891,16 +917,57 @@ class NetworkModel(object):
         else:
             return True
 
-    def get_weights_after_learning_cycle(self):
+    def get_weights_after_learning_cycle(self, iteration=None):
         """
         Saves the weights as adjacency lists (TARGET = Key) as dictionaries to file.
         """
 
         t_start = time.time()
         print 'NetworkModel.get_weights_after_learning_cycle ...'
+        conn_txt = ''
+        bias = {}
+
+        my_units = self.local_idx_exc # !GIDs are 1-aligned!
+        model = self.params['synapse_ee_global']
+        n_my_conns = 0
+        for i_pre, gid_pre in enumerate(my_units):
+            for tgt_hc in xrange(self.params['n_hc']):
+                for tgt_mc in xrange(self.params['n_mc_per_hc']):
+                    tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
+                    conns = nest.GetConnections([gid_pre], tgt_pop) # get the list of connections stored on the current MPI node
+                    if conns != None:
+#                        print 'debug conns:', conns
+                        for i_, c in enumerate(conns):
+                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                            pi = cp[0]['p_i']
+                            pj = cp[0]['p_j']
+                            pij = cp[0]['p_ij']
+                            w = np.log(pij / (pi * pj))
+                            conn_txt += '%d\t%d\t%.4e\t%.4e\t%.4e\t%.4e\n' % (cp[0]['source'], cp[0]['target'], w, pi, pj, pij)
+                            bias[cp[0]['target']] = cp[0]['bias']
+                            n_my_conns += 1
+
+        print 'Proc %d holds %d connections' % (self.pc_id, n_my_conns)
+        if iteration == None:
+            fn_out = self.params['conn_list_ee_global_fn_base'] + '%d.txt' % (self.pc_id)
+            fn_out_bias = self.params['bias_ee_fn_base'] + '%d.json' % (self.pc_id)
+        else:
+            fn_out = self.params['conn_list_ee_global_fn_base'] + 'it%04d_%d.txt' % (iteration, self.pc_id)
+            fn_out_bias = self.params['bias_ee_fn_base'] + 'it%04d_%d.json' % (iteration, self.pc_id)
+        print 'Saving connection list to: ', fn_out
+
+        bias_f = file(fn_out_bias, 'w')
+        json.dump(bias, bias_f, indent=0)
+        print 'Writing MPN - D1 connections to:', fn_out
+        conn_f = file(fn_out, 'w')
+        conn_f.write(conn_txt)
+        conn_f.flush()
+        conn_f.close()
+
+
+        """
         n_my_conns = 0
 #        my_units = np.array(self.local_idx_exc)[:, 0] # !GIDs are 1-aligned!
-        my_units = self.local_idx_exc # !GIDs are 1-aligned!
         my_adj_list_tgt = {}
 #        my_adj_list_src = {}
         for nrn in my_units:
@@ -953,6 +1020,7 @@ class NetworkModel(object):
         t_stop = time.time()
         self.times['t_get_weights'] = t_stop - t_start
 #        self.get_weights_to_recorder_neurons()
+        """
 
 
 

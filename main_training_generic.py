@@ -27,7 +27,8 @@ except:
 if __name__ == '__main__':
 
 
-    load_files = False
+    t_0 = time.time()
+    load_files = True
     save_input_files = not load_files
     record = False
 
@@ -85,5 +86,27 @@ if __name__ == '__main__':
 
     NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
 
+    NM.connect()
+
+    if record:
+        NM.record_v_exc()
+        NM.record_v_inh_unspec()
+
     GP.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called before every simulation
-#    NM.connect()
+
+#    NM.run_sim(10.)
+    NM.run_sim(params['t_sim'])
+    if comm != None:
+        comm.Barrier()
+    NM.get_weights_after_learning_cycle()
+
+    NM.merge_local_gid_files()
+    t_end = time.time()
+    t_diff = t_end - t_0
+    if NM.pc_id == 0:
+        print 'Removing empty files ...'
+        utils.remove_empty_files(params['spiketimes_folder'])
+    else:
+        print 'Waiting for remove_empty_files to end ... '
+    print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
+
