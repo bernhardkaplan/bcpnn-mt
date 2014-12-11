@@ -10,6 +10,19 @@ import re
 import json
 import itertools
 
+def compute_stim_time(stim_params):
+    """
+    Based on the stim params, one the training stimulus takes different time to stimulate
+    """
+    if stim_params[2] > 0: # rightward movement
+        xlim = 1.
+    else:
+        xlim = 0.
+    dx = np.abs(stim_params[0] - xlim)
+    t_exit = dx / np.abs(stim_params[2]) * 1000.
+    return t_exit 
+
+
 
 def set_vx_tau_transformation_params(params, vmin, vmax):
     tau_max, tau_min = params['tau_zi_max'], params['tau_zi_min']

@@ -40,7 +40,7 @@ class NetworkModel(object):
         self.training_stim_duration = np.zeros(self.params['n_stim'])
         for i_ in xrange(self.params['stim_range'][0], self.params['stim_range'][1]):
             stim_params = training_stimuli[i_, :]
-            t_exit = CI.compute_stim_time(stim_params)
+            t_exit = utils.compute_stim_time(stim_params)
             self.training_stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
         self.params['t_sim'] = self.training_stim_duration.sum()
         np.savetxt(self.params['training_stim_durations_fn'], self.training_stim_duration)
@@ -631,7 +631,12 @@ class NetworkModel(object):
 
 
     def create_training_input_for_cells(self, gids, with_blank):
+#    def create_training_input_for_cells(self, tp, with_blank):
 
+#        if tp.ndim == 2:
+#            n_cells = tp[:, 0].size
+#        else:
+#            n_cells = 1
         n_cells = len(gids)
         spike_times_container = [ np.array([]) for i in xrange(len(gids))]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
@@ -652,6 +657,7 @@ class NetworkModel(object):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
                 x_stim = (x0 + time_ * v0) % self.params['torus_width']
                 L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[gids, :], self.params, (x_stim, 0, v0, 0, 0))
+#                L_input[:, i_time] = utils.get_input(tp, self.params, (x_stim, 0, v0, 0, 0))
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 5000 == 0):
                     print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])

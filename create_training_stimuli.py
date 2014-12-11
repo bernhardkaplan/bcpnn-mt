@@ -40,19 +40,24 @@ if __name__ == '__main__':
 #    training_stimuli[:n_grid, :] = training_stimuli_grid[random.sample(range(params['n_stim_training']), n_grid), :]
 #    training_stimuli[n_grid:n_grid+n_center, :] = training_stimuli_center 
     training_stimuli[n_grid+n_center:, :] = training_stimuli_sample[random.sample(range(params['n_stim_training']), params['n_stim_training'] - n_grid - n_center), :]
-    print 'Saving training stimuli parameters to:', params['training_stimuli_fn']
-    np.savetxt(params['training_stimuli_fn'], training_stimuli)
+    answer = raw_input('Overwrite training stimuli parameters file?\n\t%s\n' % (params['training_stimuli_fn']))
+    if answer.capitalize() == 'Y':
+        print 'Saving training stimuli parameters to:', params['training_stimuli_fn']
+        np.savetxt(params['training_stimuli_fn'], training_stimuli)
 
     training_stim_duration = np.zeros(training_stimuli[:, 0].size)
     for i_ in xrange(training_stimuli[:, 0].size):
         stim_params = training_stimuli[i_, :]
-        t_exit = CI.compute_stim_time(stim_params)
+        t_exit = utils.compute_stim_time(stim_params)
         print 'stim_params', stim_params, 't_exit', t_exit
         training_stim_duration[i_] = max(params['t_training_max'], t_exit)
 
 
     Plotter = Plotter(params)#, it_max=1)
     Plotter.plot_training_sample_space(plot_process=True)
-    print 'Saving training stim durations to:', params['training_stim_durations_fn']
-    np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
+
+    answer = raw_input('Overwrite training stimuli duration file?\n\t%s\n' % (params['training_stim_durations_fn']))
+    if answer.capitalize() == 'Y':
+        print 'Saving training stim durations to:', params['training_stim_durations_fn']
+        np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
     pylab.show()

@@ -29,18 +29,28 @@ class Plotter(object):
         self.rfs = np.loadtxt(self.params['receptive_fields_exc_fn'])
 
 
-    def plot_training_sample_space(self, plot_process=False):
-        fn = self.params['training_stimuli_fn']
-        print 'Loading training stimuli data from:', fn
-        d = np.loadtxt(fn)
+    def plot_training_sample_space(self, d=None, plot_process=False, stim_lim=None):
+        if d == None:
+            fn = self.params['training_stimuli_fn']
+            print 'Loading training stimuli data from:', fn
+            d = np.loadtxt(fn)
+            training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+            n_stim = d[:, 0].size
+        else:
+            n_stim = d[:, 0].size
+            training_stim_duration = np.zeros(n_stim)
+            for i_ in xrange(n_stim):
+                stim_params = d[i_, :]
+                t_exit = utils.compute_stim_time(stim_params)
+                training_stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
+        if stim_lim == None:
+            stim_lim = (0, n_stim)
 
         fig = pylab.figure()#figsize=(12, 12))
         ax1 = fig.add_subplot(111)
 
         patches = []
             
-        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
-
         for gid in xrange(self.params['n_exc']):
             ax1.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=2)
             ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2], linewidth=0, alpha=0.1)
@@ -49,7 +59,7 @@ class Plotter(object):
             ax1.add_artist(ellipse)
 
         # plot the stimulus start points
-        for i_ in xrange(self.params['n_stim']):
+        for i_ in xrange(stim_lim[0], stim_lim[1]):
             if plot_process:
                 mp = d[i_, :]
 #                idx = i_ * self.params['n_iterations_per_stim']
@@ -110,21 +120,26 @@ class Plotter(object):
 
 if __name__ == '__main__':
 
+    training_stim = None
+    plot_process = False
+#    stim_lim = None
+    stim_lim = (0, 20)
     if len(sys.argv) > 1:
-        param_fn = sys.argv[1]
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
-        import json
-        f = file(param_fn, 'r')
-        print 'Loading parameters from', param_fn
-        params = json.load(f)
-
+        try:
+            params = utils.load_params(sys.argv[1])
+            print 'Case 1A'
+        except: # its the 
+            print 'Case 1B'
+            import simulation_parameters
+            param_tool = simulation_parameters.parameter_storage()
+            params = param_tool.params
+            training_stim = np.loadtxt(sys.argv[1])
     else:
+        print 'Case 2'
         import simulation_parameters
         param_tool = simulation_parameters.parameter_storage()
         params = param_tool.params
-
     
     Plotter = Plotter(params)#, it_max=1)
-    Plotter.plot_training_sample_space(plot_process=True)
+    Plotter.plot_training_sample_space(training_stim, plot_process=plot_process, stim_lim=stim_lim)
     pylab.show()

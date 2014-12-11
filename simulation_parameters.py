@@ -222,13 +222,13 @@ class parameter_storage(object):
         self.params['delay_ei_spec'] = 2.   # [ms]
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 5.    # untrained, unspecific PYR -> Basket connections
+        self.params['w_ei_unspec'] = 2.    # untrained, unspecific PYR -> Basket connections
         self.params['p_ei_unspec'] = .75     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec']))
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
-        self.params['w_ie_unspec'] = -15.  # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -10.  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .75     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_exc_per_mc']))

@@ -81,12 +81,13 @@ class ActivityPlotter(object):
 #            print 'cell %d spikes between %d - %d: %d times' % (gid, t0, t1, nspikes[gid - 1])
         return nspikes
 
-    def plot_nspike_histogram_vs_gids(self, spike_data, cell_type='exc'):
+    def plot_rate_histogram_vs_gids(self, spike_data, cell_type='exc'):
         """
         spike_data is the raw rasterplot data
         """
         n_cells = self.params['n_%s' % cell_type]
         nspikes = utils.get_nspikes(spike_data, n_cells=n_cells)
+        nspikes /= self.params['t_sim'] / 1000.
         idx_0 = (nspikes == 0).nonzero()[0]
 #        print 'Cells that did not fire any spikes:'
 #        for gid in idx_0:
@@ -97,8 +98,8 @@ class ActivityPlotter(object):
         ax = fig.add_subplot(111)
         ax.bar(x, nspikes, width=1)
         ax.set_xlim((0, n_cells))
-        ax.set_ylabel('Number of spikes')
-        ax.set_title('Number of spikes fired by %s cells' % cell_type)
+        ax.set_ylabel('Rate [Hz]')
+        ax.set_title('%s cells firing rates averageed over %d ms' % (cell_type.capitalize(), self.params['t_sim']))
         ax.set_xlabel('Cell GIDs')
 
 
@@ -400,7 +401,7 @@ if __name__ == '__main__':
     #inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
     inh_unspec_spike_data = Plotter.load_spike_data('inh_unspec')
 
-    Plotter.plot_nspike_histogram_vs_gids(exc_spike_data)
+    Plotter.plot_rate_histogram_vs_gids(exc_spike_data)
 
 #    Plotter.plot_spike_rate_vs_time(exc_spike_data, binsize=10)
 
@@ -409,7 +410,7 @@ if __name__ == '__main__':
     time_range = None
 #    stim = 1
 
-#    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
+    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
 #    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc')
 
     print 'Time range', time_range
