@@ -287,8 +287,8 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['x_max_training'] = 0.9
         self.params['x_min_training'] = 0.1
-        self.params['training_stim_noise_v'] = 0.00 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.00 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 #        self.params['n_training_v'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
 
@@ -321,7 +321,7 @@ class parameter_storage(object):
         self.params['stim_range'] = [training_stim_offset, training_stim_offset + self.params['n_stim']] # naming the training folder, but params['stim_range'] will be overwritten 
         # stim_range indicates which stimuli have been presented to the network, i.e. the row index in the training_stimuli file
         self.params['trained_stimuli'] = None # contains only the motion parameters from those stimuli that actually have been presented
-        self.params['frac_training_samples_from_grid'] = .3
+        self.params['frac_training_samples_from_grid'] = .8
         self.params['frac_training_samples_center'] = .0 # fraction of training samples drawn from the center
         self.params['center_stim_width'] = .0 # width from which the center training samples are drawn OR if reward_based_learning: stimuli positions are sampled from .5 +- center_stim_width
         assert (1.0 >= self.params['frac_training_samples_center'] + self.params['frac_training_samples_from_grid'])
@@ -374,7 +374,7 @@ class parameter_storage(object):
         # ########################
         # BCPNN SYNAPSE PARAMETERS
         # ########################
-        self.params['fmax_bcpnn'] = 500.0   # should be as the maximum output rate (with inhibitory feedback)
+        self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
         self.params['taui_bcpnn'] = 100.
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
@@ -446,15 +446,15 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%s_%dx%d_%d-%d_taui%d_taup%d_nHC%d_nMC%d_blurXV_%.2f_%.2f' % ( \
+                folder_name = 'TrainingSim_%s_%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f' % ( \
                         self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], \
                         self.params['stim_range'][0], self.params['stim_range'][1], \
-                        self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
+                        self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'])
             else:
-                folder_name = 'TestSim_%s_%d_taui%d_taup%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
+                folder_name = 'TestSim_%s_%d_taui%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 
-                        self.params['bcpnn_params']['tau_i'], self.params['taup_bcpnn'], \
+                        self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], \
                         self.params['w_ei_global_max'])
             folder_name += '/'

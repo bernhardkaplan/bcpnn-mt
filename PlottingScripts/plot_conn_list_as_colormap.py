@@ -107,11 +107,12 @@ if __name__ == '__main__':
 #    clim = (-0.5, .5)
 #    clim = (-200., 200.)
 
-    conn_type = 'ei'
-#    if conn_type[0] == 'e':
-#        sort_idx = 0 # or 2
-#    else:
-    sort_idx = None
+    conn_type = 'ee'
+
+    if conn_type[0] == 'e':
+        sort_idx = 0 # or 2
+    else:
+        sort_idx = None
 
     if len(sys.argv) > 2:
         print 'Case 1'

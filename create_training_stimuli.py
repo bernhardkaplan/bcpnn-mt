@@ -53,11 +53,10 @@ if __name__ == '__main__':
         training_stim_duration[i_] = max(params['t_training_max'], t_exit)
 
 
-    Plotter = Plotter(params)#, it_max=1)
-    Plotter.plot_training_sample_space(plot_process=True)
-
     answer = raw_input('Overwrite training stimuli duration file?\n\t%s\n' % (params['training_stim_durations_fn']))
     if answer.capitalize() == 'Y':
         print 'Saving training stim durations to:', params['training_stim_durations_fn']
         np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
+    Plotter = Plotter(params)#, it_max=1)
+    Plotter.plot_training_sample_space(plot_process=False)
     pylab.show()
