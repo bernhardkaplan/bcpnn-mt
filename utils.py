@@ -8,6 +8,33 @@ import os
 import copy
 import re
 import json
+import itertools
+
+def compute_stim_time(stim_params):
+    """
+    Based on the stim params, one the training stimulus takes different time to stimulate
+    """
+    if stim_params[2] > 0: # rightward movement
+        xlim = 1.
+    else:
+        xlim = 0.
+    dx = np.abs(stim_params[0] - xlim)
+    t_exit = dx / np.abs(stim_params[2]) * 1000.
+    return t_exit 
+
+
+
+def set_vx_tau_transformation_params(params, vmin, vmax):
+    tau_max, tau_min = params['tau_zi_max'], params['tau_zi_min']
+    if params['tau_vx_transformation_mode'] == 'linear':
+        beta = (tau_max - tau_min * vmin / vmax) / (1. - vmin / vmax)
+        params['tau_vx_param1'] = beta
+        params['tau_vx_param2'] = (tau_min - beta) / vmax
+    else:
+        alpha = (tau_min * vmax - tau_max * vmin) / (tau_max - tau_min)
+        beta = tau_max * (alpha - vmin)
+        params['tau_vx_param1'] = beta
+        params['tau_vx_param2'] = (tau_min - beta) / vmax
 
 
 def load_params(param_fn):
@@ -840,6 +867,79 @@ def get_nspikes(spiketimes_fn_or_array, n_cells=0, cell_offset=0, get_spiketrain
     else:
         return nspikes
 
+def get_random_connections(n_src, n_tgt, p_conn, allow_autapses=True, RNG=None):
+    """
+
+    RNG -- an instance of numpy.random.RandomState
+    if the source population == target population, you should set allow_autapse=False
+    if n_src != n_tgt, allow_autapses is ignored (because source population != target population)
+    """
+    if RNG == None:
+        RNG = np.random
+
+    if (n_src == n_tgt) and allow_autapses == False:
+        invalid_idx = [(n_src + 1) * i_ for i_ in xrange(n_tgt - 1)]
+        n_conn = np.int(np.round((n_src**2 - n_src) * p_conn))
+        n_conn_possible = n_src ** 2 - n_src
+    else:
+        invalid_idx = []
+        n_conn = np.int(np.round((n_src * n_tgt) * p_conn))
+        n_conn_possible = n_src * n_tgt
+
+    if n_conn == 0:
+        return []
+    print 'invalid_idx', invalid_idx
+    list_of_connections = []
+    combinations = itertools.product(range(n_src), range(n_tgt))
+    n_idx = 0
+#    while (n_idx != n_conn):
+#    for i_ in xrange(n_conn):
+#        rnd_idx = RNG.random_integers(0, len(n_conn_possible - 1), 1)
+
+
+    randomly_selected_connection_idx = RNG.random_integers(0, n_conn_possible - 1, n_conn)
+    n_idx = np.unique(randomly_selected_connection_idx).size
+    print 'n_idx = ', n_idx, n_conn, n_conn_possible
+
+
+    valid_idx = np.array(list(set(range(n_conn_possible)).difference(invalid_idx)))
+    print 'n_conn_possible:', n_conn_possible
+    print 'valid_idx', valid_idx
+
+    conn_idx = np.sort(randomly_selected_connection_idx)
+    print 'selected idx:', conn_idx
+    print 'selected conn idx:', valid_idx[conn_idx]
+    i_cnt = 0
+    i_conn = 0
+    for conn in combinations:
+#        print 'debug', list_of_connections, i_conn, len(valid_idx)
+        if i_cnt == valid_idx[conn_idx][i_conn]:
+            list_of_connections.append((conn[0], conn[1]))
+            i_conn += 1
+            if i_conn == len(conn_idx):
+                break
+        i_cnt += 1
+    return list_of_connections
+#    i_cnt = 0
+#    print 'n_idx', n_idx, p_conn, p_conn * n_conn_possible
+#    print 'n_conn_possible', n_conn_possible
+#    print 'conn_idx', conn_idx, conn_idx.size
+#    print 'invalid_idx', invalid_idx
+
+#    i_conn = 0
+#    for i_ in xrange(n_src):
+#        for j_ in xrange(n_tgt):
+#            if len(invalid_idx) > 0:
+#                if i_cnt != invalid_idx[0]:
+
+#            if i_cnt == conn_idx[i_conn]:
+#                print 'conn', i_, j_, i_cnt, i_conn
+#                i_conn += 1
+#            else:
+#                print 'no conn', i_, j_, i_cnt
+
+#            i_cnt += 1
+#    
 
 def get_sources(conn_list, target_gid):
     n = conn_list[:, 0].size 
@@ -1251,24 +1351,106 @@ def get_outgoing_connections(d, src_gid):
     return c_out
 
 
-def linear_transformation(x, y_min, y_max):
+#def linear_transformation(x, y_min, y_max):
+# renamed to:
+def transform_linear(x, y_range, x_range=None):
     """
-    x : the range to be transformed
+    x: single value or x-range to be linearly mapped into y_range
     y_min, y_max : lower and upper boundaries for the range into which x
                    is transformed to
+    if x_range == None:
+        x must be a list or array with more than one element, other wise no mapping is possible into y-range
+
     Returns y = f(x), f(x) = m * x + b
     """
-    x_min = np.min(x)
-    x_max = np.max(x)
-    if x_min == x_max:
-        x_max = x_min * 1.0001
+    error_txt = 'Error: can not map a single value without x_range into the given y_range. \n \
+            Please give x_range or use an array (or list) for the x parameter when calling utils.transform_linear!'
+    if x_range == None:
+        x_min = np.min(x)
+        x_max = np.max(x)
+        assert (x_min != x_max), error_txt
+    else:
+        x_min = np.min(x_range)
+        x_max = np.max(x_range)
+    y_min, y_max = y_range
+    assert (x_min != x_max), error_txt
     return (y_min + (y_max - y_min) / (x_max - x_min) * (x - x_min))
 
-def merge_files(input_fn_base, output_fn):
 
+def transform_quadratic(x, a, y_range, x_range=None):
+    """
+    Returns the function   f(x) = a * x**2 + b * x + c    for a value or interval.
+    (however, this function internally works with the vertex form f(x) = a * (x - h)**2 + k (where (h, k) are the vertex' (x, y) coordinates
+    The vertex coordinates are derived depending on x (or x_range), y_range and 'a'
+
+    x -- either a list or array of x-values to be mapped, or a single value
+        if x is a single value x_range can not be None
+    a -- 'pos' or 'neg' (if 
+        if a == 'pos': parabola is open upwards --> a > 0
+           a == 'neg': parabola is open downwards --> a < 0
+        if a > 0 and y_range[0] < y_range[1] --> quadratic increase from left (x_range[0]) to right x_range[1] (parabola open 'upwards')
+        if a < 0 and y_range[0] < y_range[1] --> quadratic approach from x_range[0] to x_range[1] (parabola open 'downwards')
+        if a > 0 and y_range[0] > y_range[1] --> quadratic decrease from left to right (parabola open upwards)
+        if a < 0 and y_range[0] > y_range[1] --> quadratic decrease from left to right (parabola open downwards)
+    """
+    
+    if a != 'pos' and a != 'neg':
+        raise ValueError('The parameter \'a\' must be either a \'neg\' or \'pos\' and determines whether the parabola implementing your quadratic fit is open upwards or downwards')
+    error_txt = 'Error: can not map a single value without x_range into the given y_range. \n \
+            Please give x_range or use an array (or list) for the x parameter when calling utils.transform_linear!'
+    if x_range != None:
+        assert x_range[0] < x_range[1], 'Error: please give x_range as tuple with the smaller element first, e.g.  x_range = (0, 1) and NOT (1, 0)'
+    else:
+        x_range = (np.min(x), np.max(x))
+    assert (x_range[0] != x_range[1]), error_txt
+
+    assert a != 0, 'if you want a == 0, you should use utils.transform_linear'
+    # determine the vertex and the other point of the parabola
+    if a == 'neg' and y_range[0] < y_range[1]:
+        vertex = (x_range[1], y_range[1])
+        x0 = x_range[0]
+        y0 = y_range[0]
+    elif a == 'neg' and y_range[0] > y_range[1]:
+        vertex = (x_range[0], y_range[0])
+        x0 = x_range[1]
+        y0 = y_range[1]
+    elif a == 'pos' and y_range[0] < y_range[1]:
+        vertex = (x_range[0], y_range[0])
+        x0 = x_range[1]
+        y0 = y_range[1]
+    elif a == 'pos' and y_range[0] > y_range[1]:
+        vertex = (x_range[1], y_range[1])
+        x0 = x_range[0]
+        y0 = y_range[0]
+            
+    alpha = (y0 - vertex[1]) / (x0 - vertex[0])**2
+    f_x = alpha * (x - vertex[0])**2 + vertex[1]
+    return f_x
+
+
+def merge_connection_files(params, conn_type='ee', iteration=None):
+    #conn_list_fn = params['merged_conn_list_%s' % conn_type]
+    if iteration==None:
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type]
+    else:
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type] + 'it%04d_' % iteration
+
+#        self.params['conn_list_ii_fn_base'] = '%sconn_list_ii_' % (self.params['connections_folder'])
+#        self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
+#    if not os.path.exists(conn_list_fn):
+#        print 'Merging default connection files...'
+    if iteration==None:
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type]
+    else:
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type] + 'it%04d_' % iteration
+    fn_out = params['merged_conn_list_%s' % conn_type]
+#    merge_files(merge_pattern, fn_out)
+    merge_and_sort_files(merge_pattern, fn_out)
+
+
+def merge_files(input_fn_base, output_fn):
     cmd = 'cat %s* > %s' % (input_fn_base, output_fn)
     os.system(cmd)
-
 
 def merge_and_sort_files(merge_pattern, fn_out):
     rnd_nr1 = np.random.randint(0,10**8)
@@ -1286,7 +1468,7 @@ def sort_cells_by_distance_to_stimulus(n_cells, verbose=False):
     import simulation_parameters
     network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
     params = network_params.load_params()                       # params stores cell numbers, etc as a dictionary
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     mp = params['mp_select_cells']
     indices, distances = sort_gids_by_distance_to_stimulus(tp, mp, params) # cells in indices should have the highest response to the stimulus
     print 'Motion parameters', mp
@@ -1383,14 +1565,14 @@ def resolve_src_tgt_with_tp(conn_type, params):
     """
     if conn_type == 'ee':
         n_src, n_tgt = params['n_exc'], params['n_exc']
-        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
         tp_src = tuning_prop_exc
         tp_tgt = tuning_prop_exc
         syn_type = 'excitatory'
 
     elif conn_type == 'ei':
         n_src, n_tgt = params['n_exc'], params['n_inh']
-        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
         tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
         tp_src = tuning_prop_exc
         tp_tgt = tuning_prop_inh
@@ -1398,7 +1580,7 @@ def resolve_src_tgt_with_tp(conn_type, params):
 
     elif conn_type == 'ie':
         n_src, n_tgt = params['n_inh'], params['n_exc']
-        tuning_prop_exc = np.loadtxt(params['tuning_prop_means_fn'])
+        tuning_prop_exc = np.loadtxt(params['tuning_prop_exc_fn'])
         tuning_prop_inh = np.loadtxt(params['tuning_prop_inh_fn'])
         tp_src = tuning_prop_inh
         tp_tgt = tuning_prop_exc
@@ -1469,7 +1651,7 @@ def select_well_tuned_cells_trajectory(tp, mp, params, n_cells, n_pop):
 # recording parameters for anticipatory mode
 def all_anticipatory_gids(params):
     ex_cells = params['n_exc']
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     selected_gids = []
     cells = np.arange(ex_cells)
     for cell in cells:
@@ -1481,7 +1663,7 @@ def all_anticipatory_gids(params):
             
 def pop_anticipatory_gids(params):
     ex_cells = params['n_exc']
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     selected_gids = all_anticipatory_gids(params)
     pop1, pop2, pop3, pop4, pop5 = [],[],[],[],[]
     for gid in selected_gids:
@@ -1504,7 +1686,7 @@ def pop_anticipatory_gids(params):
 
 def CRF_anticipatory_gids(params, RF_xrange = np.arange(0.7,1,0.1)):
     ex_cells = params['n_exc']
-    tp = np.loadtxt(params['tuning_prop_means_fn'])
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
     selected_gids = all_anticipatory_gids(params)
     CRF_pop = []
     for gid in selected_gids:
@@ -1557,4 +1739,20 @@ def get_colorlist():
             '#CCCCCC', \
                     ]
     return colorlist
+
+
+def convert_to_NEST_conform_dict(json_dict):
+    testing_params = {}
+    for k in json_dict.keys():
+        if type(json_dict[k]) == type({}):
+            d = json_dict[k]
+            d_new = {}
+            for key in d.keys():
+                d_new[str(key)] = d[key]
+            testing_params[k] = d_new
+        elif type(json_dict[k]) == unicode:
+            testing_params[str(k)] = str(json_dict[k])
+        else:
+            testing_params[str(k)] = json_dict[k]
+    return testing_params
 

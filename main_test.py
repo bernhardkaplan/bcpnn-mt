@@ -120,13 +120,13 @@ if __name__ == '__main__':
         print 'Wrong flag in simulation parameters. Set training_run = False.'
         exit(1)
 
-    assert (params['n_cells'] == training_params['n_cells']), 'ERROR: Test and training params are differen wrt n_cells!\n\ttraining %d \t test %d' % (trainin_params['n_cells'], params['n_cells'])
+    assert (params['n_cells'] == training_params['n_cells']), 'ERROR: Test and training params are differen wrt n_cells!\n\ttraining %d \t test %d' % (training_params['n_cells'], params['n_cells'])
     # always call set_filenames to update the folder name and all depending filenames (if params are modified and folder names change due to that)!
     ps.set_filenames() 
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = False
+    load_files = True
     record = False
     save_input_files = True #not load_files
     NM = NetworkModel(ps, iteration=0)
@@ -136,8 +136,6 @@ if __name__ == '__main__':
     NM.setup()
     NM.training_params = training_params
     NM.create()
-#    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True)
-    NM.create_test_input(load_files=load_files, save_output=save_input_files, with_blank=True, training_params=training_params)
     NM.connect()
     NM.connect_recorder_neurons()
 

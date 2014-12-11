@@ -13,6 +13,7 @@ import sys
 import os
 import utils
 import re
+import json
 from FigureCreator import plot_params
 pylab.rcParams.update(plot_params)
 
@@ -24,10 +25,7 @@ class ActivityPlotter(object):
     def __init__(self, params, it_max=None):
         self.params = params
         if it_max == None:
-            if self.params['training_run']:
-                self.n_stim_total = self.params['n_training_stim']
-            else:
-                self.n_stim_total = self.params['n_test_stim']
+            self.n_stim_total = self.params['n_stim']
         else:
             self.n_stim_total = it_max
 
@@ -36,10 +34,9 @@ class ActivityPlotter(object):
         self.n_x_ticks = 10
         self.x_ticks = np.linspace(0, self.n_bins_x, self.n_x_ticks)
         self.load_tuning_prop()
-        if self.params['training_run']:
-            self.t_stim = self.params['t_training_stim']
-        else:
-            self.t_stim = self.params['t_test_stim']
+        gids_f = self.params['gid_fn']
+        f = file(gids_f, 'r')
+        self.gids_dict = json.load(f)
 
 
     def load_spike_data(self, cell_type):
@@ -63,7 +60,7 @@ class ActivityPlotter(object):
 
     def load_tuning_prop(self):
         print 'ActivityPlotter.load_tuning_prop ...'
-        self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
+        self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
 #        self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
         self.x_grid = np.linspace(0, 1, self.n_bins_x, endpoint=False)
@@ -84,12 +81,13 @@ class ActivityPlotter(object):
 #            print 'cell %d spikes between %d - %d: %d times' % (gid, t0, t1, nspikes[gid - 1])
         return nspikes
 
-    def plot_nspike_histogram_vs_gids(self, spike_data, cell_type='exc'):
+    def plot_rate_histogram_vs_gids(self, spike_data, cell_type='exc'):
         """
         spike_data is the raw rasterplot data
         """
         n_cells = self.params['n_%s' % cell_type]
         nspikes = utils.get_nspikes(spike_data, n_cells=n_cells)
+        nspikes /= self.params['t_sim'] / 1000.
         idx_0 = (nspikes == 0).nonzero()[0]
 #        print 'Cells that did not fire any spikes:'
 #        for gid in idx_0:
@@ -100,8 +98,8 @@ class ActivityPlotter(object):
         ax = fig.add_subplot(111)
         ax.bar(x, nspikes, width=1)
         ax.set_xlim((0, n_cells))
-        ax.set_ylabel('Number of spikes')
-        ax.set_title('Number of spikes fired by %s cells' % cell_type)
+        ax.set_ylabel('Rate [Hz]')
+        ax.set_title('%s cells firing rates averageed over %d ms' % (cell_type.capitalize(), self.params['t_sim']))
         ax.set_xlabel('Cell GIDs')
 
 
@@ -121,11 +119,13 @@ class ActivityPlotter(object):
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
-        for stim in xrange(self.n_stim_total):
-            t0 = stim * self.t_stim
-            t1 = (stim + 1) * self.t_stim
-            ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
-            ax.plot((t1, t1), (ylim[0], ylim[1]), '--', c='k', lw=1)
+        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+        for i_stim in xrange(self.params['n_stim']):
+            t0 = training_stim_duration[:i_stim].sum()
+            t1 = training_stim_duration[:i_stim+1].sum()
+            ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
+            ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
+            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
 
         if time_range != None:
             ax.set_xlim((time_range[0], time_range[1]))
@@ -167,11 +167,15 @@ class ActivityPlotter(object):
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
-        for stim in xrange(self.n_stim_total):
-            t0 = stim * self.t_stim
-            t1 = (stim + 1) * self.t_stim
-            ax.plot((t0, t0), (ylim[0], ylim[1]), '--', c='k', lw=1)
-            ax.plot((t1, t1), (ylim[0], ylim[1]), '--', c='k', lw=1)
+
+
+        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+        for i_stim in xrange(self.params['n_stim']):
+            t0 = training_stim_duration[:i_stim].sum()
+            t1 = training_stim_duration[:i_stim+1].sum()
+            ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
+            ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
+            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
 
         if time_range != None:
             ax.set_xlim((time_range[0], time_range[1]))
@@ -250,8 +254,8 @@ class ActivityPlotter(object):
         nspikes_per_mc = np.zeros(n_columns)
         for gid in np.unique(gids):
             nspikes = (gid == gids).nonzero()[0].size
+            # alternative: self.gids_dict[cell_type]['gid_to_column'][gid]
             mc_idx = (gid - 1 - gid_offset) / n_per_mc
-#            print 'debug cell_type gid mc_idx', cell_type, gid, mc_idx
             nspikes_per_mc[mc_idx] += nspikes
         
         nspikes_per_mc  /= (time_range[1] - time_range[0]) / 1000.# transform into rate
@@ -263,7 +267,7 @@ class ActivityPlotter(object):
         fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.bar(range(n_columns), nspikes_per_mc, width=1)
-        ax.set_title('%s activity during time %d - %d' % (cell_type.capitalize(), time_range[0], time_range[1]))
+        ax.set_title('%s activity during time %d - %d [ms]' % (cell_type.capitalize(), time_range[0], time_range[1]))
         ax.set_ylabel('Mean output rate\n(avg over %d cells) [Hz]' % (n_per_mc))
         ax.set_xlabel('Column index')
         ax.set_ylim((0, f_max))
@@ -281,6 +285,88 @@ class ActivityPlotter(object):
         if output_fn != None:
             print 'Saving to:', output_fn
             pylab.savefig(output_fn, dpi=300)
+
+
+    def plot_spike_rate_vs_time(self, spike_data, binsize=25., time_range=None, cell_type='exc'):
+
+        if cell_type == 'exc':
+            n_per_mc = self.params['n_exc_per_mc']
+            n_per_hc = self.params['n_exc_per_hc']
+            n_columns = self.params['n_mc']
+            gid_offset = self.params['exc_offset']
+        elif cell_type == 'inh_spec':
+            n_per_mc = self.params['n_inh_per_mc']
+            n_per_hc = self.params['n_inh_per_hc']
+            n_columns = self.params['n_mc']
+            gid_offset = self.params['inh_spec_offset']
+        elif cell_type == 'inh_unspec':
+            n_per_mc = 1
+            n_per_hc = self.params['n_inh_unspec_per_hc']
+            n_columns = self.params['n_inh_unspec']
+            gid_offset = self.params['inh_unspec_offset']
+
+        # build a color scheme
+        # define the colormap
+        cmap = matplotlib.cm.jet
+
+        # if you want to modify the colormap:
+        # extract all colors from the cmap
+#        cmaplist = [cmap(i) for i in xrange(cmap.N)]
+
+        # force the first color entry to be grey 
+        #cmaplist[0] = (.5,.5,.5,1.0)
+        # create the new map
+#        cmap = cmap.from_list('Custom cmap', cmaplist, cmap.N)
+
+
+        fig = pylab.figure()
+        ax = fig.add_subplot(111)
+        bounds = range(params['n_mc_per_hc'])
+        norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N)
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
+        m.set_array(np.arange(bounds[0], bounds[-1], 1.))
+        rgba_colors = m.to_rgba(bounds)
+        cb = fig.colorbar(m)
+        cb.set_label('Minicolumn index')#, fontsize=24)
+
+        if time_range == None:
+            time_range = (0, self.params['t_sim'])
+            spikes = spike_data[:, time_axis]
+            gids = spike_data[:, gid_axis]
+        else:
+            spikes, gids = utils.get_spikes_within_interval(spike_data, time_range[0], time_range[1], time_axis=time_axis, gid_axis=gid_axis)
+
+        n_bins = np.int(np.round((time_range[1] - time_range[0]) / binsize))
+#        for gid in np.unique(gids):
+#            key = str(int(gid))
+#            hc_idx, mc_idx = self.gids_dict['gid_to_column'][cell_type][key]
+#            color = rgba_colors[mc_idx]
+#            idx = (gids == gid).nonzero()[0]
+#            cells_spikes = spikes[idx]
+#            hist, edges = np.histogram(cells_spikes, bins=n_bins, range=time_range)
+#            print 'debug hist edges', hist.size, edges.size
+
+#            ax.plot(edges[:-1] + .5 * binsize,  hist * (1000. / binsize), lw=1, c=color)
+
+            # another way of coloring (global mc index determines color)
+#            mc = hc_idx * self.params['n_mc_per_hc'] + mc_idx
+#            color = rgba_colors[mc]
+
+        for i_hc in xrange(self.params['n_hc']):
+            for i_mc in xrange(self.params['n_mc_per_hc']):
+                cell_gids = self.gids_dict['column_to_gid'][cell_type][str(i_hc)][str(i_mc)]
+                mc_activity = np.zeros(n_bins)
+                for gid in cell_gids:
+                    idx = (gids == gid).nonzero()[0]
+                    cells_spikes = spikes[idx]
+                    hist, edges = np.histogram(cells_spikes, bins=n_bins, range=time_range)
+                    mc_activity += hist
+
+                color = rgba_colors[i_mc]
+                ax.plot(edges[:-1] + .5 * binsize,  mc_activity * (1000. / binsize) / n_per_mc, lw=1, c=color)
+
+
+
 
 
 if __name__ == '__main__':
@@ -302,23 +388,30 @@ if __name__ == '__main__':
 
     Plotter = ActivityPlotter(params)#, it_max=1)
     exc_spike_data = Plotter.load_spike_data('exc')
-    inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
+
+    trained_stim = params['trained_stimuli']
+    training_stim_duration = np.loadtxt(params['training_stim_durations_fn'])
+    stim_range = params['stim_range']
+    binsize = 50
+    for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
+        t0 = training_stim_duration[:stim].sum()
+        t1 = training_stim_duration[:stim+1].sum()
+        Plotter.plot_spike_rate_vs_time(exc_spike_data, binsize=binsize, time_range=(t0, t1))
+
+    #inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
     inh_unspec_spike_data = Plotter.load_spike_data('inh_unspec')
 
+    Plotter.plot_rate_histogram_vs_gids(exc_spike_data)
 
-    Plotter.plot_nspike_histogram_vs_gids(exc_spike_data)
+#    Plotter.plot_spike_rate_vs_time(exc_spike_data, binsize=10)
+
+#    Plotter.plot_spike_rate_vs_time(inh_unspec_spike_data, binsize=15)
 
     time_range = None
-    stim = 1
+#    stim = 1
 
-    if params['training_run']:
-        t_stim = params['t_training_stim']
-    else:
-        t_stim = params['t_test_stim']
-
-#    time_range = (stim * t_stim, (stim + 1) * t_stim)
-#    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
-    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc', time_range=time_range)
+    Plotter.plot_raster_simple(title='Inh unspecific neurons', cell_type='inh_unspec')
+#    Plotter.plot_raster_simple(title='Exc neurons', cell_type='exc')
 
     print 'Time range', time_range
     fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by x-position', sort_idx=0, time_range=time_range)
@@ -327,27 +420,23 @@ if __name__ == '__main__':
     print 'Saving to:', output_fn
     fig.savefig(output_fn, dpi=300)
 
-    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by $v_x$', sort_idx=2, time_range=time_range)
-    Plotter.plot_input_spikes_sorted(ax, sort_idx=2)
-    output_fn = params['figures_folder'] + 'exc_raster_vx.png'
-    print 'Saving to:', output_fn
-    fig.savefig(output_fn, dpi=300)
-
-#    time_steps = 1 # in which one stimulus is to be divided
-#    time_window = (time_range[0] / time_steps, time_range[1] / time_steps)
-#    f_max = 50 / time_steps
-#    for i_ in xrange(time_steps):
-#        time_range = ((i_+1) * time_window[0], (i_ + 1) * time_window[1])
-#        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_stim%02d_step%02d.png' % (stim, i_)
-#        Plotter.plot_nspike_histogram_in_MCs(exc_spike_data, cell_type='exc', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
-
-#        output_fn = params['figures_folder'] + 'mc_inh_unspec_nspike_histogram_stim%02d_step%02d.png' % (stim, i_)
-#        Plotter.plot_nspike_histogram_in_MCs(inh_unspec_spike_data, cell_type='inh_unspec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
-
-#        output_fn = params['figures_folder'] + 'mc_inh_spec_nspike_histogram_stim%02d_step%02d.png' % (stim, i_)
-#        Plotter.plot_nspike_histogram_in_MCs(inh_spec_spike_data, cell_type='inh_spec', time_range=(time_range[0], time_range[1]), f_max=f_max, output_fn=output_fn)
+#    fig, ax = Plotter.plot_raster_sorted(title='Exc cells sorted by $v_x$', sort_idx=2, time_range=time_range)
+#    Plotter.plot_input_spikes_sorted(ax, sort_idx=2)
+#    output_fn = params['figures_folder'] + 'exc_raster_vx.png'
+#    print 'Saving to:', output_fn
+#    fig.savefig(output_fn, dpi=300)
 
 
-#    fig.savefig(params['figures_folder'] + 'rasterplot_in_and_out.png')
+#    trained_stim = params['trained_stimuli']
+#    training_stim_duration = np.loadtxt(params['training_stim_durations_fn'])
+#    stim_range = [0, 2]
+#    f_max = 350.
+#    for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
+#        t0 = training_stim_duration[:stim].sum()
+#        t1 = training_stim_duration[:stim+1].sum()
+#        print 'Stim:', stim, 'time_range:', t0, t1, 'mp:', trained_stim[stim]
+#        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_stim%02d.png' % (stim)
+#        Plotter.plot_nspike_histogram_in_MCs(exc_spike_data, cell_type='exc', time_range=(t0, t1), f_max=f_max, output_fn=output_fn)
+#        pylab.savefig(output_fn)
 
     pylab.show()

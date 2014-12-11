@@ -17,12 +17,13 @@ import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
 from FigureCreator import plot_params
 pylab.rcParams.update(plot_params)
+import set_tuning_properties
 
 class Plotter(object):
 
     def __init__(self, params, it_max=None):
         self.params = params
-        tp_fn = self.params['tuning_prop_means_fn']
+        tp_fn = self.params['tuning_prop_exc_fn']
         rfs_fn = self.params['receptive_fields_exc_fn']
         if not (os.path.exists(tp_fn)) or not (os.path.exists(rfs_fn)):
             print 'RECOMPUTING tuning properties'
@@ -54,18 +55,19 @@ class Plotter(object):
         ax3 = fig.add_subplot(223)
         ax4 = fig.add_subplot(224)
 
+        n_bins = 40
         ax1.set_title('Distribution of spatial receptive fields')
-        ax1.scatter(tp[:, 0], tp[:, 1], marker='o', c='k')
+        ax1.plot(tp[:, 0], tp[:, 1], marker='o', c='k', markersize=1, ls='')
 
         ax3.set_title('Histogram of spatial receptive fields')
-        cnt, bins = np.histogram(tp[:, 0], bins=20)
+        cnt, bins = np.histogram(tp[:, 0], bins=n_bins)
         ax3.bar(bins[:-1], cnt, width=bins[1]-bins[0])
 
         ax2.set_title('Distribution of speed tunings')
-        ax2.scatter(tp[:, 2], tp[:, 3], marker='o', c='k')
+        ax2.plot(tp[:, 2], tp[:, 3], marker='o', c='k', markersize=1, ls='')
 
         ax4.set_title('Histogram of speed tunings')
-        cnt, bins = np.histogram(tp[:, 2], bins=20)
+        cnt, bins = np.histogram(tp[:, 2], bins=n_bins)
         ax4.bar(bins[:-1], cnt, width=bins[1]-bins[0])
 
         if os.path.exists(self.params['figures_folder']):
@@ -84,10 +86,10 @@ class Plotter(object):
         patches = []
         for gid in xrange(self.tp[:, 0].size):
             ax.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=3)
-            ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2])
+            ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2], linewidth=1.)
             patches.append(ellipse)
 
-        collection = PatchCollection(patches, alpha=0.1)
+        collection = PatchCollection(patches, alpha=0.2, facecolor='blue', linewidth=1)
         ax.add_collection(collection)
         ylim = ax.get_ylim()
         ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))

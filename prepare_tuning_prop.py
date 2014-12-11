@@ -1,6 +1,7 @@
 import numpy as np
 import utils
 import sys
+import set_tuning_properties
 
 import simulation_parameters
 PS = simulation_parameters.parameter_storage()
@@ -11,15 +12,17 @@ print 'n_cells=%d\tn_exc=%d\tn_inh=%d' % (params['n_cells'], params['n_exc'], pa
 PS.create_folders()
 PS.write_parameters_to_file()
 
-if params['n_grid_dimensions'] == 1:
-    tuning_prop_exc = utils.set_tuning_prop_1D(params, cell_type='exc')
-    tuning_prop_inh = utils.set_tuning_prop_1D(params, cell_type='inh')
-else:
-    tuning_prop_exc = utils.set_tuning_prop(params, mode='hexgrid', cell_type='exc')
-    tuning_prop_inh = utils.set_tuning_prop(params, mode='hexgrid', cell_type='inh')
+#if params['n_grid_dimensions'] == 1:
+#    tuning_prop_exc = utils.set_tuning_prop_1D(params, cell_type='exc')
+#    tuning_prop_inh = utils.set_tuning_prop_1D(params, cell_type='inh')
+#else:
+#    tuning_prop_exc = utils.set_tuning_prop(params, mode='hexgrid', cell_type='exc')
+#    tuning_prop_inh = utils.set_tuning_prop(params, mode='hexgrid', cell_type='inh')
 
-print "Saving exc tuning_prop to file:", params['tuning_prop_means_fn']
-np.savetxt(params['tuning_prop_means_fn'], tuning_prop_exc)
+tuning_prop_exc, rfs = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(params)
+
+print "Saving exc tuning_prop to file:", params['tuning_prop_exc_fn']
+np.savetxt(params['tuning_prop_exc_fn'], tuning_prop_exc)
 print "Saving inh tuning_prop to file:", params['tuning_prop_inh_fn']
 np.savetxt(params['tuning_prop_inh_fn'], tuning_prop_inh)
 

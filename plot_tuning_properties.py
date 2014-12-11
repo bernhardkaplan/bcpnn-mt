@@ -46,7 +46,7 @@ if re_calculate: # load
     ps.create_folders()
     d = utils.set_tuning_prop(params, mode='hexgrid', cell_type=cell_type)        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
 else:
-    fn = params['tuning_prop_means_fn']
+    fn = params['tuning_prop_exc_fn']
     print '\nLoading from', fn
     d = np.loadtxt(fn)
 
