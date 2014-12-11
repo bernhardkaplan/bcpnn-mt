@@ -65,7 +65,7 @@ class TrainingAnalyser(object):
 
     def load_tuning_prop(self):
         print 'TrainingAnalyser.load_tuning_prop ...'
-        self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_means_fn'])
+        self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
 #        self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 #        self.x_grid = np.linspace(0, 1, self.n_bins_x, endpoint=False)
 #        self.gid_to_posgrid_mapping = utils.get_grid_index_mapping(self.tuning_prop_exc[:, 0], self.x_grid)

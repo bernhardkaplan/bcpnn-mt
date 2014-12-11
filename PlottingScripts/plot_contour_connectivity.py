@@ -220,7 +220,7 @@ def get_pconn_target_perspective(params, tp, gid, x_src, vx_src):
 
 def run_contour_plot_tgt_perspective(params, mp=None):
 
-    tp = np.loadtxt(params['tuning_prop_means_fn']) #load the data and merge files before if necessary
+    tp = np.loadtxt(params['tuning_prop_exc_fn']) #load the data and merge files before if necessary
     adj_list_fn = params['adj_list_tgt_fn_base'] + 'merged.json'
 #    if not os.path.exists(adj_list_fn):
 #        adj_list_src_index = utils.convert_adjacency_lists(params)
@@ -241,7 +241,7 @@ def run_contour_plot_tgt_perspective(params, mp=None):
 
 def run_contour_plot_src_perspective(params, mp=None):
 
-    tp = np.loadtxt(params['tuning_prop_means_fn']) #load the data and merge files before if necessary
+    tp = np.loadtxt(params['tuning_prop_exc_fn']) #load the data and merge files before if necessary
     adj_list_fn = params['adj_list_src_fn_base'] + 'merged.json'
     if not os.path.exists(adj_list_fn):
         adj_list_src_index = utils.convert_adjacency_lists(params)

@@ -18,7 +18,7 @@ class Plotter(object):
         self.cell_cnt = 0
         self.colorlist = utils.get_colorlist()
         self.traces = {}  # store traces for each GID
-        self.tp = np.loadtxt(self.params['tuning_prop_means_fn'])
+        self.tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
         self.t_axis = None
         self.y_lim_global = [np.inf, -np.inf]
 

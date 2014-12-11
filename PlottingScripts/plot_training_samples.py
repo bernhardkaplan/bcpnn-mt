@@ -81,7 +81,7 @@ class Plotter(object):
 #                idx_stop = (i_ + 1) * self.params['n_iterations_per_stim']
 #                mps = d[idx:idx_stop, :]
                     ax1.plot(x1, mp[2], '*', markersize=10, color='y', markeredgewidth=1)#, zorder=100)
-                    ellipse = mpatches.Ellipse((x1, mp[2]), self.params['blur_X'], self.params['blur_V'], linewidth=0)
+                    ellipse = mpatches.Ellipse((x1, mp[2]), self.params['blur_X'], self.params['blur_V'], linewidth=0, alpha=0.2)
                 ellipse.set_facecolor('r')
                 patches.append(ellipse)
                 ax1.add_artist(ellipse)
@@ -93,6 +93,7 @@ class Plotter(object):
                 ellipse.set_facecolor('r')
                 patches.append(ellipse)
                 ax1.add_artist(ellipse)
+            ax1.text(mp[0] + 0.02, mp[2] + 0.1, '%d' % i_, fontsize=16, color='k')
         collection = PatchCollection(patches)#, alpha=0.1)
         ax1.add_collection(collection)
 

@@ -1416,20 +1416,23 @@ def transform_quadratic(x, a, y_range, x_range=None):
 
 
 def merge_connection_files(params, conn_type='ee', iteration=None):
-    conn_list_fn = params['merged_conn_list_%s' % conn_type]
+    #conn_list_fn = params['merged_conn_list_%s' % conn_type]
     if iteration==None:
-        merge_pattern = params['conn_list_%s_global_fn_base' % conn_type]
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type]
     else:
-        merge_pattern = params['conn_list_%s_global_fn_base' % conn_type] + 'it%04d_' % iteration
-    if not os.path.exists(conn_list_fn):
-        print 'Merging default connection files...'
-        if iteration==None:
-            merge_pattern = params['conn_list_%s_global_fn_base' % conn_type]
-        else:
-            merge_pattern = params['conn_list_%s_global_fn_base' % conn_type] + 'it%04d_' % iteration
-        fn_out = params['merged_conn_list_%s' % conn_type]
-#        merge_and_sort_files(merge_pattern, fn_out, sort=False)
-        merge_files(merge_pattern, fn_out)
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type] + 'it%04d_' % iteration
+
+#        self.params['conn_list_ii_fn_base'] = '%sconn_list_ii_' % (self.params['connections_folder'])
+#        self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
+#    if not os.path.exists(conn_list_fn):
+#        print 'Merging default connection files...'
+    if iteration==None:
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type]
+    else:
+        merge_pattern = params['conn_list_%s_fn_base' % conn_type] + 'it%04d_' % iteration
+    fn_out = params['merged_conn_list_%s' % conn_type]
+#    merge_files(merge_pattern, fn_out)
+    merge_and_sort_files(merge_pattern, fn_out)
 
 
 def merge_files(input_fn_base, output_fn):
