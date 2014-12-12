@@ -82,7 +82,7 @@ class NetworkModel(object):
         # # # # # # # # # # # #
         #     S E T U P       #
         # # # # # # # # # # # #
-        nest.SetKernelStatus({'data_path':self.params['spiketimes_folder'], 'resolution': .1, 'overwrite_files' : True})
+        nest.SetKernelStatus({'data_path':self.params['spiketimes_folder'], 'resolution': self.params['dt_sim'], 'overwrite_files' : True})
         (delay_min, delay_max) = self.params['delay_range']
 #        nest.SetKernelStatus({'tics_per_ms':self.params['dt_sim'], 'min_delay':delay_min, 'max_delay':delay_max})
 
@@ -137,6 +137,9 @@ class NetworkModel(object):
         # input -> exc: NMDA
         nest.CopyModel('static_synapse', 'input_exc_slow', \
                 {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': 2})
+        # trigger -> exc: AMPA
+        nest.CopyModel('static_synapse', 'trigger_synapse', \
+                {'weight': self.params['w_trigger'], 'delay': 0.1, 'receptor_type': 1})  # numbers must be consistent with cell_params_exc
 
         # exc - inh unspecific (within one hypercolumn) AMPA
         nest.CopyModel('static_synapse', 'exc_inh_unspec_fast', \
@@ -288,6 +291,13 @@ class NetworkModel(object):
             json.dump(gids_dict, f_gids, indent=2)
             f_gids.flush()
             f_gids.close()
+
+        ####### Trigger spikes
+        self.trigger_spike_source = nest.Create('spike_generator', 1)
+        for hc in xrange(self.params['n_hc']):
+            for mc in xrange(self.params['n_mc_per_hc']):
+                nest.DivergentConnect(self.trigger_spike_source, self.list_of_exc_pop[hc][mc], model='trigger_synapse')
+
         if self.comm != None:
             self.comm.Barrier()
 
@@ -1312,4 +1322,15 @@ class NetworkModel(object):
         f.flush()
 
 
+
+    def trigger_spikes(self):
+        """
+        At the end of the training call this function to trigger spikes in all cells 
+        in order to initiate a weight update
+        """
+        t_pause = 50.
+        n_spikes = 4
+        t_spikes = [np.around(self.params['t_sim'] + t_pause + i_ * self.params['dt_sim'], decimals=1) for i_ in xrange(n_spikes)]
+        nest.SetStatus(self.trigger_spike_source, {'spike_times' : t_spikes})
+        nest.Simulate(t_pause + 10.)
 

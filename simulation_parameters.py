@@ -31,7 +31,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 16
+        self.params['n_rf'] = 10
 #        self.params['n_rf'] = 8
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
@@ -50,7 +50,7 @@ class parameter_storage(object):
         self.params['n_rf_x_log'] = self.params['n_rf_x'] - self.params['n_rf_x_fovea']
         assert (self.params['n_rf_x_log'] % 2 == 0), 'ERROR: please make sure that n_rf_x_log is an even number (as n_rf_x_fovea), so please change n_hc (=n_rf_x) or frac_rf_x_fovea'
 
-        self.params['n_v'] = 12
+        self.params['n_v'] = 10
         assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
@@ -422,7 +422,7 @@ class parameter_storage(object):
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
             self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS
-
+        self.params['w_trigger'] = 30.
 
         # ######
         # NOISE
