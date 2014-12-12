@@ -101,6 +101,8 @@ if __name__ == '__main__':
     NM.run_sim(params['t_sim'])
     if comm != None:
         comm.Barrier()
+
+    NM.trigger_spikes()
     NM.get_weights_after_learning_cycle()
     NM.get_weights_static()
 
