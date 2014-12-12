@@ -123,7 +123,7 @@ if __name__ == '__main__':
     training_stim = None
     plot_process = False
 #    stim_lim = None
-    stim_lim = (0, 20)
+    stim_lim = (0, 50)
     if len(sys.argv) > 1:
         try:
             params = utils.load_params(sys.argv[1])

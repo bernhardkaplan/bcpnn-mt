@@ -9,6 +9,7 @@ import numpy as np
 import pylab
 import utils
 import json
+import FigureCreator as FC
 
 
 class Plotter(object):
@@ -177,7 +178,7 @@ if __name__ == '__main__':
     fns = utils.find_files(params['spiketimes_folder'], params['free_vmem_fn_base'])
     print 'fns', fns
 
-    fig = pylab.figure()
+    fig = pylab.figure(figsize=FC.get_fig_size(1200))
     
     P = Plotter(params)
     for fn in fns:
@@ -189,5 +190,9 @@ if __name__ == '__main__':
 
         # SIMPLE PLOTTING, plot without any sorting or other stuff
 #        P.plot_volt(path, gid='all')
+
+    output_fn = params['figures_folder'] + 'free_membrane_potentials.png'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
 
     pylab.show()
