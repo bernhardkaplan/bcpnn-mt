@@ -32,7 +32,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 10
+        self.params['n_rf'] = 20
 #        self.params['n_rf'] = 8
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
@@ -51,7 +51,7 @@ class parameter_storage(object):
         self.params['n_rf_x_log'] = self.params['n_rf_x'] - self.params['n_rf_x_fovea']
         assert (self.params['n_rf_x_log'] % 2 == 0), 'ERROR: please make sure that n_rf_x_log is an even number (as n_rf_x_fovea), so please change n_hc (=n_rf_x) or frac_rf_x_fovea'
 
-        self.params['n_v'] = 10
+        self.params['n_v'] = 10  # == N_MC_PER_HC
         assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
@@ -271,7 +271,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .05, .05
+        self.params['blur_X'], self.params['blur_V'] = .15, .15
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -375,11 +375,11 @@ class parameter_storage(object):
         # BCPNN SYNAPSE PARAMETERS
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
-        self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
-        self.params['taui_bcpnn'] = 100.
+        self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
+        self.params['taui_bcpnn'] = 5.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
-        self.params['bcpnn_init_val'] = 0.001
+        self.params['bcpnn_init_val'] = 0.0001
         #self.params['bcpnn_init_val'] = 0.1
 
         if self.params['training_run']:
@@ -423,7 +423,7 @@ class parameter_storage(object):
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
             self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS
-        self.params['w_trigger'] = 30.
+        self.params['w_trigger'] = 35.
 
         # ######
         # NOISE

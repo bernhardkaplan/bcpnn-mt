@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
 
     t_0 = time.time()
-    load_files = True
+    load_files = False
     save_input_files = not load_files
     record = False
 
