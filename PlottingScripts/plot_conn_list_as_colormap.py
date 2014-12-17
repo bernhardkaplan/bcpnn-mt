@@ -58,6 +58,7 @@ def plot_conn_list(params, conn_list_fn, iteration=None, clim=None, conn_type='e
         tgt = data[c, 1] - tgt_min
         if compute_weights:
             conn_mat[src, tgt] = np.log(data[c, 5] / (data[c, 3] * data[c, 4]))
+#            conn_mat[src, tgt] = data[c, 3]
         else:
             conn_mat[src, tgt] = data[c, 2]
     
@@ -102,12 +103,13 @@ if __name__ == '__main__':
     # TODO
 
     fns = sys.argv[1:] # 
-    clim = None
-#    clim = 'symm'
+#    clim = None
+    clim = 'symm'
 #    clim = (-0.5, .5)
 #    clim = (-200., 200.)
 
     conn_type = 'ee'
+    compute_weights = True
 
     if conn_type[0] == 'e':
         sort_idx = 0 # or 2
@@ -120,14 +122,14 @@ if __name__ == '__main__':
             params = utils.load_params(fn)
             tgt_type = 'd1'
             conn_list_fn = params['merged_conn_list_%s' % conn_type]
-            plot_conn_list(params, conn_list_fn, clim=clim, conn_type=conn_type, sort_idx=sort_idx)
+            plot_conn_list(params, conn_list_fn, clim=clim, conn_type=conn_type, sort_idx=sort_idx, compute_weights=compute_weights)
     elif len(sys.argv) == 2:
         print 'Case 2'
 #        params = utils.load_params(sys.argv[1])
         if sys.argv[1].endswith('.json') or os.path.isdir(sys.argv[1]):
             params = utils.load_params(sys.argv[1])
             conn_list_fn = params['merged_conn_list_%s' % conn_type]
-            plot_conn_list(params, conn_list_fn, clim=clim, conn_type=conn_type, sort_idx=sort_idx)
+            plot_conn_list(params, conn_list_fn, clim=clim, conn_type=conn_type, sort_idx=sort_idx, compute_weights=compute_weights)
         else:          
             print 'Please provide the folder / simulation_parameters.json file and not the conn_list.dat file!'
             exit(1)
@@ -137,5 +139,5 @@ if __name__ == '__main__':
         GP = simulation_parameters.parameter_storage()
         params = GP.params
         conn_list_fn = params['merged_conn_list_%s' % conn_type]
-        plot_conn_list(params, conn_list_fn, clim=clim, conn_type=conn_type, sort_idx=sort_idx)
+        plot_conn_list(params, conn_list_fn, clim=clim, conn_type=conn_type, sort_idx=sort_idx, compute_weights=compute_weights)
     pylab.show()

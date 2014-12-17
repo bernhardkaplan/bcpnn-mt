@@ -23,6 +23,30 @@ def compute_stim_time(stim_params):
     return t_exit 
 
 
+def get_gids_near_stim(mp, tp_cells, n=1, ndim=1):
+    """
+    Get the cell GIDS (0 - aligned) from n cells,
+    that are closest to the stimulus with parameters mp
+    mp : target parameters (x, y, u, v)
+    tp_cells : same format as mp
+    ndim: number of spatial dimensions in the model
+    if ndim == 1: use only the x-components to calculate the distance
+    """
+#    dy = (utils.torus_distance_array(tp_cells[:, 1], mp[1]))**2
+#    dx = (utils.torus_distance_array(tp_cells[:, 0], mp[0]))**2
+    if ndim == 1:
+        dx = np.abs(tp_cells[:, 0] - mp[0])
+        velocity_dist = np.abs(tp_cells[:, 2] - mp[2])
+        summed_dist = dx + velocity_dist
+    elif ndim == 2:
+        dy = (tp_cells[:, 1] - mp[1])**2
+        dx = np.abs(tp_cells[:, 0] - mp[0])
+        velocity_dist = np.sqrt((tp_cells[:, 2] - mp[2])**2 + (tp_cells[:, 3] - mp[3])**2)
+        summed_dist = dx + dy + velocity_dist
+    gids_sorted = np.argsort(summed_dist)[:n]
+    return gids_sorted, summed_dist[gids_sorted]
+    
+
 
 def set_vx_tau_transformation_params(params, vmin, vmax):
     tau_max, tau_min = params['tau_zi_max'], params['tau_zi_min']
@@ -1755,4 +1779,19 @@ def convert_to_NEST_conform_dict(json_dict):
         else:
             testing_params[str(k)] = json_dict[k]
     return testing_params
+
+
+def extract_weight_from_connection_list(conn_list, pre_gid, post_gid, idx=None):
+    """
+    Extract the weight that connects the pre_gid to the post_gid
+    """
+    if idx == None:
+        idx = 2
+    pre_idx = set((conn_list[:, 0] == pre_gid).nonzero()[0])
+    post_idx = set((conn_list[:, 1] == post_gid).nonzero()[0])
+    valid_idx = list(pre_idx.intersection(post_idx))
+    if len(valid_idx) == 0:
+        return 0.
+    return float(conn_list[valid_idx, idx])
+
 
