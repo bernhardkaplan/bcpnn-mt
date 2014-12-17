@@ -1,5 +1,8 @@
-import sys
-import os
+import os, sys, inspect
+# use this if you want to include modules from a subforder
+cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../")))
+if cmd_subfolder not in sys.path:
+    sys.path.insert(0, cmd_subfolder)
 import pylab
 import numpy as np
 import random
@@ -108,22 +111,24 @@ class TrainingInputPlotter(object):
 
 
         ax2.legend(rate_curves, gids_to_plot)
-        self.plot_stimulus_borders_vertically(ax2, ymax=rate_max)
+        self.plot_stimulus_borders_vertically(ax2, ylim=ax2.get_ylim())
         return fig
 
 
 
-    def plot_stimulus_borders_vertically(self, ax, ymax=None):
+    def plot_stimulus_borders_vertically(self, ax, ylim=None):
 
-        if ymax == None:
-            ymax = ax.get_ylim()[1]
+        if ylim == None:
+            ylim = ax.get_ylim()
         n_stim = self.motion_params[:, 0].size
-        for i in xrange(n_stim):
-            t0 = i * self.params['t_training_stim']
-            t1 = (i + 1) * self.params['t_training_stim']
-            ax.plot((t0, t0), (0, ymax), ls='--', c='k')
-            ax.plot((t1, t1), (0, ymax), ls='--', c='k')
-            ax.annotate('%d' % i, (t0 + .5 * self.params['t_training_stim'], 0.90 * ymax))
+
+        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+        for i_stim in xrange(n_stim):
+            t0 = training_stim_duration[:i_stim].sum()
+            t1 = training_stim_duration[:i_stim+1].sum()
+            ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
+            ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
+            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
 
 
 

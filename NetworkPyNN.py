@@ -521,7 +521,7 @@ class NetworkModel(object):
             p_ = p[sources][non_zero_idx]
             l_ = latency[sources][non_zero_idx] * self.params['delay_scale']
 
-            w = utils.linear_transformation(p_, self.params['w_thresh_min'], self.params['w_thresh_max'])
+            w = utils.transform_linear(p_, self.params['w_thresh_min'], self.params['w_thresh_max'])
             for i in xrange(len(p_)):
 #                        w[i] = max(self.params['w_min'], min(w[i], self.params['w_max']))
                 delay = min(max(l_[i], delay_min), delay_max)  # map the delay into the valid range

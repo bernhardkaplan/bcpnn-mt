@@ -104,7 +104,7 @@ class ConnectionPlotter(object):
     def plot_connections(self, tgt_ids, tgt_tp, weights, marker, color, with_directions=False, annotate=False, is_target=True): 
         """
         """
-        markersizes = utils.linear_transformation(weights, self.markersize_min, self.markersize_max)
+        markersizes = utils.transform_linear(weights, (self.markersize_min, self.markersize_max))
 
         if is_target:
             quiver_style = '-'
@@ -217,6 +217,9 @@ class ConnectionPlotter(object):
             tgt_tp = self.tp_inh
             legend_txt = 'inh src gid: %d --> inh tgts, n=%d' % (src_gid, len(tgt_ids))
 
+        if self.params['use_pynest']:
+            tgt_ids = tgt_ids - 1
+
         if len(tgt_ids) > 0:
             plot = self.plot_connections(tgt_ids, tgt_tp, weights, marker, color, with_directions, annotate, outgoing_conns)
             if outgoing_conns:
@@ -230,7 +233,7 @@ class ConnectionPlotter(object):
             delay_min, delay_max = 0, 1500
 #            delay_min, delay_max = delays.min(), delays.max()
 #            delay_min, delay_max = self.params['delay_range'][0], self.params['delay_range'][1]
-            norm = matplotlib.mpl.colors.Normalize(vmin=delay_min, vmax=delay_max)
+            norm = matplotlib.colors.Normalize(vmin=delay_min, vmax=delay_max)
             m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.jet)#spring)
             m.set_array(np.arange(delay_min, delay_max, 0.01))
 #            if not self.delay_colorbar_set:

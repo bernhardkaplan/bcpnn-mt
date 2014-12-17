@@ -23,11 +23,12 @@ class Plotter(object):
 
     def __init__(self, params, it_max=None):
         self.params = params
-        tp_fn = self.params['tuning_prop_means_fn']
+        tp_fn = self.params['tuning_prop_exc_fn']
         rfs_fn = self.params['receptive_fields_exc_fn']
         if not (os.path.exists(tp_fn)) or not (os.path.exists(rfs_fn)):
             print 'RECOMPUTING tuning properties'
-            self.tp, self.rfs = set_tuning_properties.set_tuning_properties(self.params)
+#            self.tp, self.rfs = set_tuning_properties.set_tuning_properties(self.params)
+            self.tp, self.rfs = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
         else:
             print 'Loading', tp_fn
             self.tp = np.loadtxt(tp_fn)
@@ -89,7 +90,7 @@ class Plotter(object):
             ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2], linewidth=1.)
             patches.append(ellipse)
 
-        collection = PatchCollection(patches, alpha=1.0, facecolor='none', linewidth=1)
+        collection = PatchCollection(patches, alpha=0.2, facecolor='blue', linewidth=1)
         ax.add_collection(collection)
         ylim = ax.get_ylim()
         ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))

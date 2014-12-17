@@ -27,6 +27,7 @@ except:
 if __name__ == '__main__':
 
 
+    t_0 = time.time()
     load_files = False
     save_input_files = not load_files
     record = False
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     assert (training_stimuli[:, 0].size >= n_max), 'The expected number of training iterations (= %d) is too high for the given training_stimuli from file %s (contains %d training stim)' % \
             (n_max, training_stimuli_fn, training_stimuli[:, 0].size)
 
-
+    params['stim_range'] = [continue_training_idx, continue_training_idx + params['n_stim']] 
     if pc_id == 0:
         GP.write_parameters_to_file(params['params_fn_json'], params) # write_parameters_to_file MUST be called before every simulation
     if pc_id == 0:
@@ -85,5 +86,34 @@ if __name__ == '__main__':
 
     NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
 
+
+    NM.connect()
+    if old_params != None:
+        NM.set_weights(old_params)
+
+    if record:
+        NM.record_v_exc()
+        NM.record_v_inh_unspec()
+
     GP.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called before every simulation
-#    NM.connect()
+
+#    NM.run_sim(10.)
+    NM.run_sim(params['t_sim'])
+    if comm != None:
+        comm.Barrier()
+
+    NM.trigger_spikes()
+    NM.get_weights_after_learning_cycle()
+    NM.get_weights_static()
+
+    NM.merge_local_gid_files()
+    t_end = time.time()
+    t_diff = t_end - t_0
+    if NM.pc_id == 0:
+        print 'Removing empty files ...'
+        utils.remove_empty_files(params['spiketimes_folder'])
+    else:
+        print 'Waiting for remove_empty_files to end ... '
+
+    print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
+

@@ -397,18 +397,6 @@ class CreateInput(object):
         return motion_params
 
 
-    def compute_stim_time(self, stim_params):
-        """
-        Based on the stim params, one the training stimulus takes different time to stimulate
-        """
-        if stim_params[2] > 0: # rightward movement
-            xlim = 1.
-        else:
-            xlim = 0.
-        dx = np.abs(stim_params[0] - xlim)
-        t_exit = dx / np.abs(stim_params[2]) * 1000.
-        return t_exit 
-
 
 
 if __name__ == '__main__':
@@ -476,7 +464,7 @@ if __name__ == '__main__':
             vx, vy = v * np.cos(theta), - v * np.sin(theta)
             x0, y0 = motion_params[stim_id, 0:2]
             stim_params = [x0, y0, vx, vy]
-            t_exit = CI.compute_stim_time(stim_params)
+            t_exit = utils.compute_stim_time(stim_params)
             print 'stim_params', stim_params, 't_exit', t_exit
             if params['n_grid_dimensions'] == 1: # for visibility reasons
                 y0 = float(stim_id) / n_stim_total

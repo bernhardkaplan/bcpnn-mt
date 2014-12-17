@@ -9,6 +9,7 @@ import numpy as np
 import pylab
 import utils
 import json
+import FigureCreator as FC
 
 
 class Plotter(object):
@@ -18,7 +19,7 @@ class Plotter(object):
         self.cell_cnt = 0
         self.colorlist = utils.get_colorlist()
         self.traces = {}  # store traces for each GID
-        self.tp = np.loadtxt(self.params['tuning_prop_means_fn'])
+        self.tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
         self.t_axis = None
         self.y_lim_global = [np.inf, -np.inf]
 
@@ -119,14 +120,19 @@ class Plotter(object):
             ax = fig.add_subplot(n_cells, 1, i_ + 1)
             ax.plot(self.t_axis, self.traces[gid_sorted])
 #            print 'debug', ax.get_yticks()
-            ax.set_xticks([])
-            ax.set_xticklabels([])
+            if i_ != len(gids_recorders) - 1:
+                ax.set_xticks([])
+                ax.set_xticklabels([])
+#            else:
+#            print 'hello'
+#            print 'i_', i_, len(gids_recorders)
             ax.set_ylim(self.y_lim_global)
-            ax.set_yticks([.5 * (self.y_lim_global[0] - self.y_lim_global[1])])
+#            ax.set_yticks([.5 * (self.y_lim_global[0] - self.y_lim_global[1])])
 #            print 'debug', .5 * (self.y_lim_global[1] - self.y_lim_global[0]), self.traces[gid_sorted].mean(), self.y_lim_global
             print 'debug', v_x, rf_x
-            ax.set_yticklabels(['%.2f %.2f' % (rf_x, v_x)])
+#            ax.set_yticklabels(['%.2f %.2f' % (rf_x, v_x)])
 
+        ax.set_xlabel('Time [ms]')
 
 
 
@@ -172,7 +178,7 @@ if __name__ == '__main__':
     fns = utils.find_files(params['spiketimes_folder'], params['free_vmem_fn_base'])
     print 'fns', fns
 
-    fig = pylab.figure()
+    fig = pylab.figure(figsize=FC.get_fig_size(1200))
     
     P = Plotter(params)
     for fn in fns:
@@ -184,5 +190,9 @@ if __name__ == '__main__':
 
         # SIMPLE PLOTTING, plot without any sorting or other stuff
 #        P.plot_volt(path, gid='all')
+
+    output_fn = params['figures_folder'] + 'free_membrane_potentials.png'
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
 
     pylab.show()
