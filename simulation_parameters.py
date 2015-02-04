@@ -23,9 +23,8 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' 
 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-#        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = 'DEBUG2'
+        self.params['sim_id'] = ''
 
         # ###################
         # HEXGRID PARAMETERS
@@ -61,10 +60,10 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['n_recorder_neurons'] = 5  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
+        self.params['n_recorder_neurons'] = 40  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
@@ -279,7 +278,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .15, .15
+        self.params['blur_X'], self.params['blur_V'] = .10, .10
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -300,7 +299,7 @@ class parameter_storage(object):
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 #        self.params['n_training_v'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
 
-        self.params['n_training_v'] = 2 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 100 # how many different speeds are trained per cycle
         #self.params['n_training_v'] = self.params['n_v'] # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
@@ -454,11 +453,12 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%s_%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f' % ( \
+                folder_name = 'TrainingSim_%s_%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e' % ( \
                         self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], \
                         self.params['stim_range'][0], self.params['stim_range'][1], \
                         self.params['bcpnn_params']['tau_i'], \
-                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'])
+                        self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], \
+                        self.params['bcpnn_init_val'])
             else:
                 folder_name = 'TestSim_%s_%d_taui%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 

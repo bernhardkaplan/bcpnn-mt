@@ -19,80 +19,6 @@ import json
 import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
-def plot_traces(t_axis, pi, pj, pij, wij_nest, output_fn=None):
-
-    import pylab
-    wij = np.log(pij / (pi * pj))
-    bias = np.log(pj)
-    fig = pylab.figure()
-    ax1 = fig.add_subplot(311)
-    ax2 = fig.add_subplot(312)
-    ax3 = fig.add_subplot(313)
-
-    ax1.set_title('Traces retrieved from NEST module')
-    plots = []
-    p1, = ax1.plot(t_axis, pi)
-    p2, = ax1.plot(t_axis, pj)
-    p3, = ax1.plot(t_axis, pij)
-    plots += [p1, p2, p3]
-    labels = ['$p_i$', '$p_j$', '$p_{ij}$']
-    ax1.legend(plots, labels, loc='upper left')
-    ax1.set_ylabel('p values')
-
-
-    plots = []
-    p1, = ax2.plot(t_axis, wij)
-    p2, = ax2.plot(t_axis, wij_nest)
-    plots += [p1, p2]
-    labels = ['$w=\log(p_{ij} / (p_i \cdot p_j))$', '$w_{NEST}$']
-    ax2.set_ylabel('Weight')
-    ax2.legend(plots, labels, loc='upper left')
-
-
-    plots = []
-    p1, = ax3.plot(t_axis, bias)
-    plots += [p1]
-    ax3.set_ylabel('Bias')
-    ax3.set_xlabel('Time [ms]')
-    ax3.legend(plots, ['Bias'], loc='upper left')
-
-    if output_fn == None:
-        output_fn = params['figures_folder'] + 'nest_traces.png'
-    print 'Saving to:', output_fn
-    pylab.savefig(output_fn, dpi=300)
-
-
-def run_tracking(params, NM):
-    pre_gid = 62
-    post_gid = 81
-    hc_idx, mc_idx_in_hc, idx_in_mc = NM.get_indices_for_gid(pre_gid)
-    pre_neuron = NM.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]
-    hc_idx, mc_idx_in_hc, idx_in_mc = NM.get_indices_for_gid(post_gid)
-    post_neuron = NM.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_mc]
-    on_node = NM.get_p_values([pre_neuron, post_neuron])
-    t = 0
-    t_step = 10.
-    t_axis = np.arange(0, params['t_sim'], t_step)
-    pi_nest = np.ones(t_axis.size) * params['bcpnn_init_val']
-    pj_nest = np.ones(t_axis.size) * params['bcpnn_init_val']
-    pij_nest = np.ones(t_axis.size) * params['bcpnn_init_val'] ** 2
-    wij_nest = np.log(pij_nest / (pi_nest * pj_nest))
-    for i_, t in enumerate(t_axis):
-        NM.run_sim(t_step)
-        if on_node != False:
-            pi, pj, pij, wij = NM.get_p_values([pre_neuron, post_neuron])
-            pi_nest[i_] = pi
-            pj_nest[i_] = pj
-            pij_nest[i_] = pij
-            wij_nest[i_] = wij
-    if on_node != False:
-        output_fn = params['figures_folder'] + 'p_traces_%d_%d.png' % (pre_gid, post_gid)
-        plot_traces(t_axis, pi_nest, pj_nest, pij_nest, wij_nest, output_fn)
-        output_fn = params['connections_folder'] + 'p_traces_%d_%d.dat' % (pre_gid, post_gid)
-        print 'Saving traces to', output_fn
-        np.savetxt(output_fn, np.array((t_axis, pi_nest, pj_nest, pij_nest, wij_nest)).transpose())
-
-
 if __name__ == '__main__':
 
 #    try: 
@@ -107,11 +33,9 @@ if __name__ == '__main__':
 #        print "MPI not used"
 
     assert (len(sys.argv) > 1), 'Missing training folder as command line argument'
-    training_folder = os.path.abspath(sys.argv[1]) # contains the EPTH and OB activity of simple patterns
+    training_folder = os.path.abspath(sys.argv[1]) 
+    training_params = utils.load_params(training_folder)
     print 'Training folder:', training_folder
-    training_params_fn = os.path.abspath(training_folder) + '/Parameters/simulation_parameters.json'
-    training_param_tool = simulation_parameters.parameter_storage(params_fn=training_params_fn)
-    training_params = training_param_tool.params
 
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
@@ -143,11 +67,7 @@ if __name__ == '__main__':
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
-    tracking = False
-    if tracking:
-        run_tracking(params, NM)
-    else:
-        NM.run_sim(params['t_sim'])
+    NM.run_sim(params['t_sim'])
 
     t_end = time.time()
     t_diff = t_end - t_0

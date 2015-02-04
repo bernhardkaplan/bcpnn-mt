@@ -30,7 +30,7 @@ class NetworkModel(object):
             assert (comm.size == self.n_proc), 'mpi4py and NEST tell me different PIDs!'
             self.comm.Barrier()
 
-    def update_bcpnn_params(self, t_sim):
+    def update_bcpnn_params(self):
         self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
         self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
@@ -49,8 +49,8 @@ class NetworkModel(object):
             t_exit = utils.compute_stim_time(stim_params)
             self.training_stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
         t_sim = self.training_stim_duration.sum()
-        self.update_bcpnn_params(t_sim)
         self.params['t_sim'] = t_sim
+        self.update_bcpnn_params()
         np.savetxt(self.params['training_stim_durations_fn'], self.training_stim_duration)
         print 'NetworkModel.setup preparing for %.1f [ms] simulation' % (self.params['t_sim'])
         self.projections = {}
