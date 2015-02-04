@@ -28,7 +28,8 @@ class Plotter(object):
         if not (os.path.exists(tp_fn)) or not (os.path.exists(rfs_fn)):
             print 'RECOMPUTING tuning properties'
 #            self.tp, self.rfs = set_tuning_properties.set_tuning_properties(self.params)
-            self.tp, self.rfs = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+#            self.tp, self.rfs = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+            self.tp, self.rfs = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         else:
             print 'Loading', tp_fn
             self.tp = np.loadtxt(tp_fn)
