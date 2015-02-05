@@ -299,10 +299,10 @@ class parameter_storage(object):
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 #        self.params['n_training_v'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
 
-        self.params['n_training_v'] = 20 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 10 # how many different speeds are trained per cycle
         #self.params['n_training_v'] = self.params['n_v'] # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 20 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 10 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
