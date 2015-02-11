@@ -123,8 +123,9 @@ class ConnectivityPlotter(object):
             print '%d\t%.2f' % (target_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
         ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
-
-
+        output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
+        print 'Saving fig to:', output_fn
+        pylab.savefig(output_fn, dpi=200)
 
 
     def load_conn_list(self, conn_type):
@@ -169,3 +170,4 @@ if __name__ == '__main__':
             P.plot_outgoing_connections_exc(tp_params)
             del P 
     pylab.show()
+
