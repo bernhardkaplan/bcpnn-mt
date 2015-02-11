@@ -43,7 +43,7 @@ class parameter_storage(object):
             self.params['n_rf_y'] = 1
             self.params['n_theta'] = 1
 
-        self.params['frac_rf_x_fovea'] = 0.5 # this fraction of all n_rf_x cells will have constant (minimum) RF size
+        self.params['frac_rf_x_fovea'] = 0.4 # this fraction of all n_rf_x cells will have constant (minimum) RF size
         self.params['n_rf_x_fovea'] = np.int(np.round(self.params['frac_rf_x_fovea'] * self.params['n_rf_x']))
         if self.params['n_rf_x_fovea'] % 2:
             self.params['n_rf_x_fovea'] += 1
@@ -52,7 +52,7 @@ class parameter_storage(object):
 
         self.params['n_v'] = 20  # == N_MC_PER_HC
         assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
-        self.params['frac_rf_v_fovea'] = 0.3 # this fraction of all n_rf_v cells will have constant (minimum) RF size
+        self.params['frac_rf_v_fovea'] = 0.2 # this fraction of all n_rf_v cells will have constant (minimum) RF size
         self.params['n_rf_v_fovea'] = np.int(np.round(self.params['frac_rf_v_fovea'] * self.params['n_v']))
         if self.params['n_rf_v_fovea'] % 2:
             self.params['n_rf_v_fovea'] += 1
@@ -60,10 +60,10 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['n_recorder_neurons'] = 40  # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
+        self.params['n_recorder_neurons'] = self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations

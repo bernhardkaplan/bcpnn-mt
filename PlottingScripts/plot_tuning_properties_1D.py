@@ -101,6 +101,50 @@ class Plotter(object):
             pylab.savefig(output_fn)
 
 
+    def plot_tuning_width_distribution(self):
+        """
+        Creates a two dimensional plot with rf_center on x-axis and rf-size on the y-axis
+        """
+        n_cells = self.params['n_exc']
+        assert (n_cells  == self.rfs[:, 0].size), 'Mismatch in parameters given to plot_tuning_properties and simulation_parameters.py'
+
+        fig = pylab.figure()
+        pylab.subplots_adjust(hspace=0.5)
+        ax1 = fig.add_subplot(211)
+        ax2 = fig.add_subplot(212)
+
+        x_axis = self.tp[:, 0]
+        y_axis = self.rfs[:, 0]
+        ax1.plot(x_axis, y_axis, marker='o', linestyle='None', markersize=2, c='k')
+        ax1.set_xlabel('RF_x center')
+        ax1.set_ylabel('RF_x size')
+        ax1.set_title('Preferred position tuning widths')
+
+        x_axis = self.tp[:, 2]
+        y_axis = self.rfs[:, 2]
+        ax2.plot(x_axis, y_axis, marker='o', linestyle='None', markersize=2, c='k')
+        ax2.set_title('Preferred speed tuning widths')
+        ax2.set_xlabel('RF_vx center')
+        ax2.set_ylabel('RF_vx size')
+
+        tp = self.tp
+        fig = pylab.figure()
+        ax1 = fig.add_subplot(221)
+        ax2 = fig.add_subplot(222)
+        ax3 = fig.add_subplot(223)
+        ax4 = fig.add_subplot(224)
+        sort_idx_x = np.argsort(tp[:, 0])
+        sort_idx_v = np.argsort(tp[:, 2])
+        ax1.plot(range(tp[:, 0].size), tp[sort_idx_x, 0], 'o', ls='')
+        ax2.plot(range(tp[:, 2].size), tp[sort_idx_v, 2], 'o', ls='')
+        ax3.plot(range(tp[:, 0].size - 1), tp[sort_idx_x[1:], 0] - tp[sort_idx_x[:-1], 0], 'o', ls='', c='k', markersize=5)
+        ax4.plot(range(tp[:, 2].size - 1), tp[sort_idx_v[1:], 2] - tp[sort_idx_v[:-1], 2], 'o', ls='', c='k', markersize=5)
+        ax3.set_ylabel('Differences in tp')
+        ax3.set_xlabel('GID')
+        ax4.set_xlabel('GID')
+        ax1.set_title('Spatial receptive field positions')
+        ax2.set_title('Preferred speeds')
+
 
 if __name__ == '__main__':
 
@@ -121,5 +165,6 @@ if __name__ == '__main__':
     Plotter = Plotter(params)#, it_max=1)
     Plotter.plot_tuning_prop()
     Plotter.plot_tuning_space()
+    Plotter.plot_tuning_width_distribution()
 
     pylab.show()

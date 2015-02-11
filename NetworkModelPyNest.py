@@ -61,7 +61,8 @@ class NetworkModel(object):
         if not load_tuning_prop:
 #            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
 #            self.rf_sizes = self.set_receptive_fields('exc')
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+#            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 #            set_tuning_properties(self.params)
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])

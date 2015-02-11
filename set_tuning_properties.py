@@ -132,7 +132,7 @@ def get_receptive_field_sizes_x(params, x_pos):
     dx_pos_upper_half.reverse()
     print 'debug dx_pos_upper_half', len(dx_pos_upper_half), len(rf_size_x[params['n_hc'] / 2:]), len(rf_size_x)
     rf_size_x[params['n_hc'] / 2:] = dx_pos_upper_half
-    rf_size_x *= 1.5
+#    rf_size_x *= 1.5
 #    rf_size_x *= 0.8
 #    rf_size_x[params['n_hc'] / 2:] = dx_pos_half
 
