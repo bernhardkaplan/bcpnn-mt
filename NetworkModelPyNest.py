@@ -603,14 +603,14 @@ class NetworkModel(object):
         self.connect_input_to_exc()
 
         if self.params['training_run']:
-#            print 'Connecting exc - exc'
-#            self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
-#            self.connect_input_to_recorder_neurons()
-#            print 'Connecting exc - inh unspecific'
-#            self.connect_ei_unspecific()
-#            print 'Connecting inh - exc unspecific'
-#            self.connect_ie_unspecific() # normalizing inhibition
-            pass
+            print 'Connecting exc - exc'
+            self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
+            self.connect_input_to_recorder_neurons()
+            print 'Connecting exc - inh unspecific'
+            self.connect_ei_unspecific()
+            print 'Connecting inh - exc unspecific'
+            self.connect_ie_unspecific() # normalizing inhibition
+            #pass
         else: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
             self.connect_input_to_recorder_neurons()
