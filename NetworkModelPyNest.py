@@ -91,6 +91,7 @@ class NetworkModel(object):
         #     R A N D O M    D I S T R I B U T I O N S  #
         # # # # # # # # # # # # # # # # # # # # # # # # #
         self.RNG = np.random.RandomState(self.params['visual_stim_seed'] + self.pc_id)
+        nprnd.seed(self.params['input_spikes_seed'])
 #        self.RNGs = [np.random.RandomState(s) for s in range(self.params['visual_stim_seed'], self.params['visual_stim_seed'] + self.n_proc)]
         nest.SetKernelStatus({'grng_seed' : self.params['seed'] + self.n_proc})
         nest.SetKernelStatus({'rng_seeds' : range(self.params['seed'] + self.n_proc + 1, \
@@ -396,7 +397,6 @@ class NetworkModel(object):
 #            print 'Debug idx_t_stop_pause', idx_t_stop_pause
             L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
 
-        nprnd.seed(self.params['input_spikes_seed'])
         # create the spike trains
         print 'Creating input spiketrains...'
         nspikes = np.zeros((len(my_units), 2))
@@ -431,7 +431,6 @@ class NetworkModel(object):
 
     def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False):
 
-        nprnd.seed(self.params['input_spikes_seed'])
         my_units = np.array(self.local_idx_exc) - 1
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
@@ -471,6 +470,7 @@ class NetworkModel(object):
                     spike_times.append(i * dt + t_offset)
 #                    print i*dt + t_offset, t_offset
 
+            self.spike_times_container[i_] = np.array(spike_times)
             if len(spike_times) > 0:
                 nest.SetStatus([self.stimulus[i_]], {'spike_times' : np.around(spike_times, decimals=1)})
                 if save_output:
@@ -1285,7 +1285,9 @@ class NetworkModel(object):
             sim_time = self.training_stim_duration[i_stim]
             if self.pc_id == 0:
                 print "Running simulation for %d milliseconds" % (sim_time)
+            self.comm.Barrier()
             nest.Simulate(sim_time)
+            self.comm.Barrier()
 
         t_stop = time.time()
         t_diff = t_stop - t_start

@@ -22,7 +22,7 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
         self.params['sim_id'] = ''
 
@@ -60,7 +60,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -464,7 +464,7 @@ class parameter_storage(object):
                         self.params['sim_id'], self.params['n_test_stim'], 
                         self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], \
-                        self.params['w_ei_global_max'])
+                        self.params['w_ei_unspec'])
             folder_name += '/'
             self.params['folder_name'] = folder_name
         else:
