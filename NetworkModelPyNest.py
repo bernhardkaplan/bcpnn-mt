@@ -11,6 +11,7 @@ import CreateInput
 import json
 import set_tuning_properties
 from copy import deepcopy
+import WeightAnalyser
 
 class NetworkModel(object):
 
@@ -377,13 +378,14 @@ class NetworkModel(object):
                 idx_within_stim += 1
         
             if with_blank:
-                start_blank = idx_t_start + 1. / dt * self.params['t_before_blank']
-                stop_blank = idx_t_start + 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
+                start_blank = idx_t_start + 1. / dt * self.params['t_start_blank']
+                stop_blank = idx_t_start + 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
                 blank_idx = np.arange(start_blank, stop_blank)
                 before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
                 blank_idx = np.concatenate((blank_idx, before_stim_idx))
                 # blanking
                 for i_time in blank_idx:
+#                    L_input[:, i_time] = 0.
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
             # make a pause between the stimuli
@@ -440,19 +442,21 @@ class NetworkModel(object):
             L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
             L_input[:, i_time] *= self.params['f_max_stim']
 
-            if with_blank:
-                start_blank = 1. / dt * self.params['t_before_blank']
-                stop_blank = 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
-                blank_idx = np.arange(start_blank, stop_blank)
-                before_stim_idx = np.arange(self.params['t_start'] * 1./dt)
-#                print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
-#                print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
-                blank_idx = np.concatenate((blank_idx, before_stim_idx))
-                # blanking
-                for i_time in blank_idx:
-                    L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-
         t_offset = self.training_stim_duration[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
+
+        if with_blank:
+            start_blank = 1. / dt * self.params['t_start_blank']
+            stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
+            blank_idx = np.arange(start_blank, stop_blank)
+            before_stim_idx = np.arange(self.params['t_start'] * 1. / dt)
+#            print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
+#            print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
+            blank_idx = np.concatenate((blank_idx, before_stim_idx))
+            # blanking
+            for i_time in blank_idx:
+#                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+                L_input[:, i_time] = 0.
+
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
         for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
             rate_of_t = np.array(L_input[i_, :])
@@ -517,8 +521,8 @@ class NetworkModel(object):
                 idx_within_stim += 1
 
             if with_blank:
-                start_blank = idx_t_start + 1. / dt * self.params['t_before_blank']
-                stop_blank = idx_t_start + 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
+                start_blank = idx_t_start + 1. / dt * self.params['t_start_blank']
+                stop_blank = idx_t_start + 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
                 blank_idx = np.arange(start_blank, stop_blank)
                 before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
 #                    print 'debug stim before_stim_idx', i_stim, before_stim_idx, before_stim_idx.size
@@ -614,7 +618,7 @@ class NetworkModel(object):
             print 'Connecting exc - exc '
             self.connect_ee_testing()
 #            exit(1)
-            self.connect_network_to_recorder_neurons()
+#            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
             print 'Connecting exc - inh specific'
@@ -624,7 +628,7 @@ class NetworkModel(object):
             print 'Connecting inh - exc specific'
 #            self.connect_ie_specific()
             self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
-            self.connect_recorder_neurons()
+#            self.connect_recorder_neurons()
 
 #        self.times['t_connect'] = self.timer.diff()
 
@@ -729,8 +733,8 @@ class NetworkModel(object):
                 idx_within_stim += 1
         
             if with_blank:
-                start_blank = idx_t_start + 1. / dt * self.params['t_before_blank']
-                stop_blank = idx_t_start + 1. / dt * (self.params['t_before_blank'] + self.params['t_blank'])
+                start_blank = idx_t_start + 1. / dt * self.params['t_start_blank']
+                stop_blank = idx_t_start + 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
                 blank_idx = np.arange(start_blank, stop_blank)
                 before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
                 blank_idx = np.concatenate((blank_idx, before_stim_idx))
@@ -881,15 +885,41 @@ class NetworkModel(object):
 
     def connect_ee_testing(self):
 
-        # connect cells within one MC
-        for tgt_gid in self.local_idx_exc:
-            hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
-            n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
-            source_gids = np.random.randint(gid_min, gid_max, n_src)
-            source_gids = np.unique(source_gids)
-            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
-            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
+        if not(os.path.exists(self.params['conn_matrix_mc_fn'])):
+            WA = WeightAnalyser.WeightAnalyser(self.params)
+            M = WA.get_weight_matrix_mc_mc()
+        else:
+            M = np.loadtxt(self.params['conn_matrix_mc_fn'])
 
+        self.w_bcpnn_max = np.max(M)
+        self.w_bcpnn_min = np.min(M)
+        for src_hc in xrange(self.params['n_hc']):
+            for src_mc in xrange(self.params['n_mc_per_hc']):
+                src_pop = self.list_of_exc_pop[src_hc][src_mc]
+                src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
+                for tgt_hc in xrange(self.params['n_hc']):
+                    for tgt_mc in xrange(self.params['n_mc_per_hc']):
+                        tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
+                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
+                        w = M[src_pop_idx, tgt_pop_idx]
+                        if w != 0:
+                            w_ = self.transform_weight(w)
+                            nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
+                                    model='exc_exc_global_fast')
+                            nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
+                                    model='exc_exc_global_slow')
+
+
+        # connect cells within one MC
+#        for tgt_gid in self.local_idx_exc:
+#            hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
+#            n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
+#            source_gids = np.random.randint(gid_min, gid_max, n_src)
+#            source_gids = np.unique(source_gids)
+#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
+#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
+
+        """
         w_debug = np.zeros((self.params['n_mc'], self.params['n_mc']))
         # connect the minicolumns according to their weight after training
         for src_hc in xrange(self.params['n_hc']):
@@ -918,6 +948,7 @@ class NetworkModel(object):
         debug_fn = self.params['connections_folder'] + 'w_conn_ee_debug.txt'
         print 'Saving debug connection matrix to:', debug_fn
         np.savetxt(debug_fn, w_debug)
+        """
     
     def load_training_weights(self):
 
@@ -925,21 +956,22 @@ class NetworkModel(object):
         fn = self.training_params['merged_conn_list_ee']
         if not os.path.exists(fn):
             print 'Merging connection files...'
-            utils.merge_connection_files(self.params, 'ee', iteration=None)
+            utils.merge_connection_files(self.training_params, 'ee', iteration=None)
 
         # copy the merged connection file to the test folder
         os.system('cp %s %s' % (fn, self.params['connections_folder']))
-        print 'Loading connection matrix from training:', fn
-        self.conn_mat_training = np.loadtxt(fn)
-        self.w_bcpnn_max = np.max(self.conn_mat_training)
-        self.w_bcpnn_min = np.min(self.conn_mat_training)
+
+#        print 'Loading connection matrix from training:', fn
+#        self.conn_mat_training = np.loadtxt(fn)
+#        self.w_bcpnn_max = np.max(self.conn_mat_training)
+#        self.w_bcpnn_min = np.min(self.conn_mat_training)
 
 
     def transform_weight(self, w):
         if w > 0:
             w_ = w * self.params['w_ee_global_max'] / self.w_bcpnn_max
         elif w < 0:
-            w_ = -1. * w * self.params['w_ei_global_max'] / self.w_bcpnn_min
+            w_ = -1. * w * self.params['w_ei_spec'] / self.w_bcpnn_min
         return w_
 
 
@@ -1279,22 +1311,20 @@ class NetworkModel(object):
         # # # # # # # # # # # # # #
 
         n_stim_total = self.params['n_stim']
-        t_total = 0
         print 'Run sim for %d stim' % (n_stim_total)
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            self.create_input_for_stim(stim_idx, self.params['save_input'], self.params['training_run'])
+            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
             sim_time = self.training_stim_duration[i_stim]
             if self.pc_id == 0:
                 print "Running simulation for %d milliseconds" % (sim_time)
-            self.comm.Barrier()
+            if self.comm != None:
+                self.comm.Barrier()
             nest.Simulate(sim_time)
-            t_total += sim_time
-            self.comm.Barrier()
-#            nest.Simulate(self.params['t_stim_pause'])
-#            t_total += self.params['t_stim_pause']
-#            self.comm.Barrier()
+            if self.comm != None:
+                self.comm.Barrier()
 
+        np.savetxt(self.params['test_sequence_fn'], self.motion_params[self.params['stim_range'], :])
         t_stop = time.time()
         t_diff = t_stop - t_start
         print "Simulation finished: %d [sec]" % (t_diff)

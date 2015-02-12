@@ -23,13 +23,13 @@ class WeightAnalyser(object):
         self.nspikes, self.spiketimes = utils.get_nspikes(fn_out, get_spiketrains=True)
 
 
-    def get_weight_matrix_mc_mc(self):
+    def get_weight_matrix_mc_mc(self, plotting=False):
 
         conn_type = 'ee'
-        conn_list_fn = params['merged_conn_list_%s' % conn_type]
+        conn_list_fn = self.params['merged_conn_list_%s' % conn_type]
         if not os.path.exists(conn_list_fn):
             print 'Merging connection files...'
-            utils.merge_connection_files(params, conn_type, iteration=None)
+            utils.merge_connection_files(self.params, conn_type, iteration=None)
 
 #        conn_list_fn = 'dummy_connlist.txt'
         print 'Loading ', conn_list_fn, 
@@ -57,6 +57,7 @@ class WeightAnalyser(object):
         np.savetxt(output_fn, M)
         print 'Plotting'
         plot_conn_list_as_colormap.plot_matrix(M)
+        return M
 
 
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 
     iteration = 0
     WA = WeightAnalyser(params, iteration=iteration)
-    WA.get_weight_matrix_mc_mc()
+    WA.get_weight_matrix_mc_mc(plotting=True)
 
     pylab.show()
 

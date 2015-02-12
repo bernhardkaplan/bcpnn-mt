@@ -1137,7 +1137,7 @@ class PlotPrediction(object):
 
 
     def plot_blank(self, ax, time_range, c='k'):
-        t_start_blank = time_range[0] + self.params['t_before_blank']
+        t_start_blank = time_range[0] + self.params['t_start_blank']
         t_stop_blank = t_start_blank + self.params['t_blank']
         ylim = ax.get_ylim()
         ax.plot((t_start_blank, t_start_blank), (ylim[0], ylim[1]), ls='--', c=c, lw=2)
@@ -1149,15 +1149,15 @@ class PlotPrediction(object):
         ax = cax.axes
 
         # plot lines for blank
-        ax.axvline(self.params['t_before_blank'] / self.time_binsize, ls='--', color=c, lw=3)
-        ax.axvline((self.params['t_before_blank'] + self.params['t_blank']) / self.time_binsize, ls='--', color=c, lw=3)
+        ax.axvline(self.params['t_start_blank'] / self.time_binsize, ls='--', color=c, lw=3)
+        ax.axvline((self.params['t_start_blank'] + self.params['t_blank']) / self.time_binsize, ls='--', color=c, lw=3)
 
         # plot lines before stimulus starts
         ax.axvline(0, ls='--', color=c, lw=3)
         ax.axvline(self.params['t_start'] / self.time_binsize, ls='--', color=c, lw=3)
 
         if txt != '':
-            txt_pos_x = (self.params['t_before_blank'] + .15 * self.params['t_blank']) / self.time_binsize
+            txt_pos_x = (self.params['t_start_blank'] + .15 * self.params['t_blank']) / self.time_binsize
             ylim = ax.get_ylim()
             txt_pos_y = .15 * ylim[1]
             ax.annotate(txt, (txt_pos_x, txt_pos_y), fontsize=14, color='w')
@@ -1202,8 +1202,12 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
     for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
         plotter.compute_pos_and_v_estimates(stim)
         print 'Stim:', stim
-        t0 = training_stim_duration[:i_stim].sum()
-        t1 = training_stim_duration[:i_stim+1].sum()
+        if params['n_stim'] > 1:
+            t0 = training_stim_duration[:i_stim].sum()
+            t1 = training_stim_duration[:i_stim+1].sum()
+        else:
+            t0 = 0
+            t1 = training_stim_duration
 
         time_range = (t0, t1)
         stim_range = (stim, stim + 1)

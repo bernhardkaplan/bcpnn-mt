@@ -143,11 +143,17 @@ if __name__ == '__main__':
             rate_fn = params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
             spike_fn = params['input_st_fn_base']  + '%d_%d.dat' % (gid, stim_idx)
 
-            t_offset = t_stim[:stim_idx].sum()# + params['t_stim_pause'] * stim_idx 
-            t_axis = np.arange(t_offset, t_offset + t_stim[stim_idx] - params['dt_rate'], params['dt_rate'])
+            if params['n_stim'] > 1:
+                t_offset = t_stim[:stim_idx].sum()# + params['t_stim_pause'] * stim_idx 
+                t_axis = np.arange(t_offset, t_offset + t_stim[stim_idx] - params['dt_rate'], params['dt_rate'])
+            else:
+                t_offset = 0 
+                t_axis = np.arange(0, t_stim - params['dt_rate'], params['dt_rate'])
             
             if os.path.exists(rate_fn):
                 rate = np.loadtxt(rate_fn)
+                if rate.size != t_axis.size:
+                    rate = rate[:-1]
 
                 y_min = rate.min()
                 y_max = rate.max()

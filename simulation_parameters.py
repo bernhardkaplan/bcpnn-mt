@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
         self.params['sim_id'] = ''
 
@@ -221,11 +221,12 @@ class parameter_storage(object):
         # exc - exc: global
         self.params['p_ee_global'] = .3
         self.params['w_ee_global_max'] = 4.
-        self.params['delay_ee_global'] = 2. # [ms]
+        self.params['delay_ee_global'] = 1. # [ms]
         self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))
 
         # exc - inh: spec
-        self.params['delay_ei_spec'] = 2.   # [ms]
+        self.params['delay_ei_spec'] = 1.   # [ms]
+        self.params['w_ei_spec'] = -4.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
         self.params['w_ei_unspec'] = 2.    # untrained, unspecific PYR -> Basket connections
@@ -296,9 +297,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 2 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 4 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 2 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 4 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -359,12 +360,12 @@ class parameter_storage(object):
         else:
             self.params['t_sim'] = self.params['n_test_stim'] * self.params['t_test_stim']
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_start'] = 0.           # [ms] blank time before stimulus appears
+        self.params['t_start'] = 100.           # [ms] blank time before stimulus appears
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 200
-        self.params['t_before_blank'] = self.params['t_start'] + 600.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+            self.params['t_blank'] = 400
+        self.params['t_start_blank'] = self.params['t_start'] + 600.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
@@ -472,12 +473,6 @@ class parameter_storage(object):
         self.set_folder_name(folder_name)
         print 'Folder name:', self.params['folder_name']
 
-        # in order to NOT re-compute the input spike trains when the stimulus parameters have not changed, do NOT store them in a subfolder of self.params['folder_name']
-#        self.params['input_folder'] = "Debug_InputSpikeTrains_bX%.2e_bV%.2e_fstim%.1e_tsim%d_tblank%d_tbeforeblank%d_%dnrns/" % \
-#                (self.params['blur_X'], self.params['blur_V'], self.params['f_max_stim'], self.params['t_sim'], self.params['t_blank'], self.params['t_before_blank'], self.params['n_cells'])
-#        self.params['input_folder'] = "TwoCellInputSpikeTrains/" # folder containing the input spike trains for the network generated from a certain stimulus
-
-#        self.params['input_folder'] = "%sInputFiles/" % self.params['folder_name'] # folder containing the input spike trains for the network generated from a certain stimulus
         if self.params['training_run']:
             self.params['input_folder'] = "InputFilesTraining_seed%d_nX%d_nV%d_stimRange%d-%d/" % (self.params['visual_stim_seed'], self.params['n_training_x'], self.params['n_training_v'], \
                     self.params['stim_range'][0], self.params['stim_range'][1])
