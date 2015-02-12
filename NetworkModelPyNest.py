@@ -1291,9 +1291,6 @@ class NetworkModel(object):
             nest.Simulate(sim_time)
             t_total += sim_time
             self.comm.Barrier()
-            #nest.Simulate(self.params['t_stim_pause'])
-            #t_total += self.params['t_stim_pause']
-            #self.comm.Barrier()
 
         t_stop = time.time()
         t_diff = t_stop - t_start

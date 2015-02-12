@@ -5,14 +5,14 @@ print 'cmd_subfolder', cmd_subfolder
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
+import utils
 import matplotlib
 #matplotlib.use('Agg')
 import pylab
 import numpy as np
 import sys
-#import rcParams
-#rcP= rcParams.rcParams
 import os
+import json
 
 rcP= { 'axes.labelsize' : 18,
             'label.fontsize': 18,
@@ -23,127 +23,141 @@ rcP= { 'axes.labelsize' : 18,
 
 pylab.rcParams.update(rcP)
 
+def plot_input_old(params):
+    rate_fn = params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
+    spike_fn = params['input_st_fn_base']  + '%d_%d.dat' % (gid, stim_idx)
+    print 'Loading data from', rate_fn, '\n', spike_fn
+    print 'debug', params['figures_folder']
 
-# --------------------------------------------------------------------------
-#def get_figsize(fig_width_pt):
-#    inches_per_pt = 1.0/72.0                # Convert pt to inch
-#    golden_mean = (np.sqrt(5)-1.0)/2.0    # Aesthetic ratio
-#    fig_width = fig_width_pt*inches_per_pt  # width in inches
-#    fig_height = fig_width*golden_mean      # height in inches
-#    fig_size =  [fig_width,fig_height]      # exact figsize
-#    return fig_size
-
-#params2 = {'backend': 'png',
-#          'axes.labelsize': 12,
-#          'text.fontsize': 12,
-#          'xtick.labelsize': 12,
-#          'ytick.labelsize': 12,
-#          'legend.pad': 0.2,     # empty space around the legend box
-#          'legend.fontsize': 12,
-#          'lines.markersize' : 0.1,
-#          'font.size': 12,
-#          'path.simplify': False,
-#          'figure.figsize': get_figsize(800)}
-
-#def set_figsize(fig_width_pt):
-#    pylab.rcParams['figure.figsize'] = get_figsize(fig_width_pt)
-
-#pylab.rcParams.update(params2)
-
-# --------------------------------------------------------------------------
+    #else:
+    #    info = "\n\tuse:\n \
+    #    \t\tpython plot_input.py   [RATE_ENVELOPE_FILE]  [SPIKE_INPUT_FILE]\n \
+    #    \tor: \n\
+    #    \t\tpython plot_input.py [gid of the cell to plot]" 
+    #    print info
 
 
-if len(sys.argv) == 2:
-    gid = int(sys.argv[1])
-    import simulation_parameters
-    ps = simulation_parameters.parameter_storage()
-    params = ps.params
-elif len(sys.argv) == 3:
-    gid = int(sys.argv[1])
-    import json
-    params = utils.load_params(sys.argv[2])
-else:
-    import simulation_parameters
-    ps = simulation_parameters.parameter_storage()
-    params = ps.params
-    gid = 1
+    rate = np.loadtxt(rate_fn)
+    #rate /= np.max(rate)
+    y_min = rate.min()
+    y_max = rate.max()
 
-print 'Plotting GID:', gid
+    spikes = np.loadtxt(spike_fn) # spikedata
 
-rate_fn = params['input_rate_fn_base'] + str(gid) + '.dat'
-spike_fn = params['input_st_fn_base'] + str(gid) + '.dat'
-print 'Loading data from', rate_fn, '\n', spike_fn
-print 'debug', params['figures_folder']
+    #spikes *= 10. # because rate(t) = L(t) was created with a stepsize of .1 ms
 
-#else:
-#    info = "\n\tuse:\n \
-#    \t\tpython plot_input.py   [RATE_ENVELOPE_FILE]  [SPIKE_INPUT_FILE]\n \
-#    \tor: \n\
-#    \t\tpython plot_input.py [gid of the cell to plot]" 
-#    print info
+    binsize = 50
+    n_bins = int(round(params['t_sim'] / binsize))
+    n, bins = np.histogram(spikes, bins=n_bins, range=(0, params['t_sim']))
+    print 'n, bins', n, 'total', np.sum(n), 'binsize:', binsize
+
+    fig = pylab.figure()
+    pylab.subplots_adjust(bottom=.10, left=.12, hspace=.02, top=0.94)#55)
+    ax = fig.add_subplot(211)
+
+    nspikes = spikes.size
+    w_input_exc = 2e-3
+    cond_in = w_input_exc * 1000. * nspikes
+    print 'Cond_in: %.3e [nS] nspikes: %d' % (cond_in, nspikes)
+    ax.set_title('Input spike train and L(t)')
+    for s in spikes:
+        ax.plot((s, s), (0.2 * (y_max-y_min) + y_min, 0.8 * (y_max-y_min) + y_min), c='k')
+    #rate_half = .5 * (np.max(rate) - np.min(rate))
+    #ax.plot(spikes, rate_half * np.ones(spikes.size), '|', markersize=1)
+    #ax.plot(spikes, 0.5 * np.ones(spikes.size), '|', markersize=1)
+    print 'rate', rate
+
+    n_steps = int(round(1. / params['dt_rate']))
+    rate = rate[::n_steps] # ::10 because dt for rate creation was 0.1 ms
+    ax.plot(np.arange(rate.size), rate, label='Cond_in = %.3e nS' % cond_in, lw=2, c='b')
+    #ax.set_xlabel('Time [ms]')
+    ax.set_xticks([])
+
+    ax.set_ylabel('Input rate (t) [kHz]')
+    def set_yticks(ax, n_ticks=5, endpoint=False):
+        ylim = ax.get_ylim()
+        ticks = np.linspace(ylim[0], ylim[1], n_ticks, endpoint=endpoint)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(['%d' % i for i in ticks])
+
+    set_yticks(ax, 5)
+    #ax.set_yticklabels(['', '.7', '1.4', '2.1', '2.8'])
+
+    #ax.legend()
+    ax = fig.add_subplot(212)
+    ax.bar(bins[:-1], n, width= bins[1] - bins[0])
+    #ax.set_title('Binned input spike train, binsize=%.1f ms' % binsize)
+
+    ax.set_xlim((0, params['t_sim']))
+    ax.set_ylabel('Num input spikes')
+    ax.set_xlabel('Time [ms]')
+    #ylabels = ax.get_yticklabels()
+    set_yticks(ax, 4)
+
+    output_fn = params['figures_folder'] + 'input_%d.png' % (gid)
+    print 'Saving to', output_fn
+    pylab.savefig(output_fn, dpi=200)
+
+    #output_fn = 'delme.dat'
+    #np.savetxt(output_fn, data)
+    pylab.show()
 
 
-rate = np.loadtxt(rate_fn)
-#rate /= np.max(rate)
-y_min = rate.min()
-y_max = rate.max()
+def get_cell_gid(params, tp_params, stim_range, n_cells=1):
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
+    gids, dist = utils.get_gids_near_stim(tp_params, tp, n=n_cells)
+#    print 'debug gids dist', gids, dist
+#    print 'tp[gids]', tp[gids, :]
+    cnt_ = np.zeros(n_cells)
+    for i_, gid in enumerate(gids):
+        for stim_idx in stim_range:
+            rate_fn = params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
+            if os.path.exists(rate_fn):
+                cnt_[i_] += 1
+    return gids[np.argsort(cnt_)[-n_cells:]]
 
-spikes = np.loadtxt(spike_fn) # spikedata
+if __name__ == '__main__':
 
-#spikes *= 10. # because rate(t) = L(t) was created with a stepsize of .1 ms
+    if len(sys.argv) == 2:
+        params = utils.load_params(sys.argv[1])
+    else:
+        print 'Using standard params'
+        import simulation_parameters
+        ps = simulation_parameters.parameter_storage()
+        params = ps.params
 
-binsize = 50
-n_bins = int(round(params['t_sim'] / binsize))
-n, bins = np.histogram(spikes, bins=n_bins, range=(0, params['t_sim']))
-print 'n, bins', n, 'total', np.sum(n), 'binsize:', binsize
+    tp_params = (0.2, 0.5, 0.7, 0.)
+    stim_range = [0, params['n_stim']]
+    n_cells = 10
+    gids = get_cell_gid(params, tp_params, stim_range, n_cells)
 
-fig = pylab.figure()
-pylab.subplots_adjust(bottom=.10, left=.12, hspace=.02, top=0.94)#55)
-ax = fig.add_subplot(211)
+    print 'Plotting GID:', gids
 
-nspikes = spikes.size
-w_input_exc = 2e-3
-cond_in = w_input_exc * 1000. * nspikes
-print 'Cond_in: %.3e [nS] nspikes: %d' % (cond_in, nspikes)
-ax.set_title('Input spike train and L(t)')
-for s in spikes:
-    ax.plot((s, s), (0.2 * (y_max-y_min) + y_min, 0.8 * (y_max-y_min) + y_min), c='k')
-#rate_half = .5 * (np.max(rate) - np.min(rate))
-#ax.plot(spikes, rate_half * np.ones(spikes.size), '|', markersize=1)
-#ax.plot(spikes, 0.5 * np.ones(spikes.size), '|', markersize=1)
-print 'rate', rate
+    fig = pylab.figure()
+    pylab.subplots_adjust(bottom=.10, left=.12, hspace=.02, top=0.94)#55)
+    ax = fig.add_subplot(111)
 
-n_steps = int(round(1. / params['dt_rate']))
-rate = rate[::n_steps] # ::10 because dt for rate creation was 0.1 ms
-ax.plot(np.arange(rate.size), rate, label='Cond_in = %.3e nS' % cond_in, lw=2, c='b')
-#ax.set_xlabel('Time [ms]')
-ax.set_xticks([])
+    t_stim = np.loadtxt(params['training_stim_durations_fn'])
+    for gid in gids:
+        for stim_idx in range(stim_range[0], stim_range[1]):
+            rate_fn = params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
+            spike_fn = params['input_st_fn_base']  + '%d_%d.dat' % (gid, stim_idx)
 
-ax.set_ylabel('Input rate (t) [kHz]')
-def set_yticks(ax, n_ticks=5, endpoint=False):
-    ylim = ax.get_ylim()
-    ticks = np.linspace(ylim[0], ylim[1], n_ticks, endpoint=endpoint)
-    ax.set_yticks(ticks)
-    ax.set_yticklabels(['%d' % i for i in ticks])
+            t_offset = t_stim[:stim_idx].sum()# + params['t_stim_pause'] * stim_idx 
+            t_axis = np.arange(t_offset, t_offset + t_stim[stim_idx] - params['dt_rate'], params['dt_rate'])
+            
+            if os.path.exists(rate_fn):
+                rate = np.loadtxt(rate_fn)
 
-set_yticks(ax, 5)
-#ax.set_yticklabels(['', '.7', '1.4', '2.1', '2.8'])
+                y_min = rate.min()
+                y_max = rate.max()
 
-#ax.legend()
-ax = fig.add_subplot(212)
-ax.bar(bins[:-1], n, width= bins[1] - bins[0])
-#ax.set_title('Binned input spike train, binsize=%.1f ms' % binsize)
+                ax.plot(t_axis, rate, c='b')
+            else:
+                ax.plot(t_axis, np.zeros(t_axis.size), c='b')
 
-ax.set_xlim((0, params['t_sim']))
-ax.set_ylabel('Num input spikes')
-ax.set_xlabel('Time [ms]')
-#ylabels = ax.get_yticklabels()
-set_yticks(ax, 4)
+#            for s in spikes:
+#                ax.plot((s, s), (0.2 * (y_max-y_min) + y_min, 0.8 * (y_max-y_min) + y_min), c='k')
 
-output_fn = params['figures_folder'] + 'input_%d.png' % (gid)
-print 'Saving to', output_fn
-pylab.savefig(output_fn, dpi=200)
-
-#output_fn = 'delme.dat'
-#np.savetxt(output_fn, data)
-pylab.show()
+    pylab.show()
+#    spike_fn = params['input_st_fn_base']  + '%d_%d.dat' % (gid, stim_idx)

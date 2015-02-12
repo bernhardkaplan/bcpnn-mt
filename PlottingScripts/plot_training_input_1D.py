@@ -84,7 +84,8 @@ class TrainingInputPlotter(object):
             gid = gids_to_plot[i]
 
             # ax2 - input rates
-            input_rate = np.loadtxt(self.params['input_rate_fn_base'] + str(gid) + '.dat')
+#            input_rate = np.loadtxt(self.params['input_rate_fn_base'] + str(gid) + '.dat')
+            input_rate = np.loadtxt(self.params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
             rate_max = max(rate_max, input_rate.max())
             t_axis = np.arange(0, input_rate.size) * self.params['dt_rate']
             plot, = ax2.plot(t_axis, input_rate, lw=2, label=gid, c=self.color_list[i % len(self.color_list)])
