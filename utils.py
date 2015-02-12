@@ -1795,3 +1795,20 @@ def extract_weight_from_connection_list(conn_list, pre_gid, post_gid, idx=None):
     return float(conn_list[valid_idx, idx])
 
 
+def get_indices_for_gid(params, gid):
+    """Returns the HC, MC, and within MC index for the gid
+    """
+    n_per_hc = params['n_mc_per_hc'] * params['n_exc_per_mc']
+    mc_idx = (gid - 1) / params['n_exc_per_mc']
+    hc_idx = (gid - 1) / n_per_hc
+    mc_idx_in_hc = mc_idx - hc_idx * params['n_mc_per_hc']
+    idx_in_mc = (gid - 1) - mc_idx * params['n_exc_per_mc']
+    return hc_idx, mc_idx_in_hc, idx_in_mc
+
+
+def get_mc_index_for_gid(params, gid):
+    mc_idx = (gid - 1) / params['n_exc_per_mc']
+    return mc_idx
+
+
+

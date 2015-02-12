@@ -81,7 +81,12 @@ class ConnectivityPlotter(object):
 
         abs_max = max(abs(weights.min()), weights.max())
 #        markersizes = utils.transform_linear(weights, (0., abs_max))
-        markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
+        print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
+        if weights.min() == weights.max():
+            markersizes = np.ones(weights.size)
+            print 'WARNING all weights are equal!'
+        else:
+            markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
         norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
 
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.bwr) # large weights -- black, small weights -- white
@@ -123,8 +128,9 @@ class ConnectivityPlotter(object):
             print '%d\t%.2f' % (target_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
         ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
-
-
+        output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
+        print 'Saving fig to:', output_fn
+        pylab.savefig(output_fn, dpi=200)
 
 
     def load_conn_list(self, conn_type):
@@ -144,7 +150,7 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.3, 0.5, -0.5, 0.)
+    tp_params = (0.5, 0.5, 0.5, 0.)
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters
@@ -169,3 +175,4 @@ if __name__ == '__main__':
             P.plot_outgoing_connections_exc(tp_params)
             del P 
     pylab.show()
+

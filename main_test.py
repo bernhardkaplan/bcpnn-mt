@@ -50,10 +50,10 @@ if __name__ == '__main__':
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = True
+    load_files = False
     record = False
     save_input_files = True #not load_files
-    NM = NetworkModel(ps, iteration=0)
+    NM = NetworkModel(params, iteration=0)
     pc_id, n_proc = NM.pc_id, NM.n_proc
     if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
@@ -61,13 +61,13 @@ if __name__ == '__main__':
     NM.training_params = training_params
     NM.create()
     NM.connect()
-    NM.connect_recorder_neurons()
+#    NM.connect_recorder_neurons()
 
     if record:
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
-    NM.run_sim(params['t_sim'])
+    NM.run_sim()
 
     t_end = time.time()
     t_diff = t_end - t_0

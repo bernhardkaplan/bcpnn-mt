@@ -28,8 +28,6 @@ if __name__ == '__main__':
 
 
     t_0 = time.time()
-    load_files = False
-    save_input_files = not load_files
     record = False
 
     t0 = time.time()
@@ -64,14 +62,16 @@ if __name__ == '__main__':
     assert (training_stimuli[:, 0].size >= n_max), 'The expected number of training iterations (= %d) is too high for the given training_stimuli from file %s (contains %d training stim)' % \
             (n_max, training_stimuli_fn, training_stimuli[:, 0].size)
 
+
     params['stim_range'] = [continue_training_idx, continue_training_idx + params['n_stim']] 
     if pc_id == 0:
         GP.write_parameters_to_file(params['params_fn_json'], params) # write_parameters_to_file MUST be called before every simulation
+        np.savetxt(params['training_stimuli_fn'], training_stimuli[:params['n_stim']])
     if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
         utils.remove_files_from_folder(params['connections_folder'])
         utils.remove_files_from_folder(params['volt_folder'])
-        if not load_files:
+        if not params['load_input']:
             utils.remove_files_from_folder(params['input_folder'])
 
     if comm != None:
@@ -84,21 +84,24 @@ if __name__ == '__main__':
 
     NM.create()
 
-    NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
-
-
+#    NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
     NM.connect()
     if old_params != None:
         NM.set_weights(old_params)
+    if comm != None:
+        comm.Barrier()
 
     if record:
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
     GP.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called before every simulation
+    if comm != None:
+        comm.Barrier()
 
 #    NM.run_sim(10.)
-    NM.run_sim(params['t_sim'])
+    print 'NM.run_sim()'
+    NM.run_sim()
     if comm != None:
         comm.Barrier()
 
