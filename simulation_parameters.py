@@ -21,9 +21,8 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = False
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['Cluster'] = True
         self.params['sim_id'] = ''
 
         # ###################
@@ -299,10 +298,10 @@ class parameter_storage(object):
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 #        self.params['n_training_v'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
 
-        self.params['n_training_v'] = 100 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 10 # how many different speeds are trained per cycle
         #self.params['n_training_v'] = self.params['n_v'] # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 10 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -383,7 +382,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 5.0
+        self.params['taui_bcpnn'] = 50.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001
