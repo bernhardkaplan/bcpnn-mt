@@ -324,9 +324,9 @@ class NetworkModel(object):
         self.initialize_vmem(self.local_idx_inh_spec)
         self.initialize_vmem(self.local_idx_inh_unspec)
 
-        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
-        nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
-        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
+#        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
+#        nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
+#        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
 #        if self.params['training_run']:
 #            self.create_training_input
@@ -430,7 +430,6 @@ class NetworkModel(object):
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
-        print 'idx_t_stop:', idx_t_stop
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
 
@@ -453,7 +452,7 @@ class NetworkModel(object):
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
-        t_offset = self.training_stim_duration[:stim_idx].sum() 
+        t_offset = self.training_stim_duration[:stim_idx].sum() + stim_idx * self.params['t_stimulus']
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
         for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
             rate_of_t = np.array(L_input[i_, :])
@@ -1291,6 +1290,9 @@ class NetworkModel(object):
             self.comm.Barrier()
             nest.Simulate(sim_time)
             t_total += sim_time
+            self.comm.Barrier()
+            nest.Simulate(self.params['t_stim_pause'])
+            t_total += self.params['t_stim_pause']
             self.comm.Barrier()
 
         t_stop = time.time()
