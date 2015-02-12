@@ -145,7 +145,7 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.3, 0.5, -0.5, 0.)
+    tp_params = (0.5, 0.5, -1.0, 0.)
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters
