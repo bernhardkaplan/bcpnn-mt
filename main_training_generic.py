@@ -86,14 +86,19 @@ if __name__ == '__main__':
     NM.connect()
     if old_params != None:
         NM.set_weights(old_params)
+    if comm != None:
+        comm.Barrier()
 
     if record:
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
     GP.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called before every simulation
+    if comm != None:
+        comm.Barrier()
 
 #    NM.run_sim(10.)
+    print 'NM.run_sim()'
     NM.run_sim()
     if comm != None:
         comm.Barrier()

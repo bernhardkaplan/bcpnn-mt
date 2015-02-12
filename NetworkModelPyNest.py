@@ -363,7 +363,7 @@ class NetworkModel(object):
 
         stimuli = range(self.params['test_stim_range'][0], self.params['test_stim_range'][1])
         for i_stim, stim_idx in enumerate(stimuli):
-            print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
+            print 'Calculating test input signal for %d cells in training stim %d / %d (%.1f percent)' % (n_cells, i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
 
             # get the input signal
@@ -431,12 +431,14 @@ class NetworkModel(object):
 
     def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False):
 
+
         my_units = np.array(self.local_idx_exc) - 1
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
         print 'idx_t_stop:', idx_t_stop
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
+
 
         # compute the trajectory
         for i_time in xrange(idx_t_stop):
@@ -502,7 +504,7 @@ class NetworkModel(object):
 
         self.trained_stimuli = []
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
-            print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
+            print 'Calculating OLD training input signal for %d cells in training stim %d / %d (%.1f percent)' % (n_cells, i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
             self.trained_stimuli.append((x0, .5, v0, .0, 0.))
 
@@ -606,7 +608,7 @@ class NetworkModel(object):
         if self.params['training_run']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
-            self.connect_input_to_recorder_neurons()
+            #self.connect_input_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
             print 'Connecting inh - exc unspecific'
@@ -614,7 +616,7 @@ class NetworkModel(object):
             #pass
         else: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
-            self.connect_input_to_recorder_neurons()
+            #self.connect_input_to_recorder_neurons()
             self.load_training_weights()
             print 'Connecting exc - exc '
             self.connect_ee_testing()
@@ -716,7 +718,7 @@ class NetworkModel(object):
         np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         n_stim_total = self.params['n_stim_training']
         for i_stim in xrange(n_stim_total):
-            print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
+            print 'Re-Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             x0, v0 = self.motion_params[i_stim, 0], self.motion_params[i_stim, 2]
 
             # get the input signal
@@ -1280,9 +1282,8 @@ class NetworkModel(object):
         n_stim_total = self.params['n_stim']
         print 'Run sim for %d stim' % (n_stim_total)
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
-            print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
+            print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             self.create_input_for_stim(stim_idx, self.params['save_input'], self.params['training_run'])
-            #self.update_input()
             sim_time = self.training_stim_duration[i_stim]
             if self.pc_id == 0:
                 print "Running simulation for %d milliseconds" % (sim_time)

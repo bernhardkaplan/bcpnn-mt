@@ -296,12 +296,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-#        self.params['n_training_v'] = 3 # self.params['n_v'] # how many different speeds are trained per cycle
-
-        self.params['n_training_v'] = 10 # how many different speeds are trained per cycle
-        #self.params['n_training_v'] = self.params['n_v'] # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 6 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 10 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 6 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -452,8 +449,8 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%s_%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e' % ( \
-                        self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], \
+                folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e' % ( \
+                        self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], self.params['n_training_x'], \
                         self.params['stim_range'][0], self.params['stim_range'][1], \
                         self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], \
