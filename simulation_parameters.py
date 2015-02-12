@@ -59,7 +59,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 10 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -123,7 +123,7 @@ class parameter_storage(object):
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
 
-        self.params['save_input'] = self.params['Cluster']
+        self.params['save_input'] = True #self.params['Cluster']
         self.params['load_input'] = not self.params['save_input']
 
 
@@ -296,9 +296,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 10 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 4 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 10 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 4 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']

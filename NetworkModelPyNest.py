@@ -452,7 +452,7 @@ class NetworkModel(object):
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
-        t_offset = self.training_stim_duration[:stim_idx].sum() + stim_idx * self.params['t_stimulus']
+        t_offset = self.training_stim_duration[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
         for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
             rate_of_t = np.array(L_input[i_, :])
@@ -1072,17 +1072,17 @@ class NetworkModel(object):
             for i_mc_src in xrange(self.params['n_mc_per_hc']):
                 for i_hc_inh in xrange(self.params['n_hc']):
                     conns_ei = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_unspecific_inh_pop[i_hc_inh ])
-                    conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc_inh], self.list_of_exc_pop[i_hc_src][i_mc_src])
+                    #conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc_inh], self.list_of_exc_pop[i_hc_src][i_mc_src])
                     if conns_ei != None:
                         for i_, c in enumerate(conns_ei):
                             cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
                             conn_txt_ei += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
                             n_conns_ei += 1
-                    if conns_ie != None:
-                        for i_, c in enumerate(conns_ie):
-                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                            conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
-                            n_conns_ie += 1
+                    #if conns_ie != None:
+                        #for i_, c in enumerate(conns_ie):
+                            #cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                            #conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                            #n_conns_ie += 1
 
         print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ei)
         fn_out_ei = self.params['conn_list_ei_fn_base'] + '%d.txt' % (self.pc_id)
@@ -1092,13 +1092,13 @@ class NetworkModel(object):
         conn_f_ei.flush()
         conn_f_ei.close()
 
-        print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ie)
-        fn_out_ie = self.params['conn_list_ie_fn_base'] + '%d.txt' % (self.pc_id)
-        print 'Writing E-I connections to:', fn_out_ie
-        conn_f_ie = file(fn_out_ie, 'w')
-        conn_f_ie.write(conn_txt_ie)
-        conn_f_ie.flush()
-        conn_f_ie.close()
+        #print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ie)
+        #fn_out_ie = self.params['conn_list_ie_fn_base'] + '%d.txt' % (self.pc_id)
+        #print 'Writing E-I connections to:', fn_out_ie
+        #conn_f_ie = file(fn_out_ie, 'w')
+        #conn_f_ie.write(conn_txt_ie)
+        #conn_f_ie.flush()
+        #conn_f_ie.close()
 
 
 
@@ -1291,9 +1291,9 @@ class NetworkModel(object):
             nest.Simulate(sim_time)
             t_total += sim_time
             self.comm.Barrier()
-            nest.Simulate(self.params['t_stim_pause'])
-            t_total += self.params['t_stim_pause']
-            self.comm.Barrier()
+            #nest.Simulate(self.params['t_stim_pause'])
+            #t_total += self.params['t_stim_pause']
+            #self.comm.Barrier()
 
         t_stop = time.time()
         t_diff = t_stop - t_start
