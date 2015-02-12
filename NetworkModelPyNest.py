@@ -324,9 +324,9 @@ class NetworkModel(object):
         self.initialize_vmem(self.local_idx_inh_spec)
         self.initialize_vmem(self.local_idx_inh_unspec)
 
-        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
-        nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
-        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
+#        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
+#        nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
+#        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
 #        if self.params['training_run']:
 #            self.create_training_input
