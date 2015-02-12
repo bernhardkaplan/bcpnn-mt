@@ -296,9 +296,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 6 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 10 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 6 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 10 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -379,7 +379,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 50.0
+        self.params['taui_bcpnn'] = 5.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001
@@ -500,8 +500,8 @@ class parameter_storage(object):
         self.params['folder_names'] = [self.params['folder_name'], \
                             self.params['spiketimes_folder'], \
                             self.params['volt_folder'], \
-                            self.params['gsyn_folder'], \
-                            self.params['curr_folder'], \
+                            #self.params['gsyn_folder'], \
+                            #self.params['curr_folder'], \
                             self.params['parameters_folder'], \
                             self.params['connections_folder'], \
                             self.params['figures_folder'], \
@@ -537,19 +537,19 @@ class parameter_storage(object):
 
         self.params['exc_volt_fn_base'] = '%sexc_volt' % self.params['volt_folder']
         self.params['exc_volt_anticipation'] = '%sexc_volt_anticipation.v' % self.params['volt_folder']
-        self.params['exc_gsyn_anticipation'] = '%sexc_gsyn_anticipation.dat' % self.params['gsyn_folder']
-        self.params['exc_curr_anticipation'] = '%sexc_curr_anticipation.dat' % self.params['curr_folder']
+        #self.params['exc_gsyn_anticipation'] = '%sexc_gsyn_anticipation.dat' % self.params['gsyn_folder']
+        #self.params['exc_curr_anticipation'] = '%sexc_curr_anticipation.dat' % self.params['curr_folder']
         self.params['inh_spec_volt_fn_base'] = '%sinh_spec_volt' % self.params['volt_folder']
         self.params['inh_spec_volt_anticipation'] = '%sinh_spec_volt_anticipation.v' % self.params['volt_folder']
-        self.params['inh_spec_gsyn_anticipation'] = '%sinh_spec_gsyn_anticipation.dat' % self.params['gsyn_folder']
-        self.params['inh_spec_curr_anticipation'] = '%sinh_spec_curr_anticipation.dat' % self.params['curr_folder']
+        #self.params['inh_spec_gsyn_anticipation'] = '%sinh_spec_gsyn_anticipation.dat' % self.params['gsyn_folder']
+        #self.params['inh_spec_curr_anticipation'] = '%sinh_spec_curr_anticipation.dat' % self.params['curr_folder']
         self.params['inh_unspec_volt_fn_base'] = '%sinh_unspec_volt' % self.params['volt_folder']
         self.params['inh_unspec_volt_anticipation'] = '%sinh_unspec_volt_anticipation.v' % self.params['volt_folder']
-        self.params['inh_unspec_gsyn_anticipation'] = '%sinh_unspec_gsyn_anticipation.dat' % self.params['gsyn_folder']
-        self.params['inh_unspec_curr_anticipation'] = '%sinh_unspec_curr_anticipation.dat' % self.params['curr_folder']
-        self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
-        self.params['rasterplot_inh_spec_fig'] = '%srasterplot_inh_spec.png' % (self.params['figures_folder'])
-        self.params['rasterplot_inh_unspec_fig'] = '%srasterplot_inh_unspec.png' % (self.params['figures_folder'])
+        #self.params['inh_unspec_gsyn_anticipation'] = '%sinh_unspec_gsyn_anticipation.dat' % self.params['gsyn_folder']
+        #self.params['inh_unspec_curr_anticipation'] = '%sinh_unspec_curr_anticipation.dat' % self.params['curr_folder']
+        #self.params['rasterplot_exc_fig'] = '%srasterplot_exc.png' % (self.params['figures_folder'])
+        #self.params['rasterplot_inh_spec_fig'] = '%srasterplot_inh_spec.png' % (self.params['figures_folder'])
+        #self.params['rasterplot_inh_unspec_fig'] = '%srasterplot_inh_unspec.png' % (self.params['figures_folder'])
 
         # files for "recorder_neurons" recording the "free" membrane potential
         self.params['free_vmem_fn_base'] = 'free_vmem'
