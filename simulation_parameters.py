@@ -24,7 +24,7 @@ class parameter_storage(object):
 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = ''
+        self.params['sim_id'] = 'FIAS'
 
         # ###################
         # HEXGRID PARAMETERS
@@ -96,8 +96,8 @@ class parameter_storage(object):
             self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
             self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
-            self.params['sigma_rf_pos'] = 0.05 #.02 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = 0.10 #.03 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = 0.01 #.02 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = 0.03 #.03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
