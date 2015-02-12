@@ -81,7 +81,12 @@ class ConnectivityPlotter(object):
 
         abs_max = max(abs(weights.min()), weights.max())
 #        markersizes = utils.transform_linear(weights, (0., abs_max))
-        markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
+        print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
+        if weights.min() == weights.max():
+            markersizes = np.ones(weights.size)
+            print 'WARNING all weights are equal!'
+        else:
+            markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
         norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
 
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.bwr) # large weights -- black, small weights -- white
@@ -145,7 +150,7 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.5, 0.5, -1.0, 0.)
+    tp_params = (0.5, 0.5, 0.5, 0.)
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters

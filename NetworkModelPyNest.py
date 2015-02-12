@@ -452,7 +452,7 @@ class NetworkModel(object):
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
-        t_offset = self.training_stim_duration[:stim_idx].sum() + stim_idx * self.params['t_stimulus']
+        t_offset = self.training_stim_duration[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
         for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
             rate_of_t = np.array(L_input[i_, :])
@@ -1291,9 +1291,9 @@ class NetworkModel(object):
             nest.Simulate(sim_time)
             t_total += sim_time
             self.comm.Barrier()
-            nest.Simulate(self.params['t_stim_pause'])
-            t_total += self.params['t_stim_pause']
-            self.comm.Barrier()
+#            nest.Simulate(self.params['t_stim_pause'])
+#            t_total += self.params['t_stim_pause']
+#            self.comm.Barrier()
 
         t_stop = time.time()
         t_diff = t_stop - t_start
