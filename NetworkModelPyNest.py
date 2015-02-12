@@ -182,16 +182,12 @@ class NetworkModel(object):
             nest.CopyModel('bcpnn_synapse', 'exc_exc_local_training', self.params['bcpnn_params'])
             nest.CopyModel('bcpnn_synapse', 'exc_exc_global_training', self.params['bcpnn_params'])
         else:
-            # exc - exc local (within a minicolumn): AMPA
+            # exc - exc fast: AMPA
             nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
                     {'delay': self.params['delay_ee_local'], 'receptor_type': 1})
+            # exc - exc slow: AMPA
             nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
                     {'delay': self.params['delay_ee_local'], 'receptor_type': 2})
-            nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
-                    {'delay': self.params['delay_ee_global'], 'receptor_type': 1})
-            # exc - exc global (between hypercolumns): AMPA
-            nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
-                    {'delay': self.params['delay_ee_global'], 'receptor_type': 2})
             # exc - inh global specific (between hypercolumns): AMPA
             nest.CopyModel('static_synapse', 'exc_inh_specific_fast', \
                     {'delay': self.params['delay_ei_spec'], 'receptor_type': 1})
@@ -426,8 +422,6 @@ class NetworkModel(object):
         return True
 
 
-#    def compute_input(self, gids, motion_params, save_output=False, with_blank=False):
-#        spike_trains = self.create_training_input_for_cells
 
     def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False):
 
@@ -606,7 +600,7 @@ class NetworkModel(object):
         if self.params['training_run']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
-            self.connect_input_to_recorder_neurons()
+#            self.connect_input_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
             print 'Connecting inh - exc unspecific'
@@ -614,11 +608,11 @@ class NetworkModel(object):
 #            pass
         else: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
-            self.connect_input_to_recorder_neurons()
+#            self.connect_input_to_recorder_neurons()
             self.load_training_weights()
             print 'Connecting exc - exc '
             self.connect_ee_testing()
-            exit(1)
+#            exit(1)
             self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
@@ -662,7 +656,17 @@ class NetworkModel(object):
 
 
     def connect_input_to_recorder_neurons(self):
+        """
+        The recorder stimulus is inserted into recorder neurons which are not supposed to spike (high v_thresh).
+        """
 
+        self.recorder_stimulus = nest.Create('spike_generator', self.params['n_recorder_neurons'])
+        for i_ in xrange(self.params['n_recorder_neurons']):
+            nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
+            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
+            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
+
+        """
         # pick recorder neurons along the spatial axis --> sort the neurons according to their x-pos
         sorted_gids = np.argsort(self.tuning_prop_exc[:, 0])
         # pick evenly spaced indices
@@ -671,7 +675,6 @@ class NetworkModel(object):
         # get the indices for the corresponding 'normal' neurons
         gids_normal = sorted_gids[rnd_gids]
 
-        self.recorder_stimulus = nest.Create('spike_generator', self.params['n_recorder_neurons'])
         self.recorder_neuron_gid_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
 
         for i_, gid in enumerate(self.recorder_neurons):
@@ -688,25 +691,16 @@ class NetworkModel(object):
             input_spikes_for_recorder_neurons = self.create_training_input_for_cells(gids_normal, with_blank=True)
 #            input_spikes_for_recorder_neurons = self.compute_input(gids_normal, self.motion_params, save_output=self.save_output, with_blank=True)
         
-        for i_ in xrange(self.params['n_recorder_neurons']):
-            spike_times = input_spikes_for_recorder_neurons[i_]
-            nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
-            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
-            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
             np.savetxt(self.params['recorder_neuron_input_fn_base'] + '%d.dat' % (self.recorder_neurons[i_]), spike_times)
+
+            spike_times = input_spikes_for_recorder_neurons[i_]
 
         f = file(self.params['recorder_neurons_gid_mapping'], 'w')
         json.dump(self.recorder_neuron_gid_mapping, f, indent=2)
+        """
 
 
-
-    def create_training_input_for_cells(self, gids, with_blank):
-#    def create_training_input_for_cells(self, tp, with_blank):
-
-#        if tp.ndim == 2:
-#            n_cells = tp[:, 0].size
-#        else:
-#            n_cells = 1
+    def create_training_input_for_cells(self, stim_idx, gids, with_blank):
         n_cells = len(gids)
         spike_times_container = [ np.array([]) for i in xrange(len(gids))]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
@@ -895,7 +889,7 @@ class NetworkModel(object):
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
 
-        w_debug = np.zeros(self.conn_mat_training.shape)
+        w_debug = np.zeros((self.params['n_mc'], self.params['n_mc']))
         # connect the minicolumns according to their weight after training
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -905,7 +899,6 @@ class NetworkModel(object):
                 # get the tuning properties for cells in that MC and 
                 # calculate the time_constants based on the preferred velocity
 #                print 'Debug TODO Need to get the tuning prop of this source pop:', src_pop
-                tp_src = self.tuning_prop_exc[src_pop_idx, 2] # get the v_x tuning for these cells
                 for tgt_hc in xrange(self.params['n_hc']):
                     for tgt_mc in xrange(self.params['n_mc_per_hc']):
                         # TODO:
@@ -926,8 +919,15 @@ class NetworkModel(object):
         np.savetxt(debug_fn, w_debug)
     
     def load_training_weights(self):
-        fn = self.training_params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat'
-        assert (os.path.exists(fn)), 'ERROR: Weight matrix not found %s\n\tCorrect training_run flag set?\n\t\tHave you run Network_PyNEST_weight_analysis_after_training.py?\n' % fn
+
+#        fn = self.training_params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat'
+        fn = self.training_params['merged_conn_list_ee']
+        if not os.path.exists(fn):
+            print 'Merging connection files...'
+            utils.merge_connection_files(self.params, 'ee', iteration=None)
+
+        # copy the merged connection file to the test folder
+        os.system('cp %s %s' % (fn, self.params['connections_folder']))
         print 'Loading connection matrix from training:', fn
         self.conn_mat_training = np.loadtxt(fn)
         self.w_bcpnn_max = np.max(self.conn_mat_training)
@@ -1278,6 +1278,7 @@ class NetworkModel(object):
         # # # # # # # # # # # # # #
 
         n_stim_total = self.params['n_stim']
+        t_total = 0
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             print 'Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             self.create_input_for_stim(stim_idx, self.params['save_input'], self.params['training_run'])
@@ -1287,6 +1288,7 @@ class NetworkModel(object):
                 print "Running simulation for %d milliseconds" % (sim_time)
             self.comm.Barrier()
             nest.Simulate(sim_time)
+            t_total += sim_time
             self.comm.Barrier()
 
         t_stop = time.time()
