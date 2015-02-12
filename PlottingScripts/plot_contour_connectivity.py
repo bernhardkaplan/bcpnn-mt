@@ -48,7 +48,7 @@ class ConnectivityPlotter(object):
         pylab.rcParams.update(plot_params)
 
 
-    def plot_outgoing_connections_exc(self, tp_params=None):
+    def plot_outgoing_connections_exc(self, tp_params=None, clim=None):
         """
         tp_params -- select cells near these parameters in the tuning property space
         """
@@ -87,7 +87,10 @@ class ConnectivityPlotter(object):
             print 'WARNING all weights are equal!'
         else:
             markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
-        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
+
+        if clim == None:
+            clim = (weights.min(), weights.max())
+        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
 
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.bwr) # large weights -- black, small weights -- white
         m.set_array(weights)
@@ -151,19 +154,20 @@ class ConnectivityPlotter(object):
 if __name__ == '__main__':
 
     tp_params = (0.5, 0.5, 0.5, 0.)
+    clim = [-3., 3.]
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters
         GP = simulation_parameters.parameter_storage()
         params = GP.params
         P = ConnectivityPlotter(params)
-        P.plot_outgoing_connections_exc(tp_params)
+        P.plot_outgoing_connections_exc(tp_params, clim=clim)
     elif len(sys.argv) == 2:
         print 'Case 2'
         if sys.argv[1].endswith('.json') or os.path.isdir(sys.argv[1]):
             params = utils.load_params(sys.argv[1])
             P = ConnectivityPlotter(params)
-            P.plot_outgoing_connections_exc(tp_params)
+            P.plot_outgoing_connections_exc(tp_params, clim=clim)
         else:          
             print 'Please provide the folder / simulation_parameters.json file and not the conn_list.dat file!'
             exit(1)
@@ -172,7 +176,7 @@ if __name__ == '__main__':
         for fn in fns:
             params = utils.load_params(fn)
             P = ConnectivityPlotter(params)
-            P.plot_outgoing_connections_exc(tp_params)
+            P.plot_outgoing_connections_exc(tp_params, clim=clim)
             del P 
     pylab.show()
 
