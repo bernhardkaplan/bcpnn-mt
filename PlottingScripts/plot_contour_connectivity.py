@@ -26,11 +26,11 @@ class ConnectivityPlotter(object):
                 'ie_unspec': False
                 }
         plot_params = {'backend': 'png',
-                      'axes.labelsize': 20,
-                      'axes.titlesize': 20,
+                      'axes.labelsize': 32,
+                      'axes.titlesize': 32,
                       'text.fontsize': 20,
-                      'xtick.labelsize': 16,
-                      'ytick.labelsize': 16,
+                      'xtick.labelsize': 24,
+                      'ytick.labelsize': 24,
                       'legend.pad': 0.2,     # empty space around the legend box
                       'legend.fontsize': 14,
                        'lines.markersize': 1,
@@ -44,7 +44,7 @@ class ConnectivityPlotter(object):
                       'figure.subplot.top':.88,
                       'figure.subplot.hspace':.05, 
                       'figure.subplot.wspace':.30, 
-                      'figure.figsize': utils.get_figsize(1000)}
+                      'figure.figsize': utils.get_figsize(1000, portrait=False)}
         pylab.rcParams.update(plot_params)
 
 
@@ -157,8 +157,9 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.5, 0.5, 0.5, 0.)
-    clim = [-3., 3.]
+    tp_params = (0.5, 0.5, 1.5, 0.)
+#    clim = [-5., 5.]
+    clim = None #[-5., 5.]
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters

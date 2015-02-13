@@ -21,17 +21,17 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = False # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
-        self.params['sim_id'] = 'FIAS'
+        self.params['sim_id'] = ''
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 8
-        self.params['n_v'] = 8 # == N_MC_PER_HC
+        self.params['n_rf'] = 6
+        self.params['n_v'] = 6 # == N_MC_PER_HC
 #        self.params['n_rf'] = 8
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
@@ -278,7 +278,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .10, .10
+        self.params['blur_X'], self.params['blur_V'] = .0, .0
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -297,9 +297,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 4 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 2 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 4 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
 
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -380,7 +380,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 50.0
+        self.params['taui_bcpnn'] = 20.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001
@@ -399,8 +399,8 @@ class parameter_storage(object):
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
                 'tau_i': self.params['taui_bcpnn'], \
-                'tau_j': 10.,\
-                'tau_e': 10.,\
+                'tau_j': 2.,\
+                'tau_e': 1.,\
                 'tau_p': self.params['taup_bcpnn'],\
                 'epsilon': epsilon, \
                 'p_i': self.params['bcpnn_init_val'], \

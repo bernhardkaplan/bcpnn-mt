@@ -434,12 +434,11 @@ class NetworkModel(object):
         idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
-
         # compute the trajectory
         for i_time in xrange(idx_t_stop):
             time_ = (i_time * dt) / self.params['t_stimulus']
             x_stim = (x0 + time_ * v0)
-            L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
+            L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
             L_input[:, i_time] *= self.params['f_max_stim']
 
         t_offset = self.training_stim_duration[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
@@ -725,7 +724,7 @@ class NetworkModel(object):
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
                 x_stim = (x0 + time_ * v0) % self.params['torus_width']
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[gids, :], self.params, (x_stim, 0, v0, 0, 0))
+                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[gids, :], self.rf_sizes[gids, :], self.params, (x_stim, 0, v0, 0, 0))
 #                L_input[:, i_time] = utils.get_input(tp, self.params, (x_stim, 0, v0, 0, 0))
                 L_input[:, i_time] *= self.params['f_max_stim']
                 if (i_time % 5000 == 0):
