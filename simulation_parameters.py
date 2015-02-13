@@ -212,7 +212,7 @@ class parameter_storage(object):
         # #######################
 
         # exc - exc: local
-        self.params['p_ee_local'] = .25
+        self.params['p_ee_local'] = .75
         self.params['n_conn_ee_local_out_per_pyr'] = np.int(np.round(self.params['p_ee_local'] * self.params['n_exc_per_mc']))
         self.params['w_ee_local'] = 0.      # [nS]
         self.params['delay_ee_local'] = 1.  # [ms]
@@ -296,10 +296,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 10 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 20 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 10 # number of different starting positions per trained  speed
-
+        self.params['n_training_x'] = 20 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 

@@ -73,10 +73,10 @@ fns = sys.argv[1:]
 fig = pylab.figure()
 ax = fig.add_subplot(111)
 for fn in fns:
-    try:
-        d = np.loadtxt(fn)
-    except:
-        d = np.load(fn)
+#    try:
+    d = np.loadtxt(fn)
+#    except:
+#        d = np.load(fn)
 
     gid = None
 

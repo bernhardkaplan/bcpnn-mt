@@ -81,10 +81,12 @@ class Plotter(object):
 
     def plot_tuning_space(self):
 
+#        fig = pylab.figure(figsize=utils.get_figsize(600, portrait=True))
         fig = pylab.figure()
         ax = fig.add_subplot(111)
-        ax.set_xlabel('Receptive field center $x$', fontsize=18)
-        ax.set_ylabel('Preferred speed', fontsize=18)
+        ax.set_title('Feature space')
+        ax.set_xlabel('Receptive field center $x$', fontsize=20)
+        ax.set_ylabel('Preferred speed $v_x$', fontsize=20)
         patches = []
         for gid in xrange(self.tp[:, 0].size):
             ax.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=3)
@@ -97,9 +99,10 @@ class Plotter(object):
         ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
         if os.path.exists(self.params['figures_folder']):
             output_fn = self.params['figures_folder'] + 'tuning_space.png'
-            print 'Saving to:', output_fn
-            pylab.savefig(output_fn)
-
+        else:
+            output_fn = 'tuning_property_space.png'
+        print 'Saving to:', output_fn
+        pylab.savefig(output_fn, dpi=150)
 
     def plot_tuning_width_distribution(self):
         """
@@ -167,4 +170,4 @@ if __name__ == '__main__':
     Plotter.plot_tuning_space()
     Plotter.plot_tuning_width_distribution()
 
-    pylab.show()
+#    pylab.show()

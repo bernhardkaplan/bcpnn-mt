@@ -26,11 +26,11 @@ class ConnectivityPlotter(object):
                 'ie_unspec': False
                 }
         plot_params = {'backend': 'png',
-                      'axes.labelsize': 20,
-                      'axes.titlesize': 20,
+                      'axes.labelsize': 32,
+                      'axes.titlesize': 32,
                       'text.fontsize': 20,
-                      'xtick.labelsize': 16,
-                      'ytick.labelsize': 16,
+                      'xtick.labelsize': 24,
+                      'ytick.labelsize': 24,
                       'legend.pad': 0.2,     # empty space around the legend box
                       'legend.fontsize': 14,
                        'lines.markersize': 1,
@@ -44,11 +44,11 @@ class ConnectivityPlotter(object):
                       'figure.subplot.top':.88,
                       'figure.subplot.hspace':.05, 
                       'figure.subplot.wspace':.30, 
-                      'figure.figsize': utils.get_figsize(1000)}
+                      'figure.figsize': utils.get_figsize(1000, portrait=False)}
         pylab.rcParams.update(plot_params)
 
 
-    def plot_outgoing_connections_exc(self, tp_params=None):
+    def plot_outgoing_connections_exc(self, tp_params=None, clim=None):
         """
         tp_params -- select cells near these parameters in the tuning property space
         """
@@ -87,7 +87,10 @@ class ConnectivityPlotter(object):
             print 'WARNING all weights are equal!'
         else:
             markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
-        norm = matplotlib.colors.Normalize(vmin=weights.min(), vmax=weights.max())
+
+        if clim == None:
+            clim = (weights.min(), weights.max())
+        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
 
         m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.bwr) # large weights -- black, small weights -- white
         m.set_array(weights)
@@ -100,6 +103,9 @@ class ConnectivityPlotter(object):
             ax.plot(x_tgts[i_], vx_tgts[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
 #            print 'debug i_ %d tgt_gid %d weight %.2f ms %.1f color' % (i_, tgt, weights[i_], markersizes[i_]), rgba_colors[i_]
 
+        ax.set_xlabel('Position')
+        ax.set_ylabel('Preferred speed')
+        ax.set_title('Outgoing connections, $\\tau_i = %d$' % self.params['bcpnn_params']['tau_i'])
 
         annotate = False
         if annotate:
@@ -127,6 +133,7 @@ class ConnectivityPlotter(object):
         for i_ in xrange(5):
             print '%d\t%.2f' % (target_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
+
         ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
         output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
         print 'Saving fig to:', output_fn
@@ -150,20 +157,22 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.5, 0.5, 0.5, 0.)
+    tp_params = (0.5, 0.5, 1.5, 0.)
+#    clim = [-5., 5.]
+    clim = None #[-5., 5.]
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters
         GP = simulation_parameters.parameter_storage()
         params = GP.params
         P = ConnectivityPlotter(params)
-        P.plot_outgoing_connections_exc(tp_params)
+        P.plot_outgoing_connections_exc(tp_params, clim=clim)
     elif len(sys.argv) == 2:
         print 'Case 2'
         if sys.argv[1].endswith('.json') or os.path.isdir(sys.argv[1]):
             params = utils.load_params(sys.argv[1])
             P = ConnectivityPlotter(params)
-            P.plot_outgoing_connections_exc(tp_params)
+            P.plot_outgoing_connections_exc(tp_params, clim=clim)
         else:          
             print 'Please provide the folder / simulation_parameters.json file and not the conn_list.dat file!'
             exit(1)
@@ -172,7 +181,7 @@ if __name__ == '__main__':
         for fn in fns:
             params = utils.load_params(fn)
             P = ConnectivityPlotter(params)
-            P.plot_outgoing_connections_exc(tp_params)
+            P.plot_outgoing_connections_exc(tp_params, clim=clim)
             del P 
     pylab.show()
 
