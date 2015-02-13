@@ -6,6 +6,7 @@ if cmd_subfolder not in sys.path:
 import pylab
 import numpy as np
 import random
+from PlottingScripts.plot_input import get_cell_gids_with_input_near_tp
 
 class TrainingInputPlotter(object):
 
@@ -63,7 +64,7 @@ class TrainingInputPlotter(object):
         n_stim = self.motion_params[:, 0].size
 
         n_cells_to_plot = len(gids_to_plot)
-        tp = np.zeros((n_cells_to_plot, 5))
+        tp = np.zeros((n_cells_to_plot, 4))
 
         fig = pylab.figure()
         ax1 = fig.add_subplot(2, 1, 1)
@@ -79,24 +80,27 @@ class TrainingInputPlotter(object):
 
         rate_curves = []
         rate_max = 0.
+        t_stim_durations = np.loadtxt(self.params['training_stim_durations_fn'])
         for i in xrange(n_cells_to_plot):
-
             gid = gids_to_plot[i]
+            for stim_idx in range(self.params['stim_range'][0], self.params['stim_range'][1]):
 
             # ax2 - input rates
 #            input_rate = np.loadtxt(self.params['input_rate_fn_base'] + str(gid) + '.dat')
-            input_rate = np.loadtxt(self.params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
-            rate_max = max(rate_max, input_rate.max())
-            t_axis = np.arange(0, input_rate.size) * self.params['dt_rate']
-            plot, = ax2.plot(t_axis, input_rate, lw=2, label=gid, c=self.color_list[i % len(self.color_list)])
-            rate_curves.append(plot)
+                input_fn = self.params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
+                if os.path.exists(input_fn):
+                    input_rate = np.loadtxt(input_fn)
+                else:
+                    input_rate = np.zeros(t_stim_durations[stim_idx] / self.params['dt_rate'])
+                rate_max = max(rate_max, input_rate.max())
+                t_axis = np.arange(0, input_rate.size) * self.params['dt_rate']
+                plot, = ax2.plot(t_axis, input_rate, lw=2, label=gid, c=self.color_list[i % len(self.color_list)])
+                rate_curves.append(plot)
 
             # ax1 - cell tuning
             tp[i, :] = self.tuning_prop[gid, :]
             tp[i, 1] = i / 10.
             ax1.annotate('(%.2f, %.2f)' % (tp[i, 0], tp[i, 2]), (tp[i, 0] - .05, tp[i, 1] + .02))
-
-
 
 #        handles, labels = ax2.get_legend_handles_labels()
         ax1.quiver(tp[:, 0], tp[:, 1], tp[:, 2], tp[:, 3], \
@@ -168,13 +172,10 @@ if __name__ == '__main__':
 
     random.seed(1)
     n_gids_to_plot = 3
-    try:
-        gids_to_plot = np.loadtxt(params['gids_to_record_fn'], dtype=np.int)[:n_gids_to_plot]
-                      #random.sample(np.loadtxt(params['gids_to_record_fn'], dtype=np.int), n_gids_to_plot)
-    except:
-        print 'Could not find file: %s\nWill plot random GIDs'  % (params['gids_to_record_fn'])
-        gids_to_plot = np.unique(np.random.randint(0, params['n_exc'], n_gids_to_plot))
-        gids_to_plot = np.array([0, 1, 70])
+
+    tp_params = (0.2, 0.5, 0.7, 0.)
+    stim_range = params['stim_range']
+    gids_to_plot = get_cell_gids_with_input_near_tp(params, tp_params, stim_range, n_cells=3)
     print 'gids_to_plot: ', gids_to_plot
     fig2 = TIP.plot_training_input(gids_to_plot)
 

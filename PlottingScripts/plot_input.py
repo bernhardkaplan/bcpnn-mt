@@ -105,6 +105,8 @@ def plot_input_old(params):
 
 def get_cell_gid(params, tp_params, stim_range, n_cells=1):
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
+
+    gids_found = False
     gids, dist = utils.get_gids_near_stim(tp_params, tp, n=n_cells)
 #    print 'debug gids dist', gids, dist
 #    print 'tp[gids]', tp[gids, :]
@@ -115,6 +117,29 @@ def get_cell_gid(params, tp_params, stim_range, n_cells=1):
             if os.path.exists(rate_fn):
                 cnt_[i_] += 1
     return gids[np.argsort(cnt_)[-n_cells:]]
+
+
+def get_cell_gids_with_input_near_tp(params, tp_params, stim_range, n_cells=1):
+
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
+
+    gids, dist = utils.get_gids_near_stim(tp_params, tp, n=params['n_exc'])
+
+    idx = np.argsort(dist)
+    print 'gids', gids[idx]
+    print 'dist', dist[idx]
+    gids_to_return = []
+    for gid in gids[idx]:
+        n_input_files_for_cell = 0
+        for stim_idx in stim_range:
+            rate_fn = params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)
+            if os.path.exists(rate_fn):
+                gids_to_return.append(gid)
+                break
+
+    print 'gids_to_return:', gids_to_return[:n_cells]
+    return gids_to_return[:n_cells]
+
 
 if __name__ == '__main__':
 
@@ -127,7 +152,8 @@ if __name__ == '__main__':
         params = ps.params
 
     tp_params = (0.2, 0.5, 0.7, 0.)
-    stim_range = [0, params['n_stim']]
+#    stim_range = [0, params['n_stim']]
+    stim_range = params['stim_range']
     n_cells = 10
     gids = get_cell_gid(params, tp_params, stim_range, n_cells)
 
