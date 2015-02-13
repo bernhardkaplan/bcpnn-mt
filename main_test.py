@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ps.create_folders()
     ps.write_parameters_to_file()
 
-    load_files = True
+    load_files = False
     record = False
     save_input_files = True #not load_files
     NM = NetworkModel(params, iteration=0)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         NM.record_v_exc()
         NM.record_v_inh_unspec()
 
-    NM.run_sim(params['t_sim'])
+    NM.run_sim()
 
     t_end = time.time()
     t_diff = t_end - t_0
