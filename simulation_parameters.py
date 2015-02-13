@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False# if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = False
         self.params['sim_id'] = 'TEST'
 
@@ -322,7 +322,10 @@ class parameter_storage(object):
             self.params['n_stim'] = self.params['n_test_stim']
 
         training_stim_offset = 0
-        self.params['stim_range'] = [training_stim_offset, training_stim_offset + self.params['n_stim']] # naming the training folder, but params['stim_range'] will be overwritten 
+        if self.params['training_run']:
+            self.params['stim_range'] = [training_stim_offset, training_stim_offset + self.params['n_stim']] # naming the training folder, but params['stim_range'] will be overwritten 
+        else:
+            self.params['stim_range'] = self.params['test_stim_range']
         # stim_range indicates which stimuli have been presented to the network, i.e. the row index in the training_stimuli file
         self.params['trained_stimuli'] = None # contains only the motion parameters from those stimuli that actually have been presented
         self.params['frac_training_samples_from_grid'] = .8
@@ -365,7 +368,8 @@ class parameter_storage(object):
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
             self.params['t_blank'] = 400
-        self.params['t_start_blank'] = self.params['t_start'] + 600.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 1000.
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays

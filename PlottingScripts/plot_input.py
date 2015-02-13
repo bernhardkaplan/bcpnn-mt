@@ -151,7 +151,7 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()
         params = ps.params
 
-    tp_params = (0.2, 0.5, 0.7, 0.)
+    tp_params = (0.1, 0.5, -1.5, 0.)
 #    stim_range = [0, params['n_stim']]
     stim_range = params['stim_range']
     n_cells = 10
@@ -163,7 +163,10 @@ if __name__ == '__main__':
     pylab.subplots_adjust(bottom=.10, left=.12, hspace=.02, top=0.94)#55)
     ax = fig.add_subplot(111)
 
-    t_stim = np.loadtxt(params['training_stim_durations_fn'])
+    if params['training_run']:
+        t_stim = np.loadtxt(params['training_stim_durations_fn'])
+    else:
+        t_stim = params['t_test_stim'] * np.ones(params['n_stim'])
     for gid in gids:
         for stim_idx in range(stim_range[0], stim_range[1]):
             rate_fn = params['input_rate_fn_base'] + '%d_%d.dat' % (gid, stim_idx)

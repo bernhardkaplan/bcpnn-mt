@@ -23,7 +23,6 @@ class NetworkModel(object):
         self.iteration = 0  # the learning iteration (cycle)
         self.times = {}
         self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
-        self.training_params = None # only relevant for testing 
 
         self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
         self.comm = comm # mpi communicator needed to broadcast nspikes between processes
@@ -38,8 +37,9 @@ class NetworkModel(object):
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_params']['epsilon'] = epsilon
 
-    def setup(self, training_stimuli=None, load_tuning_prop=False):
-
+    def setup(self, training_stimuli=None, load_tuning_prop=False, training_params=None):
+        if training_params != None:
+            self.training_params = training_params
         if not load_tuning_prop:
             self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         else:
@@ -53,16 +53,27 @@ class NetworkModel(object):
         if self.comm != None:
             self.comm.Barrier()
 
-        if training_stimuli == None:
-            training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
             
-        training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
-        self.motion_params = training_stimuli
-        np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
+        if self.params['training_run']:
+            if training_stimuli == None:
+                training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
+            self.motion_params = training_stimuli
+            np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
+        else:
+            self.CI = CreateInput.CreateInput(self.params)
+#            self.motion_params = self.CI.create_test_stim_1D_from_training_stim(self.params, self.training_params)
+            self.motion_params = self.CI.create_test_stim_grid(self.params)
+            np.savetxt(self.params['test_sequence_fn'], self.motion_params)
+
+        if self.comm != None:
+            self.comm.Barrier()
 
         self.training_stim_duration = np.zeros(self.params['n_stim'])
         for i_ in xrange(self.params['stim_range'][0], self.params['stim_range'][1]):
-            stim_params = training_stimuli[i_, :]
+            if self.params['training_run']:
+                stim_params = training_stimuli[i_, :]
+            else:
+                stim_params = self.motion_params[i_, :]
             t_exit = utils.compute_stim_time(stim_params)
             self.training_stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
         t_sim = self.training_stim_duration.sum()
@@ -429,7 +440,11 @@ class NetworkModel(object):
         my_units = np.array(self.local_idx_exc) - 1
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-        idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
+        if with_blank:
+            #idx_t_stop = np.int(self.training_stim_duration[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
+            idx_t_stop = np.int(self.params['t_test_stim'] / dt)
+        else:
+            idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
         # compute the trajectory
@@ -446,10 +461,13 @@ class NetworkModel(object):
             stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
             blank_idx = np.arange(start_blank, stop_blank)
             before_stim_idx = np.arange(self.params['t_start'] * 1. / dt)
-#            print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
-#            print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
-            blank_idx = np.concatenate((blank_idx, before_stim_idx))
+            print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
+            print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
+            print 'debug t_offset', t_offset
+            print 'debug training_stim_duration', self.training_stim_duration
+            blank_idx = np.concatenate((before_stim_idx, blank_idx))
             # blanking
+            print 'debug blank_idx', blank_idx
             for i_time in blank_idx:
 #                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                 L_input[:, i_time] = 0.
@@ -887,11 +905,17 @@ class NetworkModel(object):
     def connect_ee_testing(self):
 
         if not(os.path.exists(self.params['conn_matrix_mc_fn'])):
-            WA = WeightAnalyser.WeightAnalyser(self.params)
+            print 'Can not find conn_matrix_mc_fn:', self.params['conn_matrix_mc_fn']
+            WA = WeightAnalyser.WeightAnalyser(self.training_params)
             M = WA.get_weight_matrix_mc_mc()
+            output_fn = self.params['conn_matrix_mc_fn']
+            print 'Saving connection matrix to:', output_fn
+            np.savetxt(output_fn, M)
         else:
             M = np.loadtxt(self.params['conn_matrix_mc_fn'])
 
+        if self.comm != None:
+            self.comm.Barrier()
         self.w_bcpnn_max = np.max(M)
         self.w_bcpnn_min = np.min(M)
         for src_hc in xrange(self.params['n_hc']):
@@ -1316,8 +1340,8 @@ class NetworkModel(object):
         mp = []
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
-#            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
+#            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
+            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
             sim_time = self.training_stim_duration[i_stim]
             if self.pc_id == 0:
                 print "Running simulation for %d milliseconds" % (sim_time)
