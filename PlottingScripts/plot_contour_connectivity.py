@@ -100,6 +100,9 @@ class ConnectivityPlotter(object):
             ax.plot(x_tgts[i_], vx_tgts[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
 #            print 'debug i_ %d tgt_gid %d weight %.2f ms %.1f color' % (i_, tgt, weights[i_], markersizes[i_]), rgba_colors[i_]
 
+        ax.set_xlabel('Position')
+        ax.set_ylabel('Preferred speed')
+        ax.set_title('Outgoing connections, $\\tau_i = %d$' % self.params['bcpnn_params']['tau_i'])
 
         annotate = False
         if annotate:
@@ -126,6 +129,7 @@ class ConnectivityPlotter(object):
             print '%d\t%.2f' % (target_gids[sort_idx[-(i_+1)]], weights[sort_idx[-(i_+1)]])
         for i_ in xrange(5):
             print '%d\t%.2f' % (target_gids[sort_idx[i_]], weights[sort_idx[i_]])
+
 
         ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
         output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)

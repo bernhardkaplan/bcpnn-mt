@@ -1314,7 +1314,8 @@ class NetworkModel(object):
         print 'Run sim for %d stim' % (n_stim_total)
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
+            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
+#            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
             sim_time = self.training_stim_duration[i_stim]
             if self.pc_id == 0:
                 print "Running simulation for %d milliseconds" % (sim_time)
