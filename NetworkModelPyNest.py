@@ -12,6 +12,7 @@ import json
 import set_tuning_properties
 from copy import deepcopy
 import WeightAnalyser
+from create_training_stimuli import create_training_stimuli_based_on_tuning_prop
 
 class NetworkModel(object):
 
@@ -39,11 +40,27 @@ class NetworkModel(object):
 
     def setup(self, training_stimuli=None, load_tuning_prop=False):
 
-        CI = CreateInput.CreateInput(self.params)
+        if not load_tuning_prop:
+#            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
+#            self.rf_sizes = self.set_receptive_fields('exc')
+            # self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
+#            set_tuning_properties(self.params)
+        else:
+            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
+#            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
+
+
         if training_stimuli == None:
-            random_order = self.params['random_training_order']
-            training_stimuli = CI.create_motion_sequence_1D_training(self.params, random_order)
+#            random_order = self.params['random_training_order']
+#            CI = CreateInput.CreateInput(self.params)
+#            training_stimuli = CI.create_motion_sequence_1D_training(self.params, random_order)
+            training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
+            
+        training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
         self.motion_params = training_stimuli
+        np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
+
         self.training_stim_duration = np.zeros(self.params['n_stim'])
         for i_ in xrange(self.params['stim_range'][0], self.params['stim_range'][1]):
             stim_params = training_stimuli[i_, :]
@@ -59,17 +76,6 @@ class NetworkModel(object):
         self.projections['ei'] = []
         self.projections['ie'] = []
         self.projections['ii'] = []
-        if not load_tuning_prop:
-#            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
-#            self.rf_sizes = self.set_receptive_fields('exc')
-            # self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
-#            set_tuning_properties(self.params)
-        else:
-            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
-#            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
-
-        np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
 
         # update 
         utils.set_vx_tau_transformation_params(self.params, self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
@@ -77,6 +83,7 @@ class NetworkModel(object):
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
             np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
+            np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
 #            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
 #            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
@@ -427,19 +434,19 @@ class NetworkModel(object):
 
     def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False):
 
-
         my_units = np.array(self.local_idx_exc) - 1
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
+        print 'debug idx_t_stop', idx_t_stop
         # compute the trajectory
         for i_time in xrange(idx_t_stop):
             time_ = (i_time * dt) / self.params['t_stimulus']
             x_stim = (x0 + time_ * v0)
-            L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
-            L_input[:, i_time] *= self.params['f_max_stim']
+            L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
+                    self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
 
         t_offset = self.training_stim_duration[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
 
@@ -456,11 +463,12 @@ class NetworkModel(object):
 #                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                 L_input[:, i_time] = 0.
 
+        L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
         for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
             rate_of_t = np.array(L_input[i_, :])
             # each cell will get its own spike train stored in the following file + cell gid
-            n_steps = rate_of_t.size
+            n_steps = rate_of_t.size - int(self.params['t_stim_pause'] / dt)
             spike_times = []
             for i in xrange(n_steps):
                 r = nprnd.rand()
@@ -773,7 +781,7 @@ class NetworkModel(object):
         """
         Connect each minicolumn to all other minicolumns but only sparsely
         """
-        self.connect_ee_within_one_MC()
+#        self.connect_ee_within_one_MC()
         if self.params['training_run']:
             self.connect_ee_training()
 
@@ -811,11 +819,14 @@ class NetworkModel(object):
                 mc_idx_src  = i_hc_src * self.params['n_mc_per_hc'] + i_mc_src
                 for i_hc_tgt in xrange(self.params['n_hc']):
                     for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
-                        mc_idx_tgt  = i_hc_tgt * self.params['n_mc_per_hc'] + i_mc_tgt
-                        if mc_idx_src != mc_idx_tgt:
-                            nest.RandomDivergentConnect(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt], 
-                                    self.params['n_conn_ee_global_out_per_pyr'], model='exc_exc_global_training', \
-                                    options={'allow_multapses': False})
+                        nest.DivergentConnect(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt], 
+                                model='exc_exc_global_training')
+
+#                        mc_idx_tgt  = i_hc_tgt * self.params['n_mc_per_hc'] + i_mc_tgt
+#                        if mc_idx_src != mc_idx_tgt:
+#                            nest.RandomDivergentConnect(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt], 
+#                                    self.params['n_conn_ee_global_out_per_pyr'], model='exc_exc_global_training', \
+#                                    options={'allow_multapses': False})
 
 
 
@@ -1311,6 +1322,7 @@ class NetworkModel(object):
 
         n_stim_total = self.params['n_stim']
         print 'Run sim for %d stim' % (n_stim_total)
+        mp = []
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
             self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
@@ -1323,8 +1335,10 @@ class NetworkModel(object):
             nest.Simulate(sim_time)
             if self.comm != None:
                 self.comm.Barrier()
+            mp.append(self.motion_params[stim_idx, :])
 
-        np.savetxt(self.params['test_sequence_fn'], self.motion_params[self.params['stim_range'], :])
+        if not self.params['training_run']:
+            np.savetxt(self.params['test_sequence_fn'], np.array(mp))
         t_stop = time.time()
         t_diff = t_stop - t_start
         print "Simulation finished: %d [sec]" % (t_diff)

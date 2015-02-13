@@ -30,9 +30,8 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 20
-        self.params['n_v'] = 20 # == N_MC_PER_HC
-#        self.params['n_rf'] = 8
+        self.params['n_rf'] = 10 
+        self.params['n_v'] = 10 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -51,7 +50,7 @@ class parameter_storage(object):
         assert (self.params['n_rf_x_log'] % 2 == 0), 'ERROR: please make sure that n_rf_x_log is an even number (as n_rf_x_fovea), so please change n_hc (=n_rf_x) or frac_rf_x_fovea'
 
         assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
-        self.params['frac_rf_v_fovea'] = 0.2 # this fraction of all n_rf_v cells will have constant (minimum) RF size
+        self.params['frac_rf_v_fovea'] = 0.1 # this fraction of all n_rf_v cells will have constant (minimum) RF size
         self.params['n_rf_v_fovea'] = np.int(np.round(self.params['frac_rf_v_fovea'] * self.params['n_v']))
         if self.params['n_rf_v_fovea'] % 2:
             self.params['n_rf_v_fovea'] += 1
@@ -218,7 +217,7 @@ class parameter_storage(object):
         self.params['delay_ee_local'] = 1.  # [ms]
 
         # exc - exc: global
-        self.params['p_ee_global'] = .3
+        self.params['p_ee_global'] = 1.0
         self.params['w_ee_global_max'] = 4.
         self.params['delay_ee_global'] = 1. # [ms]
         self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))
@@ -293,12 +292,12 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['x_max_training'] = 0.9
         self.params['x_min_training'] = 0.1
-        self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_v'] = 0.10 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
         self.params['n_training_v'] = 20 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 20 # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 
@@ -340,10 +339,10 @@ class parameter_storage(object):
         self.params['seed'] = 12345 # the master seed
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
-        self.params['visual_stim_seed'] = 123
+        self.params['visual_stim_seed'] = 4
         self.params['np_random_seed'] = 0
         self.params['tp_seed'] = 666
-        self.params['t_training_max'] = 3000. # [ms]
+        self.params['t_training_max'] = 10000. # [ms]
         if self.params['training_run']:
             self.params['t_stim_pause'] = 500.
         else:

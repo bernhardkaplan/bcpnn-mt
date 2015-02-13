@@ -90,6 +90,7 @@ class Plotter(object):
         patches = []
         for gid in xrange(self.tp[:, 0].size):
             ax.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=3)
+#            print 'debug', self.tp[gid, 0], self.tp[gid, 2]
             ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2], linewidth=1.)
             patches.append(ellipse)
 
@@ -103,6 +104,7 @@ class Plotter(object):
             output_fn = 'tuning_property_space.png'
         print 'Saving to:', output_fn
         pylab.savefig(output_fn, dpi=150)
+        return ax
 
     def plot_tuning_width_distribution(self):
         """
@@ -149,6 +151,22 @@ class Plotter(object):
         ax2.set_title('Preferred speeds')
 
 
+    def plot_stimuli(self, ax):
+        mp = np.loadtxt(self.params['training_stimuli_fn'])
+
+        stim_duration = np.loadtxt(self.params['training_stim_durations_fn']) 
+
+        for i_ in xrange(params['n_stim']):
+            x_start = mp[i_, 0]
+            x_stop = mp[i_, 0] + mp[i_, 2] * (stim_duration[i_] - self.params['t_stim_pause']) / self.params['t_stimulus']
+
+            ax.plot((x_start, x_stop), (mp[i_, 2], mp[i_, 2]), '--', c='k', lw=5)
+            ax.plot(x_start, mp[i_, 2], 'o', c='b', ms=10)
+            ax.plot(x_stop, mp[i_, 2], 'o', c='r', ms=10)
+            ax.text(x_start, mp[i_, 2] + 0.1, 'Start %d' % i_)
+            ax.text(x_stop, mp[i_, 2] + 0.1, 'Stop %d' % i_)
+
+
 if __name__ == '__main__':
 
     if len(sys.argv) > 1:
@@ -159,15 +177,16 @@ if __name__ == '__main__':
         f = file(param_fn, 'r')
         print 'Loading parameters from', param_fn
         params = json.load(f)
-
     else:
         import simulation_parameters
         param_tool = simulation_parameters.parameter_storage()
         params = param_tool.params
 
     Plotter = Plotter(params)#, it_max=1)
-    Plotter.plot_tuning_prop()
-    Plotter.plot_tuning_space()
-    Plotter.plot_tuning_width_distribution()
+#    Plotter.plot_tuning_prop()
+    ax = Plotter.plot_tuning_space()
+    if os.path.exists(params['training_stimuli_fn']):
+        Plotter.plot_stimuli(ax)
+#    Plotter.plot_tuning_width_distribution()
 
-#    pylab.show()
+    pylab.show()
