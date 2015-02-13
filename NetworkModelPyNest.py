@@ -41,20 +41,19 @@ class NetworkModel(object):
     def setup(self, training_stimuli=None, load_tuning_prop=False):
 
         if not load_tuning_prop:
-#            self.tuning_prop_exc = utils.set_tuning_prop(self.params, mode='hexgrid', cell_type='exc')        # set the tuning properties of exc cells: space (x, y) and velocity (u, v)
-#            self.rf_sizes = self.set_receptive_fields('exc')
-            # self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
             self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
-#            set_tuning_properties(self.params)
         else:
             self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
-#            self.tuning_prop_inh = np.loadtxt(self.params['tuning_prop_inh_fn'])
 
+        if self.pc_id == 0:
+            print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
+            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
+            np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
+
+        if self.comm != None:
+            self.comm.Barrier()
 
         if training_stimuli == None:
-#            random_order = self.params['random_training_order']
-#            CI = CreateInput.CreateInput(self.params)
-#            training_stimuli = CI.create_motion_sequence_1D_training(self.params, random_order)
             training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
             
         training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
@@ -79,13 +78,6 @@ class NetworkModel(object):
 
         # update 
         utils.set_vx_tau_transformation_params(self.params, self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
-
-        if self.pc_id == 0:
-            print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
-            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
-            np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
-#            print "Saving tuning_prop to file:", self.params['tuning_prop_inh_fn']
-#            np.savetxt(self.params['tuning_prop_inh_fn'], self.tuning_prop_inh)
 
 #        exit(1)
         # # # # # # # # # # # #
@@ -440,7 +432,6 @@ class NetworkModel(object):
         idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
-        print 'debug idx_t_stop', idx_t_stop
         # compute the trajectory
         for i_time in xrange(idx_t_stop):
             time_ = (i_time * dt) / self.params['t_stimulus']

@@ -72,8 +72,6 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     v_ = v_[np.where(v_ != 0.)[0]]
     N = x_.size * v_.size
     np.random.seed(params['visual_stim_seed'])
-    print 'debug x_', x_
-    print 'debug v_', v_
     mp = np.zeros((params['n_stim'], 4))
     cnt_ = 0
     while cnt_ != params['n_stim']:
@@ -93,15 +91,13 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     idx = range(params['n_stim'])
     np.random.shuffle(idx)
     mp = mp[idx, :]
-    print 'mp', mp
-    print 'N', N, cnt_
-    print 'Saving traingin stimuli to:', params['training_stimuli_fn']
+#    print 'Saving traingin stimuli to:', params['training_stimuli_fn']
     np.savetxt(params['training_stimuli_fn'], mp)
     training_stim_duration = np.zeros(params['n_stim'])
     for i_ in xrange(params['n_stim']):
         t_exit = utils.compute_stim_time(mp[i_, :])
         training_stim_duration[i_] = min(t_exit, params['t_training_max']) + params['t_stim_pause']
-    print 'Saving training stim durations to:', params['training_stim_durations_fn']
+#    print 'Saving training stim durations to:', params['training_stim_durations_fn']
     np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
 
     return mp[idx, :]
