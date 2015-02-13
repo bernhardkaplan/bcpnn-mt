@@ -23,8 +23,7 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
-        self.params['sim_id'] = ''
-
+        self.params['sim_id'] = 'Cluster'
         # ###################
         # HEXGRID PARAMETERS
         # ###################
