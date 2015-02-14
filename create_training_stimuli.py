@@ -66,7 +66,25 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     if tp == None:
         tp = np.loadtxt(params['tuning_prop_exc_fn'])
     x_ = np.unique(np.around(tp[:, 0], decimals=1))
-    v_ = np.unique(np.around(tp[:, 2], decimals=1))
+#    v_ = np.unique(np.around(tp[:, 2], decimals=3))
+
+    v_ = np.zeros(params['n_v'])
+    n_rf_v_log = params['n_v'] - params['n_rf_v_fovea']
+    idx_upper = n_rf_v_log / 2 + params['n_rf_v_fovea']
+    if params['log_scale']==1:
+        v_rho_half = np.linspace(params['v_min_tp'], params['v_max_tp'], num=n_rf_v_log/2, endpoint=True)
+    else:
+        v_rho_half = np.logspace(np.log(params['v_min_tp'])/np.log(params['log_scale']),
+                        np.log(params['v_max_tp'])/np.log(params['log_scale']), num=n_rf_v_log/2,
+                        endpoint=True, base=params['log_scale'])
+    v_rho_half_ = list(v_rho_half)
+    v_rho_half_.reverse()
+    v_[:n_rf_v_log / 2] = v_rho_half_
+    v_[idx_upper:] = -v_rho_half
+    RF_v_log = np.concatenate((-v_rho_half, v_rho_half))
+    RF_v_const = np.linspace(-params['v_min_tp'], params['v_min_tp'], params['n_rf_v_fovea'] + 1, endpoint=False)[1:]
+    v_[n_rf_v_log / 2 : n_rf_v_log / 2 + params['n_rf_v_fovea']] = RF_v_const
+
     x_ = x_[np.where(x_ <= params['x_max_training'])[0]]
     x_ = x_[np.where(x_ >= params['x_min_training'])[0]]
     v_ = v_[np.where(v_ != 0.)[0]]
@@ -74,20 +92,56 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     np.random.seed(params['visual_stim_seed'])
     mp = np.zeros((params['n_stim'], 4))
     cnt_ = 0
+    v_stim_tolerance = 0.1
+
+    for i_ in xrange(params['n_training_v_slow_speeds']):
+        x_is_valid = False
+        v_is_valid = False
+        while not (x_is_valid and v_is_valid):
+            x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
+            v_noise = 1. + (2 * params['training_stim_noise_v'] * np.random.random_sample() - params['training_stim_noise_v'])
+            mp[cnt_, 2] = RF_v_const[i_ % len(RF_v_const)] * v_noise
+            if mp[cnt_, 2] > 0.:
+                x_start = .05
+            else:
+                x_start = .95
+            mp[cnt_, 0] = x_start + x_noise
+            mp[cnt_, 1] = .5
+            if mp[cnt_, 0] > params['x_min_training'] and mp[cnt_, 0] < params['x_max_training']:
+                x_is_valid = True
+            else:
+                x_is_valid = False
+            if (mp[cnt_, 2] > -params['v_max_training'] - v_stim_tolerance) and (mp[cnt_, 2] < params['v_max_training'] + v_stim_tolerance):
+                v_is_valid = True
+            else:
+                v_is_valid = False
+        cnt_ += 1
+
     while cnt_ != params['n_stim']:
-        for i_x in xrange(x_.size):
-            for i_v in xrange(v_.size):
-                x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
-                v_noise = 2 * params['training_stim_noise_v'] * np.random.random_sample() + (1. + params['training_stim_noise_v'])
-                mp[cnt_, 0] = x_[i_x] + x_noise
-                mp[cnt_, 1] = .5
-                mp[cnt_, 2] = v_[i_v] * v_noise
-                cnt_ += 1
-                if cnt_ == params['n_stim']:
-                    break
-            if cnt_ == params['n_stim']:
-                break
-                print 'noise', x_noise, v_noise
+        x_is_valid = False
+        v_is_valid = False
+        while not (x_is_valid and v_is_valid):
+            x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
+            v_noise = 1. + (2 * params['training_stim_noise_v'] * np.random.random_sample() - params['training_stim_noise_v'])
+            mp[cnt_, 2] = np.random.choice(RF_v_log) * v_noise
+            if mp[cnt_, 2] > 0.:
+                x_start = .05
+            else:
+                x_start = .95
+            mp[cnt_, 0] = x_start + x_noise
+            mp[cnt_, 1] = .5
+
+            if mp[cnt_, 0] > params['x_min_training'] and mp[cnt_, 0] < params['x_max_training']:
+                x_is_valid = True
+            else:
+                x_is_valid = False
+            if (mp[cnt_, 2] > -params['v_max_training'] - v_stim_tolerance) and (mp[cnt_, 2] < params['v_max_training'] + v_stim_tolerance):
+                v_is_valid = True
+            else:
+                v_is_valid = False
+#        print 'debug training speeds:', mp[cnt_, 2]
+        cnt_ += 1
+
     idx = range(params['n_stim'])
     np.random.shuffle(idx)
     mp = mp[idx, :]
@@ -113,11 +167,10 @@ if __name__ == '__main__':
     GP = simulation_parameters.parameter_storage()
     params = GP.params
     GP.write_parameters_to_file(params['params_fn_json'], params) # write_parameters_to_file MUST be called before every simulation
-    tp, rfs = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(params)
+    tp, rfs = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(params)
     np.savetxt(params['tuning_prop_exc_fn'], tp)
     np.savetxt(params['receptive_fields_exc_fn'], rfs)
     create_training_stimuli_based_on_tuning_prop(params)
 #    else:
 #        create_training_stim_in_tp_space()
-
     pylab.show()

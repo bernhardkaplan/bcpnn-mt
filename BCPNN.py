@@ -11,11 +11,12 @@ def convert_spiketrain_to_trace(st, t_max, t_min=0., dt=0.1, spike_width=1):
     """
     n = np.int((t_max - t_min)/ dt) + spike_width
     trace = np.zeros(n)
-    spike_idx = st / dt
-    idx = (spike_idx - t_min / dt).astype(np.int)
-    trace[idx] = 1
-    for i in xrange(spike_width):
-        trace[idx + i] = 1
+    if len(st) > 0:
+        spike_idx = st / dt
+        idx = (spike_idx - t_min / dt).astype(np.int)
+        trace[idx] = 1
+        for i in xrange(spike_width):
+            trace[idx + i] = 1
     return trace
 
 

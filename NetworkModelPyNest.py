@@ -68,18 +68,19 @@ class NetworkModel(object):
         if self.comm != None:
             self.comm.Barrier()
 
-        self.training_stim_duration = np.zeros(self.params['n_stim'])
+        self.stim_durations = np.zeros(self.params['n_stim'])
         for i_ in xrange(self.params['stim_range'][0], self.params['stim_range'][1]):
             if self.params['training_run']:
                 stim_params = training_stimuli[i_, :]
+                t_exit = utils.compute_stim_time(stim_params)
+                self.stim_durations[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
             else:
                 stim_params = self.motion_params[i_, :]
-            t_exit = utils.compute_stim_time(stim_params)
-            self.training_stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
-        t_sim = self.training_stim_duration.sum()
+                self.stim_durations[i_] = self.params['t_test_stim']
+        t_sim = self.stim_durations.sum()
         self.params['t_sim'] = t_sim
         self.update_bcpnn_params()
-        np.savetxt(self.params['training_stim_durations_fn'], self.training_stim_duration)
+        np.savetxt(self.params['training_stim_durations_fn'], self.stim_durations)
         print 'NetworkModel.setup preparing for %.1f [ms] simulation' % (self.params['t_sim'])
         self.projections = {}
         self.projections['ee'] = []
@@ -441,10 +442,10 @@ class NetworkModel(object):
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         if with_blank:
-            #idx_t_stop = np.int(self.training_stim_duration[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
+            #idx_t_stop = np.int(self.stim_durations[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
             idx_t_stop = np.int(self.params['t_test_stim'] / dt)
         else:
-            idx_t_stop = np.int(self.training_stim_duration[stim_idx] / dt)
+            idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
         # compute the trajectory
@@ -454,20 +455,20 @@ class NetworkModel(object):
             L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
                     self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
 
-        t_offset = self.training_stim_duration[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
+        t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
 
         if with_blank:
             start_blank = 1. / dt * self.params['t_start_blank']
             stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
             blank_idx = np.arange(start_blank, stop_blank)
             before_stim_idx = np.arange(self.params['t_start'] * 1. / dt)
-            print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
-            print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
-            print 'debug t_offset', t_offset
-            print 'debug training_stim_duration', self.training_stim_duration
+#            print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
+#            print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
+#            print 'debug t_offset', t_offset
+#            print 'debug stim_durations', self.stim_durations
             blank_idx = np.concatenate((before_stim_idx, blank_idx))
             # blanking
-            print 'debug blank_idx', blank_idx
+#            print 'debug blank_idx', blank_idx
             for i_time in blank_idx:
 #                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
                 L_input[:, i_time] = 0.
@@ -524,8 +525,8 @@ class NetworkModel(object):
 #            self.compute_input(my_units)
 
             # get the input signal
-            idx_t_start = np.int(self.training_stim_duration[:i_stim].sum() / dt)
-            idx_t_stop = np.int(self.training_stim_duration[:i_stim+1].sum() / dt)
+            idx_t_start = np.int(self.stim_durations[:i_stim].sum() / dt)
+            idx_t_stop = np.int(self.stim_durations[:i_stim+1].sum() / dt)
             idx_within_stim = 0
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
@@ -548,8 +549,8 @@ class NetworkModel(object):
                 for i_time in blank_idx:
                     L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
 
-            idx_t_start_pause = np.int((self.training_stim_duration[:i_stim+1].sum() - self.params['t_stim_pause'])/ dt)
-            idx_t_stop_pause = np.int(self.training_stim_duration[:i_stim+1].sum() / dt)
+            idx_t_start_pause = np.int((self.stim_durations[:i_stim+1].sum() - self.params['t_stim_pause'])/ dt)
+            idx_t_stop_pause = np.int(self.stim_durations[:i_stim+1].sum() / dt)
 #            print 'Debug idx_t_start_pause', idx_t_start_pause
 #            print 'Debug idx_t_stop_pause', idx_t_stop_pause
             L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
@@ -735,8 +736,8 @@ class NetworkModel(object):
             x0, v0 = self.motion_params[i_stim, 0], self.motion_params[i_stim, 2]
 
             # get the input signal
-            idx_t_start = np.int(self.training_stim_duration[:i_stim].sum() / dt)
-            idx_t_stop = np.int(self.training_stim_duration[:i_stim+1].sum() / dt)
+            idx_t_start = np.int(self.stim_durations[:i_stim].sum() / dt)
+            idx_t_stop = np.int(self.stim_durations[:i_stim+1].sum() / dt)
             idx_within_stim = 0
             for i_time in xrange(idx_t_start, idx_t_stop):
                 time_ = (idx_within_stim * dt) / self.params['t_stimulus']
@@ -996,7 +997,11 @@ class NetworkModel(object):
         if w > 0:
             w_ = w * self.params['w_ee_global_max'] / self.w_bcpnn_max
         elif w < 0:
-            w_ = -1. * w * self.params['w_ei_spec'] / self.w_bcpnn_min
+            # CAUTION: if using di-synaptic inhibition via RSNP cells --> use:
+            if self.params['with_rsnp_cells']:
+                w_ = -1. * w * self.params['w_ei_spec'] / self.w_bcpnn_min
+            else:
+                w_ = w * self.params['w_ei_spec'] / self.w_bcpnn_min
         return w_
 
 
@@ -1342,7 +1347,7 @@ class NetworkModel(object):
             print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
 #            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
             self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
-            sim_time = self.training_stim_duration[i_stim]
+            sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running simulation for %d milliseconds" % (sim_time)
             if self.comm != None:

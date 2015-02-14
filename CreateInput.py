@@ -152,6 +152,9 @@ class CreateInput(object):
         for i_ in xrange(n_stim):
             mp_test[i_, :] = x_test, .5, v_test, .0
 
+        if n_stim == 1:
+            mp_test.reshape((1, 4))
+        return mp_test
 
     def create_test_stim_1D_from_training_stim(self, test_params, training_params):
         n_stim = test_params['n_test_stim']

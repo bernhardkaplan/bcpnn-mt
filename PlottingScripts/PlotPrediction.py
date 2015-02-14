@@ -528,12 +528,20 @@ class PlotPrediction(object):
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
-        for i_stim in xrange(stim_range[0], stim_range[1]):
-            t0 = self.training_stim_duration[:i_stim].sum() - self.training_stim_duration[:i_stim]
-            t1 = self.training_stim_duration[:i_stim+1].sum() - self.training_stim_duration[:i_stim]
+        if self.params['n_stim'] > 1:
+            for i_stim in xrange(stim_range[0], stim_range[1]):
+                t0 = self.training_stim_duration[:i_stim].sum() - self.training_stim_duration[:i_stim]
+                t1 = self.training_stim_duration[:i_stim+1].sum() - self.training_stim_duration[:i_stim]
+                print 'debug t0 t1', t0, t1, ylim, self.training_stim_duration[:i_stim+1].sum()
+                ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
+                ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
+                ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
+        else:
+            t0 = 0
+            t1 = self.training_stim_duration
             ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
             ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
-            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
+#            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
 
 
         ax.set_xlabel('Time [ms]')
@@ -541,14 +549,14 @@ class PlotPrediction(object):
             ax.set_ylabel('RF-position')
         elif sort_idx == 2:
             ax.set_ylabel('Preferred speed')
-        if not self.params['training_run']:
+#        if not self.params['training_run']:
             # todo: test this after testing ;)
-            if time_range == None:
-                t0 = self.training_stim_duration[:stim_range[0]].sum()
-                t1 = self.training_stim_duration[:stim_range[1]].sum()
-                time_range = (t0, t1)
+#            if time_range == None:
+#                t0 = self.training_stim_duration[:stim_range[0]].sum()
+#                t1 = self.training_stim_duration[:stim_range[1]].sum()
+#                time_range = (t0, t1)
 #                time_range = (0, self.params['t_sim'])
-            self.plot_blank(ax, time_range)
+#            self.plot_blank(ax, time_range)
 
 
     def plot_input_spikes_sorted(self, time_range=None, fig_cnt=1, title='', sort_idx=0):
@@ -1198,6 +1206,10 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
 #        else:
 #            stim_range = params['test_stim_range']
 
+    if os.path.exists(params['input_folder']):
+        input_folder_exists = True
+    else:
+        input_folder_exists = False
     training_stim_duration = np.loadtxt(params['training_stim_durations_fn'])
     for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
         plotter.compute_pos_and_v_estimates(stim)
@@ -1225,10 +1237,11 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         plotter.n_fig_x = 2
         plotter.n_fig_y = 2
         plotter.create_fig()  # create an empty figure
-        plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
         plotter.plot_raster_sorted(stim_range, fig_cnt=1, title='Exc cells sorted by x-position', sort_idx=0)
         plotter.plot_x_grid_vs_time(2, time_range=time_range, stim_idx=stim)
-        plotter.plot_input_spikes_sorted(time_range, fig_cnt=3, sort_idx=2)
+        if input_folder_exists:
+            plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
+            plotter.plot_input_spikes_sorted(time_range, fig_cnt=3, sort_idx=2)
         plotter.plot_raster_sorted(stim_range, fig_cnt=3, title='Exc cells sorted by $v_x$', sort_idx=2)
         plotter.plot_vx_grid_vs_time(4, time_range=time_range)
 

@@ -160,11 +160,11 @@ class Plotter(object):
             x_start = mp[i_, 0]
             x_stop = mp[i_, 0] + mp[i_, 2] * (stim_duration[i_] - self.params['t_stim_pause']) / self.params['t_stimulus']
 
-            ax.plot((x_start, x_stop), (mp[i_, 2], mp[i_, 2]), '--', c='k', lw=5)
-            ax.plot(x_start, mp[i_, 2], 'o', c='b', ms=10)
-            ax.plot(x_stop, mp[i_, 2], 'o', c='r', ms=10)
-            ax.text(x_start, mp[i_, 2] + 0.1, 'Start %d' % i_)
-            ax.text(x_stop, mp[i_, 2] + 0.1, 'Stop %d' % i_)
+            ax.plot((x_start, x_stop), (mp[i_, 2], mp[i_, 2]), '--', c='k', lw=3)
+            ax.plot(x_start, mp[i_, 2], 'o', c='b', ms=8)
+            ax.plot(x_stop, mp[i_, 2], 'o', c='r', ms=8)
+#            ax.text(x_start, mp[i_, 2] + 0.1, 'Start %d' % i_)
+#            ax.text(x_stop, mp[i_, 2] + 0.1, 'Stop %d' % i_)
 
 
 if __name__ == '__main__':
@@ -183,10 +183,10 @@ if __name__ == '__main__':
         params = param_tool.params
 
     Plotter = Plotter(params)#, it_max=1)
-#    Plotter.plot_tuning_prop()
     ax = Plotter.plot_tuning_space()
     if os.path.exists(params['training_stimuli_fn']):
         Plotter.plot_stimuli(ax)
+#    Plotter.plot_tuning_prop()
 #    Plotter.plot_tuning_width_distribution()
 
     pylab.show()
