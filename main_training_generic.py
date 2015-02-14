@@ -71,12 +71,9 @@ if __name__ == '__main__':
 
     if pc_id == 0:
         GP.write_parameters_to_file(params['params_fn_json'], params) # write_parameters_to_file MUST be called before every simulation
-#        np.savetxt(params['training_stimuli_fn'], training_stimuli[:params['n_stim']])
-    if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
         utils.remove_files_from_folder(params['connections_folder'])
         utils.remove_files_from_folder(params['volt_folder'])
-        np.savetxt(params['training_stimuli_fn'], training_stimuli[:params['n_stim']])
         if not params['load_input']:
             utils.remove_files_from_folder(params['input_folder'])
 

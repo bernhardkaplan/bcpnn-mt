@@ -29,8 +29,8 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 10 
-        self.params['n_v'] = 10 # == N_MC_PER_HC
+        self.params['n_rf'] = 20 
+        self.params['n_v'] = 20 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -291,10 +291,10 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['x_max_training'] = 0.9
         self.params['x_min_training'] = 0.1
-        self.params['training_stim_noise_v'] = 0.10 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_v'] = 0.20 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_x'] = 0.10 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 20 # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 200 # how many different speeds are trained per cycle
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
@@ -376,7 +376,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 5.0
+        self.params['taui_bcpnn'] = 100.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001
