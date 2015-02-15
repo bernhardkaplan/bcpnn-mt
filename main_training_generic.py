@@ -35,6 +35,19 @@ if __name__ == '__main__':
     GP = simulation_parameters.parameter_storage()
 
     params = GP.params
+    
+
+    if len(sys.argv) > 1:
+        params['taui_bcpnn'] = float(sys.argv[1])
+        params['bcpnn_params']['tau_i'] = params['taui_bcpnn']
+        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e/' % ( \
+                params['sim_id'], params['n_training_cycles'], params['n_training_v'], params['n_training_x'], \
+                params['stim_range'][0], params['stim_range'][1], \
+                params['bcpnn_params']['tau_i'], \
+                params['n_hc'], params['n_mc_per_hc'], params['blur_X'], params['blur_V'], \
+                params['bcpnn_init_val'])
+        GP.set_filenames(folder_name=folder_name)
+
 #    trained_stimuli = []
 #    info_text = "\nThere are different use cases:\n \
 #    \tpython script_name [training_stimuli_fn] [training_stim_idx] \
@@ -62,7 +75,6 @@ if __name__ == '__main__':
 #    assert (training_stimuli[:, 0].size >= n_max), 'The expected number of training iterations (= %d) is too high for the given training_stimuli from file %s (contains %d training stim)' % \
 #            (n_max, training_stimuli_fn, training_stimuli[:, 0].size)
 
-
     continue_training_idx = 0
     if params['n_stim'] == 1:
         params['stim_range'] = [continue_training_idx]
@@ -77,43 +89,37 @@ if __name__ == '__main__':
         if not params['load_input']:
             utils.remove_files_from_folder(params['input_folder'])
 
-
     if comm != None:
         comm.Barrier()
     t0 = time.time()
 
-
     NM = NetworkModel(params, iteration=0, comm=comm)
-
-    NM.setup()
-#    NM.setup(training_stimuli=training_stimuli)
-
+    NM.setup() # create stimuli
+    #training_stimuli = np.array([[.1, .5, 1.5, .0], \
+                        #[.9, .5, -.1, .0]])
+    #NM.setup(training_stimuli=training_stimuli)
     NM.create()
-
-#    NM.create_training_input(load_files=load_files, save_output=save_input_files, with_blank=(not params['training_run']))
     NM.connect()
     if old_params != None:
         NM.set_weights(old_params)
     if comm != None:
         comm.Barrier()
-
     if record:
         NM.record_v_exc()
         NM.record_v_inh_unspec()
-
     GP.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called before every simulation
     if comm != None:
         comm.Barrier()
-
-#    NM.run_sim(10.)
-    print 'NM.run_sim()'
     NM.run_sim()
     if comm != None:
         comm.Barrier()
-
     NM.trigger_spikes()
+    t_start_get_weights = time.time()
     NM.get_weights_after_learning_cycle()
+    t_start_get_weights_static = time.time()
     NM.get_weights_static()
+    t_stop_get_weights = time.time()
+    print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
 
     NM.merge_local_gid_files()
     t_end = time.time()

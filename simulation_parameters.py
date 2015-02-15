@@ -23,7 +23,9 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
         self.params['Cluster'] = True
-        self.params['sim_id'] = 'Cluster'
+        self.params['sim_id'] = ''
+        self.params['with_rsnp_cells'] = False # True is not yet implemented
+
         # ###################
         # HEXGRID PARAMETERS
         # ###################
@@ -68,7 +70,7 @@ class parameter_storage(object):
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 1.5   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
 
         # receptive field size parameters
@@ -99,7 +101,7 @@ class parameter_storage(object):
             self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
         else:
             self.params['sigma_rf_pos'] = 0.01 #.02 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = 0.01 #.03 # some variability in the speed of RFs
+            self.params['sigma_rf_speed'] = 0.05 #.03 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
     #        self.params['rf_size_x_gradient'] = .2  # receptive field size for x-pos increases with distance to .5
@@ -120,8 +122,8 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['save_input'] = True #self.params['Cluster']
-        self.params['load_input'] = not self.params['save_input']
+        self.params['save_input'] = True # not self.params['Cluster']
+        self.params['load_input'] = False # not self.params['save_input']
 
 
         # ###################
@@ -217,7 +219,7 @@ class parameter_storage(object):
 
         # exc - exc: global
         self.params['p_ee_global'] = 1.0
-        self.params['w_ee_global_max'] = 4.
+        self.params['w_ee_global_max'] = 0.5
         self.params['delay_ee_global'] = 1. # [ms]
         self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))
 
@@ -275,7 +277,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .0, .0
+        self.params['blur_X'], self.params['blur_V'] = .0, .05
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -289,13 +291,16 @@ class parameter_storage(object):
         # #####################
         self.params['v_max_training'] = self.params['v_max_tp']# * .9
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['x_max_training'] = 0.9
-        self.params['x_min_training'] = 0.1
-        self.params['training_stim_noise_v'] = 0.20 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.10 # percentage of noise for each individual training speed
+        self.params['x_max_training'] = 0.95
+        self.params['x_min_training'] = 0.05
+        self.params['training_stim_noise_v'] = 0.02 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
-        self.params['n_training_v'] = 200 # how many different speeds are trained per cycle
-        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
+
+        self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
+        #self.params['n_training_v'] = self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 3 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -316,9 +321,13 @@ class parameter_storage(object):
             self.params['n_stim'] = self.params['n_stim_training']
         else:
             self.params['n_stim'] = self.params['n_test_stim']
+#        self.params['frac_training_slow_speeds'] = int(self.params['frac_rf_v_fovea'] * self.params['n_stim'])
 
         training_stim_offset = 0
-        self.params['stim_range'] = [training_stim_offset, training_stim_offset + self.params['n_stim']] # naming the training folder, but params['stim_range'] will be overwritten 
+        if self.params['training_run']:
+            self.params['stim_range'] = [training_stim_offset, training_stim_offset + self.params['n_stim']] # naming the training folder, but params['stim_range'] will be overwritten 
+        else:
+            self.params['stim_range'] = self.params['test_stim_range']
         # stim_range indicates which stimuli have been presented to the network, i.e. the row index in the training_stimuli file
         self.params['trained_stimuli'] = None # contains only the motion parameters from those stimuli that actually have been presented
         self.params['frac_training_samples_from_grid'] = .8
@@ -341,7 +350,7 @@ class parameter_storage(object):
         self.params['visual_stim_seed'] = 4
         self.params['np_random_seed'] = 0
         self.params['tp_seed'] = 666
-        self.params['t_training_max'] = 10000. # [ms]
+        self.params['t_training_max'] = 50000. # [ms]
         if self.params['training_run']:
             self.params['t_stim_pause'] = 500.
         else:
@@ -361,7 +370,8 @@ class parameter_storage(object):
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
             self.params['t_blank'] = 400
-        self.params['t_start_blank'] = self.params['t_start'] + 600.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 1000.
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
@@ -376,7 +386,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 100.0
+        self.params['taui_bcpnn'] = 5.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001
