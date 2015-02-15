@@ -92,7 +92,7 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     np.random.seed(params['visual_stim_seed'])
     mp = np.zeros((params['n_stim'], 4))
     cnt_ = 0
-    v_stim_tolerance = 0.1
+    v_stim_tolerance = 0.2
 
     for i_ in xrange(params['n_training_v_slow_speeds']):
         x_is_valid = False
@@ -102,9 +102,9 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
             v_noise = 1. + (2 * params['training_stim_noise_v'] * np.random.random_sample() - params['training_stim_noise_v'])
             mp[cnt_, 2] = RF_v_const[i_ % len(RF_v_const)] * v_noise
             if mp[cnt_, 2] > 0.:
-                x_start = .05
+                x_start = .02
             else:
-                x_start = .95
+                x_start = .98
             mp[cnt_, 0] = x_start + x_noise
             mp[cnt_, 1] = .5
             if mp[cnt_, 0] > params['x_min_training'] and mp[cnt_, 0] < params['x_max_training']:
@@ -123,7 +123,8 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
         while not (x_is_valid and v_is_valid):
             x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
             v_noise = 1. + (2 * params['training_stim_noise_v'] * np.random.random_sample() - params['training_stim_noise_v'])
-            mp[cnt_, 2] = np.random.choice(RF_v_log) * v_noise
+            mp[cnt_, 2] = RF_v_log[cnt_ % len(RF_v_log)] * v_noise
+#            mp[cnt_, 2] = np.random.choice(RF_v_log) * v_noise
             if mp[cnt_, 2] > 0.:
                 x_start = .05
             else:
@@ -154,6 +155,11 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
 #    print 'Saving training stim durations to:', params['training_stim_durations_fn']
     np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
 
+    fig = pylab.figure()
+    ax = fig.add_subplot(111)
+    cnt, bins = np.histogram(mp[:, 2], bins=100)
+    ax.bar(bins[:-1], cnt, width=(bins[1]-bins[0]))
+
     return mp[idx, :]
 
 
@@ -173,4 +179,4 @@ if __name__ == '__main__':
     create_training_stimuli_based_on_tuning_prop(params)
 #    else:
 #        create_training_stim_in_tp_space()
-    pylab.show()
+#    pylab.show()

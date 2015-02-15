@@ -53,6 +53,7 @@ class ToyExperiment(object):
         tp_not_matching = np.array([[x0, y0, u0, v0, .0], \
                     [x0 + self.dx, y0, -u0, v0, .0]])
         self.tp_s = np.array(tp_matching)
+        self.rfs = np.array([[.1, .1, .1, .1], [.1, .1, .1, .1]])
         self.mp = [.0, self.v_stim] # choose the motion - parameters for the test stimulus
 
         # define how long a simulation takes based on the stimulus duration and the speed of the stimulus
@@ -94,7 +95,7 @@ class ToyExperiment(object):
                 for t_ in stim_time_axis:
                     x_stim = self.mp[0] + t_ / self.params['t_stimulus'] * self.mp[1]
                     assert global_time_idx < self.L_input[0, :].size, 'invalid global_time_idx\ntime.size=%d' % time.size
-                    self.L_input[:, global_time_idx] = utils.get_input(self.tp_s, self.params, (x_stim, 0, self.mp[1], 0, 0))
+                    self.L_input[:, global_time_idx] = utils.get_input(self.tp_s, self.rfs, self.params, (x_stim, 0, self.mp[1], 0, 0))
                     self.L_input[:, global_time_idx] *= self.params['f_max_stim']
                     if (global_time_idx % 10000 == 0):
                         print "t: %.2f [ms]" % (global_time)
@@ -134,7 +135,10 @@ class ToyExperiment(object):
                 {'weight': self.params['w_input_exc'], 'receptor_type': 1})
 
         if (not 'bcpnn_synapse' in nest.Models('synapses')):
-            nest.Install('pt_module')
+            try:
+                nest.Install('pt_module')
+            except:
+                nest.Install('pt_module')
 
 
         # Create cells

@@ -85,8 +85,10 @@ if __name__ == '__main__':
 
     NM = NetworkModel(params, iteration=0, comm=comm)
 
-    NM.setup()
-#    NM.setup(training_stimuli=training_stimuli)
+    training_stimuli = np.array([[.1, .5, 1.5, .0], \
+                                [.9, .5, -1.5, .0]])
+    NM.setup(training_stimuli=training_stimuli)
+    #NM.setup()
 
     NM.create()
 
@@ -112,8 +114,15 @@ if __name__ == '__main__':
         comm.Barrier()
 
     NM.trigger_spikes()
-    NM.get_weights_after_learning_cycle()
-    NM.get_weights_static()
+    #t_start_get_weights = time.time()
+    #NM.get_weights_after_learning_cycle()
+    #t_start_get_weights_static = time.time()
+    #NM.get_weights_static()
+    #t_stop_get_weights = time.time()
+    #print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
+
+
+
 
     NM.merge_local_gid_files()
     t_end = time.time()
