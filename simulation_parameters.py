@@ -22,7 +22,7 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
