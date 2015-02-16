@@ -23,7 +23,7 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = False
         self.params['Cluster'] = False
-        self.params['debug'] = False
+        self.params['debug'] = True
         if self.params['debug']:
             self.params['sim_id'] = 'DEBUG'
         else:
