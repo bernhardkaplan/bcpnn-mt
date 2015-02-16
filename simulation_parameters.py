@@ -22,7 +22,7 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -291,10 +291,10 @@ class parameter_storage(object):
         # #####################
         self.params['v_max_training'] = self.params['v_max_tp']# * .9
         self.params['v_min_training'] = self.params['v_min_tp']
-        self.params['x_max_training'] = 0.95
-        self.params['x_min_training'] = 0.05
+        self.params['x_max_training'] = 0.98
+        self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.10 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
@@ -347,7 +347,7 @@ class parameter_storage(object):
         self.params['seed'] = 12345 # the master seed
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
-        self.params['visual_stim_seed'] = 4
+        self.params['visual_stim_seed'] = 0
         self.params['np_random_seed'] = 0
         self.params['tp_seed'] = 666
         self.params['t_training_max'] = 50000. # [ms]

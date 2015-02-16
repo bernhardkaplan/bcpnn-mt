@@ -104,9 +104,9 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
             v_noise = 1. + (2 * params['training_stim_noise_v'] * np.random.random_sample() - params['training_stim_noise_v'])
             mp[cnt_, 2] = RF_v_const[i_ % len(RF_v_const)] * v_noise
             if mp[cnt_, 2] > 0.:
-                x_start = .02
+                x_start = params['training_stim_noise_x']
             else:
-                x_start = .98
+                x_start = 1. - params['training_stim_noise_x']
             mp[cnt_, 0] = x_start + x_noise
             mp[cnt_, 1] = .5
             if mp[cnt_, 0] > params['x_min_training'] and mp[cnt_, 0] < params['x_max_training']:
@@ -128,9 +128,9 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
             mp[cnt_, 2] = RF_v_log[cnt_ % len(RF_v_log)] * v_noise
 #            mp[cnt_, 2] = np.random.choice(RF_v_log) * v_noise
             if mp[cnt_, 2] > 0.:
-                x_start = .02
+                x_start = params['training_stim_noise_x']
             else:
-                x_start = .98
+                x_start = 1. - params['training_stim_noise_x']
             mp[cnt_, 0] = x_start + x_noise
             mp[cnt_, 1] = .5
 
