@@ -853,6 +853,7 @@ class NetworkModel(object):
         w_ampa_min = np.min(self.W_ampa)
         w_nmda_max = np.max(self.W_nmda)
         w_nmda_min = np.min(self.W_nmda)
+        
 
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -865,8 +866,10 @@ class NetworkModel(object):
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
                         if w_ampa != 0:
-                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
-                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
+                            w_ampa_ = w_ampa * self.params['bcpnn_gain']
+                            w_nmda_ = w_nmda * self.params['bcpnn_gain'] * 1. / self.params['ampa_nmda_ratio']
+#                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
+#                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
                             nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                     weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
@@ -943,6 +946,16 @@ class NetworkModel(object):
             else:
                 w_ = w * self.params['w_ei_spec'] / w_bcpnn_min
         return w_
+
+        # using transformation dictated by the target - weight
+#        if w > 0:
+#            w_ = w * self.params['w_ee_global_max'] / w_bcpnn_max
+#        elif w < 0: #CAUTION: if using di-synaptic inhibition via RSNP cells --> use:
+#            if self.params['with_rsnp_cells']:
+#                w_ = -1. * w * self.params['w_ei_spec'] / w_bcpnn_min
+#            else:
+#                w_ = w * self.params['w_ei_spec'] / w_bcpnn_min
+#        return w_
 
 
 

@@ -167,6 +167,7 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
+            self.params['ampa_nmda_ratio'] = 5.
             self.params['tau_syn'] = {'ampa': 5., 'nmda': 150., 'gaba': 5.}
             self.params['syn_ports'] = {'ampa':1, 'nmda':2, 'gaba': 3}
             self.params['neuron_model'] = 'aeif_cond_exp_multisynapse'
@@ -217,6 +218,9 @@ class parameter_storage(object):
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
+
+        # only used during testing:
+        self.params['bcpnn_gain'] = 1.
 
         # exc - exc: local
         self.params['p_ee_local'] = .75
