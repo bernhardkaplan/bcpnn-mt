@@ -120,7 +120,12 @@ if __name__ == '__main__':
     NM.get_weights_static()
     t_stop_get_weights = time.time()
     print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
-
+    #t_start_get_weights = time.time()
+    #NM.get_weights_after_learning_cycle()
+    #t_start_get_weights_static = time.time()
+    #NM.get_weights_static()
+    #t_stop_get_weights = time.time()
+    #print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
     NM.merge_local_gid_files()
     t_end = time.time()
     t_diff = t_end - t_0

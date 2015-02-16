@@ -77,8 +77,6 @@ class ConnectivityPlotter(object):
 
         x_tgts = tp[target_gids, 0]
         vx_tgts = tp[target_gids, 2]
-
-
         abs_max = max(abs(weights.min()), weights.max())
 #        markersizes = utils.transform_linear(weights, (0., abs_max))
         print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
@@ -157,7 +155,7 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.5, 0.5, 1.5, 0.)
+    tp_params = (0.5, 0.5, 0.1, 0.)
 #    clim = [-5., 5.]
     clim = None #[-5., 5.]
     if len(sys.argv) == 1:

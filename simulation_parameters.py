@@ -122,7 +122,7 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['save_input'] = True # not self.params['Cluster']
+        self.params['save_input'] = False # not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -293,14 +293,14 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['x_max_training'] = 0.95
         self.params['x_min_training'] = 0.05
-        self.params['training_stim_noise_v'] = 0.02 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_v'] = 0.10 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.05 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        #self.params['n_training_v'] = self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
-        self.params['n_training_v'] = 3 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
-        #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
+        self.params['n_training_v'] = 4 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        #self.params['n_training_v'] = 2
+        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
@@ -377,7 +377,8 @@ class parameter_storage(object):
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
-        self.params['n_gids_to_record'] = 20    # number to be sampled across some trajectory
+        self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
+        self.params['record_v'] = False
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         

@@ -98,6 +98,8 @@ class TracePlotter(object):
 
         st_pre = spike_data_pre[gid_pre]
         st_post = spike_data_post[gid_post]
+        print 'debug st_pre:', st_pre
+        print 'debug st_post:', st_post
         s_pre = BCPNN.convert_spiketrain_to_trace(st_pre, t_range[1], t_min=t_range[0])
         s_post = BCPNN.convert_spiketrain_to_trace(st_post, t_range[1], t_min=t_range[0])
         wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = BCPNN.get_spiking_weight_and_bias(s_pre, s_post, self.bcpnn_params)
@@ -232,9 +234,20 @@ class TracePlotter(object):
             return self.spike_data[idx, 1]
         else: 
             (spikes, gids) = utils.get_spikes_within_interval(self.spike_data, t_range[0], t_range[1], time_axis=1, gid_axis=0)
+            print 'debug spike_data', spikes ,gids
             idx = np.nonzero(gid == gids)[0]
             return spikes[idx]
 
+
+
+    def get_stimulus_time(self, mp, params):
+        training_stim = np.loadtxt(params['training_stimuli_fn'])
+        gids, dist = utils.get_gids_near_stim(mp, training_stim)
+        stim_durations = np.loadtxt(params['training_stim_durations_fn'])
+#        print 'training_stim durations:', stim_durations[gids]
+#        print 'time:', stim_durations[:gids[0]].sum(), stim_durations[gids[0]]
+        time_range = (stim_durations[:gids[0]].sum(), stim_durations[gids[0]] + stim_durations[:gids[0]].sum())
+        return time_range
 
 
 if __name__ == '__main__':
@@ -250,13 +263,17 @@ if __name__ == '__main__':
     TP = TracePlotter(params)
     dt = 0.1
 
-#    t_range_trace_computation = (0, params['t_sim'])
-    t_range_trace_computation = (0, 290000.)
 
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
     tp_pre = [0.5, 0.5, 1.5, .0]
-    tp_post = [0.5, 0.5, -1.5, .0]
+    tp_post = [0.6, 0.5, 1.5, .0]
+#    t_range_trace_computation = (0, params['t_sim'])
+     
+    t_range_trace_computation = TP.get_stimulus_time(tp_pre, params)
+    print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
+
+#    exit(1)
     gids_pre, dist = utils.get_gids_near_stim(tp_pre, TP.tuning_prop, n=1)
     gids_post, dist = utils.get_gids_near_stim(tp_post, TP.tuning_prop, n=1)
     print 'gids_pre:', gids_pre
@@ -267,6 +284,9 @@ if __name__ == '__main__':
     gid_post = gids_post[0]
     spike_data = { gid_pre : [], 
             gid_post :[] }
+    spike_data[gid_pre] = TP.get_spikes_for_gid(gid_pre, t_range_trace_computation)
+    spike_data[gid_post] = TP.get_spikes_for_gid(gid_post, t_range_trace_computation)
+    print 'spike_data', spike_data
     bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation)
 
     # SELECT CELLS BY GID
