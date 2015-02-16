@@ -155,7 +155,7 @@ class ConnectivityPlotter(object):
 
 if __name__ == '__main__':
 
-    tp_params = (0.5, 0.5, 0.1, 0.)
+    tp_params = (0.5, 0.5, 1.0, 0.)
 #    clim = [-5., 5.]
     clim = None #[-5., 5.]
     if len(sys.argv) == 1:
