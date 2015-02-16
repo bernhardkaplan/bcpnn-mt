@@ -59,6 +59,7 @@ class ConnectivityPlotter(object):
         conn_type = 'ee'
         self.load_conn_list(conn_type)
         d = self.conn_lists[conn_type]
+        print 'd:', d
         tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
         src_gids = d[:, 0]
         tgt_gids = d[:, 0]
@@ -139,38 +140,53 @@ class ConnectivityPlotter(object):
 
 
     def load_conn_list(self, conn_type):
-        conn_list_fn = params['merged_conn_list_%s' % conn_type]
-        if not os.path.exists(conn_list_fn):
-            print 'Merging connection files...'
-            utils.merge_connection_files(params, conn_type, iteration=None)
-        print 'Loading ', conn_list_fn
-        try:
-            self.conn_lists[conn_type] = np.loadtxt(conn_list_fn)
-        except:
-            print '\nERROR: Could not find conn_list_fn:', conn_list_fn
-            print '\tCheck if the simulation finished!\n\tWill now quit'
-            exit(1)
-        self.conn_lists_loaded[conn_type] = True
+        if not self.conn_lists_loaded[conn_type]:
+            conn_list_fn = params['merged_conn_list_%s' % conn_type]
+            if not os.path.exists(conn_list_fn):
+                print 'Merging connection files...'
+                utils.merge_connection_files(params, conn_type, iteration=None)
+            print 'Loading ', conn_list_fn
+            try:
+                self.conn_lists[conn_type] = np.loadtxt(conn_list_fn)
+            except:
+                print '\nERROR: Could not find conn_list_fn:', conn_list_fn
+                print '\tCheck if the simulation finished!\n\tWill now quit'
+                exit(1)
+            self.conn_lists_loaded[conn_type] = True
+        else:
+            pass
 
 
 if __name__ == '__main__':
 
-    tp_params = (0.5, 0.5, 1.0, 0.)
-#    clim = [-5., 5.]
-    clim = None #[-5., 5.]
+#    tp_params = (0.5, 0.5, 1.0, 0.)
+
+    tp_params_fast = (0.5, 0.5, 1.0, 0.)
+    tp_params_slow = (0.5, 0.5, 0.1, 0.)
+#    tp_params = (0.5, 0.5, 1.0, 0.)
+#    tp_params = (0.5, 0.5, 1.0, 0.)
+    
+    tp_params = np.array([tp_params_fast, tp_params_slow])
+
+    clim = [-6., 6.]
+#    clim = None #[-5., 5.]
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters
         GP = simulation_parameters.parameter_storage()
         params = GP.params
         P = ConnectivityPlotter(params)
-        P.plot_outgoing_connections_exc(tp_params, clim=clim)
+        for tp_params_ in tp_params:
+            P.plot_outgoing_connections_exc(tp_params_, clim=clim)
+#        P.plot_outgoing_connections_exc(tp_params, clim=clim)
     elif len(sys.argv) == 2:
         print 'Case 2'
         if sys.argv[1].endswith('.json') or os.path.isdir(sys.argv[1]):
             params = utils.load_params(sys.argv[1])
             P = ConnectivityPlotter(params)
-            P.plot_outgoing_connections_exc(tp_params, clim=clim)
+            for tp_params_ in tp_params:
+                P.plot_outgoing_connections_exc(tp_params_, clim=clim)
+#            P.plot_outgoing_connections_exc(tp_params, clim=clim)
         else:          
             print 'Please provide the folder / simulation_parameters.json file and not the conn_list.dat file!'
             exit(1)
@@ -179,7 +195,9 @@ if __name__ == '__main__':
         for fn in fns:
             params = utils.load_params(fn)
             P = ConnectivityPlotter(params)
-            P.plot_outgoing_connections_exc(tp_params, clim=clim)
+            for tp_params_ in tp_params:
+                P.plot_outgoing_connections_exc(tp_params_, clim=clim)
+#            P.plot_outgoing_connections_exc(tp_params, clim=clim)
             del P 
     pylab.show()
 

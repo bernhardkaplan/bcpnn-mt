@@ -139,7 +139,7 @@ class CreateInput(object):
     def create_test_stim_grid(self, params):
         n_stim = params['n_stim']
         vlim = (params['v_min_training'], params['v_max_training'])
-        v_test = np.linspace(vlim[0], vlim[1], params['n_stim'], endpoint=True)
+        v_test = np.linspace(vlim[1], vlim[0], params['n_stim'])
         mp_test = np.zeros((params['n_stim'], 4))
         x_idx_pos = (v_test > 0.).nonzero()[0]
         x_idx_neg = (v_test <= 0.).nonzero()[0]
@@ -148,13 +148,12 @@ class CreateInput(object):
             x_test[i_] = 0.1
         for i_ in x_idx_neg:
             x_test[i_] = 0.9
-
         for i_ in xrange(n_stim):
             mp_test[i_, :] = x_test, .5, v_test, .0
-
         if n_stim == 1:
             mp_test.reshape((1, 4))
         return mp_test
+
 
     def create_test_stim_1D_from_training_stim(self, test_params, training_params):
         n_stim = test_params['n_test_stim']

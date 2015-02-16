@@ -19,6 +19,8 @@ import json
 import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
+
+
 if __name__ == '__main__':
 
 #    try: 
@@ -32,16 +34,17 @@ if __name__ == '__main__':
 #        pc_id, n_proc, comm = 0, 1, None
 #        print "MPI not used"
 
-    assert (len(sys.argv) > 1), 'Missing training folder as command line argument'
-    training_folder = os.path.abspath(sys.argv[1]) 
-    training_params = utils.load_params(training_folder)
-    print 'Training folder:', training_folder
-
+    assert (len(sys.argv) > 2), 'Missing connection matrices folders as command line arguments'
+    
+    conn_fn_ampa = sys.argv[1]
+    conn_fn_nmda = sys.argv[2]
+    # conn_fn_ should be the filenames for the connection matrices on MC-MC basis
+    
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
     params = ps.params
     assert (params['training_run'] == False), 'Wrong flag in simulation parameters. Set training_run = False.'
-    assert (params['n_mc'] == training_params['n_mc']), 'ERROR: Test and training params are differen wrt n_mc !\n\ttraining %d \t test %d' % (training_params['n_mc'], params['n_mc'])
+#    assert (params['n_mc'] == training_params['n_mc']), 'ERROR: Test and training params are differen wrt n_mc !\n\ttraining %d \t test %d' % (training_params['n_mc'], params['n_mc'])
     #assert (params['n_cells'] == training_params['n_cells']), 'ERROR: Test and training params are differen wrt n_cells!\n\ttraining %d \t test %d' % (training_params['n_cells'], params['n_cells'])
     # always call set_filenames to update the folder name and all depending filenames (if params are modified and folder names change due to that)!
     ps.set_filenames() 
@@ -52,10 +55,11 @@ if __name__ == '__main__':
     record = False
     save_input_files = True #not load_files
     NM = NetworkModel(params, iteration=0)
+    NM.set_connection_matrices(conn_fn_ampa, conn_fn_nmda)
     pc_id, n_proc = NM.pc_id, NM.n_proc
     if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
-    NM.setup(training_params=training_params)
+    NM.setup()# training_params=training_params)
     NM.create()
     NM.connect()
 #    NM.connect_recorder_neurons()
