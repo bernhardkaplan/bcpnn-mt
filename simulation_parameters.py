@@ -21,9 +21,9 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = True # if false, it's a test run and you should run main_test.py
-        self.params['Cluster'] = False
-        self.params['sim_id'] = 'DEBUG'
+        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['Cluster'] = True
+        self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -59,11 +59,10 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 3# must be an integer multiple of 4
-#        assert (self.params['n_exc_per_mc'] % 4) == 0
+        self.params['n_exc_per_mc'] = 4# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['n_recorder_neurons'] = 10 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
+        self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
@@ -123,9 +122,8 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-
-        self.params['save_input'] = not self.params['Cluster']
-        self.params['load_input'] = not self.params['save_input']
+        self.params['save_input'] = False # not self.params['Cluster']
+        self.params['load_input'] = False # not self.params['save_input']
 
 
         # ###################
@@ -300,11 +298,10 @@ class parameter_storage(object):
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        self.params['n_training_v'] = 3 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 4 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
-
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 
@@ -381,7 +378,7 @@ class parameter_storage(object):
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
-        self.params['record_v'] = True
+        self.params['record_v'] = False
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
@@ -390,7 +387,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 20.0
+        self.params['taui_bcpnn'] = 5.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001

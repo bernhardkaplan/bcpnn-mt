@@ -532,7 +532,6 @@ class NetworkModel(object):
 
         self.connect_input_to_exc()
 
-        return
         if self.params['training_run']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
@@ -1048,17 +1047,17 @@ class NetworkModel(object):
             for i_mc_src in xrange(self.params['n_mc_per_hc']):
                 for i_hc_inh in xrange(self.params['n_hc']):
                     conns_ei = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_unspecific_inh_pop[i_hc_inh ])
-                    conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc_inh], self.list_of_exc_pop[i_hc_src][i_mc_src])
+                    #conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc_inh], self.list_of_exc_pop[i_hc_src][i_mc_src])
                     if conns_ei != None:
                         for i_, c in enumerate(conns_ei):
                             cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
                             conn_txt_ei += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
                             n_conns_ei += 1
-                    if conns_ie != None:
-                        for i_, c in enumerate(conns_ie):
-                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                            conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
-                            n_conns_ie += 1
+                    #if conns_ie != None:
+                        #for i_, c in enumerate(conns_ie):
+                            #cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                            #conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                            #n_conns_ie += 1
 
         print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ei)
         fn_out_ei = self.params['conn_list_ei_fn_base'] + '%d.txt' % (self.pc_id)
@@ -1068,13 +1067,13 @@ class NetworkModel(object):
         conn_f_ei.flush()
         conn_f_ei.close()
 
-        print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ie)
-        fn_out_ie = self.params['conn_list_ie_fn_base'] + '%d.txt' % (self.pc_id)
-        print 'Writing E-I connections to:', fn_out_ie
-        conn_f_ie = file(fn_out_ie, 'w')
-        conn_f_ie.write(conn_txt_ie)
-        conn_f_ie.flush()
-        conn_f_ie.close()
+        #print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ie)
+        #fn_out_ie = self.params['conn_list_ie_fn_base'] + '%d.txt' % (self.pc_id)
+        #print 'Writing E-I connections to:', fn_out_ie
+        #conn_f_ie = file(fn_out_ie, 'w')
+        #conn_f_ie.write(conn_txt_ie)
+        #conn_f_ie.flush()
+        #conn_f_ie.close()
 
 
 
@@ -1200,6 +1199,7 @@ class NetworkModel(object):
         t_stop = time.time()
         self.times['t_get_weights'] = t_stop - t_start
 #        self.get_weights_to_recorder_neurons()
+
         """
 
 
@@ -1260,12 +1260,13 @@ class NetworkModel(object):
         print 'Run sim for %d stim' % (n_stim_total)
         mp = []
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
-            print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
+            if self.pc_id == 0:
+                print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
 #            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
             self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
-                print "Running simulation for %d milliseconds" % (sim_time)
+                print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]
             if self.comm != None:
                 self.comm.Barrier()
             nest.Simulate(sim_time)
@@ -1281,7 +1282,7 @@ class NetworkModel(object):
 
 
     def record_v_exc(self):
-        voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
+        voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 1.0})
         nest.SetStatus(voltmeter,[{"to_file": True, "withtime": True, 'label' : 'exc_volt'}])
 
         for i_hc in xrange(self.params['n_hc']):

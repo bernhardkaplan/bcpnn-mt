@@ -7,6 +7,8 @@ import numpy as np
 import time
 import os
 import utils
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 from PlottingScripts.plot_training_samples import Plotter
 import random
@@ -126,9 +128,9 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
             mp[cnt_, 2] = RF_v_log[cnt_ % len(RF_v_log)] * v_noise
 #            mp[cnt_, 2] = np.random.choice(RF_v_log) * v_noise
             if mp[cnt_, 2] > 0.:
-                x_start = .05
+                x_start = .02
             else:
-                x_start = .95
+                x_start = .98
             mp[cnt_, 0] = x_start + x_noise
             mp[cnt_, 1] = .5
 
@@ -155,10 +157,10 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
 #    print 'Saving training stim durations to:', params['training_stim_durations_fn']
     np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
 
-    fig = pylab.figure()
-    ax = fig.add_subplot(111)
-    cnt, bins = np.histogram(mp[:, 2], bins=100)
-    ax.bar(bins[:-1], cnt, width=(bins[1]-bins[0]))
+    #fig = pylab.figure()
+    #ax = fig.add_subplot(111)
+    #cnt, bins = np.histogram(mp[:, 2], bins=100)
+    #ax.bar(bins[:-1], cnt, width=(bins[1]-bins[0]))
 
     return mp[idx, :]
 
