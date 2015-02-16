@@ -866,8 +866,8 @@ class NetworkModel(object):
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
                         if w_ampa != 0:
-                            w_ampa_ = w_ampa * self.params['bcpnn_gain']
-                            w_nmda_ = w_nmda * self.params['bcpnn_gain'] * 1. / self.params['ampa_nmda_ratio']
+                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa']
+                            w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'])
 #                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
 #                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
                             nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
