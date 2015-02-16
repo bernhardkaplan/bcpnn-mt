@@ -37,9 +37,9 @@ class NetworkModel(object):
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_params']['epsilon'] = epsilon
 
-    def setup(self, training_stimuli=None, load_tuning_prop=False, training_params=None):
-        if training_params != None:
-            self.training_params = training_params
+    def setup(self, training_stimuli=None, load_tuning_prop=False): #, training_params=None):
+#        if training_params != None:
+#            self.training_params = training_params
         if not load_tuning_prop:
             self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         else:
@@ -148,45 +148,45 @@ class NetworkModel(object):
         # STATIC SYNAPSES 
         # input -> exc: AMPA
         nest.CopyModel('static_synapse', 'input_exc_fast', \
-                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': 1})  # numbers must be consistent with cell_params_exc
+                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
         # input -> exc: NMDA
         nest.CopyModel('static_synapse', 'input_exc_slow', \
-                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': 2})
+                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['nmda']})
         # trigger -> exc: AMPA
         nest.CopyModel('static_synapse', 'trigger_synapse', \
-                {'weight': self.params['w_trigger'], 'delay': 0.1, 'receptor_type': 1})  # numbers must be consistent with cell_params_exc
+                {'weight': self.params['w_trigger'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
 
         # exc - inh unspecific (within one hypercolumn) AMPA
         nest.CopyModel('static_synapse', 'exc_inh_unspec_fast', \
-                {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': 1})
+                {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': self.params['syn_ports']['ampa']})
         # exc - inh unspecific (within one hypercolumn) NMDA
         nest.CopyModel('static_synapse', 'exc_inh_unspec_slow', \
-                {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': 2})
+                {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': self.params['syn_ports']['nmda']})
         # inh - exc unspecific (within one hypercolumn) GABA_A
         nest.CopyModel('static_synapse', 'inh_exc_unspec', \
-                {'weight': self.params['w_ie_unspec'], 'delay': self.params['delay_ie_unspec'], 'receptor_type': 3})
+                {'weight': self.params['w_ie_unspec'], 'delay': self.params['delay_ie_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - exc unspecific (within one hypercolumn) GABA_B
 #        nest.CopyModel('static_synapse', 'inh_exc_unspec_slow', \
-#                {'weight': self.params['w_ie_unspec'], 'receptor_type': 3})
+#                {'weight': self.params['w_ie_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - inh unspecific (within one hypercolumn) GABA_A
         nest.CopyModel('static_synapse', 'inh_inh_unspec_fast', \
-                {'weight': self.params['w_ii_unspec'], 'delay': self.params['delay_ii_unspec'], 'receptor_type': 3})
+                {'weight': self.params['w_ii_unspec'], 'delay': self.params['delay_ii_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - inh unspecific (within one hypercolumn) GABA_B
 #        nest.CopyModel('static_synapse', 'inh_inh_unspec_slow', \
-#                {'weight': self.params['w_ii_unspec'], 'receptor_type': 3})
+#                {'weight': self.params['w_ii_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - exc global specific (between hypercolumns): GABA_A
         nest.CopyModel('static_synapse', 'inh_exc_specific_fast', \
-                {'weight': self.params['w_ie_spec'], 'delay': self.params['delay_ie_spec'], 'receptor_type': 3})
+                {'weight': self.params['w_ie_spec'], 'delay': self.params['delay_ie_spec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - exc global specific (between hypercolumns): GABA_B
 #        nest.CopyModel('static_synapse', 'inh_exc_specific_slow', \
-#                {'weight': self.params['w_ie_spec'], 'receptor_type': 3})
+#                {'weight': self.params['w_ie_spec'], 'receptor_type': self.params['syn_ports']['gaba']})
 
         # exc - exc local (within a minicolumn) AMPA
 #        nest.CopyModel('static_synapse', 'exc_exc_local_fast', \
-#                {'weight': self.params['w_ee_local'], 'delay': self.params['delay_ee_local'], 'receptor_type': 0})
+#                {'weight': self.params['w_ee_local'], 'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
         # exc - exc local (within a minicolumn) NMDA
 #        nest.CopyModel('static_synapse', 'exc_exc_local_slow', \
-#                {'weight': self.params['w_ee_local'], 'delay': self.params['delay_ee_local'], 'receptor_type': 1})
+#                {'weight': self.params['w_ee_local'], 'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda']})
 
         # exc - exc global (between hypercolumns): AMPA
         if self.params['training_run']:
@@ -196,16 +196,16 @@ class NetworkModel(object):
         else:
             # exc - exc fast: AMPA
             nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
-                    {'delay': self.params['delay_ee_local'], 'receptor_type': 1})
+                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
             # exc - exc slow: AMPA
             nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
-                    {'delay': self.params['delay_ee_local'], 'receptor_type': 2})
+                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda']})
             # exc - inh global specific (between hypercolumns): AMPA
             nest.CopyModel('static_synapse', 'exc_inh_specific_fast', \
-                    {'delay': self.params['delay_ei_spec'], 'receptor_type': 1})
+                    {'delay': self.params['delay_ei_spec'], 'receptor_type': self.params['syn_ports']['ampa']})
             # exc - inh global specific (between hypercolumns): NMDA
             nest.CopyModel('static_synapse', 'exc_inh_specific_slow', \
-                    {'delay': self.params['delay_ei_spec'], 'receptor_type': 2})
+                    {'delay': self.params['delay_ei_spec'], 'receptor_type': self.params['syn_ports']['nmda']})
 
     def get_local_indices(self, pop):
         local_nodes = []
@@ -532,7 +532,7 @@ class NetworkModel(object):
 
         self.connect_input_to_exc()
 
-        if self.params['training_run']:
+        if self.params['training_run'] and not self.params['debug']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
 #            self.connect_input_to_recorder_neurons()
@@ -541,13 +541,12 @@ class NetworkModel(object):
             print 'Connecting inh - exc unspecific'
             self.connect_ie_unspecific() # normalizing inhibition
             #pass
-        else: # load the weight matrix
+        elif not self.params['debug']: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
 #            self.connect_input_to_recorder_neurons()
-            self.load_training_weights()
+#            self.load_training_weights()
             print 'Connecting exc - exc '
             self.connect_ee_testing()
-#            exit(1)
 #            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             self.connect_ei_unspecific()
@@ -816,22 +815,45 @@ class NetworkModel(object):
 #        np.savetxt(fn_out, self.debug_tau_zi)
 
 
-    def connect_ee_testing(self):
+    def set_connection_matrices(self, conn_fn_ampa, conn_fn_nmda):
 
-        if not(os.path.exists(self.params['conn_matrix_mc_fn'])):
-            print 'Can not find conn_matrix_mc_fn:', self.params['conn_matrix_mc_fn']
-            WA = WeightAnalyser.WeightAnalyser(self.training_params)
-            M = WA.get_weight_matrix_mc_mc()
-            output_fn = self.params['conn_matrix_mc_fn']
-            print 'Saving connection matrix to:', output_fn
-            np.savetxt(output_fn, M)
-        else:
-            M = np.loadtxt(self.params['conn_matrix_mc_fn'])
+        print 'DEBUG, loading ampa weight matrix from:', conn_fn_ampa
+        self.W_ampa = np.loadtxt(conn_fn_ampa)
+        assert (self.W_ampa.shape[0] == self.params['n_mc'] and self.W_ampa.shape[1] == self.params['n_mc']), 'ERROR: provided ampa weight matrix has wrong dimension. Check simulation parameters!'
+        print 'DEBUG, saving ampa weight matrix to:', self.params['conn_matrix_ampa_fn']
+        np.savetxt(self.params['conn_matrix_ampa_fn'], self.W_ampa)
+
+
+        print 'DEBUG, loading nmda weight matrix from:', conn_fn_nmda
+        self.W_nmda = np.loadtxt(conn_fn_nmda)
+        assert (self.W_nmda.shape[0] == self.params['n_mc'] and self.W_nmda.shape[1] == self.params['n_mc']), 'ERROR: provided nmda weight matrix has wrong dimension. Check simulation parameters!'
+        print 'DEBUG, saving nmda weight matrix to:', self.params['conn_matrix_nmda_fn']
+        np.savetxt(self.params['conn_matrix_nmda_fn'], self.W_nmda)
 
         if self.comm != None:
             self.comm.Barrier()
-        self.w_bcpnn_max = np.max(M)
-        self.w_bcpnn_min = np.min(M)
+
+
+    def connect_ee_testing(self):
+
+#        if not(os.path.exists(self.params['conn_matrix_mc_fn'])):
+#            print 'Can not find conn_matrix_mc_fn:', self.params['conn_matrix_mc_fn']
+#            WA = WeightAnalyser.WeightAnalyser(self.training_params)
+#            M = WA.get_weight_matrix_mc_mc()
+#            output_fn = self.params['conn_matrix_mc_fn']
+#            print 'Saving connection matrix to:', output_fn
+#            np.savetxt(output_fn, M)
+#        else:
+#            M = np.loadtxt(self.params['conn_matrix_mc_fn'])
+
+        if self.comm != None:
+            self.comm.Barrier()
+
+        w_ampa_max = np.max(self.W_ampa)
+        w_ampa_min = np.min(self.W_ampa)
+        w_nmda_max = np.max(self.W_nmda)
+        w_nmda_min = np.min(self.W_nmda)
+
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 src_pop = self.list_of_exc_pop[src_hc][src_mc]
@@ -840,13 +862,18 @@ class NetworkModel(object):
                     for tgt_mc in xrange(self.params['n_mc_per_hc']):
                         tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
-                        w = M[src_pop_idx, tgt_pop_idx]
-                        if w != 0:
-                            w_ = self.transform_weight(w)
-                            nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_fast')
-                            nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_slow')
+                        w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
+                        w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
+                        if w_ampa != 0:
+                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
+                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
+                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
+                                    model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
+
+                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
+                                    model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
 
 
         # connect cells within one MC
@@ -906,15 +933,15 @@ class NetworkModel(object):
 #        self.w_bcpnn_min = np.min(self.conn_mat_training)
 
 
-    def transform_weight(self, w):
+    def transform_weight(self, w, w_bcpnn_min, w_bcpnn_max):
         if w > 0:
-            w_ = w * self.params['w_ee_global_max'] / self.w_bcpnn_max
+            w_ = w * self.params['w_ee_global_max'] / w_bcpnn_max
         elif w < 0:
             # CAUTION: if using di-synaptic inhibition via RSNP cells --> use:
             if self.params['with_rsnp_cells']:
-                w_ = -1. * w * self.params['w_ei_spec'] / self.w_bcpnn_min
+                w_ = -1. * w * self.params['w_ei_spec'] / w_bcpnn_min
             else:
-                w_ = w * self.params['w_ei_spec'] / self.w_bcpnn_min
+                w_ = w * self.params['w_ei_spec'] / w_bcpnn_min
         return w_
 
 

@@ -98,8 +98,8 @@ class TracePlotter(object):
 
         st_pre = spike_data_pre[gid_pre]
         st_post = spike_data_post[gid_post]
-        print 'debug st_pre:', st_pre
-        print 'debug st_post:', st_post
+        print 'DEBUG compute_traces nspikes in st_pre:', len(st_pre)
+        print 'DEBUG compute_traces nspikes in st_post:', len(st_post)
         s_pre = BCPNN.convert_spiketrain_to_trace(st_pre, t_range[1], t_min=t_range[0])
         s_post = BCPNN.convert_spiketrain_to_trace(st_post, t_range[1], t_min=t_range[0])
         wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = BCPNN.get_spiking_weight_and_bias(s_pre, s_post, self.bcpnn_params)
@@ -234,7 +234,6 @@ class TracePlotter(object):
             return self.spike_data[idx, 1]
         else: 
             (spikes, gids) = utils.get_spikes_within_interval(self.spike_data, t_range[0], t_range[1], time_axis=1, gid_axis=0)
-            print 'debug spike_data', spikes ,gids
             idx = np.nonzero(gid == gids)[0]
             return spikes[idx]
 
@@ -263,14 +262,12 @@ if __name__ == '__main__':
     TP = TracePlotter(params)
     dt = 0.1
 
-
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
-    tp_pre = [0.5, 0.5, 1.5, .0]
-    tp_post = [0.6, 0.5, 1.5, .0]
-#    t_range_trace_computation = (0, params['t_sim'])
-     
-    t_range_trace_computation = TP.get_stimulus_time(tp_pre, params)
+    tp_pre = [0.1, 0.5, 1.0, .0]
+    tp_post = [0.3, 0.5, -0.1, .0]
+    t_range_trace_computation = (0, params['t_sim'])
+#    t_range_trace_computation = TP.get_stimulus_time(tp_pre, params)
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
 
 #    exit(1)
@@ -332,8 +329,9 @@ if __name__ == '__main__':
             color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
             extra_txt=None, w_title=None)
 
-    w_nest = TP.get_nest_weight(gid_pre, gid_post)
-    print 'w_nest:', w_nest
+    if not params['debug']:
+        w_nest = TP.get_nest_weight(gid_pre, gid_post)
+        print 'w_nest:', w_nest
 
     output_fn = params['figures_folder'] + 'bcpnn_trace_%d_%d_tauzi%03d_tauzj%03d_taue%03d_taup%05d.png' % (gid_pre, gid_post, \
             bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])

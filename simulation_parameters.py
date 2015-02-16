@@ -21,9 +21,13 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = True# if false, it's a test run and you should run main_test.py
+        self.params['training_run'] = False
         self.params['Cluster'] = False
-        self.params['sim_id'] = ''
+        self.params['debug'] = False
+        if self.params['debug']:
+            self.params['sim_id'] = 'DEBUG'
+        else:
+            self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -163,6 +167,8 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
+            self.params['tau_syn'] = {'ampa': 5., 'nmda': 150., 'gaba': 5.}
+            self.params['syn_ports'] = {'ampa':1, 'nmda':2, 'gaba': 3}
             self.params['neuron_model'] = 'aeif_cond_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
@@ -170,7 +176,8 @@ class parameter_storage(object):
             self.params['cell_params_exc'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
                     'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, \
                     'a': 0., 'b': 0., \
-                    'g_L': self.params['g_leak']}
+                    'g_L': self.params['g_leak'], \
+                    'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
 
             self.params['cell_params_inh'] = self.params['cell_params_exc']
 
@@ -214,18 +221,18 @@ class parameter_storage(object):
         # exc - exc: local
         self.params['p_ee_local'] = .75
         self.params['n_conn_ee_local_out_per_pyr'] = np.int(np.round(self.params['p_ee_local'] * self.params['n_exc_per_mc']))
-        self.params['w_ee_local'] = 0.      # [nS]
+        self.params['w_ee_local'] = 2.      # [nS]
         self.params['delay_ee_local'] = 1.  # [ms]
 
         # exc - exc: global
-        self.params['p_ee_global'] = 1.0
-        self.params['w_ee_global_max'] = 0.5
+        self.params['p_ee_global'] = 0.5 # TODO: lower this for larger networks to 
+        self.params['w_ee_global_max'] = 1.5
         self.params['delay_ee_global'] = 1. # [ms]
         self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))
 
         # exc - inh: spec
         self.params['delay_ei_spec'] = 1.   # [ms]
-        self.params['w_ei_spec'] = -4.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
+        self.params['w_ei_spec'] = -2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
         self.params['w_ei_unspec'] = 2.    # untrained, unspecific PYR -> Basket connections
@@ -234,7 +241,7 @@ class parameter_storage(object):
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec']))
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
-        self.params['w_ie_unspec'] = -10.  # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -6.  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .75     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_exc_per_mc']))
@@ -298,8 +305,8 @@ class parameter_storage(object):
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        self.params['n_training_v'] = 4 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
-        #self.params['n_training_v'] = 2
+        #self.params['n_training_v'] = 4 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
@@ -586,6 +593,8 @@ class parameter_storage(object):
         self.params['conn_list_ee_fn_base'] = '%sconn_list_ee_' % (self.params['connections_folder'])
         self.params['merged_conn_list_ee'] = '%smerged_conn_list_ee.dat' % (self.params['connections_folder'])
         self.params['conn_matrix_mc_fn'] = '%sconn_matrix_mc.dat' % (self.params['connections_folder'])
+        self.params['conn_matrix_ampa_fn'] = '%sconn_matrix_ampa.dat' % (self.params['connections_folder'])
+        self.params['conn_matrix_nmda_fn'] = '%sconn_matrix_nmda.dat' % (self.params['connections_folder'])
 
         # E - I
         self.params['conn_list_ei_fn_base'] = '%sconn_list_ei_' % (self.params['connections_folder'])
