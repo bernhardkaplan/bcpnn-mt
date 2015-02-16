@@ -83,6 +83,7 @@ if __name__ == '__main__':
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
-    if pc_id == 0:
+    if pc_id == 0 and not params['Cluster']:
+        print "Calling python PlottingScripts/PlotPrediction.py"
         os.system('python PlottingScripts/PlotPrediction.py')
 

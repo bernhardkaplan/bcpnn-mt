@@ -27,7 +27,10 @@ class parameter_storage(object):
         if self.params['debug']:
             self.params['sim_id'] = 'DEBUG'
         else:
-            self.params['sim_id'] = ''
+            if self.params['Cluster']:
+                self.params['sim_id'] = 'Cluster'
+            else:
+                self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -225,7 +228,7 @@ class parameter_storage(object):
         self.params['delay_ee_local'] = 1.  # [ms]
 
         # exc - exc: global
-        self.params['p_ee_global'] = 0.5 # TODO: lower this for larger networks to 
+        self.params['p_ee_global'] = 0.25 # TODO: lower this for larger networks to 
         self.params['w_ee_global_max'] = 1.5
         self.params['delay_ee_global'] = 1. # [ms]
         self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))

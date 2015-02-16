@@ -2,7 +2,7 @@
 # The -l above is required to get the full environment with modules
 
 # The name of the script is myjob
-#SBATCH -J OCT_testing
+#SBATCH -J sweep_params
 
 # Only 1 hour wall-clock time will be given to this job
 #SBATCH -t 0:29:00
@@ -29,7 +29,7 @@ module add python
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cfs/milner/scratch/b/bkaplan/BCPNN-Module/build-module-100725
 export PYTHONPATH=/pdc/vol/nest/2.2.2/lib/python2.7/site-packages:/pdc/vol/python/2.7.6-gnu/lib/python2.7/site-packages
 
-aprun -n 20 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_testing.py connection_matrix_20x16_taui5.dat connection_matrix_20x16_taui150.dat $1 > delme_test_$1 2>&1
+aprun -n 20 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_test.py connection_matrix_20x16_taui5.dat connection_matrix_20x16_taui150.dat $1 > delme_test_$1 2>&1
 
 echo "Stopping at `date`"
 

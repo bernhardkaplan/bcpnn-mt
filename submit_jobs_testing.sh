@@ -3,9 +3,9 @@ n=1
 for w_ee in 0.5 1.0 2.0 4.0 
 do
     echo "submitting job $((n++)) with parameter x =" $w_ee
-    python main_test.py  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat $w_ee
-    #sbatch jobfile_testing_milner_with_params.sh $w_ee
-    sleep 0.1
+    #python main_test.py  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat $w_ee
+    sbatch jobfile_testing_milner_with_params.sh $w_ee
+    sleep 0.2
     #n++
 done
 
