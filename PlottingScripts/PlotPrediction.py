@@ -1268,10 +1268,12 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
 if __name__ == '__main__':
 
     if len(sys.argv) == 2:
+        print 'Case 1'
         params = utils.load_params(sys.argv[1])
         stim_range = params['stim_range']
         plot_prediction(params=params, stim_range=stim_range)
     elif len(sys.argv) == 4:
+        print 'Case 2'
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
         params = utils.load_params(sys.argv[1])
         stim_range = (int(sys.argv[2]), int(sys.argv[3]))

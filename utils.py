@@ -857,6 +857,7 @@ def get_nspikes(spiketimes_fn_or_array, n_cells=0, cell_offset=0, get_spiketrain
         gid_offset = cell_offset
 
     if (type(spiketimes_fn_or_array) == type ('')) or (type(spiketimes_fn_or_array) == type(unicode('a'))):
+        print 'debug utils.get_nspikes loads:', spiketimes_fn_or_array
         d = np.loadtxt(spiketimes_fn_or_array)
     else:
         d = spiketimes_fn_or_array
