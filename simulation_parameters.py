@@ -23,14 +23,16 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = False
         self.params['Cluster'] = True
-        self.params['debug'] = False
-        if self.params['debug']:
+        self.params['debug'] = True
+        self.w_input_exc = 1.0
+        if self.params['debug'] and self.params['Cluster']:
+            self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
+        elif self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG'
-        else:
-            if self.params['Cluster']:
-                self.params['sim_id'] = 'Cluster'
-            else:
-                self.params['sim_id'] = ''
+        elif not self.params['debug'] and self.params['Cluster']:
+            self.params['sim_id'] = 'Cluster'
+        elif not self.params['debug'] and not self.params['Cluster']:
+            self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -66,7 +68,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -181,7 +183,9 @@ class parameter_storage(object):
                     'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, \
                     'a': 0., 'b': 0., \
                     'g_L': self.params['g_leak'], \
+                    'gsl_error_tol': 1e-8,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
+                    # default was gsl_error_tol is 1e-6
 
             self.params['cell_params_inh'] = self.params['cell_params_exc']
 
@@ -248,7 +252,7 @@ class parameter_storage(object):
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec']))
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
-        self.params['w_ie_unspec'] = -6.  # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -2.  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .75     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_exc_per_mc']))
@@ -329,7 +333,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 1)
+        self.params['test_stim_range'] = (0, 3)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -444,7 +448,8 @@ class parameter_storage(object):
         # INPUT
         # ######
         self.params['f_max_stim'] = 200.       # [Hz]
-        self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
+        self.params['w_input_exc'] = self.w_input_exc
+        #self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
             self.params['w_input_exc'] /= 1000. # [uS] --> [nS] Nest expects nS

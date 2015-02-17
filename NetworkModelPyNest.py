@@ -23,8 +23,6 @@ class NetworkModel(object):
         self.iteration = 0  # the learning iteration (cycle)
         self.times = {}
         self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
-
-        self.pc_id, self.n_proc = nest.Rank(), nest.NumProcesses()
         self.comm = comm # mpi communicator needed to broadcast nspikes between processes
         if comm != None:
             assert (comm.rank == self.pc_id), 'mpi4py and NEST tell me different PIDs!'
@@ -150,8 +148,8 @@ class NetworkModel(object):
         nest.CopyModel('static_synapse', 'input_exc_fast', \
                 {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
         # input -> exc: NMDA
-        nest.CopyModel('static_synapse', 'input_exc_slow', \
-                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['nmda']})
+        #nest.CopyModel('static_synapse', 'input_exc_slow', \
+                #{'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['nmda']})
         # trigger -> exc: AMPA
         nest.CopyModel('static_synapse', 'trigger_synapse', \
                 {'weight': self.params['w_trigger'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
@@ -554,7 +552,7 @@ class NetworkModel(object):
 #            self.connect_ei_specific()
             print 'Connecting inh - exc unspecific'
             self.connect_ie_unspecific() # normalizing inhibition
-            print 'Connecting inh - exc specific'
+            #print 'Connecting inh - exc specific'
 #            self.connect_ie_specific()
             self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
 #            self.connect_recorder_neurons()
@@ -598,7 +596,7 @@ class NetworkModel(object):
         for i_ in xrange(self.params['n_recorder_neurons']):
             nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
             nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
-            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
+            #nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
 
         """
         # pick recorder neurons along the spatial axis --> sort the neurons according to their x-pos
@@ -853,7 +851,6 @@ class NetworkModel(object):
         w_ampa_min = np.min(self.W_ampa)
         w_nmda_max = np.max(self.W_nmda)
         w_nmda_min = np.min(self.W_nmda)
-        
 
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -865,18 +862,19 @@ class NetworkModel(object):
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
-                        if w_ampa != 0:
-                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa']
-                            w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'])
+                        #if w_ampa != 0:
+                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa']
+                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'])
 #                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
 #                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                        #print 'debug w_ampa_, w_nmda_', w_ampa_, w_nmda_
+                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
+                                model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
+                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
+                                model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
 
 
         # connect cells within one MC
@@ -1046,7 +1044,7 @@ class NetworkModel(object):
             mc_idx_in_hc = mc_idx - hc_idx * self.params['n_mc_per_hc']
             idx_in_pop = (unit - 1) - mc_idx * self.params['n_exc_per_mc']
             nest.Connect([self.stimulus[i_]], [self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_pop]], model='input_exc_fast')
-            nest.Connect([self.stimulus[i_]], [self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_pop]], model='input_exc_slow')
+            #nest.Connect([self.stimulus[i_]], [self.list_of_exc_pop[hc_idx][mc_idx_in_hc][idx_in_pop]], model='input_exc_slow')
 
 
     def get_p_values(self, neurons):
@@ -1318,7 +1316,7 @@ class NetworkModel(object):
             np.savetxt(self.params['test_sequence_fn'], np.array(mp))
         t_stop = time.time()
         t_diff = t_stop - t_start
-        print "Simulation finished: %d [sec]" % (t_diff)
+        print "Simulation finished on proc %d after: %d [sec]" % (self.pc_id, t_diff)
 
 
     def record_v_exc(self):
