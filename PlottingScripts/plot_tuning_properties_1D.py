@@ -154,12 +154,13 @@ class Plotter(object):
     def plot_stimuli(self, ax):
         mp = np.loadtxt(self.params['training_stimuli_fn'])
 
-        stim_duration = np.loadtxt(self.params['training_stim_durations_fn']) 
+        stim_duration = np.loadtxt(self.params['stim_durations_fn']) 
+        if self.params['n_stim'] == 1:
+            stim_duration = np.array([stim_duration])
 
-        for i_ in xrange(params['n_stim']):
+        for i_ in xrange(self.params['n_stim']):
             x_start = mp[i_, 0]
             x_stop = mp[i_, 0] + mp[i_, 2] * (stim_duration[i_] - self.params['t_stim_pause']) / self.params['t_stimulus']
-
             ax.plot((x_start, x_stop), (mp[i_, 2], mp[i_, 2]), '--', c='k', lw=3)
             ax.plot(x_start, mp[i_, 2], 'o', c='b', ms=8)
             ax.plot(x_stop, mp[i_, 2], 'o', c='r', ms=8)

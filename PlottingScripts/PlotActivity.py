@@ -119,10 +119,12 @@ class ActivityPlotter(object):
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
-        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+        stim_duration = np.loadtxt(self.params['stim_durations_fn'])
+        if self.params['n_stim'] == 1:
+            stim_duration = np.array([stim_duration])
         for i_stim in xrange(self.params['n_stim']):
-            t0 = training_stim_duration[:i_stim].sum()
-            t1 = training_stim_duration[:i_stim+1].sum()
+            t0 = stim_duration[:i_stim].sum()
+            t1 = stim_duration[:i_stim+1].sum()
             ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
             ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
             ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
@@ -169,10 +171,12 @@ class ActivityPlotter(object):
         ylim = ax.get_ylim()
 
 
-        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+        stim_duration = np.loadtxt(self.params['stim_durations_fn'])
+        if self.params['n_stim'] == 1:
+            stim_duration = np.array([stim_duration])
         for i_stim in xrange(self.params['n_stim']):
-            t0 = training_stim_duration[:i_stim].sum()
-            t1 = training_stim_duration[:i_stim+1].sum()
+            t0 = stim_duration[:i_stim].sum()
+            t1 = stim_duration[:i_stim+1].sum()
             ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
             ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
             ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
@@ -390,13 +394,16 @@ if __name__ == '__main__':
     exc_spike_data = Plotter.load_spike_data('exc')
 
     trained_stim = params['trained_stimuli']
-    training_stim_duration = np.loadtxt(params['training_stim_durations_fn'])
+    stim_duration = np.loadtxt(params['stim_durations_fn'])
     stim_range = params['stim_range']
     binsize = 50
-    for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
-        t0 = training_stim_duration[:stim].sum()
-        t1 = training_stim_duration[:stim+1].sum()
-        Plotter.plot_spike_rate_vs_time(exc_spike_data, binsize=binsize, time_range=(t0, t1))
+    if params['n_stim'] > 1:
+        for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
+            t0 = stim_duration[:stim].sum()
+            t1 = stim_duration[:stim+1].sum()
+            Plotter.plot_spike_rate_vs_time(exc_spike_data, binsize=binsize, time_range=(t0, t1))
+    else:
+        Plotter.plot_spike_rate_vs_time(exc_spike_data, binsize=binsize, time_range=(0, stim_duration))
 
     #inh_spec_spike_data = Plotter.load_spike_data('inh_spec')
     inh_unspec_spike_data = Plotter.load_spike_data('inh_unspec')
@@ -428,12 +435,12 @@ if __name__ == '__main__':
 
 
 #    trained_stim = params['trained_stimuli']
-#    training_stim_duration = np.loadtxt(params['training_stim_durations_fn'])
+#    stim_duration = np.loadtxt(params['stim_durations_fn'])
 #    stim_range = [0, 2]
 #    f_max = 350.
 #    for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
-#        t0 = training_stim_duration[:stim].sum()
-#        t1 = training_stim_duration[:stim+1].sum()
+#        t0 = stim_duration[:stim].sum()
+#        t1 = stim_duration[:stim+1].sum()
 #        print 'Stim:', stim, 'time_range:', t0, t1, 'mp:', trained_stim[stim]
 #        output_fn = params['figures_folder'] + 'mc_exc_nspike_histogram_stim%02d.png' % (stim)
 #        Plotter.plot_nspike_histogram_in_MCs(exc_spike_data, cell_type='exc', time_range=(t0, t1), f_max=f_max, output_fn=output_fn)

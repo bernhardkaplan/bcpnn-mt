@@ -55,10 +55,10 @@ def create_training_stim_in_tp_space():
         training_stim_duration[i_] = max(params['t_training_max'], t_exit)
 
 
-    answer = raw_input('Overwrite training stimuli duration file?\n\t%s\n' % (params['training_stim_durations_fn']))
+    answer = raw_input('Overwrite training stimuli duration file?\n\t%s\n' % (params['stim_durations_fn']))
     if answer.capitalize() == 'Y':
-        print 'Saving training stim durations to:', params['training_stim_durations_fn']
-        np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
+        print 'Saving training stim durations to:', params['stim_durations_fn']
+        np.savetxt(params['stim_durations_fn'], training_stim_duration)
     Plotter = Plotter(params)#, it_max=1)
     Plotter.plot_training_sample_space(plot_process=False)
 
@@ -154,8 +154,8 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     for i_ in xrange(params['n_stim']):
         t_exit = utils.compute_stim_time(mp[i_, :])
         training_stim_duration[i_] = min(t_exit, params['t_training_max']) + params['t_stim_pause']
-#    print 'Saving training stim durations to:', params['training_stim_durations_fn']
-    np.savetxt(params['training_stim_durations_fn'], training_stim_duration)
+    print 'Saving training stim durations to:', params['stim_durations_fn']
+    np.savetxt(params['stim_durations_fn'], training_stim_duration)
 
     #fig = pylab.figure()
     #ax = fig.add_subplot(111)

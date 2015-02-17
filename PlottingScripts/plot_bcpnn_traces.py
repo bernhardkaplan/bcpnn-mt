@@ -81,8 +81,11 @@ class TracePlotter(object):
          [gid] = np.array([spike_times ... ])
         """
         assert (self.spikes_loaded), 'Please call self.load_spikes() before calling get_cells_that_spiked()'
-        self.training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
-        t_range = (self.training_stim_duration[:stim_id].sum(), self.training_stim_duration[:stim_id+1].sum())
+        self.stim_duration = np.loadtxt(self.params['stim_durations_fn'])
+        if self.params['n_stim'] > 1:
+            t_range = (self.stim_duration[:stim_id].sum(), self.stim_duration[:stim_id+1].sum())
+        else:
+            t_range = (0, self.stim_duration)
         (spikes, gids) = utils.get_spikes_within_interval(self.spike_data, t_range[0], t_range[1], time_axis=1, gid_axis=0)
 #        print 'debug spikes', spikes
         gids_uni = np.unique(gids)
@@ -242,7 +245,7 @@ class TracePlotter(object):
     def get_stimulus_time(self, mp, params):
         training_stim = np.loadtxt(params['training_stimuli_fn'])
         gids, dist = utils.get_gids_near_stim(mp, training_stim)
-        stim_durations = np.loadtxt(params['training_stim_durations_fn'])
+        stim_durations = np.loadtxt(params['stim_durations_fn'])
 #        print 'training_stim durations:', stim_durations[gids]
 #        print 'time:', stim_durations[:gids[0]].sum(), stim_durations[gids[0]]
         time_range = (stim_durations[:gids[0]].sum(), stim_durations[gids[0]] + stim_durations[:gids[0]].sum())

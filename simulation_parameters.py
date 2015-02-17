@@ -21,9 +21,9 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = False
-        self.params['Cluster'] = True
-        self.params['debug'] = True
+        self.params['training_run'] = True
+        self.params['Cluster'] = False
+        self.params['debug'] = False
         self.w_input_exc = 1.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -333,7 +333,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 3)
+        self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -590,7 +590,7 @@ class parameter_storage(object):
         self.params['gids_to_record_fn'] = '%sgids_to_record.dat' % (self.params['parameters_folder'])
         self.params['all_predictor_params_fn'] = '%sall_predictor_params.dat' % (self.params['parameters_folder'])
         self.params['training_stimuli_fn'] = '%straining_stimuli.dat' % (self.params['parameters_folder']) # contains all training stimuli (not only those that have been trained in one simulation)
-        self.params['training_stim_durations_fn'] = '%straining_stim_durations.dat' % (self.params['parameters_folder'])
+        self.params['stim_durations_fn'] = '%sstim_durations.dat' % (self.params['parameters_folder'])
         self.params['presented_stim_fn'] = '%spresented_stim_params.dat' % (self.params['data_folder']) # contains only those stimuli that have been presented
         self.params['test_sequence_fn'] = '%stest_sequence.dat' % (self.params['parameters_folder'])
 

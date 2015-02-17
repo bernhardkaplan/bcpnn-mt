@@ -164,7 +164,7 @@ if __name__ == '__main__':
     ax = fig.add_subplot(111)
 
     if params['training_run']:
-        t_stim = np.loadtxt(params['training_stim_durations_fn'])
+        t_stim = np.loadtxt(params['stim_durations_fn'])
     else:
         t_stim = params['t_test_stim'] * np.ones(params['n_stim'])
     for gid in gids:

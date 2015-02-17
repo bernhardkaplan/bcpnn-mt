@@ -34,15 +34,15 @@ class Plotter(object):
             fn = self.params['training_stimuli_fn']
             print 'Loading training stimuli data from:', fn
             d = np.loadtxt(fn)
-            training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+            stim_duration = np.loadtxt(self.params['stim_durations_fn'])
             n_stim = d[:, 0].size
         else:
             n_stim = d[:, 0].size
-            training_stim_duration = np.zeros(n_stim)
+            stim_duration = np.zeros(n_stim)
             for i_ in xrange(n_stim):
                 stim_params = d[i_, :]
                 t_exit = utils.compute_stim_time(stim_params)
-                training_stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
+                stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
         if stim_lim == None:
             stim_lim = (0, n_stim)
 

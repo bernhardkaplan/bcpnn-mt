@@ -35,14 +35,15 @@ except:
 
 if __name__ == '__main__':
 
-    assert (len(sys.argv) > 2), 'Missing connection matrices folders as command line arguments'
+#    assert (len(sys.argv) > 2), 'Missing connection matrices folders as command line arguments'
     
-    conn_fn_ampa = sys.argv[1]
-    conn_fn_nmda = sys.argv[2]
     # conn_fn_ should be the filenames for the connection matrices on MC-MC basis
-    bcpnn_gain = float(sys.argv[3])
-    w_ie = float(sys.argv[4])
-    w_ei = float(sys.argv[5])
+    w_input_exc = float(sys.argv[1])
+#    conn_fn_ampa = sys.argv[1]
+#    conn_fn_nmda = sys.argv[2]
+#    bcpnn_gain = float(sys.argv[3])
+#    w_ie = float(sys.argv[4])
+#    w_ei = float(sys.argv[5])
     
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
@@ -52,13 +53,19 @@ if __name__ == '__main__':
     #assert (params['n_cells'] == training_params['n_cells']), 'ERROR: Test and training params are differen wrt n_cells!\n\ttraining %d \t test %d' % (training_params['n_cells'], params['n_cells'])
     # always call set_filenames to update the folder name and all depending filenames (if params are modified and folder names change due to that)!
 
-    params['bcpnn_gain'] = bcpnn_gain
-    params['w_ie_unspec'] = w_ie
-    params['w_ei_unspec'] = w_ei
-    folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_pee%.2f_wie%.2f_wei%.2f' % ( \
+    params['w_input_exc'] = w_input_exc
+    folder_name = 'TestSim_%s_%d_nExcPerMc%d_winput%.2f' % ( \
             params['sim_id'], params['n_test_stim'], 
-            params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
-            params['w_ie_unspec'], params['w_ei_unspec'])
+            params['n_exc_per_mc'], params['w_input_exc'])
+
+#    params['bcpnn_gain'] = bcpnn_gain
+#    params['w_ie_unspec'] = w_ie
+#    params['w_ei_unspec'] = w_ei
+#    folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_pee%.2f_wie%.2f_wei%.2f' % ( \
+#            params['sim_id'], params['n_test_stim'], 
+#            params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
+#            params['w_ie_unspec'], params['w_ei_unspec'])
+
     folder_name += '/'
     ps.set_filenames(folder_name) 
 #    ps.set_filenames() 
@@ -71,7 +78,8 @@ if __name__ == '__main__':
     record = False
     save_input_files = True #not load_files
     NM = NetworkModel(params, iteration=0)
-    NM.set_connection_matrices(conn_fn_ampa, conn_fn_nmda)
+    if not params['debug']:
+        NM.set_connection_matrices(conn_fn_ampa, conn_fn_nmda)
     pc_id, n_proc = NM.pc_id, NM.n_proc
     if pc_id == 0:
         utils.remove_files_from_folder(params['spiketimes_folder'])
@@ -98,7 +106,7 @@ if __name__ == '__main__':
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
     if pc_id == 0 and not params['Cluster']:
         print "Calling python PlottingScripts/PlotPrediction.py"
-        os.system('python PlottingScripts/PlotPrediction.py')
+        os.system('python PlottingScripts/PlotPrediction.py %s' % params['folder_name'])
 
     if comm != None:
         comm.Barrier()

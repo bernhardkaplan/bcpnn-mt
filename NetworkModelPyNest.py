@@ -78,7 +78,7 @@ class NetworkModel(object):
         t_sim = self.stim_durations.sum()
         self.params['t_sim'] = t_sim
         self.update_bcpnn_params()
-        np.savetxt(self.params['training_stim_durations_fn'], self.stim_durations)
+        np.savetxt(self.params['stim_durations_fn'], self.stim_durations)
         print 'NetworkModel.setup preparing for %.1f [ms] simulation' % (self.params['t_sim'])
         self.projections = {}
         self.projections['ee'] = []

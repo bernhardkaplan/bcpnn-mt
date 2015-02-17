@@ -33,7 +33,7 @@ class PlotPrediction(object):
         else:
             self.show_blank = True
 
-        self.training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
+        self.stim_duration = np.loadtxt(self.params['stim_durations_fn'])
         self.spiketimes_loaded = False
         self.data_to_store = {}
         # define parameters
@@ -530,15 +530,16 @@ class PlotPrediction(object):
         ylim = ax.get_ylim()
         if self.params['n_stim'] > 1:
             for i_stim in xrange(stim_range[0], stim_range[1]):
-                t0 = self.training_stim_duration[:i_stim].sum() - self.training_stim_duration[:i_stim]
-                t1 = self.training_stim_duration[:i_stim+1].sum() - self.training_stim_duration[:i_stim]
-                print 'debug t0 t1', t0, t1, ylim, self.training_stim_duration[:i_stim+1].sum()
+                t0 = self.stim_duration[:i_stim].sum() - self.stim_duration[:i_stim].sum()
+                t1 = self.stim_duration[:i_stim+1].sum() - self.stim_duration[:i_stim].sum()
+                print 'debug t0 t1', t0, t1, ylim, self.stim_duration[:i_stim+1].sum()
+                print 'aaaaaaaaa', self.stim_duration, i_stim, i_stim+1, self.stim_duration.shape
                 ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
                 ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
                 ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
         else:
             t0 = 0
-            t1 = self.training_stim_duration
+            t1 = self.stim_duration
             ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
             ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
 #            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
@@ -552,8 +553,8 @@ class PlotPrediction(object):
 #        if not self.params['training_run']:
             # todo: test this after testing ;)
 #            if time_range == None:
-#                t0 = self.training_stim_duration[:stim_range[0]].sum()
-#                t1 = self.training_stim_duration[:stim_range[1]].sum()
+#                t0 = self.stim_duration[:stim_range[0]].sum()
+#                t1 = self.stim_duration[:stim_range[1]].sum()
 #                time_range = (t0, t1)
 #                time_range = (0, self.params['t_sim'])
 #            self.plot_blank(ax, time_range)
@@ -1205,16 +1206,16 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         input_folder_exists = True
     else:
         input_folder_exists = False
-    training_stim_duration = np.loadtxt(params['training_stim_durations_fn'])
+    stim_duration = np.loadtxt(params['stim_durations_fn'])
     for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
         plotter.compute_pos_and_v_estimates(stim)
         print 'Stim:', stim
         if params['n_stim'] > 1:
-            t0 = training_stim_duration[:i_stim].sum()
-            t1 = training_stim_duration[:i_stim+1].sum()
+            t0 = stim_duration[:i_stim].sum()
+            t1 = stim_duration[:i_stim+1].sum()
         else:
             t0 = 0
-            t1 = training_stim_duration
+            t1 = stim_duration
 
         time_range = (t0, t1)
         stim_range = (stim, stim + 1)

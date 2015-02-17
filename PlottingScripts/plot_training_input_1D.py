@@ -80,7 +80,7 @@ class TrainingInputPlotter(object):
 
         rate_curves = []
         rate_max = 0.
-        t_stim_durations = np.loadtxt(self.params['training_stim_durations_fn'])
+        t_stim_durations = np.loadtxt(self.params['stim_durations_fn'])
         for i in xrange(n_cells_to_plot):
             gid = gids_to_plot[i]
             for stim_idx in range(self.params['stim_range'][0], self.params['stim_range'][1]):
@@ -127,10 +127,16 @@ class TrainingInputPlotter(object):
             ylim = ax.get_ylim()
         n_stim = self.motion_params[:, 0].size
 
-        training_stim_duration = np.loadtxt(self.params['training_stim_durations_fn'])
-        for i_stim in xrange(n_stim):
-            t0 = training_stim_duration[:i_stim].sum()
-            t1 = training_stim_duration[:i_stim+1].sum()
+        stim_duration = np.loadtxt(self.params['stim_durations_fn'])
+        if n_stim > 1:
+            for i_stim in xrange(n_stim):
+                t0 = stim_duration[:i_stim].sum()
+                t1 = stim_duration[:i_stim+1].sum()
+                ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
+                ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
+                ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
+        else:
+            t0, t1 = 0, stim_duration
             ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
             ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
             ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
