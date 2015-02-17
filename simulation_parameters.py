@@ -22,9 +22,9 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = True
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['debug'] = False
-        self.w_input_exc = 1.0
+        self.w_input_exc = 12.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -180,7 +180,7 @@ class parameter_storage(object):
 #            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
             self.params['g_leak'] = 25. # before it was 16.66667
             self.params['cell_params_exc'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
-                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, \
+                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 5.0, \
                     'a': 0., 'b': 0., \
                     'g_L': self.params['g_leak'], \
                     'gsl_error_tol': 1e-8,  
