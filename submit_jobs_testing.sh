@@ -1,14 +1,29 @@
 
 n=1
-for w_ee in 0.5 1.0 2.0 4.0 
-do
-    echo "submitting job $((n++)) with parameter x =" $w_ee
-    python main_test.py  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat $w_ee
-    #sbatch jobfile_testing_milner_with_params.sh $w_ee
-    sleep 0.1
-    #n++
-done
 
+#for w_ie in -0.1 -0.2 -0.5 -1.0 
+#do
+    #for w_ei in 0.1 0.2 0.5 1.0 
+    #do
+        #for gain in 0.1 1.0 5.0 10.
+        #do
+            #echo "submitting job $((n++)) with parameter x =" $gain
+            ##python main_test.py  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat $w_ee
+            #sbatch jobfile_testing_milner_with_params.sh $gain $w_ie $w_ei
+            #sleep 1.0
+            ##n++
+        #done
+    #done
+#done
+
+
+for gain in 
+do
+    echo "submitting job $((n++)) with parameter x =" $gain
+    #python main_test.py  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat  TrainingSim__1x70x1_0-70_taui5_nHC20_nMC16_blurXV_0.00_0.05_pi1.0e-04/Connections/conn_matrix_mc.dat $w_ee
+    sbatch jobfile_testing_milner_with_params.sh $gain $w_ie $w_ei
+    sleep 1.0
+done
 
 #wa_d1_d1_pos=0.0
 #wa_d1_d1_neg=1.0
