@@ -618,12 +618,10 @@ class PlotPrediction(object):
         ax.set_title('Activity of %s cells' % cell_type)
 
 
-    def plot_vx_grid_vs_time(self, fig_cnt=1, time_range=None):
+    def plot_vx_grid_vs_time(self, fig_cnt=1, time_range=None, title=''):
         print 'plot_vx_grid_vs_time ... '
         xlabel = 'Time [ms]'
         ylabel = '$v_x$'
-#        title = '$v_x$ binned vs time'
-        title = ''
         vx_grid, v_edges = self.bin_estimates(self.vx_grid, index=2)
         if time_range != None:
             bin0 = int(round(time_range[0] / self.time_binsize))
@@ -635,11 +633,10 @@ class PlotPrediction(object):
 
 
 
-    def plot_vy_grid_vs_time(self, fig_cnt=1, time_range=None):
+    def plot_vy_grid_vs_time(self, fig_cnt=1, time_range=None, title=''):
         print 'plot_vy_grid_vs_time ...'
         xlabel = 'Time [ms]'
         ylabel = '$v_y$'
-        title = ''#$v_y$ binned vs time'
         vy_grid, v_edges = self.bin_estimates(self.vy_grid, index=3)
         if time_range != None:
             bin0 = int(round(time_range[0] / self.time_binsize))
@@ -649,30 +646,28 @@ class PlotPrediction(object):
         self.data_to_store['vy_grid.dat'] = {'data' : vy_grid, 'edges': v_edges}
 
 
-    def plot_x_grid_vs_time(self, fig_cnt=1, ylabel=None, time_range=None, stim_idx=0):
+    def plot_x_grid_vs_time(self, fig_cnt=1, ylabel=None, time_range=None, stim_idx=0, title=''):
         print 'plot_x_grid_vs_time ...'
         xlabel = 'Time [ms]'
         if ylabel == None:
             ylabel = '$x_{predicted}$'
-        title = ''#$x_{predicted}$ binned vs time'
         x_grid, x_edges = self.bin_estimates(self.x_grid, index=0)
         if time_range != None:
             bin0 = int(round(time_range[0] / self.time_binsize))
             bin1 = int(round(time_range[1] / self.time_binsize))
             x_grid = x_grid[:, bin0:bin1]
-            print 'DEBUG', stim_idx
             mp = self.all_motion_params[stim_idx, :]
-            title = 'Stim x_0=%.2f v_0=%.2f' % (mp[0], mp[2])
+            if title == '':
+                title = 'Stim x_0=%.2f v_0=%.2f' % (mp[0], mp[2])
         self.plot_grid_vs_time(x_grid, title, xlabel, ylabel, x_edges, fig_cnt, time_range=time_range)
         self.data_to_store['xpos_grid.dat'] = {'data' : x_grid, 'edges': x_edges}
 
 
-    def plot_y_grid_vs_time(self, fig_cnt=1, ylabel=None, time_range=None):
+    def plot_y_grid_vs_time(self, fig_cnt=1, ylabel=None, time_range=None, title=''):
         print 'plot_y_grid_vs_time ...'
         xlabel = 'Time [ms]'
         if ylabel == None:
             ylabel = '$y_{predicted}$'
-        title = ''#$y_{predicted}$ binned vs time'
         y_grid, y_edges = self.bin_estimates(self.y_grid, index=1)
         if time_range != None:
             bin0 = int(round(time_range[0] / self.time_binsize))
@@ -1224,15 +1219,6 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         time_range = (t0, t1)
         stim_range = (stim, stim + 1)
 
-        plotter.n_fig_x = 1
-        plotter.n_fig_y = 1
-        plotter.create_fig()
-        plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range)
-        output_fn = '%sraster_inhibitory_cells_stim%d.png' % (params['figures_folder'], stim)
-        print 'Saving figure to:', output_fn
-        pylab.savefig(output_fn, dpi=300)
-
-
         pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
         plotter.n_fig_x = 2
         plotter.n_fig_y = 2
@@ -1243,8 +1229,9 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=3, sort_idx=2)
         plotter.plot_raster_sorted(stim_range, fig_cnt=3, title='Exc cells sorted by $v_x$', sort_idx=2)
-        plotter.plot_vx_grid_vs_time(4, time_range=time_range)
-
+        vx_title = '$gain=%.2f\ w_{ie}=%.2f\ w_{ei}=%.2f$ \n $n_{exc}^{per MC}=%d\ p_{ee}=%.2f$' % ( \
+                params['bcpnn_gain'], params['w_ie_unspec'], params['w_ei_unspec'], params['n_exc_per_mc'], params['p_ee_local'])
+        plotter.plot_vx_grid_vs_time(4, time_range=time_range, title=vx_title)
         output_fn = output_fn_base + '_stim%d.png' % stim
         print 'Saving figure to:', output_fn
         pylab.savefig(output_fn, dpi=300)
@@ -1261,6 +1248,15 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         plotter.plot_vx_estimates(3, time_range=time_range, stim_idx=stim)
         plotter.plot_vdiff(4, time_range=time_range)
         output_fn = output_fn_base + '_population_readout_%d.png' % stim
+        print 'Saving figure to:', output_fn
+        pylab.savefig(output_fn, dpi=300)
+
+        # plot inhibitory raster
+        plotter.n_fig_x = 1
+        plotter.n_fig_y = 1
+        plotter.create_fig()
+        plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range)
+        output_fn = '%sraster_inhibitory_cells_stim%d.png' % (params['figures_folder'], stim)
         print 'Saving figure to:', output_fn
         pylab.savefig(output_fn, dpi=300)
 

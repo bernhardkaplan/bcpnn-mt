@@ -14,9 +14,12 @@ script_name = 'PlottingScripts/PlotPrediction.py'
 #    print cmd
 
 folders = sys.argv[1:]
+pure_names = ''
 for f in folders:
     cmd = 'python %s %s ' % (script_name, f)
     os.system(cmd)
     print 'cmd:', cmd
+    pure_names += '%s ' % f
 
-display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % f[:30]
+display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % pure_names
+os.system(display_cmd)
