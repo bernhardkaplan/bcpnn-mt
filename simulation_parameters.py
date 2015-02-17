@@ -24,7 +24,8 @@ class parameter_storage(object):
         self.params['training_run'] = True
         self.params['Cluster'] = False
         self.params['debug'] = False
-        self.w_input_exc = 1.0
+        self.params['with_inhibitory_neurons'] = False
+        self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -131,7 +132,7 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['save_input'] = False # not self.params['Cluster']
+        self.params['save_input'] = not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -178,10 +179,10 @@ class parameter_storage(object):
             self.params['neuron_model'] = 'aeif_cond_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_alpha_multisynapse'
-            self.params['g_leak'] = 25. # before it was 16.66667
-            self.params['cell_params_exc'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
-                    'V_reset': -70.0, 'V_th': -55.0, 't_ref': 2.0, \
-                    'a': 0., 'b': 0., \
+            self.params['g_leak'] = 30. # 
+            self.params['cell_params_exc'] = {'C_m': 281.0, 'E_L': -70.6, 'I_e': 0.0, 'V_m': -70.6, \
+                    'V_reset': -60.0, 'V_th': -50.4, 't_ref': 5.0, \
+                    'a': 4., 'b': 80.5, \
                     'g_L': self.params['g_leak'], \
                     'gsl_error_tol': 1e-8,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
@@ -295,7 +296,7 @@ class parameter_storage(object):
         
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
-        self.params['blur_X'], self.params['blur_V'] = .0, .05
+        self.params['blur_X'], self.params['blur_V'] = .0, .0
         self.params['blur_theta'] = 1.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
@@ -333,7 +334,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 1)
+        self.params['test_stim_range'] = (0, 3)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -387,7 +388,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 400
+            self.params['t_blank'] = 0
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 1000.
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
@@ -415,7 +416,7 @@ class parameter_storage(object):
             self.params['gain'] = 0.
             self.params['kappa'] = 1.
         else:
-            self.params['gain'] = 10.
+            self.params['gain'] = 1.
             self.params['kappa'] = 0.
 
         self.params['bcpnn_params'] =  {
@@ -503,7 +504,8 @@ class parameter_storage(object):
             self.params['input_folder'] = "InputFilesTraining_seed%d_nX%d_nV%d_stimRange%d-%d/" % (self.params['visual_stim_seed'], self.params['n_training_x'], self.params['n_training_v'], \
                     self.params['stim_range'][0], self.params['stim_range'][1])
         else:
-            self.params['input_folder'] = "InputFilesTest_seed%d/" % (self.params['visual_stim_seed'])
+            self.params['input_folder'] = "InputFilesTest_seed%d_nX%d_nV%d_bX%.2f_bV%.2f/" % (self.params['visual_stim_seed'], self.params['n_training_x'], self.params['n_training_v'], \
+                    self.params['blur_X'], self.params['blur_V'])
 
         # if you want to store the input files in a subfolder of self.params['folder_name'], do this:
 #        self.params['input_folder'] = "%sInputSpikeTrains/"   % self.params['folder_name']# folder containing the input spike trains for the network generated from a certain stimulus

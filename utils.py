@@ -23,7 +23,7 @@ def compute_stim_time(stim_params):
     return t_exit 
 
 
-def get_gids_near_stim(mp, tp_cells, n=1, ndim=1):
+def get_gids_near_stim_nest(mp, tp_cells, n=1, ndim=1):
     """
     Get the cell GIDS (0 - aligned) from n cells,
     that are closest to the stimulus with parameters mp
@@ -43,8 +43,9 @@ def get_gids_near_stim(mp, tp_cells, n=1, ndim=1):
         dx = np.abs(tp_cells[:, 0] - mp[0])
         velocity_dist = np.sqrt((tp_cells[:, 2] - mp[2])**2 + (tp_cells[:, 3] - mp[3])**2)
         summed_dist = dx + dy + velocity_dist
-    gids_sorted = np.argsort(summed_dist)[:n]
-    return gids_sorted, summed_dist[gids_sorted]
+    gids_sorted = np.argsort(summed_dist)[:n] # 0 .. n-1
+    nest_gids = gids_sorted + 1
+    return nest_gids, summed_dist[gids_sorted]
     
 
 
@@ -174,6 +175,16 @@ def get_spikes_within_interval(d, t0, t1, time_axis=1, gid_axis=0):
     spikes = d[idx, time_axis]
     gids = d[idx, gid_axis]
     return (spikes, gids)
+
+def get_spikes_for_gid(spike_data, gid, t_range=None):
+    if t_range == None:
+        idx = np.nonzero(gid == spike_data[:, 0])[0]
+        return spike_data[idx, 1]
+    else: 
+        (spikes, gids) = get_spikes_within_interval(spike_data, t_range[0], t_range[1], time_axis=1, gid_axis=0)
+        idx = np.nonzero(gid == gids)[0]
+        return spikes[idx]
+
 
 def transform_tauzi_from_vx(vx, params):
     """
@@ -1460,8 +1471,8 @@ def merge_connection_files(params, conn_type='ee', iteration=None):
     else:
         merge_pattern = params['conn_list_%s_fn_base' % conn_type] + 'it%04d_' % iteration
 
-#        self.params['conn_list_ii_fn_base'] = '%sconn_list_ii_' % (self.params['connections_folder'])
-#        self.params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (self.params['connections_folder'])
+#        params['conn_list_ii_fn_base'] = '%sconn_list_ii_' % (params['connections_folder'])
+#        params['merged_conn_list_ii'] = '%smerged_conn_list_ii.dat' % (params['connections_folder'])
 #    if not os.path.exists(conn_list_fn):
 #        print 'Merging default connection files...'
     if iteration==None:
@@ -1472,6 +1483,10 @@ def merge_connection_files(params, conn_type='ee', iteration=None):
 #    merge_files(merge_pattern, fn_out)
     merge_and_sort_files(merge_pattern, fn_out)
 
+def merge_spike_files_exc(params):
+    cell_type = 'exc'
+#    fn = params['exc_spiketimes_fn_merged']
+    merge_and_sort_files(params['%s_spiketimes_fn_base' % cell_type], params['%s_spiketimes_fn_merged' % cell_type])
 
 def merge_files(input_fn_base, output_fn):
     cmd = 'cat %s* > %s' % (input_fn_base, output_fn)
@@ -1736,7 +1751,7 @@ def get_figsize(fig_width_pt, portrait=True):
     return fig_size
 
 
-def get_colorlist():
+def get_colorlist(n_colors=17):
     colorlist = ['k', 'b', 'r', 'g', 'm', 'c', 'y', \
             '#00FF99', \
             #light green
@@ -1758,11 +1773,13 @@ def get_colorlist():
                     # light violet
             '#7700ff', \
                     # dark violet
-            '#555555', \
-                    # dark grey
-            '#999999', \
-            '#CCCCCC', \
                     ]
+
+    if n_colors > 17:
+        r = lambda: rnd.randint(0,255)
+        for i_ in xrange(n_colors - 17):
+            colorlist.append('#%02X%02X%02X' % (r(),r(),r()))
+
     return colorlist
 
 

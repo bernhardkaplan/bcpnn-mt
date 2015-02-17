@@ -7,7 +7,7 @@ import set_tuning_properties
 
 
 class CreateInput(object):
-    def __init__(self, params, visual_stim_seed=None):
+    def __init__(self, params, tuning_prop, rfs, visual_stim_seed=None):
         self.motion_params_created = False
         self.params = params
         self.tuning_prop_loaded = False
@@ -15,21 +15,23 @@ class CreateInput(object):
             visual_stim_seed = self.params['visual_stim_seed']
         print 'Setting seed to:', visual_stim_seed
         self.RNG = np.random.RandomState(visual_stim_seed)
-        self.load_tuning_prop()
+#        self.load_tuning_prop()
+        self.tuning_prop = tuning_prop
+        self.rf_sizes = rfs
 
-    def load_tuning_prop(self, tuning_prop_fn=None):
+    def load_tuning_prop(self):
+        print 'Loading tuning prop from:', self.params['tuning_prop_exc_fn']
+        print 'Loading receptive fields from:', self.params['receptive_fields_exc_fn']
+        self.tuning_prop = np.loadtxt(self.params['tuning_prop_exc_fn'])
+        self.rf_sizes = np.loadtxt(self.params['receptive_fields_exc_fn'])
 
-        if tuning_prop_fn == None:
-            self.tuning_prop, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
-            print 'Saving tuning prop to:', self.params['tuning_prop_exc_fn']
-            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop)
-            print 'Saving receptive fields to:', self.params['receptive_fields_exc_fn']
-            np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
-        else:
-            print 'Loading tuning prop from:', self.params['tuning_prop_exc_fn']
-            print 'Loading receptive fields from:', self.params['receptive_fields_exc_fn']
-            self.tuning_prop = np.loadtxt(self.params['tuning_prop_exc_fn'])
-            self.rf_sizes = np.loadtxt(self.params['rf_sizes_fn'])
+#        if tuning_prop_fn == None:
+#            self.tuning_prop, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
+#            print 'Saving tuning prop to:', self.params['tuning_prop_exc_fn']
+#            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop)
+#            print 'Saving receptive fields to:', self.params['receptive_fields_exc_fn']
+#            np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
+#        else:
 
 #    def compute_input(self, motion_params, gids, tuning_prop):
 #        """
@@ -139,15 +141,15 @@ class CreateInput(object):
     def create_test_stim_grid(self, params):
         n_stim = params['n_stim']
         vlim = (params['v_min_training'], params['v_max_training'])
-        v_test = np.linspace(vlim[1], vlim[0], params['n_stim'])
+        v_test = np.linspace(vlim[1], vlim[0], params['n_stim'], endpoint=True)
         mp_test = np.zeros((params['n_stim'], 4))
         x_idx_pos = (v_test > 0.).nonzero()[0]
         x_idx_neg = (v_test <= 0.).nonzero()[0]
         x_test = np.zeros(n_stim)
         for i_ in x_idx_pos:
-            x_test[i_] = 0.05
+            x_test[i_] = 0.02
         for i_ in x_idx_neg:
-            x_test[i_] = 0.95
+            x_test[i_] = 0.98
         for i_ in xrange(n_stim):
             mp_test[i_, :] = x_test[i_], .5, v_test[i_], .0
         if n_stim == 1:
