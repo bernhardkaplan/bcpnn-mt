@@ -39,11 +39,11 @@ if __name__ == '__main__':
     
     # conn_fn_ should be the filenames for the connection matrices on MC-MC basis
 #    w_input_exc = float(sys.argv[1])
-#    conn_fn_ampa = sys.argv[1]
-#    conn_fn_nmda = sys.argv[2]
-#    bcpnn_gain = float(sys.argv[3])
-#    w_ie = float(sys.argv[4])
-#    w_ei = float(sys.argv[5])
+    conn_fn_ampa = sys.argv[1]
+    conn_fn_nmda = sys.argv[2]
+    bcpnn_gain = float(sys.argv[3])
+    w_ie = float(sys.argv[4])
+    w_ei = float(sys.argv[5])
     
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
@@ -58,13 +58,13 @@ if __name__ == '__main__':
 #            params['sim_id'], params['n_test_stim'], 
 #            params['n_exc_per_mc'], params['w_input_exc'])
 
-#    params['bcpnn_gain'] = bcpnn_gain
-#    params['w_ie_unspec'] = w_ie
-#    params['w_ei_unspec'] = w_ei
-#    folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_pee%.2f_wie%.2f_wei%.2f' % ( \
-#            params['sim_id'], params['n_test_stim'], 
-#            params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
-#            params['w_ie_unspec'], params['w_ei_unspec'])
+    params['bcpnn_gain'] = bcpnn_gain
+    params['w_ie_unspec'] = w_ie
+    params['w_ei_unspec'] = w_ei
+    folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_pee%.2f_wie%.2f_wei%.2f' % ( \
+            params['sim_id'], params['n_test_stim'], 
+            params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
+            params['w_ie_unspec'], params['w_ei_unspec'])
 
 #    folder_name += '/'
 

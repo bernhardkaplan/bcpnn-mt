@@ -1130,7 +1130,6 @@ class NetworkModel(object):
                 for i_hc_tgt in xrange(self.params['n_hc']):
                     for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
                         conns = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt])
-                        print 'debug', i_hc_src, i_mc_src, i_hc_tgt, i_mc_tgt, len(conns)
                         if conns != None:
                             for i_, c in enumerate(conns):
                                 cp = nest.GetStatus([c])  # retrieve the dictionary for this connection

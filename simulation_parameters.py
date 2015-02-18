@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = False
@@ -69,7 +69,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 16 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -143,7 +143,7 @@ class parameter_storage(object):
         # neuron numbers: based on n_mc
         self.params['n_inh_unspec'] = int(round(self.params['fraction_inh_cells'] * self.params['n_exc'])) # normalizing inhibition on HC level, based on the assumption that n_inh_unspec = n_inh_spec
         self.params['n_inh_unspec_per_hc'] = int(round(self.params['n_inh_unspec'] / self.params['n_hc']))
-        self.params['n_inh_spec'] =  self.params['n_inh_unspec'] # local inhibition
+        self.params['n_inh_spec'] =  0 #self.params['n_inh_unspec'] # local inhibition
         self.params['n_inh_per_mc'] = int(round(self.params['n_inh_spec'] / float(self.params['n_mc']))) # specific local inhibition
         self.params['n_inh' ] = self.params['n_inh_unspec'] + self.params['n_inh_spec']
         self.params['n_theta_inh'] = self.params['n_theta']
@@ -248,13 +248,13 @@ class parameter_storage(object):
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
         self.params['w_ei_unspec'] = 2.    # untrained, unspecific PYR -> Basket connections
-        self.params['p_ei_unspec'] = .75     # probability for PYR -> Basket connections
+        self.params['p_ei_unspec'] = .70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec']))
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
         self.params['w_ie_unspec'] = -2.  # untrained, unspecific Basket -> PYR connections
-        self.params['p_ie_unspec'] = .75     # probability for Basket -> PYR Basket connections
+        self.params['p_ie_unspec'] = .70     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_exc_per_mc']))
 
@@ -334,7 +334,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 3)
+        self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
