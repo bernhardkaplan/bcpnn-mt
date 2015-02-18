@@ -60,6 +60,14 @@ def plot_scatter_with_histograms(x, y, fig, title='', xv='x', markersizes=None):
 
 
 def plot_tuning_prop_2D(params):
+    rcParams = { 'axes.labelsize' : 32,
+                'label.fontsize': 20,
+                'xtick.labelsize' : 18,
+                'ytick.labelsize' : 18,
+                'axes.titlesize' : 32,
+                'legend.fontsize': 9,
+                'lines.markeredgewidth' : 0}
+    pylab.rcParams.update(rcParams)
 
     cell_type = 'exc'
 
@@ -83,20 +91,24 @@ def plot_tuning_prop_2D(params):
     ms = 2 # markersize for scatterplots
 
     width = 8
-    fig = plt.figure(figsize=(12, 9))
-    plt.subplots_adjust(wspace=.3)
-    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], height_ratios=[1, 1])
-    #ax1 = fig.add_subplot(121, autoscale_on=False, aspect='equal')
-    #ax2 = fig.add_subplot(122, aspect='equal')#, autoscale_on=False)
-    ax1 = plt.subplot(gs[0], aspect='equal', autoscale_on=False)
-    ax2 = plt.subplot(gs[1], aspect='equal', autoscale_on=False)
+    fig1 = plt.figure(figsize=(12, 9))
+#    fig1 = plt.figure(figsize=(8, 6))
+    ax1 = fig1.add_subplot(111, autoscale_on=False, aspect='equal')
+    fig2 = plt.figure(figsize=(12, 9))
+    ax2 = fig2.add_subplot(111, aspect='equal')#, autoscale_on=False)
+
+#    fig = plt.figure(figsize=(12, 9))
+#    plt.subplots_adjust(wspace=.3)
+#    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], height_ratios=[1, 1])
+#    ax1 = plt.subplot(gs[0], aspect='equal', autoscale_on=False)
+#    ax2 = plt.subplot(gs[1], aspect='equal', autoscale_on=False)
 
 
     scale = 6. # scale of the quivers / arrows
     # set the colorscale for directions
     o_min = 0.
     o_max = 360.
-    norm = matplotlib.mpl.colors.Normalize(vmin=o_min, vmax=o_max)
+    norm = matplotlib.colors.Normalize(vmin=o_min, vmax=o_max)
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cm.hsv)#jet)
     m.set_array(np.arange(o_min, o_max, 0.01))
     rgba_colors = []
@@ -133,8 +145,8 @@ def plot_tuning_prop_2D(params):
     ax1.set_title('Spatial receptive fields')# for %s cells\n n_rf=%d, n_units=%d' % (cell_type, n_rf, n_units))
     ax1.set_xlim((-.05, 1.1))
     ax1.set_ylim((-.05, 1.1))
-    cb = fig.colorbar(m, ax=ax1)#, shrink=.43)
-    cb.set_label('Preferred angle of motion', fontsize=14)
+    cb = fig1.colorbar(m, ax=ax1)#, shrink=.43)
+    cb.set_label('Preferred angle of motion', fontsize=rcParams['axes.labelsize'])
 
     ax2.set_xlabel('$u$')#, fontsize=16)
     ax2.set_ylabel('$v$')#, fontsize=16)
@@ -194,18 +206,18 @@ def plot_tuning_prop_2D(params):
     output_fn = params['tuning_prop_fig_%s_fn' % cell_type]
     output_fn = output_fn.rstrip('.png') + '_%.2f.png' % params['log_scale']
     print "Saving to ... ", output_fn
-    fig.savefig(output_fn, dpi=200)
+    fig1.savefig(output_fn, dpi=100)
 
 
-    fig2 = pylab.figure(figsize=(width, width))
-    #ax2 = fig2.add_subplot(111, autoscale_on=False, aspect='equal')
+    fig3 = pylab.figure(figsize=(width, width))
+    #ax2 = fig3.add_subplot(111, autoscale_on=False, aspect='equal')
     #ax2 = fig.add_subplot(122, aspect='equal')
     #ax2 = pylab.axes()
     #plot_scatter_with_histograms(d[:, 0], d[:, 1])
-    plot_scatter_with_histograms(d[:, 2], d[:, 3], fig2)
+    plot_scatter_with_histograms(d[:, 2], d[:, 3], fig3)
     output_fn = params['figures_folder'] + 'v_tuning_histogram_vmin%.2e_vmax%.2e.png' % (params['v_min_tp'], params['v_max_tp'])
     print 'Saving to', output_fn
-    fig2.savefig(output_fn, dpi=200)
+    fig3.savefig(output_fn, dpi=200)
 
 
 
@@ -343,7 +355,7 @@ def plot_spatial_and_direction_tuning_2D():
     ax1.set_xlim((-.05, 1.1))
     ax1.set_ylim((-.05, 1.1))
     cb = fig.colorbar(m, ax=ax1)#, shrink=.43)
-    cb.set_label('Preferred angle of motion', fontsize=14)
+    cb.set_label('Preferred angle of motion')#, fontsize=14)
 
     ax2.set_xlabel('$u$')#, fontsize=16)
     ax2.set_ylabel('$v$')#, fontsize=16)

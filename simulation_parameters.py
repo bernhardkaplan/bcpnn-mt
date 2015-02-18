@@ -30,29 +30,32 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' # 'brian' #
 
         # new parameter make distinguishment between one / two dimensional model easy
-        self.params['n_grid_dimensions'] = 1
+        self.params['n_grid_dimensions'] = 2
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
-        self.params['N_RF'] = 2000 # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
+        self.params['N_RF'] = 30 # 200 for plotting, 2000 before # for more than 2-D tuning space: np.int(n_cells/N_V/N_theta)
         self.params['N_RF_X'] = self.params['N_RF']
         self.params['N_RF_Y'] = 1
-        self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
         self.params['n_orientation'] = 1 # only for compatitibility with code borrowed from  v1-anticipation branch
         if self.params['n_grid_dimensions'] == 2:
-            self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
-            self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf']))
+            self.params['N_V'], self.params['N_theta'] = 4, 8# resolution in velocity norm and direction
+            self.params['N_RF_X'] = np.int(np.sqrt(self.params['N_RF'] * np.sqrt(3)))
+            self.params['N_RF_Y'] = np.int(np.sqrt(self.params['N_RF']))
             # np.sqrt(np.sqrt(3)) comes from resolving the problem "how to quantize the square with a hex grid of a total of n_rfdots?"
-            self.params['n_theta'] = 1# resolution in velocity norm and direction
         else:
+            self.params['N_V'], self.params['N_theta'] = 10, 1# resolution in velocity norm and direction
             self.params['N_RF_X'] = self.params['N_RF']
             self.params['N_RF_Y'] = 1
             self.params['N_theta'] = 1
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
-        self.params['sigma_RF_speed'] = .30 # some variability in the speed of RFs
-        self.params['sigma_RF_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
+        self.params['sigma_RF_pos'] = .01 # some variability in the position of RFs
+#        self.params['sigma_RF_pos'] = .05 # some variability in the position of RFs
+        self.params['sigma_RF_speed'] = .00 # some variability in the speed of RFs
+#        self.params['sigma_RF_speed'] = .30 # some variability in the speed of RFs
+        self.params['sigma_RF_direction'] = .00 * 2 * np.pi # some variability in the direction of RFs
+#        self.params['sigma_RF_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
         self.params['sigma_RF_orientation'] = .1 * np.pi
 
         # ###################
