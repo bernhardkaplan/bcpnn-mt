@@ -63,7 +63,7 @@ class ConnectivityPlotter(object):
         tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
         src_gids = d[:, 0]
         tgt_gids = d[:, 0]
-        gids, dist = utils.get_gids_near_stim(tp_params, tp, n=1)
+        gids, dist = utils.get_gids_near_stim_nest(tp_params, tp, n=1)
         src_gid = gids[0]
         
         # get the targets for this cell

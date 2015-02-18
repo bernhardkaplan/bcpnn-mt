@@ -35,14 +35,10 @@ class NetworkModel(object):
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_params']['epsilon'] = epsilon
 
-    def setup(self, training_stimuli=None, load_tuning_prop=False): #, training_params=None):
+    def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
-        if not load_tuning_prop:
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
-        else:
-            self.tuning_prop_exc = np.loadtxt(self.params['tuning_prop_exc_fn'])
-
+        self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
             np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
@@ -50,7 +46,7 @@ class NetworkModel(object):
 
         if self.comm != None:
             self.comm.Barrier()
-
+#        exit(1)
             
         if self.params['training_run']:
             if training_stimuli == None:
@@ -58,7 +54,7 @@ class NetworkModel(object):
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
-            self.CI = CreateInput.CreateInput(self.params)
+            self.CI = CreateInput.CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
 #            self.motion_params = self.CI.create_test_stim_1D_from_training_stim(self.params, self.training_params)
             self.motion_params = self.CI.create_test_stim_grid(self.params)
             np.savetxt(self.params['test_sequence_fn'], self.motion_params)
@@ -101,17 +97,13 @@ class NetworkModel(object):
         #     R A N D O M    D I S T R I B U T I O N S  #
         # # # # # # # # # # # # # # # # # # # # # # # # #
         self.RNG = np.random.RandomState(self.params['visual_stim_seed'] + self.pc_id)
-        nprnd.seed(self.params['input_spikes_seed'])
+        nprnd.seed(self.params['input_spikes_seed'] + self.pc_id)
 #        self.RNGs = [np.random.RandomState(s) for s in range(self.params['visual_stim_seed'], self.params['visual_stim_seed'] + self.n_proc)]
         nest.SetKernelStatus({'grng_seed' : self.params['seed'] + self.n_proc})
         nest.SetKernelStatus({'rng_seeds' : range(self.params['seed'] + self.n_proc + 1, \
                 self.params['seed'] + 2 * self.n_proc + 1)})
 
         self.setup_synapse_types()
-
-#        self.CI = CreateInput.CreateInput(self.params)
-#        self.motion_params = self.CI.create_motion_sequence_1D_training(self.params)
-#        np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
 
 #    def set_receptive_fields(self, cell_type):
 #        """
@@ -265,31 +257,31 @@ class NetworkModel(object):
         f = file(self.params['local_gids_fn_base'] + '%d.json' % (self.pc_id), 'w')
         json.dump(local_gids_dict, f, indent=2)
 
+        if self.params['with_inhibitory_neurons']:
         ##### UNSPECIFIC INHIBITORY CELLS
-        for hc in xrange(self.params['n_hc']):
-            column_to_gid['inh_unspec'][hc] = {}
-            pop = nest.Create(self.params['neuron_model'], self.params['n_inh_unspec_per_hc'], params=self.params['cell_params_inh'])
-            self.list_of_unspecific_inh_pop.append(pop)
-            self.local_idx_inh_unspec += self.get_local_indices(pop)
-            self.inh_unspec_gids += pop
-            column_to_gid['inh_unspec'][hc] = pop
-            for i_, gid in enumerate(pop):
-                gid_to_column['inh_unspec'][gid] = (hc, 1) # mc index for all unspec inhibitory cells == 1
-                gid_to_type[gid] = 'inh_unspec'
-
+            for hc in xrange(self.params['n_hc']):
+                column_to_gid['inh_unspec'][hc] = {}
+                pop = nest.Create(self.params['neuron_model'], self.params['n_inh_unspec_per_hc'], params=self.params['cell_params_inh'])
+                self.list_of_unspecific_inh_pop.append(pop)
+                self.local_idx_inh_unspec += self.get_local_indices(pop)
+                self.inh_unspec_gids += pop
+                column_to_gid['inh_unspec'][hc] = pop
+                for i_, gid in enumerate(pop):
+                    gid_to_column['inh_unspec'][gid] = (hc, 1) # mc index for all unspec inhibitory cells == 1
+                    gid_to_type[gid] = 'inh_unspec'
 
         ##### SPECIFIC INHIBITORY CELLS
-        for hc in xrange(self.params['n_hc']):
-            column_to_gid['inh_spec'][hc] = {}
-            for mc in xrange(self.params['n_mc_per_hc']):
-                pop = nest.Create(self.params['neuron_model'], self.params['n_inh_per_mc'], params=self.params['cell_params_inh'])
-                column_to_gid['inh_spec'][hc][mc] = pop
-                self.list_of_specific_inh_pop[hc].append(pop)
-                self.local_idx_inh_spec += self.get_local_indices(pop)
-                self.inh_spec_gids += pop
-                for i_, gid in enumerate(pop):
-                    gid_to_column['inh_spec'][gid] = (hc, mc)
-                    gid_to_type[gid] = 'inh_spec'
+#        for hc in xrange(self.params['n_hc']):
+#            column_to_gid['inh_spec'][hc] = {}
+#            for mc in xrange(self.params['n_mc_per_hc']):
+#                pop = nest.Create(self.params['neuron_model'], self.params['n_inh_per_mc'], params=self.params['cell_params_inh'])
+#                column_to_gid['inh_spec'][hc][mc] = pop
+#                self.list_of_specific_inh_pop[hc].append(pop)
+#                self.local_idx_inh_spec += self.get_local_indices(pop)
+#                self.inh_spec_gids += pop
+#                for i_, gid in enumerate(pop):
+#                    gid_to_column['inh_spec'][gid] = (hc, mc)
+#                    gid_to_type[gid] = 'inh_spec'
 
         gids_dict = {}
         gids_dict['column_to_gid'] = column_to_gid
@@ -324,10 +316,12 @@ class NetworkModel(object):
         for hc in xrange(self.params['n_hc']):
             for mc in xrange(self.params['n_mc_per_hc']):
                 nest.ConvergentConnect(self.list_of_exc_pop[hc][mc], exc_spike_recorder)
-                if not self.params['training_run']:
+                if not self.params['training_run'] and self.params['with_inhibitory_neurons']:
                     nest.ConvergentConnect(self.list_of_specific_inh_pop[hc][mc], inh_spec_spike_recorder)
-        for hc in xrange(self.params['n_hc']):
-            nest.ConvergentConnect(self.list_of_unspecific_inh_pop[hc], inh_unspec_spike_recorder)
+
+        if self.params['with_inhibitory_neurons']:
+            for hc in xrange(self.params['n_hc']):
+                nest.ConvergentConnect(self.list_of_unspecific_inh_pop[hc], inh_unspec_spike_recorder)
     
         # v_init
         self.initialize_vmem(self.local_idx_exc)
@@ -399,6 +393,7 @@ class NetworkModel(object):
 
             self.spike_times_container[i_] = np.array(spike_times)
             if len(spike_times) > 0:
+#                print 'DEBUGINPUT nspikes into cell %d (%d): %d' % (tgt_gid_nest, i_, len(spike_times)), ' tp : ', self.tuning_prop_exc[tgt_gid_nest-1, :], self.motion_params[stim_idx, :]
                 nest.SetStatus([self.stimulus[i_]], {'spike_times' : np.around(spike_times, decimals=1)})
                 if save_output:
                     output_fn = self.params['input_rate_fn_base'] + '%d_%d.dat' % (tgt_gid_nest, stim_idx)
@@ -533,12 +528,12 @@ class NetworkModel(object):
         if self.params['training_run'] and not self.params['debug']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
-#            self.connect_input_to_recorder_neurons()
-            print 'Connecting exc - inh unspecific'
-            self.connect_ei_unspecific()
-            print 'Connecting inh - exc unspecific'
-            self.connect_ie_unspecific() # normalizing inhibition
-            #pass
+            if self.params['with_inhibitory_neurons']:
+                self.connect_input_to_recorder_neurons()
+                print 'Connecting exc - inh unspecific'
+                self.connect_ei_unspecific()
+                print 'Connecting inh - exc unspecific'
+                self.connect_ie_unspecific() # normalizing inhibition
         elif not self.params['debug']: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
 #            self.connect_input_to_recorder_neurons()
@@ -547,14 +542,15 @@ class NetworkModel(object):
             self.connect_ee_testing()
 #            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
-            self.connect_ei_unspecific()
-            print 'Connecting exc - inh specific'
-#            self.connect_ei_specific()
-            print 'Connecting inh - exc unspecific'
-            self.connect_ie_unspecific() # normalizing inhibition
-            #print 'Connecting inh - exc specific'
-#            self.connect_ie_specific()
-            self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
+            if self.params['with_inhibitory_neurons']:
+                self.connect_ei_unspecific()
+                print 'Connecting exc - inh specific'
+    #            self.connect_ei_specific()
+                print 'Connecting inh - exc unspecific'
+                self.connect_ie_unspecific() # normalizing inhibition
+                #print 'Connecting inh - exc specific'
+    #            self.connect_ie_specific()
+                self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
 #            self.connect_recorder_neurons()
 
 #        self.times['t_connect'] = self.timer.diff()
@@ -1134,7 +1130,6 @@ class NetworkModel(object):
                 for i_hc_tgt in xrange(self.params['n_hc']):
                     for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
                         conns = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt])
-                        print 'debug', i_hc_src, i_mc_src, i_hc_tgt, i_mc_tgt, len(conns)
                         if conns != None:
                             for i_, c in enumerate(conns):
                                 cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
@@ -1299,9 +1294,8 @@ class NetworkModel(object):
         mp = []
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             if self.pc_id == 0:
-                print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-#            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=False)
-            self.create_input_for_stim(stim_idx, self.params['save_input'], with_blank=not self.params['training_run'])
+                print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent) mp:' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.), self.motion_params[stim_idx, :]
+            self.create_input_for_stim(stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]

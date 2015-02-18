@@ -58,21 +58,24 @@ class TracePlotter(object):
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_exc_fn'])
         self.tuning_prop_loaded = True
 
-#    def get_cells_that_spiked(self, n_thresh=1):
-#        """
-#        Return cell gids that spiked more than once
-#        """
-#        assert (self.spikes_loaded), 'Please call self.load_spikes() before calling get_cells_that_spiked()'
-#        gids = []
-#        nspikes = []
-#        for gid in xrange(self.params['n_exc']):
-#            ns = np.nonzero(gid + 1 == self.spike_data[:, 0])[0].size
-#            if ns > n_thresh:
-#                gids.append(gid + 1)
-#                nspikes.append(ns)
-#        print 'gids:', gids
-#        print 'nspikes:', nspikes
-#        return gids, nspikes
+    def get_cells_that_spiked(self, n_thresh=1):
+        """
+        Return cell gids that spiked more than once
+        """
+        assert (self.spikes_loaded), 'Please call self.load_spikes() before calling get_cells_that_spiked()'
+        gids = []
+        nspikes = []
+        for gid in xrange(self.params['n_exc']):
+            ns = np.nonzero(gid + 1 == self.spike_data[:, 0])[0].size
+            if ns > n_thresh:
+                gids.append(gid + 1)
+                nspikes.append(ns)
+        print 'gids:', gids
+        print 'nspikes:', nspikes
+        self.load_tuning_prop()
+        for i_, gid in enumerate(gids):
+            print 'tp[%d, :]' % (gid-1), self.tuning_prop[gid-1, :], 'spiked %d times' % (nspikes[i_])
+        return gids, nspikes
 
 
     def get_spike_data_for_stimulus(self, stim_id):
@@ -199,7 +202,6 @@ class TracePlotter(object):
         if output_fn != None:
             print 'Saving traces to:', output_fn
             pylab.savefig(output_fn)
-
         return fig
 
 
@@ -211,8 +213,6 @@ class TracePlotter(object):
         # idx  == column in weights 
         w = utils.extract_weight_from_connection_list(self.weights, gid_pre, gid_post, idx=2)
         return w
-
-
 
 
     def find_cell_spiking_within_range(self, t_range):
@@ -227,9 +227,6 @@ class TracePlotter(object):
         return spike_data
 
 
-#    def get_spike_data_for_gids(self, spike_data_dict, gid):
-
-
     def get_spikes_for_gid(self, gid, t_range=None):
         assert (self.spikes_loaded), 'Please call self.load_spikes() before calling get_cells_that_spiked()'
         if t_range == None:
@@ -242,15 +239,6 @@ class TracePlotter(object):
 
 
 
-    def get_stimulus_time(self, mp, params):
-        training_stim = np.loadtxt(params['training_stimuli_fn'])
-        gids, dist = utils.get_gids_near_stim(mp, training_stim)
-        stim_durations = np.loadtxt(params['stim_durations_fn'])
-#        print 'training_stim durations:', stim_durations[gids]
-#        print 'time:', stim_durations[:gids[0]].sum(), stim_durations[gids[0]]
-        time_range = (stim_durations[:gids[0]].sum(), stim_durations[gids[0]] + stim_durations[:gids[0]].sum())
-        return time_range
-
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
@@ -262,32 +250,36 @@ if __name__ == '__main__':
     bcpnn_params = params['bcpnn_params']
 #    bcpnn_params['tau_p'] = 500.
     bcpnn_params['gain'] = 1.
+    bcpnn_params['K'] = 1.
+    print 'bcpnn_params:', bcpnn_params
     TP = TracePlotter(params)
     dt = 0.1
 
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
-    tp_pre = [0.1, 0.5, 1.0, .0]
-    tp_post = [0.3, 0.5, -0.1, .0]
-    t_range_trace_computation = (0, params['t_sim'])
-#    t_range_trace_computation = TP.get_stimulus_time(tp_pre, params)
-    print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
+    t_range_trace_computation = (0, params['t_sim']) 
 
-#    exit(1)
-    gids_pre, dist = utils.get_gids_near_stim(tp_pre, TP.tuning_prop, n=1)
-    gids_post, dist = utils.get_gids_near_stim(tp_post, TP.tuning_prop, n=1)
-    print 'gids_pre:', gids_pre
-    print 'gids_post:', gids_post
-    spike_data = {}
-#    for gid_pre in gid_pres
+    tp_pre = [0.2, 0.5, 1.0, .0]
+    tp_post = [0.5, 0.5, 1.0, .0]
+    print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
+    gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=1)
+    gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=1)
     gid_pre = gids_pre[0]
     gid_post = gids_post[0]
+
+    # SELECT CELLS THAT SPIKED
+#    gids, nspikes = TP.get_cells_that_spiked()
+#    gid_pre = gids[0]
+#    gid_post = gids[1]
+#    print 'gid_pre:', gid_pre
+#    print 'gid_post:', gid_post
+
     spike_data = { gid_pre : [], 
             gid_post :[] }
     spike_data[gid_pre] = TP.get_spikes_for_gid(gid_pre, t_range_trace_computation)
     spike_data[gid_post] = TP.get_spikes_for_gid(gid_post, t_range_trace_computation)
     print 'spike_data', spike_data
-    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation)
+
 
     # SELECT CELLS BY GID
 #    gid_pre = 250 + 1
@@ -307,11 +299,6 @@ if __name__ == '__main__':
 #    print 'Tuning prop post %d:' % gid_post, TP.get_tuning_prop(gid_post)
 #    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation)
 
-    # SELECT CELLS THAT SPIKED
-#    gids, nspikes = TP.get_cells_that_spiked()
-#    gid_pre = gids[1]
-#    gid_post = gids[1]
-
     # SELECT CELLS BASED ON STIMULUS ID 
 #    stim_id_pre = 0
 #    stim_id_post = 0
@@ -327,7 +314,7 @@ if __name__ == '__main__':
 #    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data_pre, spike_data_post, t_range_trace_computation)
 
 
-
+    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation)
     TP.plot_trace_with_spikes(bcpnn_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=None, \
             color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
             extra_txt=None, w_title=None)

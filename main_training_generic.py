@@ -94,10 +94,11 @@ if __name__ == '__main__':
     t0 = time.time()
 
     NM = NetworkModel(params, iteration=0, comm=comm)
-    #NM.setup() # create stimuli
-    training_stimuli = np.array([[.1, .5, 1.0, .0], \
-                        [.9, .5, -.1, .0]])
-    NM.setup(training_stimuli=training_stimuli)
+    NM.setup() # create stimuli
+    #if params['debug']:
+        #training_stimuli = np.array([[.1, .5, 1.0, .0], \
+                            #[.9, .5, -.1, .0]])
+        #NM.setup(training_stimuli=training_stimuli)
     NM.create()
     NM.connect()
     if old_params != None:
@@ -118,7 +119,8 @@ if __name__ == '__main__':
         t_start_get_weights = time.time()
         NM.get_weights_after_learning_cycle()
         t_start_get_weights_static = time.time()
-        NM.get_weights_static()
+        if params['with_inhibitory_neurons']:
+            NM.get_weights_static()
         t_stop_get_weights = time.time()
         print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
     NM.merge_local_gid_files()

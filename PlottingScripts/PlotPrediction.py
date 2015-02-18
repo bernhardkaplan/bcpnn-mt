@@ -23,6 +23,7 @@ class PlotPrediction(object):
             self.params = params
         self.no_spikes = False
 
+        self.raster_dotsize = 4
         self.spiketimes = {} # will store all spike times with cell_type as key
         self.n_fig_x = 2
         self.n_fig_y = 2
@@ -491,7 +492,7 @@ class PlotPrediction(object):
 
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         for cell in xrange(int(len(spiketimes))):
-            ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=1)
+            ax.plot(spiketimes[cell], cell * np.ones(nspikes[cell]), 'o', color='k', markersize=self.raster_dotsize)
             
         ylim = ax.get_ylim()
         ax.set_ylim((0, self.params['n_%s' % cell_type]))
@@ -525,7 +526,7 @@ class PlotPrediction(object):
             spikes = self.spiketrains[gid]
             nspikes = len(spikes)
             y_ = np.ones(nspikes) * tp[gid, sort_idx]
-            ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
+            ax.plot(spikes, y_, 'o', markersize=self.raster_dotsize, markeredgewidth=0., color='k')
 
         ylim = ax.get_ylim()
         if self.params['n_stim'] > 1:
@@ -572,14 +573,14 @@ class PlotPrediction(object):
 
         cnt_file = 0
         for fn in os.listdir(self.params['input_folder']):
-            m = re.match('stim_spike_train_(\d+)_stim(\d+)-(\d+).dat', fn)
+            m = re.match('stim_spike_train_(\d+)_(\d+).dat', fn)
             if m:
                 gid = int(m.groups()[0])
                 if (gid < self.params['n_exc']):
                     y_pos_of_cell = tp[gid, sort_idx]
                     fn_ = self.params['input_folder'] + fn
                     d = np.loadtxt(fn_)
-                    ax.plot(d, y_pos_of_cell * np.ones(d.size), 'o', markersize=3, markeredgewidth=0., alpha=.1, color='b')
+                    ax.plot(d, y_pos_of_cell * np.ones(d.size), 'o', markersize=self.raster_dotsize, markeredgewidth=0., alpha=.1, color='b')
                     cnt_file += 1
 
         print 'Found %d input files' % (cnt_file)
