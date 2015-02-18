@@ -16,7 +16,11 @@ import utils
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
 from FigureCreator import plot_params
+
+plot_params['figure.subplot.left'] = .15
+plot_params['figure.subplot.bottom'] = .15
 pylab.rcParams.update(plot_params)
+
 import set_tuning_properties
 
 class Plotter(object):
@@ -81,8 +85,8 @@ class Plotter(object):
 
     def plot_tuning_space(self):
 
-#        fig = pylab.figure(figsize=utils.get_figsize(600, portrait=True))
-        fig = pylab.figure()
+        fig = pylab.figure(figsize=utils.get_figsize(800, portrait=False))
+#        fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.set_title('Feature space')
         ax.set_xlabel('Receptive field center $x$', fontsize=20)

@@ -66,10 +66,9 @@ if __name__ == '__main__':
             params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
             params['w_ie_unspec'], params['w_ei_unspec'])
 
-#    folder_name += '/'
-
-#    ps.set_filenames(folder_name) 
-    ps.set_filenames() 
+    folder_name += '/'
+    ps.set_filenames(folder_name) 
+#    ps.set_filenames() 
     ps.create_folders()
     ps.write_parameters_to_file()
 

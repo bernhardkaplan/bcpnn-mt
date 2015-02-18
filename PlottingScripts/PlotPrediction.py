@@ -126,6 +126,23 @@ class PlotPrediction(object):
             tmp[0, :] = self.all_motion_params
             self.all_motion_params = tmp
 
+        self.trajectories_x = {}
+        self.bins_per_stim = np.zeros(self.params['n_stim'])
+        if self.params['n_stim'] == 1:
+            n_bins = self.stim_duration / self.time_binsize
+            x_ = self.all_motion_params[0, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[0, 2]
+            t_axis = np.arange(n_bins) * self.time_binsize
+            self.trajectories_x[0] = (x_, t_axis)
+            self.bins_per_stim[0] = self.stim_duration / self.time_binsize
+        else:
+            for stim_idx in xrange(self.params['n_stim']):
+                n_bins = self.stim_duration[stim_idx] / self.time_binsize
+                self.bins_per_stim[stim_idx] = n_bins
+                t_axis = np.arange(self.stim_duration[:stim_idx].sum(), self.stim_duration[:stim_idx+1].sum(), self.time_binsize)
+                x_ = self.all_motion_params[stim_idx, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[stim_idx, 2]
+                self.trajectories_x[stim_idx] = (x_, t_axis)
+
+
     def normalize_spiketimes(self, fn=None):
         """
         Fills the following arrays with data:
@@ -313,10 +330,11 @@ class PlotPrediction(object):
             self.y_stim[i] = stim_pos_y
             x_pred = self.x_confidence_binned[:, i] * self.x_tuning
             y_pred = self.y_confidence_binned[:, i] * self.y_tuning
-            self.x_avg[i] = self.get_average_of_circular_quantity(self.x_confidence_binned[:, i], self.x_tuning, xv='x')
-            self.y_avg[i] = self.get_average_of_circular_quantity(self.y_confidence_binned[:, i], self.y_tuning, xv='x')
-#            self.x_avg[i] = np.sum(x_pred)
-#            self.y_avg[i] = np.sum(y_pred)
+            # on torus:
+#            self.x_avg[i] = self.get_average_of_circular_quantity(self.x_confidence_binned[:, i], self.x_tuning, xv='x')
+#            self.y_avg[i] = self.get_average_of_circular_quantity(self.y_confidence_binned[:, i], self.y_tuning, xv='x')
+            self.x_avg[i] = np.sum(x_pred)
+            self.y_avg[i] = np.sum(y_pred)
             self.xdiff_avg[i] = np.sqrt((stim_pos_x - self.x_avg[i])**2 + (stim_pos_y - self.y_avg[i])**2)
 
             # 2) moving average
@@ -357,20 +375,20 @@ class PlotPrediction(object):
             # 3) soft-max
             # x
             # rescale activity to negative values
-            x_shifted = self.nspikes_binned[self.sorted_indices_x, i] - self.nspikes_binned[self.sorted_indices_x, i].max()
-            y_shifted = self.nspikes_binned[self.sorted_indices_y, i] - self.nspikes_binned[self.sorted_indices_y, i].max()
+#            x_shifted = self.nspikes_binned[self.sorted_indices_x, i] - self.nspikes_binned[self.sorted_indices_x, i].max()
+#            y_shifted = self.nspikes_binned[self.sorted_indices_y, i] - self.nspikes_binned[self.sorted_indices_y, i].max()
             # exp --> mapping to range(0, 1)
-            x_exp = np.exp(x_shifted)
-            y_exp = np.exp(y_shifted)
+#            x_exp = np.exp(x_shifted)
+#            y_exp = np.exp(y_shifted)
             # normalize and vote
 #            x_votes = (x_exp / x_exp.sum()) * self.x_tuning
 #            y_votes = (y_exp / y_exp.sum()) * self.y_tuning
 #            self.x_non_linear[i] = x_votes.sum()
 #            self.y_non_linear[i] = y_votes.sum()
+            # on torus:
+#            self.x_non_linear[i] = self.get_average_of_circular_quantity(x_exp, self.x_tuning, xv='x')
+#            self.y_non_linear[i] = self.get_average_of_circular_quantity(y_exp, self.x_tuning, xv='x')
 #            self.xdiff_non_linear[i] = np.sqrt((stim_pos_x - self.x_non_linear[i])**2 + (stim_pos_y - self.y_non_linear[i])**2)
-            self.x_non_linear[i] = self.get_average_of_circular_quantity(x_exp, self.x_tuning, xv='x')
-            self.y_non_linear[i] = self.get_average_of_circular_quantity(y_exp, self.x_tuning, xv='x')
-            self.xdiff_non_linear[i] = np.sqrt((stim_pos_x - self.x_non_linear[i])**2 + (stim_pos_y - self.y_non_linear[i])**2)
 
             # v
             # rescale activity to negative values
@@ -380,14 +398,13 @@ class PlotPrediction(object):
             vx_exp = np.exp(vx_shifted)
             vy_exp = np.exp(vy_shifted)
             # normalize and vote
-#            vx_votes = (vx_exp / vx_exp.sum()) * self.vx_tuning
-#            vy_votes = (vy_exp / vy_exp.sum()) * self.vy_tuning
-#            self.vx_non_linear[i] = vx_votes.sum()
-#            self.vy_non_linear[i] = vy_votes.sum()
-#            self.vdiff_non_linear[i] = np.sqrt((mp[2] - self.vx_non_linear[i])**2 + (mp[3] - self.vy_non_linear[i])**2)
-
-            self.vx_non_linear[i] = self.get_average_of_circular_quantity(vx_exp, self.vx_tuning, xv='v')
-            self.vy_non_linear[i] = self.get_average_of_circular_quantity(vy_exp, self.vy_tuning, xv='v')
+            vx_votes = (vx_exp / vx_exp.sum()) * self.vx_tuning
+            vy_votes = (vy_exp / vy_exp.sum()) * self.vy_tuning
+            self.vx_non_linear[i] = vx_votes.sum()
+            self.vy_non_linear[i] = vy_votes.sum()
+            # on torous
+#            self.vx_non_linear[i] = self.get_average_of_circular_quantity(vx_exp, self.vx_tuning, xv='v')
+#            self.vy_non_linear[i] = self.get_average_of_circular_quantity(vy_exp, self.vy_tuning, xv='v')
             self.vdiff_non_linear[i] = np.sqrt((mp[2]- self.vx_non_linear[i])**2 + (mp[3]- self.vy_non_linear[i])**2)
 
         # in the first step the trace can not have a standard deviation --> avoid NANs 
@@ -517,7 +534,6 @@ class PlotPrediction(object):
         """
         if stim_range == None:
             stim_range = self.params['stim_range']
-
         tp = self.tuning_prop
         tp_idx_sorted = tp[:, sort_idx].argsort()
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
@@ -528,37 +544,25 @@ class PlotPrediction(object):
             y_ = np.ones(nspikes) * tp[gid, sort_idx]
             ax.plot(spikes, y_, 'o', markersize=self.raster_dotsize, markeredgewidth=0., color='k')
 
-        ylim = ax.get_ylim()
-        if self.params['n_stim'] > 1:
-            for i_stim in xrange(stim_range[0], stim_range[1]):
-                t0 = self.stim_duration[:i_stim].sum() - self.stim_duration[:i_stim].sum()
-                t1 = self.stim_duration[:i_stim+1].sum() - self.stim_duration[:i_stim].sum()
-                print 'debug t0 t1', t0, t1, ylim, self.stim_duration[:i_stim+1].sum()
-                print 'aaaaaaaaa', self.stim_duration, i_stim, i_stim+1, self.stim_duration.shape
-                ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
-                ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
-                ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
-        else:
-            t0 = 0
-            t1 = self.stim_duration
-            ax.plot((t0, t0), (0, ylim[1]), ls='--', c='k')
-            ax.plot((t1, t1), (0, ylim[1]), ls='--', c='k')
-#            ax.text(t0 + .5 * (t1 - t0), 0.90 * ylim[1], '%d' % i_stim)
-
-
         ax.set_xlabel('Time [ms]')
         if sort_idx == 0:
             ax.set_ylabel('RF-position')
         elif sort_idx == 2:
             ax.set_ylabel('Preferred speed')
-#        if not self.params['training_run']:
-            # todo: test this after testing ;)
-#            if time_range == None:
-#                t0 = self.stim_duration[:stim_range[0]].sum()
-#                t1 = self.stim_duration[:stim_range[1]].sum()
-#                time_range = (t0, t1)
-#                time_range = (0, self.params['t_sim'])
-#            self.plot_blank(ax, time_range)
+
+        if not self.params['training_run']:
+            for i_stim in xrange(stim_range[0], stim_range[1]):
+                if self.params['n_stim'] > 1:
+                    t0 = self.stim_duration[:i_stim].sum()# - self.stim_duration[:i_stim].sum()
+                    t1 = self.stim_duration[:i_stim+1].sum()# - self.stim_duration[:i_stim].sum()
+                else:
+                    t0 = 0 
+                    t1 = self.stim_duration
+                time_range = (t0, t1)
+            self.plot_blank(ax, time_range)
+            print 'DEEEEEEEEEEBUG t0 t1',  t0, t1, 'stim-ragne', stim_range
+            ax.set_xlim((t0, t1))
+
 
 
     def plot_input_spikes_sorted(self, time_range=None, fig_cnt=1, title='', sort_idx=0):
@@ -892,11 +896,14 @@ class PlotPrediction(object):
         if show_blank == None:
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.plot(self.t_axis, self.x_avg, ls='-', lw=2, label='linear')
-#        ax.plot(self.t_axis, self.x_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
-#        ax.errorbar(self.t_axis, self.x_moving_avg[:, 0], yerr=self.x_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
-#        ax.plot(self.t_axis, self.x_non_linear, ls=':', lw=2, label='soft-max')
-        ax.plot(self.t_axis, self.x_stim, ls='-', c='k', lw=2, label='$x_{stim}$')
+        t_axis = self.trajectories_x[stim_idx][1]
+        if self.params['n_stim'] == 1:
+            bin_idx = (0, self.bins_per_stim[0])
+        else:
+            bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
+        ax.plot(t_axis, self.x_avg[bin_idx[0]:bin_idx[1]], ls='-', lw=2, label='linear')
+        x_stim = self.trajectories_x[stim_idx][0]
+        ax.plot(t_axis, x_stim, ls='-', c='k', lw=2, label='$x_{stim}$')
         ax.legend()#loc='upper left')
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('$x$ position [a.u.]')
@@ -912,9 +919,7 @@ class PlotPrediction(object):
             x_ticks = np.linspace(time_range[0], time_range[1], n_time_ticks)
             x_ticklabels  = ['%d' % i for i in np.linspace(time_range[0], time_range[1], n_time_ticks)]
             xlim = (time_range[0], time_range[1] - self.time_binsize)
-            idx0 = int(time_range[0] / self.time_binsize)
-            idx1 = int(time_range[1] / self.time_binsize)
-            ylim = (0, 1.1 * max(max(self.x_stim[idx0:idx1]), max(self.x_stim[idx0:idx1])))
+            ylim = (0, 1.1 * max(max(x_stim), max(x_stim)))
             ax.set_ylim(ylim)
             mp = self.all_motion_params[stim_idx, :]
             title += ' Stim: $x_0=%.2f v_0=%.2f$' % (mp[0], mp[2])
@@ -935,7 +940,14 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('$y$-predictions')#: avg, moving_avg, nonlinear')
-        ax.plot(self.t_axis, self.y_avg, ls='-', lw=2, label='linear')
+
+        if self.params['n_stim'] == 1:
+            bin_idx = (0, self.bins_per_stim[0])
+        else:
+            bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
+        t_axis = self.trajectories_x[stim_idx][1]
+        ax.plot(t_axis, self.v_avg[bin_idx[0]:bin_idx[1]], ls='-', lw=2, label='linear')
+
 #        ax.plot(self.t_axis, self.y_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.y_moving_avg[:, 0], yerr=self.y_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.y_non_linear, ls=':', lw=2, label='soft-max')
@@ -966,7 +978,12 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('$v_{x}$-predictions')#: avg, moving_avg, nonlinear')
-        ax.plot(self.t_axis, self.vx_avg, ls='-', lw=2, label='linear')
+        if self.params['n_stim'] == 1:
+            bin_idx = (0, self.bins_per_stim[0])
+        else:
+            bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
+        t_axis = self.trajectories_x[stim_idx][1]
+        ax.plot(t_axis, self.vx_avg[bin_idx[0]:bin_idx[1]], ls='-', lw=2, label='linear')
 #        ax.plot(self.t_axis, self.vx_moving_avg[:, 0], ls='--', lw=2, label='moving avg')
 #        ax.errorbar(self.t_axis, self.vx_moving_avg[:, 0], yerr=self.vx_moving_avg[:, 1], ls='--', lw=2, label='moving avg')
 #        ax.plot(self.t_axis, self.vx_non_linear, ls=':', lw=2, label='soft-max')
@@ -982,8 +999,8 @@ class PlotPrediction(object):
             x_ticks = np.linspace(time_range[0], time_range[1], n_time_ticks)
             x_ticklabels  = ['%d' % i for i in np.linspace(time_range[0], time_range[1], n_time_ticks)]
             ax.set_xlim((time_range[0], time_range[1]))
-        vx = self.all_motion_params[stim_idx, 2] * np.ones(self.t_axis.size)
-        ax.plot(self.t_axis, vx, ls='-', c='k', lw=2, label='$v_{x, stim}$')
+        vx = self.all_motion_params[stim_idx, 2] * np.ones(t_axis.size)
+        ax.plot(t_axis, vx, ls='-', c='k', lw=2, label='$v_{x, stim}$')
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_ticklabels)
         if show_blank:
@@ -1000,7 +1017,17 @@ class PlotPrediction(object):
         if show_blank == None:
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
-        ax.plot(self.t_axis, self.vy_avg, ls='-', lw=2, label='linear')
+        if self.params['n_stim'] == 1:
+            bin_idx = (0, self.bins_per_stim[0])
+        else:
+            bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
+        if self.params['n_stim'] == 1:
+            bin_idx = (0, self.bins_per_stim[0])
+        else:
+            bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
+        t_axis = self.trajectories_x[stim_idx][1]
+        ax.plot(t_axis, self.vy_avg[bin_idx[0]:bin_idx[1]], ls='-', lw=2, label='linear')
+        ax.plot(t_axis, self.all_motion_params[stim_idx, 2] * np.ones(bin_idx[1]-bin_idx[0]), ls='-', lw=2, label='$v_{stim}$')
         vy = self.params['motion_params'][3] * np.ones(self.t_axis.size)
         ax.plot(self.t_axis, vy, ls='-', c='k', lw=2, label='$v_{y, stim}$')
         ax.set_xlabel('Time [ms]')
@@ -1253,14 +1280,15 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         print 'Saving figure to:', output_fn
         pylab.savefig(output_fn, dpi=300)
 
-        # plot inhibitory raster
-        plotter.n_fig_x = 1
-        plotter.n_fig_y = 1
-        plotter.create_fig()
-        plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range)
-        output_fn = '%sraster_inhibitory_cells_stim%d.png' % (params['figures_folder'], stim)
-        print 'Saving figure to:', output_fn
-        pylab.savefig(output_fn, dpi=300)
+        if params['with_inhibitory_neurons']:
+            # plot inhibitory raster
+            plotter.n_fig_x = 1
+            plotter.n_fig_y = 1
+            plotter.create_fig()
+            plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range)
+            output_fn = '%sraster_inhibitory_cells_stim%d.png' % (params['figures_folder'], stim)
+            print 'Saving figure to:', output_fn
+            pylab.savefig(output_fn, dpi=300)
 
 
 if __name__ == '__main__':

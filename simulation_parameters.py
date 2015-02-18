@@ -24,7 +24,7 @@ class parameter_storage(object):
         self.params['training_run'] = False
         self.params['Cluster'] = False
         self.params['debug'] = False
-        self.params['with_inhibitory_neurons'] = False
+        self.params['with_inhibitory_neurons'] = True
         self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -69,7 +69,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 16 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -334,7 +334,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 1)
+        self.params['test_stim_range'] = (0, 2)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -384,13 +384,13 @@ class parameter_storage(object):
         else:
             self.params['t_sim'] = self.params['n_test_stim'] * self.params['t_test_stim']
         self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_start'] = 100.           # [ms] blank time before stimulus appears
+        self.params['t_start'] = 50.           # [ms] blank time before stimulus appears
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 0
+            self.params['t_blank'] = 400.
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
-        self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 1000.
+        self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
