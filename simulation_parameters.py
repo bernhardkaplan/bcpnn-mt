@@ -21,10 +21,10 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = True
         self.params['debug'] = False
-        self.params['with_inhibitory_neurons'] = False
+        self.params['with_inhibitory_neurons'] = True
         self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -33,7 +33,7 @@ class parameter_storage(object):
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = ''
+            self.params['sim_id'] = 'noAd'
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -143,7 +143,7 @@ class parameter_storage(object):
         # neuron numbers: based on n_mc
         self.params['n_inh_unspec'] = int(round(self.params['fraction_inh_cells'] * self.params['n_exc'])) # normalizing inhibition on HC level, based on the assumption that n_inh_unspec = n_inh_spec
         self.params['n_inh_unspec_per_hc'] = int(round(self.params['n_inh_unspec'] / self.params['n_hc']))
-        self.params['n_inh_spec'] =  self.params['n_inh_unspec'] # local inhibition
+        self.params['n_inh_spec'] =  0 #self.params['n_inh_unspec'] # local inhibition
         self.params['n_inh_per_mc'] = int(round(self.params['n_inh_spec'] / float(self.params['n_mc']))) # specific local inhibition
         self.params['n_inh' ] = self.params['n_inh_unspec'] + self.params['n_inh_spec']
         self.params['n_theta_inh'] = self.params['n_theta']
@@ -183,8 +183,11 @@ class parameter_storage(object):
             self.params['cell_params_exc'] = {'C_m': 281.0, 'E_L': -70.6, 'I_e': 0.0, 'V_m': -70.6, \
                     'V_reset': -60.0, 'V_th': -50.4, 't_ref': 5.0, \
                     'a': 4., 'b': 80.5, \
+                    #'Delta_T': 2., \
+                    #'a': 0., 'b': 0.0, \
+                    #'Delta_T': 1e-4, \
                     'g_L': self.params['g_leak'], \
-                    'gsl_error_tol': 1e-8,  
+                    'gsl_error_tol': 1e-10,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
                     # default was gsl_error_tol is 1e-6
 
@@ -241,6 +244,8 @@ class parameter_storage(object):
         self.params['w_ee_global_max'] = 1.5
         self.params['delay_ee_global'] = 1. # [ms]
         self.params['n_conn_ee_global_out_per_pyr'] = np.int(np.round(self.params['p_ee_global'] * self.params['n_exc_per_mc']))
+        self.params['n_synapses_exc_ampa'] = self.params['n_conn_ee_global_out_per_pyr'] * self.params['n_exc_per_mc'] * self.params['n_mc'] * self.params['n_mc']
+        self.params['n_synapses_exc_nmda'] = self.params['n_conn_ee_global_out_per_pyr'] * self.params['n_exc_per_mc'] * self.params['n_mc'] * self.params['n_mc']
 
         # exc - inh: spec
         self.params['delay_ei_spec'] = 1.   # [ms]
@@ -248,13 +253,13 @@ class parameter_storage(object):
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
         self.params['w_ei_unspec'] = 2.    # untrained, unspecific PYR -> Basket connections
-        self.params['p_ei_unspec'] = .75     # probability for PYR -> Basket connections
+        self.params['p_ei_unspec'] = .70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec']))
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
         self.params['w_ie_unspec'] = -2.  # untrained, unspecific Basket -> PYR connections
-        self.params['p_ie_unspec'] = .75     # probability for Basket -> PYR Basket connections
+        self.params['p_ie_unspec'] = .70     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_exc_per_mc']))
 
@@ -264,7 +269,7 @@ class parameter_storage(object):
         self.params['delay_ie_spec'] = 1.
 
         # inh - inh
-        self.params['w_ii_unspec'] = 1. # untrained, unspecific Basket -> PYR connections
+        self.params['w_ii_unspec'] = -0.5 # untrained, unspecific Basket -> PYR connections
         self.params['p_ii_unspec'] = .7 # probability for Basket -> PYR Basket connections
         self.params['delay_ii_unspec'] = 1.
 
@@ -316,8 +321,8 @@ class parameter_storage(object):
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        self.params['n_training_v'] = 4 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        self.params['n_training_v_slow_speeds'] = 4 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
+        self.params['n_training_v'] = 5 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
@@ -375,22 +380,21 @@ class parameter_storage(object):
         else:
             self.params['t_stim_pause'] = 500.
         # a test stim is presented for t_test_stim - t_stim_pause
-        self.params['t_test_stim'] = 2000. + self.params['t_stim_pause']
 
         # [ms] total simulation time -- will be overwritten depending on how long a stimulus will be presented 
         # if a stimulus leaves the visual field, the simulation is ended earlier for this stimulus, and takes maximally t_training_max per stimulus
+        self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
+        self.params['t_start'] = 50.           # [ms] blank time before stimulus appears
+        if self.params['training_run']:
+            self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
+        else:
+            self.params['t_blank'] = 400.
+        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:
             self.params['t_sim'] = self.params['n_stim_training'] * (self.params['t_training_max'] + self.params['t_stim_pause']) # will be overwritten
         else:
             self.params['t_sim'] = self.params['n_test_stim'] * self.params['t_test_stim']
-        self.params['t_stimulus'] = 1000.       # [ms] time for a stimulus of speed 1.0 to cross the whole visual field from 0 to 1.
-        self.params['t_start'] = 100.           # [ms] blank time before stimulus appears
-        if self.params['training_run']:
-            self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
-        else:
-            self.params['t_blank'] = 0
-        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
-        self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 1000.
         self.params['tuning_prop_seed'] = 0     # seed for randomized tuning properties
         self.params['input_spikes_seed'] = 0
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays

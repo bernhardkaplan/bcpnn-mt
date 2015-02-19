@@ -29,11 +29,13 @@ class NetworkModel(object):
             assert (comm.size == self.n_proc), 'mpi4py and NEST tell me different PIDs!'
             self.comm.Barrier()
 
+
     def update_bcpnn_params(self):
         self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
         self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_params']['epsilon'] = epsilon
+
 
     def setup(self, training_stimuli=None):
 #        if training_params != None:
@@ -71,6 +73,9 @@ class NetworkModel(object):
             else:
                 stim_params = self.motion_params[i_, :]
                 self.stim_durations[i_] = self.params['t_test_stim']
+                lim = .5
+                #utils.compute_time_until_stim_reaches(xlim, stim_params) + self.params['t_stim_pause']]
+
         t_sim = self.stim_durations.sum()
         self.params['t_sim'] = t_sim
         self.update_bcpnn_params()
@@ -152,21 +157,25 @@ class NetworkModel(object):
         # exc - inh unspecific (within one hypercolumn) NMDA
         nest.CopyModel('static_synapse', 'exc_inh_unspec_slow', \
                 {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': self.params['syn_ports']['nmda']})
+        assert (self.params['w_ei_unspec'] > 0), 'Excitatory weights need to be positive!'
         # inh - exc unspecific (within one hypercolumn) GABA_A
         nest.CopyModel('static_synapse', 'inh_exc_unspec', \
                 {'weight': self.params['w_ie_unspec'], 'delay': self.params['delay_ie_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
+        assert (self.params['w_ie_unspec'] < 0), 'Inhibitory weights need to be negative!'
         # inh - exc unspecific (within one hypercolumn) GABA_B
 #        nest.CopyModel('static_synapse', 'inh_exc_unspec_slow', \
 #                {'weight': self.params['w_ie_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - inh unspecific (within one hypercolumn) GABA_A
         nest.CopyModel('static_synapse', 'inh_inh_unspec_fast', \
                 {'weight': self.params['w_ii_unspec'], 'delay': self.params['delay_ii_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
+        assert (self.params['w_ii_unspec'] < 0), 'Inhibitory weights need to be negative!'
         # inh - inh unspecific (within one hypercolumn) GABA_B
 #        nest.CopyModel('static_synapse', 'inh_inh_unspec_slow', \
 #                {'weight': self.params['w_ii_unspec'], 'receptor_type': self.params['syn_ports']['gaba']})
         # inh - exc global specific (between hypercolumns): GABA_A
         nest.CopyModel('static_synapse', 'inh_exc_specific_fast', \
                 {'weight': self.params['w_ie_spec'], 'delay': self.params['delay_ie_spec'], 'receptor_type': self.params['syn_ports']['gaba']})
+        assert (self.params['w_ie_spec'] < 0), 'Inhibitory weights need to be negative!'
         # inh - exc global specific (between hypercolumns): GABA_B
 #        nest.CopyModel('static_synapse', 'inh_exc_specific_slow', \
 #                {'weight': self.params['w_ie_spec'], 'receptor_type': self.params['syn_ports']['gaba']})
@@ -310,18 +319,26 @@ class NetworkModel(object):
         self.spike_times_container = [ np.array([]) for i in xrange(len(self.local_idx_exc))]
 
         # Record spikes 
-        exc_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'exc_spikes'})
-        inh_spec_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'inh_spec_spikes'})
-        inh_unspec_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'inh_unspec_spikes'})
+        self.exc_spike_recorder = nest.Create('spike_detector', params={'to_file':False, 'label':'exc_spikes'})
+        self.inh_spec_spike_recorder = nest.Create('spike_detector', params={'to_file':False, 'label':'inh_spec_spikes'})
+        self.inh_unspec_spike_recorder = nest.Create('spike_detector', params={'to_file':False, 'label':'inh_unspec_spikes'})
+        self.spike_recorders = {}
+        self.params['cell_types'] = ['exc', 'inh_spec', 'inh_unspec']
+        self.spike_recorders['exc'] = self.exc_spike_recorder
+        self.spike_recorders['inh_spec'] = self.inh_spec_spike_recorder
+        self.spike_recorders['inh_unspec'] = self.inh_unspec_spike_recorder
+        #self.exc_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'exc_spikes'})
+        #self.inh_spec_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'inh_spec_spikes'})
+        #self.inh_unspec_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'inh_unspec_spikes'})
         for hc in xrange(self.params['n_hc']):
             for mc in xrange(self.params['n_mc_per_hc']):
-                nest.ConvergentConnect(self.list_of_exc_pop[hc][mc], exc_spike_recorder)
-                if not self.params['training_run'] and self.params['with_inhibitory_neurons']:
-                    nest.ConvergentConnect(self.list_of_specific_inh_pop[hc][mc], inh_spec_spike_recorder)
+                nest.ConvergentConnect(self.list_of_exc_pop[hc][mc], self.exc_spike_recorder)
+                if not self.params['training_run'] and self.params['with_rsnp_cells']:
+                    nest.ConvergentConnect(self.list_of_specific_inh_pop[hc][mc], self.inh_spec_spike_recorder)
 
         if self.params['with_inhibitory_neurons']:
             for hc in xrange(self.params['n_hc']):
-                nest.ConvergentConnect(self.list_of_unspecific_inh_pop[hc], inh_unspec_spike_recorder)
+                nest.ConvergentConnect(self.list_of_unspecific_inh_pop[hc], self.inh_unspec_spike_recorder)
     
         # v_init
         self.initialize_vmem(self.local_idx_exc)
@@ -529,18 +546,15 @@ class NetworkModel(object):
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
             if self.params['with_inhibitory_neurons']:
-                self.connect_input_to_recorder_neurons()
+                #self.connect_input_to_recorder_neurons() # DOES NOT WORK
                 print 'Connecting exc - inh unspecific'
                 self.connect_ei_unspecific()
                 print 'Connecting inh - exc unspecific'
                 self.connect_ie_unspecific() # normalizing inhibition
         elif not self.params['debug']: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
-#            self.connect_input_to_recorder_neurons()
+#            self.connect_input_to_recorder_neurons() # DOES NOT WORK
 #            self.load_training_weights()
-            print 'Connecting exc - exc '
-            self.connect_ee_testing()
-#            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             if self.params['with_inhibitory_neurons']:
                 self.connect_ei_unspecific()
@@ -552,6 +566,9 @@ class NetworkModel(object):
     #            self.connect_ie_specific()
                 self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
 #            self.connect_recorder_neurons()
+            print 'Connecting exc - exc '
+            self.connect_ee_testing()
+#            self.connect_network_to_recorder_neurons()
 
 #        self.times['t_connect'] = self.timer.diff()
 
@@ -1408,3 +1425,15 @@ class NetworkModel(object):
         nest.SetStatus(self.trigger_spike_source, {'spike_times' : t_spikes})
         nest.Simulate(t_pause + 10.)
 
+
+    def collect_spikes(self):
+        if self.pc_id == 0:
+            for cell_type in self.params['cell_types']:
+                stp_sptimes = nest.GetStatus(self.spike_recorder[cell_type])[0]['events']['times']
+                if self.comm != None:
+                    for i_proc in xrange(1, self.n_proc):
+                        stp_sptimes = np.r_[stp_sptimes, self.comm.recv(source=i_proc)]
+                    else:
+                        self.comm.send(nest.GetStatus(spike_recorder)[0]['events']['times'],dest=0)
+                fn = self.params['%s_spiketimes_fn_merged' % cell_type]
+                np.savetxt(fn, stp_sptimes)

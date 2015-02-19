@@ -147,9 +147,9 @@ class CreateInput(object):
         x_idx_neg = (v_test <= 0.).nonzero()[0]
         x_test = np.zeros(n_stim)
         for i_ in x_idx_pos:
-            x_test[i_] = 0.02
+            x_test[i_] = 0.0
         for i_ in x_idx_neg:
-            x_test[i_] = 0.98
+            x_test[i_] = 1.0
         for i_ in xrange(n_stim):
             mp_test[i_, :] = x_test[i_], .5, v_test[i_], .0
         if n_stim == 1:

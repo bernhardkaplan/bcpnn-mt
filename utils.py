@@ -23,6 +23,16 @@ def compute_stim_time(stim_params):
     return t_exit 
 
 
+def compute_time_until_stim_reaches(xlim, stim_params):
+    """
+    Based on the stim params, one the training stimulus takes different time to stimulate
+    """
+    dx = stim_params[0] - xlim
+    t_exit = dx / stim_params[2] * 1000.
+    assert (t_exit > 0), 'Wrong stop position given!'
+    return t_exit 
+
+
 def get_gids_near_stim_nest(mp, tp_cells, n=1, ndim=1):
     """
     Get the cell GIDS (0 - aligned) from n cells,
