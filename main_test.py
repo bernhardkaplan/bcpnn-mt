@@ -70,8 +70,8 @@ if __name__ == '__main__':
             params['w_ie_unspec'], params['w_ei_unspec'])
     folder_name += '/'
     ps.set_filenames(folder_name) 
+#    ps.set_filenames() 
 
-    #ps.set_filenames() 
     ps.create_folders()
     ps.write_parameters_to_file()
 

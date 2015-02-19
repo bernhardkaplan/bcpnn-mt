@@ -554,17 +554,20 @@ class NetworkModel(object):
         elif not self.params['debug']: # load the weight matrix
             # setup long-range connectivity based on trained connection matrix
 #            self.connect_input_to_recorder_neurons() # DOES NOT WORK
-#            self.load_training_weights()
+            print 'Connecting exc - exc '
+            self.connect_ee_testing()
+#            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             if self.params['with_inhibitory_neurons']:
                 self.connect_ei_unspecific()
-                print 'Connecting exc - inh specific'
-    #            self.connect_ei_specific()
                 print 'Connecting inh - exc unspecific'
                 self.connect_ie_unspecific() # normalizing inhibition
-                #print 'Connecting inh - exc specific'
-    #            self.connect_ie_specific()
                 self.connect_ii() # connect unspecific and specific inhibition to excitatory cells
+            if self.params['with_rsnp_cells']:
+                print 'Connecting inh - exc specific'
+                self.connect_ie_specific()
+                print 'Connecting exc - inh specific'
+                self.connect_ei_specific()
 #            self.connect_recorder_neurons()
             print 'Connecting exc - exc '
             self.connect_ee_testing()
@@ -828,17 +831,17 @@ class NetworkModel(object):
 
     def set_connection_matrices(self, conn_fn_ampa, conn_fn_nmda):
 
-        print 'DEBUG, loading ampa weight matrix from:', conn_fn_ampa
+#        print 'DEBUG, loading ampa weight matrix from:', conn_fn_ampa
         self.W_ampa = np.loadtxt(conn_fn_ampa)
         assert (self.W_ampa.shape[0] == self.params['n_mc'] and self.W_ampa.shape[1] == self.params['n_mc']), 'ERROR: provided ampa weight matrix has wrong dimension. Check simulation parameters!'
-        print 'DEBUG, saving ampa weight matrix to:', self.params['conn_matrix_ampa_fn']
+#        print 'DEBUG, saving ampa weight matrix to:', self.params['conn_matrix_ampa_fn']
         np.savetxt(self.params['conn_matrix_ampa_fn'], self.W_ampa)
 
 
-        print 'DEBUG, loading nmda weight matrix from:', conn_fn_nmda
+#        print 'DEBUG, loading nmda weight matrix from:', conn_fn_nmda
         self.W_nmda = np.loadtxt(conn_fn_nmda)
         assert (self.W_nmda.shape[0] == self.params['n_mc'] and self.W_nmda.shape[1] == self.params['n_mc']), 'ERROR: provided nmda weight matrix has wrong dimension. Check simulation parameters!'
-        print 'DEBUG, saving nmda weight matrix to:', self.params['conn_matrix_nmda_fn']
+#        print 'DEBUG, saving nmda weight matrix to:', self.params['conn_matrix_nmda_fn']
         np.savetxt(self.params['conn_matrix_nmda_fn'], self.W_nmda)
 
         if self.comm != None:
