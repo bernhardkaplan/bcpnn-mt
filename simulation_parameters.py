@@ -22,8 +22,8 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = False
-        self.params['Cluster'] = True
-        self.params['debug'] = False
+        self.params['Cluster'] = False
+        self.params['debug'] = True
         self.params['with_inhibitory_neurons'] = True
         self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
@@ -339,7 +339,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 2)
+        self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']

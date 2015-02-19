@@ -1239,8 +1239,8 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         plotter.compute_pos_and_v_estimates(stim)
         print 'Stim:', stim
         if params['n_stim'] > 1:
-            t0 = stim_duration[:i_stim].sum()
-            t1 = stim_duration[:i_stim+1].sum()
+            t0 = stim_duration[:stim].sum()
+            t1 = stim_duration[:stim+1].sum()
         else:
             t0 = 0
             t1 = stim_duration
@@ -1290,6 +1290,7 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
             print 'Saving figure to:', output_fn
             pylab.savefig(output_fn, dpi=300)
 
+    del plotter
 
 if __name__ == '__main__':
 

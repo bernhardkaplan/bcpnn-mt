@@ -80,7 +80,7 @@ if __name__ == '__main__':
     load_files = False
     record = False
     save_input_files = True #not load_files
-    NM = NetworkModel(params, iteration=0)
+    NM = NetworkModel(params, iteration=0, comm=comm)
     if not params['debug']:
         NM.set_connection_matrices(conn_fn_ampa, conn_fn_nmda)
     pc_id, n_proc = NM.pc_id, NM.n_proc

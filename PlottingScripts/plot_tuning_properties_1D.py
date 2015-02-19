@@ -15,10 +15,28 @@ import os
 import utils
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
-from FigureCreator import plot_params
+#from FigureCreator import plot_params
 
-plot_params['figure.subplot.left'] = .15
-plot_params['figure.subplot.bottom'] = .15
+plot_params = {'backend': 'png',
+              'axes.labelsize': 32,
+              'axes.titlesize': 32,
+              'text.fontsize': 20,
+              'xtick.labelsize': 24,
+              'ytick.labelsize': 24,
+              'legend.pad': 0.2,     # empty space around the legend box
+              'legend.fontsize': 14,
+               'lines.markersize': 1,
+               'lines.markeredgewidth': 0.,
+               'lines.linewidth': 1,
+              'font.size': 12,
+              'path.simplify': False,
+              'figure.subplot.left':.16,
+              'figure.subplot.bottom':.16,
+              'figure.subplot.right':.94,
+              'figure.subplot.top':.92,
+              'figure.subplot.hspace':.30,
+              'figure.subplot.wspace':.30}
+
 pylab.rcParams.update(plot_params)
 
 import set_tuning_properties
@@ -85,12 +103,13 @@ class Plotter(object):
 
     def plot_tuning_space(self):
 
-        fig = pylab.figure(figsize=utils.get_figsize(800, portrait=False))
+#        fig = pylab.figure(figsize=utils.get_figsize(800, portrait=False))
+        fig = pylab.figure(figsize=(9, 9))
 #        fig = pylab.figure()
         ax = fig.add_subplot(111)
         ax.set_title('Feature space')
-        ax.set_xlabel('Receptive field center $x$', fontsize=20)
-        ax.set_ylabel('Preferred speed $v_x$', fontsize=20)
+        ax.set_xlabel('Receptive field center $x$')
+        ax.set_ylabel('Preferred speed $v_x$')
         patches = []
         for gid in xrange(self.tp[:, 0].size):
             ax.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=3)

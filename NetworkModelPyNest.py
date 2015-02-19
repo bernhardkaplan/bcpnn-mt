@@ -322,6 +322,9 @@ class NetworkModel(object):
         self.exc_spike_recorder = nest.Create('spike_detector', params={'to_file':False, 'label':'exc_spikes'})
         self.inh_spec_spike_recorder = nest.Create('spike_detector', params={'to_file':False, 'label':'inh_spec_spikes'})
         self.inh_unspec_spike_recorder = nest.Create('spike_detector', params={'to_file':False, 'label':'inh_unspec_spikes'})
+#        self.exc_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'exc_spikes'})
+#        self.inh_spec_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'inh_spec_spikes'})
+#        self.inh_unspec_spike_recorder = nest.Create('spike_detector', params={'to_file':True, 'label':'inh_unspec_spikes'})
         self.spike_recorders = {}
         self.params['cell_types'] = ['exc', 'inh_spec', 'inh_unspec']
         self.spike_recorders['exc'] = self.exc_spike_recorder
@@ -1430,13 +1433,23 @@ class NetworkModel(object):
 
 
     def collect_spikes(self):
-        if self.pc_id == 0:
-            for cell_type in self.params['cell_types']:
-                stp_sptimes = nest.GetStatus(self.spike_recorder[cell_type])[0]['events']['times']
+        for cell_type in self.params['cell_types']:
+            if self.pc_id == 0:
+                spike_recorder = self.spike_recorders[cell_type]
+                sptimes = nest.GetStatus(spike_recorder)[0]['events']['times']
+                gids = nest.GetStatus(spike_recorder)[0]['events']['senders']
                 if self.comm != None:
                     for i_proc in xrange(1, self.n_proc):
-                        stp_sptimes = np.r_[stp_sptimes, self.comm.recv(source=i_proc)]
-                    else:
-                        self.comm.send(nest.GetStatus(spike_recorder)[0]['events']['times'],dest=0)
-                fn = self.params['%s_spiketimes_fn_merged' % cell_type]
-                np.savetxt(fn, stp_sptimes)
+                        sptimes = np.r_[sptimes, self.comm.recv(source=i_proc, tag=0)]
+                        gids = np.r_[gids, self.comm.recv(source=i_proc, tag=1)]
+                    fn = self.params['%s_spiketimes_fn_merged' % cell_type]
+                    output = np.array((gids, sptimes))
+                    np.savetxt(fn, output.transpose())
+            else:
+                spike_recorder = self.spike_recorders[cell_type]
+                sptimes = nest.GetStatus(spike_recorder)[0]['events']['times']
+                gids = nest.GetStatus(spike_recorder)[0]['events']['senders']
+                self.comm.send(nest.GetStatus(spike_recorder)[0]['events']['times'],dest=0, tag=0)
+                self.comm.send(nest.GetStatus(spike_recorder)[0]['events']['senders'],dest=0, tag=1)
+            self.comm.barrier()
+            

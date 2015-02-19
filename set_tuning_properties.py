@@ -6,13 +6,6 @@ import numpy.random as rnd
 import utils
 import PlottingScripts.FigureCreator
 from PlottingScripts.FigureCreator import plot_params
-
-plot_params.update({'figure.subplot.left':.12,
-              'figure.subplot.bottom':.12, 
-              'figure.subplot.right':.95,
-              'figure.subplot.top':.88})
-pylab.rcParams.update(plot_params)
-
 def get_xpos_exponential_distr(params):
     """
     Returns n_hc positions
@@ -588,6 +581,13 @@ def get_receptive_field_sizes_v_const_fovea(params, rf_v):
 
 
 if __name__ == '__main__':
+
+    plot_params.update({'figure.subplot.left':.12,
+                  'figure.subplot.bottom':.12, 
+                  'figure.subplot.right':.95,
+                  'figure.subplot.top':.88})
+    pylab.rcParams.update(plot_params)
+
     import simulation_parameters
     param_tool = simulation_parameters.parameter_storage()
     params = param_tool.params
