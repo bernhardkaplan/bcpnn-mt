@@ -23,7 +23,7 @@ class parameter_storage(object):
         self.params['simulator'] = 'nest' 
         self.params['training_run'] = False
         self.params['Cluster'] = False
-        self.params['debug'] = True
+        self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
@@ -33,7 +33,7 @@ class parameter_storage(object):
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'noAd'
+            self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -192,6 +192,8 @@ class parameter_storage(object):
                     # default was gsl_error_tol is 1e-6
 
             self.params['cell_params_inh'] = self.params['cell_params_exc']
+            self.params['cell_params_inh']['a'] = 0.
+            self.params['cell_params_inh']['b'] = 0.
 
 #                    'n_synapses': 3, 'tau_syn': [3., 100., 15.], 'receptor_types': [0, 1, 2]}
 #            self.params['cell_params_inh'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
@@ -226,6 +228,41 @@ class parameter_storage(object):
             self.params['v_init'] = self.params['cell_params_exc']['v_rest'] + .5 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
             self.params['v_init_sigma'] = .2 * (self.params['cell_params_exc']['v_thresh'] - self.params['cell_params_exc']['v_rest'])
             
+
+        # #######################
+        # Short - term plasticity 
+        # #######################
+
+        self.params['stp_params'] = {}
+        self.params['stp_params']['ampa'] = {
+             'U': 0.25, \
+             'delay': 1.0, \
+             'receptor_type': self.params['syn_ports']['ampa'], \
+             'synapsemodel': 'tsodyks_synapse', \
+             'tau_fac': 0.0, \
+             'tau_psc': self.params['tau_syn']['ampa'], \
+             'tau_rec': 800.0, \
+             'type': 'synapse', \
+             'u': 0.0, \
+             'weight': 1.0, \
+             'x': 1.0, \
+             'y': 0.0}
+
+        self.params['stp_params']['nmda'] = {
+             'U': 0.25, \
+             'delay': 1.0, \
+             'receptor_type': self.params['syn_ports']['nmda'], \
+             'synapsemodel': 'tsodyks_synapse', \
+             'tau_fac': 0.0, \
+             'tau_psc': self.params['tau_syn']['nmda'], \
+             'tau_rec': 800.0, \
+             'type': 'synapse', \
+             'u': 0.0, \
+             'weight': 1.0, \
+             'x': 1.0, \
+             'y': 0.0}
+
+
         # #######################
         # CONNECTIVITY PARAMETERS
         # #######################
@@ -249,19 +286,19 @@ class parameter_storage(object):
 
         # exc - inh: spec
         self.params['delay_ei_spec'] = 1.   # [ms]
-        self.params['w_ei_spec'] = -2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
+        self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 2.    # untrained, unspecific PYR -> Basket connections
-        self.params['p_ei_unspec'] = .70     # probability for PYR -> Basket connections
+        self.params['w_ei_unspec'] = 20.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
-        self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec']))
+        self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
-        self.params['w_ie_unspec'] = -2.  # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -40. * self.params['w_ei_unspec']  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .70     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
-        self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_exc_per_mc']))
+        self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_inh_unspec_per_hc'])) # RandomConvergentConnect
 
         # ie_spec effective only after training
         self.params['w_ie_spec'] = -50.     # RSNP -> PYR, effective only after training
@@ -272,6 +309,7 @@ class parameter_storage(object):
         self.params['w_ii_unspec'] = -0.5 # untrained, unspecific Basket -> PYR connections
         self.params['p_ii_unspec'] = .7 # probability for Basket -> PYR Basket connections
         self.params['delay_ii_unspec'] = 1.
+        self.params['n_conn_ii_per_hc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ii_unspec']))
 
         # approximately the same as in Mikael Lundqvist's work / copied from the olfaction project
 #        self.params['p_rsnp_pyr'] = 0.7

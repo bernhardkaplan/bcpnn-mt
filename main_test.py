@@ -39,15 +39,7 @@ if __name__ == '__main__':
     
     # conn_fn_ should be the filenames for the connection matrices on MC-MC basis
 #    w_input_exc = float(sys.argv[1])
-    conn_fn_ampa = sys.argv[1]
-    conn_fn_nmda = sys.argv[2]
-    bcpnn_gain = float(sys.argv[3])
-    w_ie = float(sys.argv[4])
-    w_ei = float(sys.argv[5])
     
-    assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
-    assert (w_ei > 0), 'Excitatory weights need to be positive!'
-    assert (w_ie < 0), 'Inhibitory weights need to be negative!'
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
     params = ps.params
@@ -61,16 +53,26 @@ if __name__ == '__main__':
 #            params['sim_id'], params['n_test_stim'], 
 #            params['n_exc_per_mc'], params['w_input_exc'])
 
-    params['bcpnn_gain'] = bcpnn_gain
-    params['w_ie_unspec'] = w_ie
-    params['w_ei_unspec'] = w_ei
-    folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_pee%.2f_wie%.2f_wei%.2f' % ( \
-            params['sim_id'], params['n_test_stim'], 
-            params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
-            params['w_ie_unspec'], params['w_ei_unspec'])
-    folder_name += '/'
-    ps.set_filenames(folder_name) 
-#    ps.set_filenames() 
+    if not params['debug']:
+        conn_fn_ampa = sys.argv[1]
+        conn_fn_nmda = sys.argv[2]
+        bcpnn_gain = float(sys.argv[3])
+        w_ie = float(sys.argv[4])
+        w_ei = float(sys.argv[5])
+        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
+        assert (w_ei > 0), 'Excitatory weights need to be positive!'
+        assert (w_ie < 0), 'Inhibitory weights need to be negative!'
+        params['bcpnn_gain'] = bcpnn_gain
+        params['w_ie_unspec'] = w_ie
+        params['w_ei_unspec'] = w_ei
+        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_pee%.2f_wie%.2f_wei%.2f' % ( \
+                params['sim_id'], params['n_test_stim'], 
+                params['n_exc_per_mc'], params['bcpnn_gain'], params['p_ee_global'], \
+                params['w_ie_unspec'], params['w_ei_unspec'])
+        folder_name += '/'
+        ps.set_filenames(folder_name) 
+    else:
+        ps.set_filenames() 
 
     ps.create_folders()
     ps.write_parameters_to_file()
@@ -90,15 +92,15 @@ if __name__ == '__main__':
         utils.remove_files_from_folder(params['volt_folder'])
         if not params['load_input']:
             utils.remove_files_from_folder(params['input_folder'])
-    NM.setup()# training_params=training_params)
+    if comm != None:
+        comm.barrier()
+    NM.setup()
     if comm != None:
         comm.barrier()
     NM.create()
     if comm != None:
         comm.barrier()
     NM.connect()
-#    NM.connect_recorder_neurons()
-
     if record:
         NM.record_v_exc()
         NM.record_v_inh_unspec()

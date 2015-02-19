@@ -99,7 +99,7 @@ for fn in fns:
         x_axis = np.arange(d.size)
         ax.scatter(x_axis, d)
     else:
-        ax.plot(spikes, gids, 'o', markersize=1, color='k')
+        ax.plot(spikes, gids, 'o', markersize=2, color='k')
     ax.set_title(fn)
 #    ax.set_xlim((0, 1000))
 #    print 'xlim:', ax.get_xlim()
