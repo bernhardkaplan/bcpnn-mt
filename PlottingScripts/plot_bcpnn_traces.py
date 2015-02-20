@@ -249,6 +249,7 @@ if __name__ == '__main__':
 
     bcpnn_params = params['bcpnn_params']
 #    bcpnn_params['tau_p'] = 500.
+    #bcpnn_params['p_i'] = 1e-3
     bcpnn_params['gain'] = 1.
     bcpnn_params['K'] = 1.
     print 'bcpnn_params:', bcpnn_params
@@ -259,8 +260,8 @@ if __name__ == '__main__':
     TP.load_tuning_prop()
     t_range_trace_computation = (0, params['t_sim']) 
 
-    tp_pre = [0.2, 0.5, 1.0, .0]
-    tp_post = [0.5, 0.5, 1.0, .0]
+    tp_pre = [0.45, 0.5, 0.1, .0]
+    tp_post = [0.5, 0.5, 0.1, .0]
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
     gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=1)
     gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=1)
