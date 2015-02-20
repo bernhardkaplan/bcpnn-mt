@@ -35,7 +35,8 @@ if __name__ == '__main__':
     GP = simulation_parameters.parameter_storage()
 
     params = GP.params
-    
+    params['training_run'] = True
+    #params['training_run'] = True
 
     if len(sys.argv) > 1:
         params['taui_bcpnn'] = float(sys.argv[1])

@@ -30,7 +30,7 @@ for f in folders:
         cmd = 'python %s %s %d %d' % (script_name, f, i_, i_+1)
         print 'cmd:', cmd
         if USE_MPI:
-            list_of_jobs.append(run_cmd)
+            list_of_jobs.append(cmd)
         else:
             os.system(cmd)
     pure_names += '%s ' % f
@@ -43,6 +43,7 @@ if USE_MPI:
         job_name = list_of_jobs[i_]
         print 'pc_id %d runs:' % pc_id, job_name
         os.system(job_name)
+
 
 if pc_id == 0:
     display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % pure_names

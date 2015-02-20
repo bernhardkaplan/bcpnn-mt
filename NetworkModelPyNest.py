@@ -176,6 +176,9 @@ class NetworkModel(object):
         nest.CopyModel('static_synapse', 'inh_exc_specific_fast', \
                 {'weight': self.params['w_ie_spec'], 'delay': self.params['delay_ie_spec'], 'receptor_type': self.params['syn_ports']['gaba']})
         assert (self.params['w_ie_spec'] < 0), 'Inhibitory weights need to be negative!'
+
+
+
         # inh - exc global specific (between hypercolumns): GABA_B
 #        nest.CopyModel('static_synapse', 'inh_exc_specific_slow', \
 #                {'weight': self.params['w_ie_spec'], 'receptor_type': self.params['syn_ports']['gaba']})
@@ -190,15 +193,23 @@ class NetworkModel(object):
         # exc - exc global (between hypercolumns): AMPA
         if self.params['training_run']:
 #            syn_params = deepcopy(self.params['bcpnn_params'])
+            nest.SetDefaults('bcpnn_synapse', params=self.params['bcpnn_params'])
             nest.CopyModel('bcpnn_synapse', 'exc_exc_local_training', self.params['bcpnn_params'])
             nest.CopyModel('bcpnn_synapse', 'exc_exc_global_training', self.params['bcpnn_params'])
         else:
             # exc - exc fast: AMPA
-            nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
-                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
+#            nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
+#                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
+
+            nest.CopyModel('tsodyks_synapse', 'exc_exc_global_fast', \
+                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa'], 'tau_psc': self.params['tau_syn']['ampa']})
+
             # exc - exc slow: AMPA
-            nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
-                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda']})
+#            nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
+#                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda']})
+            nest.CopyModel('tsodyks_synapse', 'exc_exc_global_slow', \
+                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda'], 'tau_psc': self.params['tau_syn']['nmda']})
+
             # exc - inh global specific (between hypercolumns): AMPA
             nest.CopyModel('static_synapse', 'exc_inh_specific_fast', \
                     {'delay': self.params['delay_ei_spec'], 'receptor_type': self.params['syn_ports']['ampa']})
@@ -541,10 +552,8 @@ class NetworkModel(object):
 
 
     def connect(self):
-        nest.SetDefaults('bcpnn_synapse', params=self.params['bcpnn_params'])
 
         self.connect_input_to_exc()
-
         if self.params['training_run'] and not self.params['debug']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
@@ -555,11 +564,6 @@ class NetworkModel(object):
                 print 'Connecting inh - exc unspecific'
                 self.connect_ie_unspecific() # normalizing inhibition
         elif not self.params['debug']: # load the weight matrix
-            # setup long-range connectivity based on trained connection matrix
-#            self.connect_input_to_recorder_neurons() # DOES NOT WORK
-            print 'Connecting exc - exc '
-            self.connect_ee_testing()
-#            self.connect_network_to_recorder_neurons()
             print 'Connecting exc - inh unspecific'
             if self.params['with_inhibitory_neurons']:
                 self.connect_ei_unspecific()
@@ -571,12 +575,11 @@ class NetworkModel(object):
                 self.connect_ie_specific()
                 print 'Connecting exc - inh specific'
                 self.connect_ei_specific()
-#            self.connect_recorder_neurons()
+
+            # setup long-range connectivity based on trained connection matrix
             print 'Connecting exc - exc '
             self.connect_ee_testing()
-#            self.connect_network_to_recorder_neurons()
 
-#        self.times['t_connect'] = self.timer.diff()
 
 
     def connect_ie_specific():
@@ -598,12 +601,10 @@ class NetworkModel(object):
 
     def connect_ii(self):
 
-        for tgt_gid in self.local_idx_inh_unspec:
-            n_src = int(round(self.params['p_ii_unspec'] * self.params['n_inh_unspec_per_hc']))
-            hc_idx = (tgt_gid - self.params['n_inh_unspec_per_hc'] - 1) / self.params['n_inh_unspec_per_hc']
-            src_gid_range = (hc_idx * self.params['n_inh_unspec_per_hc'] + 1, (hc_idx + 1) * self.params['n_inh_unspec_per_hc'] + 1)
-            nest.RandomConvergentConnect(range(src_gid_range[0], src_gid_range[1]), [tgt_gid], \
-                    n_src, weight=self.params['w_ii_unspec'], delay=1., model='inh_inh_unspec_fast', options={'allow_multapses':False})
+        for i_hc in xrange(self.params['n_hc']):
+            nest.RandomConvergentConnect(self.list_of_unspecific_inh_pop[i_hc], self.list_of_unspecific_inh_pop[i_hc], \
+                    self.params['n_conn_ii_per_hc'], weight=self.params['w_ii_unspec'], delay=1., model='inh_inh_unspec_fast', \
+                    options={'allow_multapses':False, 'allow_autapses': False})
 
 
     def connect_input_to_recorder_neurons(self):
@@ -853,16 +854,6 @@ class NetworkModel(object):
 
     def connect_ee_testing(self):
 
-#        if not(os.path.exists(self.params['conn_matrix_mc_fn'])):
-#            print 'Can not find conn_matrix_mc_fn:', self.params['conn_matrix_mc_fn']
-#            WA = WeightAnalyser.WeightAnalyser(self.training_params)
-#            M = WA.get_weight_matrix_mc_mc()
-#            output_fn = self.params['conn_matrix_mc_fn']
-#            print 'Saving connection matrix to:', output_fn
-#            np.savetxt(output_fn, M)
-#        else:
-#            M = np.loadtxt(self.params['conn_matrix_mc_fn'])
-
         if self.comm != None:
             self.comm.Barrier()
 
@@ -881,64 +872,31 @@ class NetworkModel(object):
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
-                        #if w_ampa != 0:
-                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa']
-                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'])
-#                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
-#                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
-                        #print 'debug w_ampa_, w_nmda_', w_ampa_, w_nmda_
-                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
-                                model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
-                                model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
+                        if w_nmda < 0:
+                            w_gaba_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['gaba']
+                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
+                                    model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                        else:
+                            #if w_ampa != 0:
+                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / self.params['stp_params']['ampa']['U']
+    #                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
+    #                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
+                            #print 'debug w_ampa_, w_nmda_', w_ampa_, w_nmda_
+                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
+                                    model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
+
+                            w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] / self.params['stp_params']['nmda']['U'])
+                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
+                                    model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
 
 
-        # connect cells within one MC
-#        for tgt_gid in self.local_idx_exc:
-#            hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
-#            n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
-#            source_gids = np.random.randint(gid_min, gid_max, n_src)
-#            source_gids = np.unique(source_gids)
-#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
-#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
-
-        """
-        w_debug = np.zeros((self.params['n_mc'], self.params['n_mc']))
-        # connect the minicolumns according to their weight after training
-        for src_hc in xrange(self.params['n_hc']):
-            for src_mc in xrange(self.params['n_mc_per_hc']):
-                src_pop = self.list_of_exc_pop[src_hc][src_mc]
-                src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
-                # TODO:
-                # get the tuning properties for cells in that MC and 
-                # calculate the time_constants based on the preferred velocity
-#                print 'Debug TODO Need to get the tuning prop of this source pop:', src_pop
-                for tgt_hc in xrange(self.params['n_hc']):
-                    for tgt_mc in xrange(self.params['n_mc_per_hc']):
-                        # TODO:
-                        # write tau_syn parameters to file
-                        tgt_pop = self.list_of_exc_pop[tgt_hc][tgt_mc]
-                        tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
-                        w = self.conn_mat_training[src_pop_idx, tgt_pop_idx]
-                        if w != 0:
-                            w_ = self.transform_weight(w)
-                            w_debug[src_pop_idx, tgt_pop_idx] = w_
-#                            print 'debug', src_pop, tgt_pop, w_, self.params['delay_ee_global']
-                            nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_fast')
-                            nest.ConvergentConnect(src_pop, tgt_pop, weight=[w_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_slow')
-        debug_fn = self.params['connections_folder'] + 'w_conn_ee_debug.txt'
-        print 'Saving debug connection matrix to:', debug_fn
-        np.savetxt(debug_fn, w_debug)
-        """
     
     def load_training_weights(self):
 
-#        fn = self.training_params['conn_mat_fn_base'] + 'ee_' + str(self.iteration) + '.dat'
         fn = self.training_params['merged_conn_list_ee']
         if not os.path.exists(fn):
             print 'Merging connection files...'
@@ -946,11 +904,6 @@ class NetworkModel(object):
 
         # copy the merged connection file to the test folder
         os.system('cp %s %s' % (fn, self.params['connections_folder']))
-
-#        print 'Loading connection matrix from training:', fn
-#        self.conn_mat_training = np.loadtxt(fn)
-#        self.w_bcpnn_max = np.max(self.conn_mat_training)
-#        self.w_bcpnn_min = np.min(self.conn_mat_training)
 
 
     def transform_weight(self, w, w_bcpnn_min, w_bcpnn_max):
@@ -964,16 +917,6 @@ class NetworkModel(object):
                 w_ = w * self.params['w_ei_spec'] / w_bcpnn_min
         return w_
 
-        # using transformation dictated by the target - weight
-#        if w > 0:
-#            w_ = w * self.params['w_ee_global_max'] / w_bcpnn_max
-#        elif w < 0: #CAUTION: if using di-synaptic inhibition via RSNP cells --> use:
-#            if self.params['with_rsnp_cells']:
-#                w_ = -1. * w * self.params['w_ei_spec'] / w_bcpnn_min
-#            else:
-#                w_ = w * self.params['w_ei_spec'] / w_bcpnn_min
-#        return w_
-
 
 
     def connect_ei_unspecific(self):
@@ -983,46 +926,15 @@ class NetworkModel(object):
                         self.params['n_conn_ei_unspec_per_mc'], \
                         options={'allow_autapses': False, 'allow_multapses': False}, \
                         model='exc_inh_unspec_fast')
-                nest.RandomDivergentConnect(self.list_of_exc_pop[i_hc][i_mc], self.list_of_unspecific_inh_pop[i_hc], \
-                        self.params['n_conn_ei_unspec_per_mc'], \
-                        options={'allow_autapses': False, 'allow_multapses': False}, \
-                        model='exc_inh_unspec_slow')
-
-
-#        for tgt_gid in self.local_idx_inh_unspec:
-#            n_src = int(round(self.params['p_ei_unspec'] * self.params['n_exc_per_hc']))
-#            hc_idx = (tgt_gid - self.params['n_exc'] - 1) / self.params['n_inh_unspec_per_hc']
-#            src_gid_range = (hc_idx * self.params['n_exc_per_hc'] + 1, (hc_idx + 1) * self.params['n_exc_per_hc'] + 1)
-#            source_gids = np.random.randint(src_gid_range[0], src_gid_range[1], n_src)
-#            source_gids = np.unique(source_gids)
-#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_inh_unspec_fast')
-#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_inh_unspec_slow')
 
 
     def connect_ie_unspecific(self):
         for i_hc in xrange(self.params['n_hc']):
             for i_mc in xrange(self.params['n_mc_per_hc']):
-                nest.RandomDivergentConnect(self.list_of_unspecific_inh_pop[i_hc], self.list_of_exc_pop[i_hc][i_mc], \
+                nest.RandomConvergentConnect(self.list_of_unspecific_inh_pop[i_hc], self.list_of_exc_pop[i_hc][i_mc], \
                         self.params['n_conn_ie_unspec_per_mc'], \
                         options={'allow_autapses': False, 'allow_multapses': False}, \
                         model='inh_exc_unspec')
-                nest.RandomDivergentConnect(self.list_of_unspecific_inh_pop[i_hc], self.list_of_exc_pop[i_hc][i_mc], \
-                        self.params['n_conn_ie_unspec_per_mc'], \
-                        options={'allow_autapses': False, 'allow_multapses': False}, \
-                        model='inh_exc_unspec')
-
-#        """
-#        Iterate over all local exc indices and connect cells with GIDs in the range for the unspecific inh neurons
-#        with a probability p_ie_unspec to the target neuron.
-#        """
-#        for tgt_gid in self.local_idx_exc:
-#            n_src = int(round(self.params['p_ie_unspec'] * self.params['n_inh_unspec_per_hc']))
-#            hc_idx = (tgt_gid - 1) / self.params['n_exc_per_hc']
-#            src_gid_range = (hc_idx * self.params['n_inh_unspec_per_hc'] + self.params['n_exc'] + 1, (hc_idx + 1) * self.params['n_inh_unspec_per_hc'] + self.params['n_exc'] + 1)
-#            source_gids = np.random.randint(src_gid_range[0], src_gid_range[1], n_src)
-#            source_gids = np.unique(source_gids)
-#            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='inh_exc_unspec_fast')
-
 
 
     def get_gids_to_mc(self, pyr_gid):
@@ -1095,26 +1007,47 @@ class NetworkModel(object):
     def get_weights_static(self):
 
         print 'NetworkModel.get_weights_static ...'
+        conn_txt_ee = ''
         conn_txt_ei = ''
         conn_txt_ie = ''
+        conn_txt_ii = ''
+        n_conns_ee = 0
         n_conns_ei = 0
         n_conns_ie = 0
+        n_conns_ii = 0
 
-        for i_hc_src in xrange(self.params['n_hc']):
-            for i_mc_src in xrange(self.params['n_mc_per_hc']):
-                for i_hc_inh in xrange(self.params['n_hc']):
-                    conns_ei = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_unspecific_inh_pop[i_hc_inh ])
-                    #conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc_inh], self.list_of_exc_pop[i_hc_src][i_mc_src])
+        for i_hc in xrange(self.params['n_hc']):
+            conns_ii = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc], self.list_of_unspecific_inh_pop[i_hc])
+            if conns_ii != None:
+                for i_, c in enumerate(conns_ii):
+                    cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                    conn_txt_ii += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                    n_conns_ii += 1
+            for i_mc in xrange(self.params['n_mc_per_hc']):
+                    conns_ei = nest.GetConnections(self.list_of_exc_pop[i_hc][i_mc], self.list_of_unspecific_inh_pop[i_hc])
+                    conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc], self.list_of_exc_pop[i_hc][i_mc])
                     if conns_ei != None:
                         for i_, c in enumerate(conns_ei):
                             cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
                             conn_txt_ei += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
                             n_conns_ei += 1
-                    #if conns_ie != None:
-                        #for i_, c in enumerate(conns_ie):
-                            #cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                            #conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
-                            #n_conns_ie += 1
+                    if conns_ie != None:
+                        for i_, c in enumerate(conns_ie):
+                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                            conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                            n_conns_ie += 1
+
+        for i_hc_src in xrange(self.params['n_hc']):
+            for i_mc_src in xrange(self.params['n_mc_per_hc']):
+                for i_hc_tgt in xrange(self.params['n_hc']):
+                    for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
+                        conns_ee = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt])
+                        if conns_ee != None:
+                            for i_, c in enumerate(conns_ee):
+                                cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                                conn_txt_ee += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                                n_conns_ee += 1
+
 
         print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ei)
         fn_out_ei = self.params['conn_list_ei_fn_base'] + '%d.txt' % (self.pc_id)
@@ -1124,14 +1057,29 @@ class NetworkModel(object):
         conn_f_ei.flush()
         conn_f_ei.close()
 
-        #print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ie)
-        #fn_out_ie = self.params['conn_list_ie_fn_base'] + '%d.txt' % (self.pc_id)
-        #print 'Writing E-I connections to:', fn_out_ie
-        #conn_f_ie = file(fn_out_ie, 'w')
-        #conn_f_ie.write(conn_txt_ie)
-        #conn_f_ie.flush()
-        #conn_f_ie.close()
+        print 'Proc %d holds %d I->E connections' % (self.pc_id, n_conns_ie)
+        fn_out_ie = self.params['conn_list_ie_fn_base'] + '%d.txt' % (self.pc_id)
+        print 'Writing I-E connections to:', fn_out_ie
+        conn_f_ie = file(fn_out_ie, 'w')
+        conn_f_ie.write(conn_txt_ie)
+        conn_f_ie.flush()
+        conn_f_ie.close()
 
+        print 'Proc %d holds %d E->E connections' % (self.pc_id, n_conns_ee)
+        fn_out_ee = self.params['conn_list_ee_fn_base'] + '%d.txt' % (self.pc_id)
+        print 'Writing E-I connections to:', fn_out_ee
+        conn_f_ee = file(fn_out_ee, 'w')
+        conn_f_ee.write(conn_txt_ee)
+        conn_f_ee.flush()
+        conn_f_ee.close()
+
+        print 'Proc %d holds %d I->I connections' % (self.pc_id, n_conns_ii)
+        fn_out_ii = self.params['conn_list_ii_fn_base'] + '%d.txt' % (self.pc_id)
+        print 'Writing E-I connections to:', fn_out_ii
+        conn_f_ii = file(fn_out_ii, 'w')
+        conn_f_ii.write(conn_txt_ii)
+        conn_f_ii.flush()
+        conn_f_ii.close()
 
 
 
@@ -1328,6 +1276,9 @@ class NetworkModel(object):
             if self.comm != None:
                 self.comm.Barrier()
             mp.append(self.motion_params[stim_idx, :])
+
+            if self.params['training_run'] and self.params['weight_tracking']:
+                self.get_weights_after_learning_cycle(iteration=stim_idx)
 
         if not self.params['training_run']:
             np.savetxt(self.params['test_sequence_fn'], np.array(mp))

@@ -3,7 +3,6 @@ import os, sys, inspect
 cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile( inspect.currentframe() ))[0],"../")))
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
-
 import matplotlib
 #matplotlib.use('Agg')
 import pylab
@@ -560,9 +559,12 @@ class PlotPrediction(object):
                     t1 = self.stim_duration
                 time_range = (t0, t1)
             self.plot_blank(ax, time_range)
-            print 'DEEEEEEEEEEBUG t0 t1',  t0, t1, 'stim-ragne', stim_range
             ax.set_xlim((t0, t1))
 
+        if sort_idx == 0:
+            ax.set_ylim((0., 1.))
+        elif sort_idx == 2:
+            ax.set_ylim((-self.params['v_max_tp'], self.params['v_max_tp']))
 
 
     def plot_input_spikes_sorted(self, time_range=None, fig_cnt=1, title='', sort_idx=0):
