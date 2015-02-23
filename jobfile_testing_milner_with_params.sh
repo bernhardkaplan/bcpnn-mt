@@ -2,7 +2,7 @@
 # The -l above is required to get the full environment with modules
 
 # The name of the script is myjob
-#SBATCH -J test_32
+#SBATCH -J test_16
 
 # Only 1 hour wall-clock time will be given to this job
 #SBATCH -t 0:59:00
@@ -16,7 +16,7 @@
 
 #SBATCH -e error_file_testing.e
 #SBATCH -o output_file_testing.o
-#SBATCH --mail-type=FAIL
+#SBATCH --mail-type=END,FAIL
 
 # Run the executable named myexe 
 # and write the output into my_output_file

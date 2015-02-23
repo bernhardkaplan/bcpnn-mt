@@ -36,6 +36,9 @@ if __name__ == '__main__':
 
     params = GP.params
     params['training_run'] = True
+    if params['n_exc_per_mc'] != 4:
+        print 'Wrong n_exc_per_mc -- too high for training! Will quit now, please set n_exc_per_mc = 4'
+        exit(1)
     #params['training_run'] = True
 
     if len(sys.argv) > 1:

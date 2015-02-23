@@ -26,6 +26,7 @@ class parameter_storage(object):
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
+        self.params['with_stp'] = True
         self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -34,7 +35,13 @@ class parameter_storage(object):
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'checkWeights'
+            self.params['sim_id'] = ''
+
+        if self.params['with_stp']:
+            self.params['sim_id'] += 'withSTP_'
+        else:
+            self.params['sim_id'] += 'noSTP_'
+        self.params['sim_id'] += 'unspecBlank_'
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -70,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 16 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
@@ -360,8 +367,8 @@ class parameter_storage(object):
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v_slow_speeds'] = 3 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        self.params['n_training_v'] = 4 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        self.params['n_training_v_slow_speeds'] = 6 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
+        self.params['n_training_v'] = 8 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
