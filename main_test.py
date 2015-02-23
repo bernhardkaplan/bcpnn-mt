@@ -67,13 +67,15 @@ if __name__ == '__main__':
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
         assert (w_ie < 0), 'Inhibitory weights need to be negative!'
-        assert (w_ii < 0), 'Inhibitory weights need to be negative!'
+        #assert (w_ii < 0), 'Inhibitory weights need to be negative!'
         params['ampa_nmda_ratio'] = ampa_nmda_ratio
         params['bcpnn_gain'] = bcpnn_gain
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
-        params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.1f_ratio%.1f_pee%.1f_wie%.1f_wei%.1f_winpu%.1f' % ( \
+        params['w_input_exc'] = w_input_exc
+        ps.w_input_exc = w_input_exc
+        #params['w_ii_unspec'] = w_ii
+        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_ratio%.1f_pee%.2f_wie%.1f_wei%.1f_winput%.1f' % ( \
                 params['sim_id'], params['n_test_stim'], 
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
                 params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
@@ -84,7 +86,12 @@ if __name__ == '__main__':
 
     ps.create_folders()
     ps.write_parameters_to_file()
-
+    if pc_id == 0:
+        utils.remove_files_from_folder(params['spiketimes_folder'])
+        utils.remove_files_from_folder(params['connections_folder'])
+        utils.remove_files_from_folder(params['volt_folder'])
+        if not params['load_input']:
+            utils.remove_files_from_folder(params['input_folder'])
     if comm != None:
         comm.barrier()
     load_files = False
@@ -94,12 +101,6 @@ if __name__ == '__main__':
     if not params['debug']:
         NM.set_connection_matrices(conn_fn_ampa, conn_fn_nmda)
     pc_id, n_proc = NM.pc_id, NM.n_proc
-    if pc_id == 0:
-        utils.remove_files_from_folder(params['spiketimes_folder'])
-        utils.remove_files_from_folder(params['connections_folder'])
-        utils.remove_files_from_folder(params['volt_folder'])
-        if not params['load_input']:
-            utils.remove_files_from_folder(params['input_folder'])
     if comm != None:
         comm.barrier()
     NM.setup()

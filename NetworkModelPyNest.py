@@ -198,17 +198,21 @@ class NetworkModel(object):
             nest.CopyModel('bcpnn_synapse', 'exc_exc_global_training', self.params['bcpnn_params'])
         else:
             # exc - exc fast: AMPA
-#            nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
-#                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
 
-            nest.CopyModel('tsodyks_synapse', 'exc_exc_global_fast', \
-                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa'], 'tau_psc': self.params['tau_syn']['ampa']})
+            if self.params['with_stp']:
+                nest.CopyModel('tsodyks_synapse', 'exc_exc_global_fast', \
+                        {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa'], 'tau_psc': self.params['tau_syn']['ampa']})
+            else:
+                nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
+                        {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
 
             # exc - exc slow: AMPA
-#            nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
-#                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda']})
-            nest.CopyModel('tsodyks_synapse', 'exc_exc_global_slow', \
-                    {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda'], 'tau_psc': self.params['tau_syn']['nmda']})
+            if self.params['with_stp']:
+                nest.CopyModel('tsodyks_synapse', 'exc_exc_global_slow', \
+                        {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda'], 'tau_psc': self.params['tau_syn']['nmda']})
+            else:
+                nest.CopyModel('static_synapse', 'exc_exc_global_slow', \
+                        {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['nmda']})
 
             # exc - inh global specific (between hypercolumns): AMPA
             nest.CopyModel('static_synapse', 'exc_inh_specific_fast', \
@@ -464,7 +468,7 @@ class NetworkModel(object):
             # blanking
             for i_time in blank_idx:
                 L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-#                L_input[:, i_time] = 0.
+                #L_input[:, i_time] = 0.
 
         L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
@@ -912,17 +916,17 @@ class NetworkModel(object):
 
     def set_connection_matrices(self, conn_fn_ampa, conn_fn_nmda):
 
-#        print 'DEBUG, loading ampa weight matrix from:', conn_fn_ampa
+        print 'DEBUG, loading ampa weight matrix from:', conn_fn_ampa
         self.W_ampa = np.loadtxt(conn_fn_ampa)
         assert (self.W_ampa.shape[0] == self.params['n_mc'] and self.W_ampa.shape[1] == self.params['n_mc']), 'ERROR: provided ampa weight matrix has wrong dimension. Check simulation parameters!'
-#        print 'DEBUG, saving ampa weight matrix to:', self.params['conn_matrix_ampa_fn']
+        print 'DEBUG, saving ampa weight matrix to:', self.params['conn_matrix_ampa_fn']
         np.savetxt(self.params['conn_matrix_ampa_fn'], self.W_ampa)
 
 
-#        print 'DEBUG, loading nmda weight matrix from:', conn_fn_nmda
+        print 'DEBUG, loading nmda weight matrix from:', conn_fn_nmda
         self.W_nmda = np.loadtxt(conn_fn_nmda)
         assert (self.W_nmda.shape[0] == self.params['n_mc'] and self.W_nmda.shape[1] == self.params['n_mc']), 'ERROR: provided nmda weight matrix has wrong dimension. Check simulation parameters!'
-#        print 'DEBUG, saving nmda weight matrix to:', self.params['conn_matrix_nmda_fn']
+        print 'DEBUG, saving nmda weight matrix to:', self.params['conn_matrix_nmda_fn']
         np.savetxt(self.params['conn_matrix_nmda_fn'], self.W_nmda)
 
         if self.comm != None:

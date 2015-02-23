@@ -12,8 +12,8 @@
 #SBATCH -n 300
 #SBATCH --ntasks-per-node=20
 
-#SBATCH -e error_file_taui150.e
-#SBATCH -o output_file_taui150.o
+#SBATCH -e error_file_taui5.e
+#SBATCH -o output_file_taui5.o
 #SBATCH --mail-type=END,FAIL
 
 # Run the executable named myexe 
@@ -30,9 +30,9 @@ module add nest/2.2.2
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cfs/milner/scratch/b/bkaplan/BCPNN-Module/build-module-100725
 export PYTHONPATH=/pdc/vol/nest/2.2.2/lib/python2.7/site-packages:/pdc/vol/python/2.7.6-gnu/lib/python2.7/site-packages
 
-aprun -n 300 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 150 > delme_training_taui150_pi1e-4_15nodes_tracking 2>&1
+aprun -n 300 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 5 > delme_training_taui5_pi1e-4_15nodes_long 2>&1
 
-#aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py training_stimuli_20x20.dat 0 > delme_training_taui150_pi1e-4_100 2>&1
+#aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py training_stimuli_20x20.dat 0 > delme_training_taui5_pi1e-4_100 2>&1
 
 #aprun -n 960 python /cfs/milner/scratch/b/bkaplan/OculomotorControl/main_training.py $1 #2>&1
 
