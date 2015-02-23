@@ -2,7 +2,7 @@
 # The -l above is required to get the full environment with modules
 
 # The name of the script is myjob
-#SBATCH -J taui150_weightTracking
+#SBATCH -J taui150_long
 
 # Only 1 hour wall-clock time will be given to this job
 #SBATCH -t 23:59:00

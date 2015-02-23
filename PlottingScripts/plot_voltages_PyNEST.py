@@ -94,28 +94,27 @@ if __name__ == '__main__':
         params = ps.params
         params_fn = params['params_fn_json']
 
-    print sys.argv
-    try: 
-        cell_type = sys.argv[1]
-        assert cell_type in params['cell_types'], 'Wrong cell type given %s should be in: %s' % (cell_type, str(params['cell_types']))
-    except:
-        cell_type = 'exc'
 
-    print 'Getting parameters from:', params_fn
-    data_folder = params['spiketimes_folder'] # should be 'volt_folder', but pynest has only one data_path
+#    print sys.argv
+#    try: 
+#        cell_type = sys.argv[1]
+#        assert cell_type in params['cell_types'], 'Wrong cell type given %s should be in: %s' % (cell_type, str(params['cell_types']))
+#    except:
+#        cell_type = 'exc'
 
-    list_of_files = []
-    to_match = '%s_volt' % cell_type
-    for fn in os.listdir(data_folder):
-#        print 'debug ', to_match, fn
-        m = re.match(to_match, fn)
-        if m:
-            path = data_folder + fn
-            print 'Found file:', path
+#    print 'Getting parameters from:', params_fn
+#    data_folder = params['spiketimes_folder'] # should be 'volt_folder', but pynest has only one data_path
 
-            list_of_files.append(path)
+#    list_of_files = []
+#    to_match = '%s_volt' % cell_type
+#    for fn in os.listdir(data_folder):
+#        m = re.match(to_match, fn)
+#        if m:
+#            path = data_folder + fn
+#            print 'Found file:', path
+#            list_of_files.append(path)
     
-
+    list_of_files = sys.argv[1:]
     pylab.figure()
     for i_, fn in enumerate(list_of_files):
         plot_volt(fn, gid='all')

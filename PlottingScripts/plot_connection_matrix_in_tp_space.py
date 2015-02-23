@@ -12,8 +12,7 @@ import numpy as np
 import utils
 import json
 import simulation_parameters
-import matplotlib.mlab as mlab
-from scipy.special import erf
+import functions
 
 
 plot_params = {'backend': 'png',
@@ -38,11 +37,6 @@ plot_params = {'backend': 'png',
 
 pylab.rcParams.update(plot_params)
 
-def skew_normal(x, mu, sigma, alpha):
-    # alpha  = skewness parameter
-    return (1. / sigma) * mlab.normpdf((x - mu)/sigma, 0., 1.) * (1. + erf(alpha * (x - mu) / (sigma * np.sqrt(2))) )
-
-#    return (1. / sigma) * mlab.normpdf((x - mu)/sigma, 0., 1.) * (1. + erf(alpha * (x - mu) / (sigma * numpy.sqrt(2))) )
 
 def get_gids_to_mc(params, pyr_gid):
     """
@@ -84,7 +78,8 @@ if __name__ == '__main__':
         params = utils.load_params(sys.argv[1])
 
     v_tolerance = .1
-    v_range = (-.2, .2)
+#    v_range = (-0.0, .2)
+    v_range = (0.5, 2.)
     tau_i = 150
 #    conn_fn = sys.argv[2]
     conn_fn = 'connection_matrix_20x16_taui%d_trained_with_AMPA_input_only.dat' % (tau_i)
@@ -130,11 +125,11 @@ if __name__ == '__main__':
 
     x = np.arange(-1., 1., 0.01)
     mu = 0.
-    sigma = 0.1
-    alpha = 0.5
+    sigma = 0.2
+    alpha = 6.0
     A = 1.5
     offset = -2
-    skew_pos = A * skew_normal(x, mu, sigma, alpha) + offset
+    skew_pos = A * functions.skew_normal(x, mu, sigma, alpha) + offset
     ax.plot(x, skew_pos, label='Skew normal distribution $\sigma=%.1f\ \\alpha=%.1f$' % (sigma, alpha), c='k', lw=4)
 
     xlim = ax.get_xlim()

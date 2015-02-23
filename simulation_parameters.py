@@ -20,13 +20,12 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['simulator'] = 'nest' 
         self.params['training_run'] = False
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
-        self.w_input_exc = 15.0
+        self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -34,7 +33,7 @@ class parameter_storage(object):
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'checkWeights'
+            self.params['sim_id'] = ''
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -70,10 +69,12 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
+        self.params['record_tuning_prop_v'] = [.95]
+        self.params['n_recorder_neurons_per_speed'] = 10 
+        self.params['n_recorder_neurons'] = len(self.params['record_tuning_prop_v']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
         self.params['n_orientation'] = 1 # number of preferred orientations
@@ -378,7 +379,7 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 3)
+        self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -439,6 +440,7 @@ class parameter_storage(object):
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
+        self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
         self.params['record_v'] = False
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
@@ -584,6 +586,7 @@ class parameter_storage(object):
         self.params['input_rate_fn_base'] = "%srate_" % self.params['input_folder']# input spike trains filename base
         # for 'recorder neurons'
         self.params['recorder_neuron_input_fn_base'] = '%srecorder_neuron_input_spikes_' % (self.params['input_folder'])
+        self.params['recorder_neuron_input_rate_fn_base'] = '%srecorder_neuron_input_spikes_' % (self.params['input_folder'])
 
         # output spiketrains
         self.params['exc_spiketimes_fn_base'] = '%sexc_spikes' % self.params['spiketimes_folder']

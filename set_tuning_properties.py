@@ -116,14 +116,14 @@ def get_receptive_field_sizes_x(params, x_pos):
 
 #    dx_pos_half[1:] = x_half[1:] - x_half[:-1]
 #    dx_pos_half[0] = x_half[1] - x_half[0]
-    print 'debug x_pos', x_pos
+#    print 'debug x_pos', x_pos
 #    print 'debug x_half', x_half
-    print 'debug dx_pos_half', dx_pos_half
+#    print 'debug dx_pos_half', dx_pos_half
 #    dx_pos_half[-1] = .5 * dx_pos_half[-2]
     rf_size_x[:params['n_hc'] / 2] = dx_pos_half
     dx_pos_upper_half = list(dx_pos_half)
     dx_pos_upper_half.reverse()
-    print 'debug dx_pos_upper_half', len(dx_pos_upper_half), len(rf_size_x[params['n_hc'] / 2:]), len(rf_size_x)
+#    print 'debug dx_pos_upper_half', len(dx_pos_upper_half), len(rf_size_x[params['n_hc'] / 2:]), len(rf_size_x)
     rf_size_x[params['n_hc'] / 2:] = dx_pos_upper_half
 #    rf_size_x *= 1.5
 #    rf_size_x *= 0.8

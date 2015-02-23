@@ -324,7 +324,7 @@ class NetworkModel(object):
 
 
         ##### RECORDER NEURONS
-        self.recorder_neurons = nest.Create(self.params['neuron_model'], self.params['n_recorder_neurons'], params=self.params['cell_params_recorder_neurons'])
+        self.setup_recorder_neurons()
 
         # set the cell parameters
         self.spike_times_container = [ np.array([]) for i in xrange(len(self.local_idx_exc))]
@@ -362,19 +362,81 @@ class NetworkModel(object):
         if self.params['record_v']:
             self.record_v_exc()
 
-#        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 0.5})
-#        nest.SetStatus(self.recorder_free_vmem, [{"to_file": True, "withtime": True, 'label' : self.params['free_vmem_fn_base']}])
-#        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
+        self.record_from = ['V_m', 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA']
+#        self.record_from = ['V_m']#, 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA']
+        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': self.record_from, 'interval': self.params['dt_volt']})
+        #self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m', 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA'], 'interval': self.params['dt_volt']})
+        nest.SetStatus(self.recorder_free_vmem, [{"to_file": False, "withtime": True}])
+        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
 #        if self.params['training_run']:
 #            self.create_training_input
 
 
 
+    def create_input_for_recorder_neurons(self, stim_idx, with_blank=False, save_output=True):
 
-    def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False):
+        mapped_gids = np.array(self.recorder_neuron_gid_mapping.values()) - 1
+        tp = self.tuning_prop_exc[mapped_gids, :]
+        x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
+        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
+        if with_blank:
+            #idx_t_stop = np.int(self.stim_durations[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
+            idx_t_stop = np.int(self.params['t_test_stim'] / dt)
+        else:
+            idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
+        L_input = np.zeros((self.params['n_recorder_neurons'], idx_t_stop))
+        # compute the trajectory
+        for i_time in xrange(idx_t_stop):
+            time_ = (i_time * dt) / self.params['t_stimulus']
+            x_stim = (x0 + time_ * v0)
+            L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
+                    self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, v0, 0, 0))
+        t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
 
-        my_units = np.array(self.local_idx_exc) - 1
+        if with_blank:
+            start_blank = 1. / dt * self.params['t_start_blank']
+            stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
+            blank_idx = np.arange(start_blank, stop_blank)
+            before_stim_idx = np.arange(self.params['t_start'] * 1. / dt)
+            blank_idx = np.concatenate((before_stim_idx, blank_idx))
+            # blanking
+            for i_time in blank_idx:
+                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+#                L_input[:, i_time] = 0.
+
+        L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
+        print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
+        for i_, tgt_gid_nest in enumerate(self.recorder_neuron_gid_mapping.keys()):
+            rate_of_t = np.array(L_input[i_, :])
+            # each cell will get its own spike train stored in the following file + cell gid
+            n_steps = rate_of_t.size - int(self.params['t_stim_pause'] / dt)
+            spike_times = []
+            for i in xrange(n_steps):
+                r = nprnd.rand()
+                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
+                    spike_times.append(i * dt + t_offset)
+#                    print i*dt + t_offset, t_offset
+
+            self.spike_times_container[i_] = np.array(spike_times)
+            if len(spike_times) > 0:
+#                print 'DEBUGINPUT nspikes into cell %d (%d): %d' % (tgt_gid_nest, i_, len(spike_times)), ' tp : ', self.tuning_prop_exc[tgt_gid_nest-1, :], self.motion_params[stim_idx, :]
+                nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.around(np.sort(spike_times), decimals=1)})
+                if save_output and self.pc_id == 0:
+                    output_fn = self.params['recorder_neuron_input_rate_fn_base'] + '%d_%d.dat' % (tgt_gid_nest, stim_idx)
+                    np.savetxt(output_fn, rate_of_t)
+                    output_fn = self.params['recorder_neuron_input_fn_base'] + '%d_%d.dat' % (tgt_gid_nest, stim_idx)
+                    print 'Saving output to:', output_fn
+                    np.savetxt(output_fn, np.array(spike_times))
+        if self.comm != None:
+            self.comm.barrier()
+
+
+
+    def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False, my_units=None):
+
+        if my_units == None:
+            my_units = np.array(self.local_idx_exc) - 1
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         if with_blank:
@@ -390,7 +452,6 @@ class NetworkModel(object):
             x_stim = (x0 + time_ * v0)
             L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
                     self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
-
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
 
         if with_blank:
@@ -398,16 +459,11 @@ class NetworkModel(object):
             stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
             blank_idx = np.arange(start_blank, stop_blank)
             before_stim_idx = np.arange(self.params['t_start'] * 1. / dt)
-#            print 'debug stim before_stim_idx', stim_idx, before_stim_idx, before_stim_idx.size
-#            print 'debug stim blank_idx', stim_idx, blank_idx, blank_idx.size
-#            print 'debug t_offset', t_offset
-#            print 'debug stim_durations', self.stim_durations
             blank_idx = np.concatenate((before_stim_idx, blank_idx))
             # blanking
-#            print 'debug blank_idx', blank_idx
             for i_time in blank_idx:
-#                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-                L_input[:, i_time] = 0.
+                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+#                L_input[:, i_time] = 0.
 
         L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
@@ -557,8 +613,8 @@ class NetworkModel(object):
         if self.params['training_run'] and not self.params['debug']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
+            self.setup_recorder_neurons() # DOES NOT WORK
             if self.params['with_inhibitory_neurons']:
-                #self.connect_input_to_recorder_neurons() # DOES NOT WORK
                 print 'Connecting exc - inh unspecific'
                 self.connect_ei_unspecific()
                 print 'Connecting inh - exc unspecific'
@@ -577,8 +633,10 @@ class NetworkModel(object):
                 self.connect_ei_specific()
 
             # setup long-range connectivity based on trained connection matrix
-            print 'Connecting exc - exc '
-            self.connect_ee_testing()
+            print 'Connecting recorder neurons'
+            self.connect_recorder_neurons()
+#            print 'Connecting exc - exc '
+#            self.connect_ee_testing()
 
 
 
@@ -607,16 +665,35 @@ class NetworkModel(object):
                     options={'allow_multapses':False, 'allow_autapses': False})
 
 
+    def setup_recorder_neurons(self):
+        self.recorder_neurons = nest.Create(self.params['neuron_model'], self.params['n_recorder_neurons'], params=self.params['cell_params_recorder_neurons'])
+        self.recorder_stimulus = nest.Create('spike_generator', self.params['n_recorder_neurons'])
+        for i_ in xrange(self.params['n_recorder_neurons']):
+            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
+
+        self.recorder_neuron_gid_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
+        self.recorder_neuron_mc_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
+        i_rec_nrn = 0
+        for speed in self.params['record_tuning_prop_v']:
+            pos = np.linspace(self.params['x_min_tp'], self.params['x_max_tp'], self.params['n_recorder_neurons_per_speed'], endpoint=True)
+            for x_, i_ in enumerate(pos):
+                gid = utils.get_gids_near_stim_nest([x_, .5, speed, .0], self.tuning_prop_exc)
+
+                self.recorder_neuron_gid_mapping[self.recorder_neurons[i_rec_nrn]] = gid[0][0]
+#                print 'DEBUG setup_recorder_neurons ', self.recorder_neurons[i_rec_nrn], self.recorder_neuron_gid_mapping[self.recorder_neurons[i_rec_nrn]], 'xpos v:', x_, speed
+                i_rec_nrn += 1
+                    
+
+
     def connect_input_to_recorder_neurons(self):
         """
         The recorder stimulus is inserted into recorder neurons which are not supposed to spike (high v_thresh).
         """
-
         self.recorder_stimulus = nest.Create('spike_generator', self.params['n_recorder_neurons'])
         for i_ in xrange(self.params['n_recorder_neurons']):
             nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.sort(spike_times)})
-            nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_fast')
             #nest.Connect([self.recorder_stimulus[i_]], [self.recorder_neurons[i_]], model='input_exc_slow')
+
 
         """
         # pick recorder neurons along the spatial axis --> sort the neurons according to their x-pos
@@ -627,7 +704,6 @@ class NetworkModel(object):
         # get the indices for the corresponding 'normal' neurons
         gids_normal = sorted_gids[rnd_gids]
 
-        self.recorder_neuron_gid_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
 
         for i_, gid in enumerate(self.recorder_neurons):
             self.recorder_neuron_gid_mapping[self.recorder_neurons[i_]] = self.exc_gids[gids_normal[i_]] + 1 
@@ -864,6 +940,7 @@ class NetworkModel(object):
 
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
+                print 'DEBUG connect_ee_testing: src_hc _mc', src_hc, src_mc
                 src_pop = self.list_of_exc_pop[src_hc][src_mc]
                 src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
                 for tgt_hc in xrange(self.params['n_hc']):
@@ -873,25 +950,21 @@ class NetworkModel(object):
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
 
-                        if w_nmda < 0:
+                        if w_ampa < 0:
                             w_gaba_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['gaba']
                             nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                     weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
                                     model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
                         else:
-                            #if w_ampa != 0:
                             w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / self.params['stp_params']['ampa']['U']
-    #                            w_ampa_ = self.transform_weight(w_ampa, w_ampa_min, w_ampa_max)
-    #                            w_nmda_ = self.transform_weight(w_nmda, w_nmda_min, w_nmda_max)
-                            #print 'debug w_ampa_, w_nmda_', w_ampa_, w_nmda_
                             nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                     weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                            w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] / self.params['stp_params']['nmda']['U'])
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
+                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] / self.params['stp_params']['nmda']['U'])
+                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
+                                model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
 
 
     
@@ -1213,16 +1286,44 @@ class NetworkModel(object):
         Must be called after the normal connect
         """
 
-        my_adj_list = {}
-        f = file(self.params['recorder_neurons_gid_mapping'], 'r')
-        gid_mapping = json.load(f)
-        for rec_nrn in self.recorder_neurons:
-            mirror_gid = gid_mapping[rec_nrn]
+        for rec_gid in self.recorder_neurons:
+            hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(self.recorder_neuron_gid_mapping[rec_gid])
+            tgt_pop_idx = hc_idx * self.params['n_mc_per_hc'] + mc_idx_in_hc
             for src_hc in xrange(self.params['n_hc']):
                 for src_mc in xrange(self.params['n_mc_per_hc']):
+                    src_pop_idx = src_hc * self.params['n_mc_per_hc'] + src_mc
+                    w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
+                    w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
                     src_pop = self.list_of_exc_pop[src_hc][src_mc]
-                    conns = nest.GetConnections(src_pop, [mirror_gid]) # get the list of connections stored on the current MPI node
-                    print 'Debug conns', conns
+                    if w_ampa < 0:
+                        w_gaba_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['gaba']
+                        nest.RandomConvergentConnect(src_pop, [rec_gid], n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
+                                model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                    else:
+                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / self.params['stp_params']['ampa']['U']
+                        nest.RandomConvergentConnect(src_pop, [rec_gid], n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
+                                model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
+
+                    w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] / self.params['stp_params']['nmda']['U'])
+                    nest.RandomConvergentConnect(src_pop, [rec_gid], n=self.params['n_conn_ee_global_out_per_pyr'],\
+                            weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
+                            model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
+
+
+
+#        my_adj_list = {}
+#        f = file(self.params['recorder_neurons_gid_mapping'], 'r')
+#        gid_mapping = json.load(f)
+#        for rec_nrn in self.recorder_neurons:
+#            mirror_gid = gid_mapping[rec_nrn]
+#            for src_hc in xrange(self.params['n_hc']):
+#                for src_mc in xrange(self.params['n_mc_per_hc']):
+#                    src_pop = self.list_of_exc_pop[src_hc][src_mc]
+#                    conns = nest.GetConnections(src_pop, [mirror_gid]) # get the list of connections stored on the current MPI node
+#                    print 'Debug conns', conns
+
 #                for c in conns:
 #                    cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
 #                    if (cp[0]['synapse_model'] == 'bcpnn_synapse'):
@@ -1267,6 +1368,7 @@ class NetworkModel(object):
             if self.pc_id == 0:
                 print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent) mp:' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.), self.motion_params[stim_idx, :]
             self.create_input_for_stim(stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
+            self.create_input_for_recorder_neurons(stim_idx, with_blank=not self.params['training_run'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]
@@ -1288,12 +1390,13 @@ class NetworkModel(object):
 
 
     def record_v_exc(self):
-        voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval': 1.0})
-        nest.SetStatus(voltmeter,[{"to_file": True, "withtime": True, 'label' : 'exc_volt'}])
+        self.voltmeter_exc = nest.Create('multimeter', params={'record_from': self.record_from, 'interval':  self.params['dt_volt']})
+        nest.SetStatus(self.voltmeter_exc,[{"to_file": False, "withtime": True, 'label' : 'exc_volt'}])
 
         for i_hc in xrange(self.params['n_hc']):
             for i_mc in xrange(self.params['n_mc_per_hc']):
-                nest.ConvergentConnect(voltmeter, [self.list_of_exc_pop[i_hc][i_mc][0]])
+                nest.ConvergentConnect(self.voltmeter_exc, [self.list_of_exc_pop[i_hc][i_mc][0]])
+
 
 #        mp_r = np.array(self.params['motion_params']) #cells well tuned to the normal stimulus
 #        selected_gids_r, pops = utils.select_well_tuned_cells_trajectory(self.tuning_prop_exc, \
@@ -1318,7 +1421,7 @@ class NetworkModel(object):
 
 
     def record_v_inh_unspec(self):
-        voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval' :0.5})
+        voltmeter = nest.Create('multimeter', params={'record_from': ['V_m'], 'interval' : self.params['dt_volt']})
         nest.SetStatus(voltmeter,[{"to_file": True, "withtime": True, 'label' : 'inh_unspec_volt'}])
         for hc in xrange(self.params['n_hc']):
             nest.DivergentConnect(voltmeter, self.list_of_unspecific_inh_pop[hc])
@@ -1404,3 +1507,33 @@ class NetworkModel(object):
                 self.comm.send(nest.GetStatus(spike_recorder)[0]['events']['senders'],dest=0, tag=1)
             self.comm.barrier()
             
+
+    def collect_vmem_data(self):
+        print 'collect_vmem_data...', 
+        output_fn_base = [self.params['free_vmem_fn_base'], 'exc']
+        for i_, recorder in enumerate([self.recorder_free_vmem, self.voltmeter_exc]):
+            for observable in self.record_from:
+                if self.pc_id == 0:
+                    output_vec = nest.GetStatus(recorder)[0]['events'][observable]
+                    for i_proc in xrange(1, self.n_proc):
+                        output_vec = np.r_[output_vec, self.comm.recv(source=i_proc)]
+                else:
+                    self.comm.send(nest.GetStatus(recorder)[0]['events'][observable],dest=0)
+                if self.comm != None:
+                    self.comm.barrier()
+
+                if self.pc_id == 0:
+                    gids = nest.GetStatus(recorder)[0]['events']['senders']
+                    for i_proc in xrange(1, self.n_proc):
+                        gids = np.r_[gids, self.comm.recv(source=i_proc)]
+                    fn = self.params['volt_folder'] + output_fn_base[i_] + '_%s.dat' % (observable)
+                    output = np.array((gids, output_vec))
+                    np.savetxt(fn, output.transpose())
+#                    print 'debug output_vec', output_vec
+#                    print 'debug get status:', nest.GetStatus(recorder)
+#                    print 'debug observable:', observable
+                else:
+                    self.comm.send(nest.GetStatus(recorder)[0]['events']['senders'],dest=0)
+
+
+        print 'done'

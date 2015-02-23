@@ -36,6 +36,7 @@ if __name__ == '__main__':
 
     params = GP.params
     params['training_run'] = True
+    #params['n_exc_per_mc'] = 4
     #params['training_run'] = True
 
     if len(sys.argv) > 1:

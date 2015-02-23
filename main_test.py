@@ -47,15 +47,24 @@ if __name__ == '__main__':
     # if training_run is set, you might end up with other wrong parameters (e.g. n_stim)
 
     if not params['debug']:
-        conn_fn_ampa = sys.argv[1]
-        conn_fn_nmda = sys.argv[2]
-        bcpnn_gain = float(sys.argv[3])
-        w_ie = float(sys.argv[4])
-        w_ei = float(sys.argv[5])
-        ampa_nmda_ratio = float(sys.argv[6])
-        w_ii = float(sys.argv[7])
+        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
+        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
+        bcpnn_gain = 2.0
+        w_ie = -10.
+        w_ei = 2.
+        w_ii = -1.
+        ampa_nmda_ratio = 5.
+        w_input_exc = 10.
+          
+#        conn_fn_ampa = sys.argv[1]
+#        conn_fn_nmda = sys.argv[2]
+#        bcpnn_gain = float(sys.argv[3])
+#        w_ie = float(sys.argv[4])
+#        w_ei = float(sys.argv[5])
+#        ampa_nmda_ratio = float(sys.argv[6])
+#        w_ii = float(sys.argv[7])
 
-        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
+#        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
         assert (w_ie < 0), 'Inhibitory weights need to be negative!'
         assert (w_ii < 0), 'Inhibitory weights need to be negative!'
@@ -64,10 +73,10 @@ if __name__ == '__main__':
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_ratio%.1f_pee%.2f_wie%.2f_wei%.2f_wii%.2f' % ( \
+        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.1f_ratio%.1f_pee%.1f_wie%.1f_wei%.1f_winpu%.1f' % ( \
                 params['sim_id'], params['n_test_stim'], 
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
-                params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'])
+                params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
     else:
@@ -79,7 +88,7 @@ if __name__ == '__main__':
     if comm != None:
         comm.barrier()
     load_files = False
-    record = False
+    record = True
     save_input_files = True #not load_files
     NM = NetworkModel(params, iteration=0, comm=comm)
     if not params['debug']:
@@ -102,7 +111,7 @@ if __name__ == '__main__':
     NM.connect()
     if record:
         NM.record_v_exc()
-        NM.record_v_inh_unspec()
+#        NM.record_v_inh_unspec()
 
     NM.run_sim()
 
@@ -110,7 +119,8 @@ if __name__ == '__main__':
         comm.barrier()
 
     NM.collect_spikes()
-
+    if record:
+        NM.collect_vmem_data()
     #NM.get_weights_static()
 
     t_end = time.time()
