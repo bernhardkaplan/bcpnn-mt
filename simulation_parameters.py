@@ -20,12 +20,12 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
-        self.params['with_stp'] = True
+        self.params['with_stp'] = False
         self.w_input_exc = 15.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -77,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['record_tuning_prop_v'] = [.95]
@@ -89,7 +89,7 @@ class parameter_storage(object):
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
-        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_max_tp'] = 0.2  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.2  # [a.u.] minimal velocity in visual space for tuning property distribution
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
@@ -143,7 +143,7 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['save_input'] = not self.params['Cluster']
+        self.params['save_input'] = False #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -515,16 +515,16 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-        #self.params['w_exc_noise'] = 2. # [nS] mean value for noise ---< columns
-        #self.params['f_exc_noise'] = 1000# [Hz] 
-        #self.params['w_inh_noise'] = 2. # [nS] mean value for noise ---< columns
-        #self.params['f_inh_noise'] = 1000# [Hz]
+#        self.params['w_noise_exc'] = 1.5 # [nS] mean value for noise ---< columns
+#        self.params['f_noise_exc'] = 1000. # [Hz] 
+#        self.params['w_noise_inh'] = -0.5 # [nS] mean value for noise ---< columns
+#        self.params['f_noise_inh'] = 1000. # [Hz]
 
         # no noise:
-        self.params['w_exc_noise'] = 1e-5          # [uS] mean value for noise ---< columns
-        self.params['f_exc_noise'] = 1# [Hz]
-        self.params['w_inh_noise'] = 1e-5          # [uS] mean value for noise ---< columns
-        self.params['f_inh_noise'] = 1# [Hz]
+        self.params['w_noise_exc'] = 1e-5          # [uS] mean value for noise ---< columns
+        self.params['f_noise_exc'] = 1.# [Hz]
+        self.params['w_noise_inh'] = 1e-5          # [uS] mean value for noise ---< columns
+        self.params['f_noise_inh'] = 1.# [Hz]
 
 
 

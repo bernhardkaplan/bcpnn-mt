@@ -105,6 +105,8 @@ class ConnectivityPlotter(object):
         ax.set_xlabel('Position')
         ax.set_ylabel('Preferred speed')
         ax.set_title('Outgoing connections, $\\tau_i = %d$' % self.params['bcpnn_params']['tau_i'])
+        cbar = fig.colorbar(m)
+        cbar.set_label('$w_{out}^{BCPNN}$')
 
         annotate = False
         if annotate:

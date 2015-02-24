@@ -47,13 +47,15 @@ if __name__ == '__main__':
     # if training_run is set, you might end up with other wrong parameters (e.g. n_stim)
 
     if not params['debug']:
-        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
-        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
+#        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
+#        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
+        conn_fn_ampa = 'connection_matrix_20x2_taui5.dat'
+        conn_fn_nmda = 'connection_matrix_20x2_taui150.dat'
         bcpnn_gain = 5.0
-        w_ie = -10.
-        w_ei = 2.
+        w_ei = 5.
+        w_ie = -5. * w_ei
         w_ii = -1.
-        ampa_nmda_ratio = 1.
+        ampa_nmda_ratio = 0.1
         w_input_exc = 12.
           
 #        conn_fn_ampa = sys.argv[1]
@@ -122,14 +124,19 @@ if __name__ == '__main__':
     NM.collect_spikes()
     if record:
         NM.collect_vmem_data()
-    #NM.get_weights_static()
+    NM.get_weights_static()
 
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
-#    if pc_id == 0 and not params['Cluster']:
-#        print "Calling python PlottingScripts/PlotPrediction.py"
-#        os.system('python PlottingScripts/PlotPrediction.py %s' % params['folder_name'])
+    if pc_id == 0 and not params['Cluster']:
+        print "Calling python PlottingScripts/PlotPrediction.py"
+        stim_range = params['stim_range']
+        for i_ in xrange(stim_range[0], stim_range[1]):
+            os.system('python PlottingScripts/PlotPrediction.py %s %d %d' % (params['folder_name'], i_, i_ + 1))
+        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
+        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']
+        os.system(display_cmd)
 
     if comm != None:
         comm.barrier()
