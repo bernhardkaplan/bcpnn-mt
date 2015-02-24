@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
@@ -90,7 +90,7 @@ class parameter_storage(object):
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.2  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_min_tp'] = 0.25  # [a.u.] minimal velocity in visual space for tuning property distribution
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
 
@@ -373,7 +373,7 @@ class parameter_storage(object):
         #self.params['n_training_v_slow_speeds'] = 6 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 8 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
-        self.params['n_training_v'] = 4 * self.params['n_v']
+        self.params['n_training_v'] = 20 * self.params['n_v']
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
@@ -533,12 +533,12 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e' % ( \
+                folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_vmin%.2f' % ( \
                         self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], self.params['n_training_x'], \
                         self.params['stim_range'][0], self.params['stim_range'][1], \
                         self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], \
-                        self.params['bcpnn_init_val'])
+                        self.params['bcpnn_init_val'], self.params['v_min_tp'])
             else:
                 folder_name = 'TestSim_%s_%d_taui%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 

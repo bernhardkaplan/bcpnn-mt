@@ -425,7 +425,6 @@ class NetworkModel(object):
                     spike_times.append(i * dt + t_offset)
 #                    print i*dt + t_offset, t_offset
 
-            self.spike_times_container[i_] = np.array(spike_times)
             if len(spike_times) > 0:
 #                print 'DEBUGINPUT nspikes into cell %d (%d): %d' % (tgt_gid_nest, i_, len(spike_times)), ' tp : ', self.tuning_prop_exc[tgt_gid_nest-1, :], self.motion_params[stim_idx, :]
                 nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.around(np.sort(spike_times), decimals=1)})
@@ -1119,18 +1118,28 @@ class NetworkModel(object):
                         conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
                         n_conns_ie += 1
 
-        for i_hc_src in xrange(self.params['n_hc']):
-            print 'DEBUG get_weights_static EE hc_src:', i_hc_src
-            for i_mc_src in xrange(self.params['n_mc_per_hc']):
-                print 'DEBUG get_weights_static EE hc_src, mc_src:', i_hc_src, i_mc_src
-                for i_hc_tgt in xrange(self.params['n_hc']):
-                    for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
-                        conns_ee = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt])
-                        if conns_ee != None:
-                            for i_, c in enumerate(conns_ee):
-                                cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                                conn_txt_ee += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
-                                n_conns_ee += 1
+        if not self.params['training_run']:
+            for i_hc_src in xrange(self.params['n_hc']):
+                print 'DEBUG get_weights_static EE hc_src:', i_hc_src
+                for i_mc_src in xrange(self.params['n_mc_per_hc']):
+                    print 'DEBUG get_weights_static EE hc_src, mc_src:', i_hc_src, i_mc_src
+                    for i_hc_tgt in xrange(self.params['n_hc']):
+                        for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
+                            conns_ee = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt])
+                            if conns_ee != None:
+                                for i_, c in enumerate(conns_ee):
+                                    cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                                    conn_txt_ee += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                                    n_conns_ee += 1
+
+
+            print 'Proc %d holds %d E->E connections' % (self.pc_id, n_conns_ee)
+            fn_out_ee = self.params['conn_list_ee_fn_base'] + '%d.txt' % (self.pc_id)
+            print 'Writing E-I connections to:', fn_out_ee
+            conn_f_ee = file(fn_out_ee, 'w')
+            conn_f_ee.write(conn_txt_ee)
+            conn_f_ee.flush()
+            conn_f_ee.close()
 
 
         print 'Proc %d holds %d E->I connections' % (self.pc_id, n_conns_ei)
@@ -1148,15 +1157,6 @@ class NetworkModel(object):
         conn_f_ie.write(conn_txt_ie)
         conn_f_ie.flush()
         conn_f_ie.close()
-
-        print 'Proc %d holds %d E->E connections' % (self.pc_id, n_conns_ee)
-        fn_out_ee = self.params['conn_list_ee_fn_base'] + '%d.txt' % (self.pc_id)
-        print 'Writing E-I connections to:', fn_out_ee
-        conn_f_ee = file(fn_out_ee, 'w')
-        conn_f_ee.write(conn_txt_ee)
-        conn_f_ee.flush()
-        conn_f_ee.close()
-
         print 'Proc %d holds %d I->I connections' % (self.pc_id, n_conns_ii)
         fn_out_ii = self.params['conn_list_ii_fn_base'] + '%d.txt' % (self.pc_id)
         print 'Writing E-I connections to:', fn_out_ii
@@ -1224,7 +1224,7 @@ class NetworkModel(object):
 
         bias_f = file(fn_out_bias, 'w')
         json.dump(bias, bias_f, indent=0)
-        print 'Writing E - E connections to:', fn_out
+        print 'Writing E - E connections (%d) to:' % (n_my_conns) , fn_out
         conn_f = file(fn_out, 'w')
         conn_f.write(conn_txt)
         conn_f.flush()

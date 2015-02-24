@@ -36,20 +36,20 @@ if __name__ == '__main__':
 
     params = GP.params
     params['training_run'] = True
-    if params['n_exc_per_mc'] != 4:
-        print 'Wrong n_exc_per_mc -- too high for training! Will quit now, please set n_exc_per_mc = 4'
-        exit(1)
+    #if params['n_exc_per_mc'] != 4:
+        #print 'Wrong n_exc_per_mc -- too high for training! Will quit now, please set n_exc_per_mc = 4'
+        #exit(1)
     #params['training_run'] = True
 
     if len(sys.argv) > 1:
         params['taui_bcpnn'] = float(sys.argv[1])
         params['bcpnn_params']['tau_i'] = params['taui_bcpnn']
-        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e/' % ( \
+        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_vmintp%.2f/' % ( \
                 params['sim_id'], params['n_training_cycles'], params['n_training_v'], params['n_training_x'], \
                 params['stim_range'][0], params['stim_range'][1], \
                 params['bcpnn_params']['tau_i'], \
                 params['n_hc'], params['n_mc_per_hc'], params['blur_X'], params['blur_V'], \
-                params['bcpnn_init_val'])
+                params['bcpnn_init_val'], params['v_min_tp'])
         GP.set_filenames(folder_name=folder_name)
 
 #    trained_stimuli = []
@@ -119,6 +119,7 @@ if __name__ == '__main__':
     if comm != None:
         comm.Barrier()
     NM.trigger_spikes()
+    NM.collect_spikes()
     if not params['debug']:
         t_start_get_weights = time.time()
         NM.get_weights_after_learning_cycle()
@@ -127,6 +128,8 @@ if __name__ == '__main__':
             NM.get_weights_static()
         t_stop_get_weights = time.time()
         print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
+    if comm != None:
+        comm.Barrier()
     NM.merge_local_gid_files()
     t_end = time.time()
     t_diff = t_end - t_0
@@ -137,4 +140,6 @@ if __name__ == '__main__':
         print 'Waiting for remove_empty_files to end ... '
 
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60.)
+    if comm != None:
+        comm.Barrier()
 
