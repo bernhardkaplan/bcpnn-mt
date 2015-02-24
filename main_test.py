@@ -49,12 +49,12 @@ if __name__ == '__main__':
     if not params['debug']:
         conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
         conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
-        bcpnn_gain = 2.0
+        bcpnn_gain = 5.0
         w_ie = -10.
         w_ei = 2.
         w_ii = -1.
-        ampa_nmda_ratio = 5.
-        w_input_exc = 10.
+        ampa_nmda_ratio = 1.
+        w_input_exc = 12.
           
 #        conn_fn_ampa = sys.argv[1]
 #        conn_fn_nmda = sys.argv[2]

@@ -9,6 +9,7 @@ import copy
 import re
 import json
 import itertools
+import matplotlib
 
 def compute_stim_time(stim_params):
     """
@@ -185,6 +186,9 @@ def get_spikes_within_interval(d, t0, t1, time_axis=1, gid_axis=0):
     spikes = d[idx, time_axis]
     gids = d[idx, gid_axis]
     return (spikes, gids)
+
+
+
 
 def get_spikes_for_gid(spike_data, gid, t_range=None):
     if t_range == None:
@@ -1492,6 +1496,7 @@ def merge_connection_files(params, conn_type='ee', iteration=None):
     fn_out = params['merged_conn_list_%s' % conn_type]
 #    merge_files(merge_pattern, fn_out)
     merge_and_sort_files(merge_pattern, fn_out)
+    return fn_out
 
 def merge_spike_files_exc(params):
     cell_type = 'exc'
@@ -1790,6 +1795,26 @@ def get_colorlist(n_colors=17):
         for i_ in xrange(n_colors - 17):
             colorlist.append('#%02X%02X%02X' % (r(),r(),r()))
 
+    return colorlist
+
+
+def get_colorlist_sorted(value_range, mapped_axis):
+    """
+    value_range is a tuple representing the (min, max) value of the interval to be color-mapped
+    mapped_axis is an array which is to be mapped.
+    returns a colorlist of the same size as mapped_axis
+    Example:
+        100 cells have positions between (0, 1), but you everything below 0.2 and above 0.5 is unimportant:
+
+        v_range = (0.2, 0.5)
+        mapped_axis = np.random.rand(100) # random positions
+        return value:
+        colorlist[cell_idx] --> color of cell_idx in the interval v_range
+    """
+    norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m.set_array(mapped_axis)
+    colorlist= m.to_rgba(mapped_axis)
     return colorlist
 
 

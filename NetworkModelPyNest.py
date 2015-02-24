@@ -40,7 +40,9 @@ class NetworkModel(object):
     def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
+#        self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
+
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
             np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop_exc)
@@ -1095,6 +1097,7 @@ class NetworkModel(object):
         n_conns_ii = 0
 
         for i_hc in xrange(self.params['n_hc']):
+            print 'DEBUG get_weights_static hc:', i_hc
             conns_ii = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc], self.list_of_unspecific_inh_pop[i_hc])
             if conns_ii != None:
                 for i_, c in enumerate(conns_ii):
@@ -1102,21 +1105,24 @@ class NetworkModel(object):
                     conn_txt_ii += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
                     n_conns_ii += 1
             for i_mc in xrange(self.params['n_mc_per_hc']):
-                    conns_ei = nest.GetConnections(self.list_of_exc_pop[i_hc][i_mc], self.list_of_unspecific_inh_pop[i_hc])
-                    conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc], self.list_of_exc_pop[i_hc][i_mc])
-                    if conns_ei != None:
-                        for i_, c in enumerate(conns_ei):
-                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                            conn_txt_ei += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
-                            n_conns_ei += 1
-                    if conns_ie != None:
-                        for i_, c in enumerate(conns_ie):
-                            cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
-                            conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
-                            n_conns_ie += 1
+                print 'DEBUG get_weights_static hc:', i_hc
+                conns_ei = nest.GetConnections(self.list_of_exc_pop[i_hc][i_mc], self.list_of_unspecific_inh_pop[i_hc])
+                conns_ie = nest.GetConnections(self.list_of_unspecific_inh_pop[i_hc], self.list_of_exc_pop[i_hc][i_mc])
+                if conns_ei != None:
+                    for i_, c in enumerate(conns_ei):
+                        cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                        conn_txt_ei += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                        n_conns_ei += 1
+                if conns_ie != None:
+                    for i_, c in enumerate(conns_ie):
+                        cp = nest.GetStatus([c])  # retrieve the dictionary for this connection
+                        conn_txt_ie += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
+                        n_conns_ie += 1
 
         for i_hc_src in xrange(self.params['n_hc']):
+            print 'DEBUG get_weights_static EE hc_src:', i_hc_src
             for i_mc_src in xrange(self.params['n_mc_per_hc']):
+                print 'DEBUG get_weights_static EE hc_src, mc_src:', i_hc_src, i_mc_src
                 for i_hc_tgt in xrange(self.params['n_hc']):
                     for i_mc_tgt in xrange(self.params['n_mc_per_hc']):
                         conns_ee = nest.GetConnections(self.list_of_exc_pop[i_hc_src][i_mc_src], self.list_of_exc_pop[i_hc_tgt][i_mc_tgt])
