@@ -51,11 +51,11 @@ if __name__ == '__main__':
 #        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
         conn_fn_ampa = 'connection_matrix_20x2_taui5.dat'
         conn_fn_nmda = 'connection_matrix_20x2_taui150.dat'
-        bcpnn_gain = 5.0
+        bcpnn_gain = 2.0
         w_ei = 5.
         w_ie = -5. * w_ei
         w_ii = -1.
-        ampa_nmda_ratio = 0.1
+        ampa_nmda_ratio = 5.
         w_input_exc = 12.
           
 #        conn_fn_ampa = sys.argv[1]
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     NM.collect_spikes()
     if record:
         NM.collect_vmem_data()
-    NM.get_weights_static()
+#    NM.get_weights_static()
 
     t_end = time.time()
     t_diff = t_end - t_0
