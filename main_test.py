@@ -122,7 +122,7 @@ if __name__ == '__main__':
     NM.collect_spikes()
     if record:
         NM.collect_vmem_data()
-    #NM.get_weights_static()
+    NM.get_weights_static()
 
     t_end = time.time()
     t_diff = t_end - t_0
