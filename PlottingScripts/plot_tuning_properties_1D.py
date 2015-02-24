@@ -49,7 +49,7 @@ class Plotter(object):
         rfs_fn = self.params['receptive_fields_exc_fn']
         if not (os.path.exists(tp_fn)) or not (os.path.exists(rfs_fn)):
             print 'RECOMPUTING tuning properties'
-#            self.tp, self.rfs = set_tuning_properties.set_tuning_properties(self.params)
+            #self.tp, self.rfs = set_tuning_properties.set_tuning_properties(self.params)
 #            self.tp, self.rfs = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
             self.tp, self.rfs = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         else:

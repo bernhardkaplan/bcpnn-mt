@@ -41,6 +41,7 @@ class parameter_storage(object):
         else:
             self.params['sim_id'] += 'noSTP_'
         self.params['sim_id'] += 'unspecBlank_'
+
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
         # ###################
@@ -67,8 +68,8 @@ class parameter_storage(object):
         self.params['n_rf_x_log'] = self.params['n_rf_x'] - self.params['n_rf_x_fovea']
         assert (self.params['n_rf_x_log'] % 2 == 0), 'ERROR: please make sure that n_rf_x_log is an even number (as n_rf_x_fovea), so please change n_hc (=n_rf_x) or frac_rf_x_fovea'
 
-        assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
-        self.params['frac_rf_v_fovea'] = 0.1 # this fraction of all n_rf_v cells will have constant (minimum) RF size
+        # assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
+        self.params['frac_rf_v_fovea'] = 0.0 # this fraction of all n_rf_v cells will have constant (minimum) RF size
         self.params['n_rf_v_fovea'] = np.int(np.round(self.params['frac_rf_v_fovea'] * self.params['n_v']))
         if self.params['n_rf_v_fovea'] % 2:
             self.params['n_rf_v_fovea'] += 1
@@ -89,7 +90,8 @@ class parameter_storage(object):
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_min_tp'] = 0.2  # [a.u.] minimal velocity in visual space for tuning property distribution
+#        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
 
         # receptive field size parameters
@@ -368,8 +370,10 @@ class parameter_storage(object):
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v_slow_speeds'] = 6 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        self.params['n_training_v'] = 8 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        #self.params['n_training_v_slow_speeds'] = 6 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
+        self.params['n_training_v_slow_speeds'] = 0
+        #self.params['n_training_v'] = 8 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
+        self.params['n_training_v'] = 4 * self.params['n_v']
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed

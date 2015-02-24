@@ -6,6 +6,8 @@ import numpy.random as rnd
 import utils
 import PlottingScripts.FigureCreator
 from PlottingScripts.FigureCreator import plot_params
+
+
 def get_xpos_exponential_distr(params):
     """
     Returns n_hc positions
@@ -18,7 +20,6 @@ def get_xpos_exponential_distr(params):
     assert (0 < eps_half)
     assert (.5 > eps_0)
     assert (.5 > eps_half)
-
     C = params['rf_x_distribution_steepness']# 'free' parameter determining the steep-ness of the exponential distribution for x-pos
     z = (n_hc / 2 - 1.) # half of the indices
     A = (.5 - eps_half - eps_0) / (1. - np.exp(-C * z))
@@ -27,12 +28,9 @@ def get_xpos_exponential_distr(params):
     idx_2 = np.arange(n_hc / 2, n_hc)    
     # f_idx = the x position of the HC depending on the index of the HC
     f_idx = A * (1. - np.exp(-C * idx)) + eps_0
-
     B = (.5 - eps_0 - eps_half) / (np.exp(C * (n_hc / 2 - 1)) - 1)
-
     D = .5 + eps_half - B
     g_idx = B * np.exp(C * idx) + D
-
     x_pos = np.zeros(n_hc)
     x_pos[:n_hc / 2] = f_idx
     x_pos[-n_hc / 2:] = g_idx
@@ -522,6 +520,7 @@ def set_tuning_prop_1D_with_const_fovea_and_const_velocity(params, cell_type='ex
     v_rho_half_ = list(v_rho_half)
     v_rho_half_.reverse()
     RF_v[:n_rf_v_log / 2] = v_rho_half_
+#    print 'debug RF_v:', RF_v, v_rho_half
     RF_v[idx_upper:] = -v_rho_half
     RF_v[n_rf_v_log / 2 : n_rf_v_log / 2 + params['n_rf_v_fovea']] = RF_v_const
 
@@ -556,28 +555,32 @@ def set_tuning_prop_1D_with_const_fovea_and_const_velocity(params, cell_type='ex
 
 
 def get_receptive_field_sizes_v_const_fovea(params, rf_v):
-    idx = np.argsort(rf_v)
-    rf_size_v = np.zeros(rf_v.size)
-    pos_idx = (rf_v[idx] > 0.0).nonzero()[0]
-    neg_idx = (rf_v[idx] < 0.0).nonzero()[0]
-    dv_pos_half = np.zeros(pos_idx.size)
-    dv_neg_half = np.zeros(neg_idx.size)
-    dv_pos_half = rf_v[idx][pos_idx][1:] - rf_v[idx][pos_idx][:-1]
-    dv_neg_half = np.abs(rf_v[idx][neg_idx][1:] - rf_v[idx][neg_idx][:-1])
-
-    dv_neg_reverse = list(dv_neg_half)
-    dv_neg_reverse.reverse()
-    rf_size_v[:neg_idx.size-1] = dv_neg_half
-    rf_size_v[neg_idx.size] = dv_neg_half[-1]
-    if params['n_v'] % 2:
-        rf_size_v[pos_idx.size+2:] = dv_pos_half # for 21
+    if (params['n_v'] >= 4):
+        idx = np.argsort(rf_v)
+        rf_size_v = np.zeros(rf_v.size)
+        pos_idx = (rf_v[idx] > 0.0).nonzero()[0]
+        neg_idx = (rf_v[idx] < 0.0).nonzero()[0]
+        dv_pos_half = np.zeros(pos_idx.size)
+        dv_neg_half = np.zeros(neg_idx.size)
+        dv_pos_half = rf_v[idx][pos_idx][1:] - rf_v[idx][pos_idx][:-1]
+        dv_neg_half = np.abs(rf_v[idx][neg_idx][1:] - rf_v[idx][neg_idx][:-1])
+        dv_neg_reverse = list(dv_neg_half)
+        dv_neg_reverse.reverse()
+        rf_size_v[:neg_idx.size-1] = dv_neg_half
+        rf_size_v[neg_idx.size] = dv_neg_half[-1]
+        if params['n_v'] % 2:
+            rf_size_v[pos_idx.size+2:] = dv_pos_half # for 21
+        else:
+            rf_size_v[pos_idx.size+1:] = dv_pos_half # for 20
+        rf_size_v[pos_idx.size] = dv_pos_half[0]
+        rf_size_v[idx.size / 2 - 1] = dv_pos_half[0]
+    #    rf_size_v *= params['rf_size_v_multiplicator']
+    #    print 'rf_size_v', rf_size_v
+        return rf_size_v
     else:
-        rf_size_v[pos_idx.size+1:] = dv_pos_half # for 20
-    rf_size_v[pos_idx.size] = dv_pos_half[0]
-    rf_size_v[idx.size / 2 - 1] = dv_pos_half[0]
-#    rf_size_v *= params['rf_size_v_multiplicator']
-#    print 'rf_size_v', rf_size_v
-    return rf_size_v
+        rf_size_v = np.zeros(rf_v.size)
+        print 'rf_v:', rf_v
+        return rf_v
 
 
 if __name__ == '__main__':
