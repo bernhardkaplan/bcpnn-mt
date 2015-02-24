@@ -119,15 +119,15 @@ def run_plot_currents(params):
     
 
 if __name__ == '__main__':
-#folder_name = 'TestSim__1_nExcPerMc4_gain2.0_ratio5.0_pee0.2_wie-10.0_wei2.0_winpu10.0'
     if len(sys.argv) > 1: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
+        show = False
     else:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
         params = ps.params
-
-
+        show = True
     run_plot_currents(params)
-    pylab.show()
+    if show:
+        pylab.show()
