@@ -1260,8 +1260,8 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=3, sort_idx=2)
         plotter.plot_raster_sorted(stim_range, fig_cnt=3, title='Exc cells sorted by $v_x$', sort_idx=2)
-        vx_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA}=%.1f\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ie}=%.1f\ w_{ei}=%.1f\ w_{ii}=%.1f$' % ( \
-                params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'])
+        vx_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1f\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ie}=%.1f\ w_{ei}=%.1f\ w_{exc}^{input}=%.1f$' % ( \
+                params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
         plotter.plot_vx_grid_vs_time(4, time_range=time_range, title=vx_title)
         output_fn = output_fn_base + '_stim%d.png' % stim
         print 'Saving figure to:', output_fn
@@ -1280,7 +1280,7 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         plotter.plot_vdiff(4, time_range=time_range)
         output_fn = output_fn_base + '_population_readout_%d.png' % stim
         print 'Saving figure to:', output_fn
-        pylab.savefig(output_fn, dpi=300)
+        pylab.savefig(output_fn, dpi=200)
 
         if params['with_inhibitory_neurons']:
             # plot inhibitory raster
@@ -1290,7 +1290,7 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
             plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range)
             output_fn = '%sraster_inhibitory_cells_stim%d.png' % (params['figures_folder'], stim)
             print 'Saving figure to:', output_fn
-            pylab.savefig(output_fn, dpi=300)
+            pylab.savefig(output_fn, dpi=200)
 
     del plotter
 
