@@ -77,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 16 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['n_recorder_neurons'] = 1 #self.params['n_mc'] # number of dummy neurons with v_thresh --> inf that act as 'electrodes'
