@@ -49,22 +49,23 @@ if __name__ == '__main__':
     if not params['debug']:
 #        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
 #        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
-        conn_fn_ampa = 'connection_matrix_20x2_taui5.dat'
-        conn_fn_nmda = 'connection_matrix_20x2_taui150.dat'
-        bcpnn_gain = 2.0
-        w_ei = 5.
-        w_ie = -5. * w_ei
-        w_ii = -1.
-        ampa_nmda_ratio = 5.
-        w_input_exc = 12.
+#        conn_fn_ampa = 'connection_matrix_20x2_taui5.dat'
+#        conn_fn_nmda = 'connection_matrix_20x2_taui150.dat'
+#        bcpnn_gain = 1.5
+#        w_ei = 5.
+#        w_ie = -5. * w_ei
+#        w_ii = -1.
+#        ampa_nmda_ratio = 4.
+#        w_input_exc = 12.
           
-#        conn_fn_ampa = sys.argv[1]
-#        conn_fn_nmda = sys.argv[2]
-#        bcpnn_gain = float(sys.argv[3])
-#        w_ie = float(sys.argv[4])
-#        w_ei = float(sys.argv[5])
-#        ampa_nmda_ratio = float(sys.argv[6])
-#        w_ii = float(sys.argv[7])
+        conn_fn_ampa = sys.argv[1]
+        conn_fn_nmda = sys.argv[2]
+        bcpnn_gain = float(sys.argv[3])
+        w_ie = float(sys.argv[4])
+        w_ei = float(sys.argv[5])
+        ampa_nmda_ratio = float(sys.argv[6])
+        w_ii = -1. #float(sys.argv[7])
+        w_input_exc = float(sys.argv[7])#15.
 
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
@@ -77,7 +78,7 @@ if __name__ == '__main__':
         params['w_input_exc'] = w_input_exc
         ps.w_input_exc = w_input_exc
         #params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_ratio%.1f_pee%.2f_wie%.1f_wei%.1f_winput%.1f' % ( \
+        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wie%.1f_wei%.1f_winput%.1f' % ( \
                 params['sim_id'], params['n_test_stim'], 
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
                 params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
@@ -135,8 +136,8 @@ if __name__ == '__main__':
         for i_ in xrange(stim_range[0], stim_range[1]):
             os.system('python PlottingScripts/PlotPrediction.py %s %d %d' % (params['folder_name'], i_, i_ + 1))
         os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
-        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']
-        os.system(display_cmd)
+#        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']
+#        os.system(display_cmd)
 
     if comm != None:
         comm.barrier()

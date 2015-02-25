@@ -12,6 +12,7 @@ def get_fig_size(fig_width_pt, portrait=False):
         fig_size =  [fig_width,fig_height]
     return fig_size
 
+
 plot_params = {'backend': 'png',
               'axes.labelsize': 24,
               'axes.titlesize': 24,

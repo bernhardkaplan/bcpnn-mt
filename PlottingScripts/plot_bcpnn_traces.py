@@ -12,6 +12,8 @@ import BCPNN
 import simulation_parameters
 import FigureCreator
 import json
+import itertools
+
 
 class TracePlotter(object):
 
@@ -100,15 +102,15 @@ class TracePlotter(object):
 
 
 
-    def compute_traces(self, gid_pre, gid_post, spike_data_pre, spike_data_post, t_range):
+    def compute_traces(self, gid_pre, gid_post, spike_data_pre, spike_data_post, t_range, dt=0.1):
 
         st_pre = spike_data_pre[gid_pre]
         st_post = spike_data_post[gid_post]
         print 'DEBUG compute_traces nspikes in st_pre:', len(st_pre)
         print 'DEBUG compute_traces nspikes in st_post:', len(st_post)
-        s_pre = BCPNN.convert_spiketrain_to_trace(st_pre, t_range[1], t_min=t_range[0])
-        s_post = BCPNN.convert_spiketrain_to_trace(st_post, t_range[1], t_min=t_range[0])
-        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = BCPNN.get_spiking_weight_and_bias(s_pre, s_post, self.bcpnn_params)
+        s_pre = BCPNN.convert_spiketrain_to_trace(st_pre, t_range[1], t_min=t_range[0], dt=dt)
+        s_post = BCPNN.convert_spiketrain_to_trace(st_post, t_range[1], t_min=t_range[0], dt=dt)
+        wij, bias, pi, pj, pij, ei, ej, eij, zi, zj = BCPNN.get_spiking_weight_and_bias(s_pre, s_post, self.bcpnn_params, dt=dt)
         self.bcpnn_traces.append([wij, bias, pi, pj, pij, ei, ej, eij, zi, zj, s_pre, s_post])
         return [wij, bias, pi, pj, pij, ei, ej, eij, zi, zj, s_pre, s_post]
 
@@ -239,7 +241,6 @@ class TracePlotter(object):
 
 
 
-
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         params = utils.load_params(sys.argv[1])
@@ -254,19 +255,39 @@ if __name__ == '__main__':
     bcpnn_params['K'] = 1.
     print 'bcpnn_params:', bcpnn_params
     TP = TracePlotter(params)
-    dt = 0.1
+    dt = 2.
+    bcpnn_params['tau_e'] = dt
+
+    assert dt <= bcpnn_params['tau_i'], 'Not allowed due to numberical instability'
+    assert dt <= bcpnn_params['tau_j'], 'Not allowed due to numberical instability'
+    assert dt <= bcpnn_params['tau_e'], 'Not allowed due to numberical instability'
+    assert dt <= bcpnn_params['tau_p'], 'Not allowed due to numberical instability'
 
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
-    t_range_trace_computation = (0, params['t_sim']) 
+    t_range_trace_computation = (0, 100000)
+#    t_range_trace_computation = (0, params['t_sim']) 
 
-    tp_pre = [0.45, 0.5, 0.1, .0]
-    tp_post = [0.5, 0.5, 0.1, .0]
+    tp_pre = [0.25, 0.5, 0.8, .0]
+    tp_post = [0.4, 0.5, 0.8, .0]
+    n_cells_pre = 5
+    n_cells_post = 5
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
-    gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=1)
-    gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=1)
-    gid_pre = gids_pre[0]
-    gid_post = gids_post[0]
+    gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=n_cells_pre)
+    gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=n_cells_post)
+#    gid_pre = gids_pre[0]
+#    gid_post = gids_post[0]
+
+    spike_data = {}
+    print 'Tuning properties:'
+    for gid_pre in gids_pre:
+        print 'GID pre: ', gid_pre, TP.tuning_prop[gid_pre - 1, :]
+        spike_data[gid_pre] = []
+        spike_data[gid_pre] = TP.get_spikes_for_gid(gid_pre, t_range_trace_computation)
+    for gid_post in gids_post:
+        print 'GID post: ', gid_post, TP.tuning_prop[gid_post- 1, :]
+        spike_data[gid_post] = []
+        spike_data[gid_post] = TP.get_spikes_for_gid(gid_post, t_range_trace_computation)
 
     # SELECT CELLS THAT SPIKED
 #    gids, nspikes = TP.get_cells_that_spiked()
@@ -275,11 +296,11 @@ if __name__ == '__main__':
 #    print 'gid_pre:', gid_pre
 #    print 'gid_post:', gid_post
 
-    spike_data = { gid_pre : [], 
-            gid_post :[] }
-    spike_data[gid_pre] = TP.get_spikes_for_gid(gid_pre, t_range_trace_computation)
-    spike_data[gid_post] = TP.get_spikes_for_gid(gid_post, t_range_trace_computation)
-    print 'spike_data', spike_data
+#    spike_data = { gid_pre : [], 
+#            gid_post :[] }
+#    spike_data[gid_pre] = TP.get_spikes_for_gid(gid_pre, t_range_trace_computation)
+#    spike_data[gid_post] = TP.get_spikes_for_gid(gid_post, t_range_trace_computation)
+#    print 'spike_data', spike_data
 
 
     # SELECT CELLS BY GID
@@ -315,18 +336,107 @@ if __name__ == '__main__':
 #    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data_pre, spike_data_post, t_range_trace_computation)
 
 
-    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation)
-    TP.plot_trace_with_spikes(bcpnn_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=None, \
-            color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
-            extra_txt=None, w_title=None)
+    fig = None
+    traces = {}
+    combinations = itertools.product(gids_pre, gids_post)
+#    for gid_pre, gid_post in zip(gids_pre, gids_post):
+    n = int((t_range_trace_computation[1] - t_range_trace_computation[0]) / dt)
+    n_traces = len(gids_pre) * len(gids_post)
+    print 'debug n:', n
+    wij_all = np.zeros((n+1, n_traces))
+    bias_all = np.zeros((n+1, n_traces))
+    pi_all = np.zeros((n+1, n_traces))
+    pj_all = np.zeros((n+1, n_traces))
+    pij_all = np.zeros((n+1, n_traces))
+    ei_all = np.zeros((n+1, n_traces))
+    ej_all = np.zeros((n+1, n_traces))
+    eij_all = np.zeros((n+1, n_traces))
+    zi_all = np.zeros((n+1, n_traces))
+    zj_all = np.zeros((n+1, n_traces))
+    spre_all = np.zeros((n+1, n_traces))
+    spost_all = np.zeros((n+1, n_traces))
+    for i_, (gid_pre, gid_post) in enumerate(combinations):
+        bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation, dt)
+        [wij, bias, pi, pj, pij, ei, ej, eij, zi, zj, s_pre, s_post] = bcpnn_traces
+        wij_all[:, i_] = wij
+        bias_all[:, i_] = bias
+        pi_all[:, i_] = pi
+        pj_all[:, i_] = pj
+        pij_all[:, i_] = pij
+        eij_all[:, i_] = eij
+        ei_all[:, i_] = ei
+        ej_all[:, i_] = ej
+        zi_all[:, i_] = zi
+        zj_all[:, i_] = zj
+        spre_all[:, i_] = s_pre
+        spost_all[:, i_] = s_post
+        traces[(gid_pre, gid_post)] = bcpnn_traces
+        fig = TP.plot_trace_with_spikes(bcpnn_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=fig, \
+                color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
+                extra_txt=None, w_title=None)
+    output_fn = params['figures_folder'] + 'bcpnn_trace_%d_%d_tauzi%03d_tauzj%03d_taue%03d_taup%05d.png' % (gid_pre, gid_post, \
+            bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])
+    print 'Saving figure to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
+
+    print 'Computing mean traces...'
+    wij_mean = np.zeros((n+1, 2))
+    bias_mean = np.zeros((n+1, 2))
+    pi_mean = np.zeros((n+1, 2))
+    pj_mean = np.zeros((n+1, 2))
+    pij_mean = np.zeros((n+1, 2))
+    ei_mean = np.zeros((n+1, 2))
+    ej_mean = np.zeros((n+1, 2))
+    eij_mean = np.zeros((n+1, 2))
+    zi_mean = np.zeros((n+1, 2))
+    zj_mean = np.zeros((n+1, 2))
+    spre_mean = np.zeros((n+1, 2))
+    spost_mean = np.zeros((n+1, 2))
+    for i_ in xrange(n + 1):
+        if i_ % 1000 == 0:
+            print 't:', i_ * dt
+        wij_mean[i_, 0] = wij_all[i_, :].mean()
+        wij_mean[i_, 1] = wij_all[i_, :].std()
+        bias_mean[i_, 0] = bias_all[i_, :].mean()
+        bias_mean[i_, 1] = bias_all[i_, :].std()
+        pi_mean[i_, 0] = pi_all[i_, :].mean()
+        pi_mean[i_, 1] = pi_all[i_, :].std()
+        pj_mean[i_, 0] = pj_all[i_, :].mean()
+        pj_mean[i_, 1] = pj_all[i_, :].std()
+        pij_mean[i_, 0] = pij_all[i_, :].mean()
+        pij_mean[i_, 1] = pij_all[i_, :].std()
+        ei_mean[i_, 0] = ei_all[i_, :].mean()
+        ei_mean[i_, 1] = ei_all[i_, :].std()
+        ej_mean[i_, 0] = ej_all[i_, :].mean()
+        ej_mean[i_, 1] = ej_all[i_, :].std()
+        eij_mean[i_, 0] = eij_all[i_, :].mean()
+        eij_mean[i_, 1] = eij_all[i_, :].std()
+        zi_mean[i_, 0] = zi_all[i_, :].mean()
+        zi_mean[i_, 1] = zi_all[i_, :].std()
+        zj_mean[i_, 0] = zj_all[i_, :].mean()
+        zj_mean[i_, 1] = zj_all[i_, :].std()
+        spre_mean[i_, 0] = spre_all[i_, :].mean()
+        spre_mean[i_, 1] = spre_all[i_, :].std()
+        spost_mean[i_, 0] = spost_all[i_, :].mean()
+        spost_mean[i_, 1] = spost_all[i_, :].std()
+    print 'done'
 
     if not params['debug']:
         w_nest = TP.get_nest_weight(gid_pre, gid_post)
         print 'w_nest:', w_nest
 
-    output_fn = params['figures_folder'] + 'bcpnn_trace_%d_%d_tauzi%03d_tauzj%03d_taue%03d_taup%05d.png' % (gid_pre, gid_post, \
+    mean_traces  = [wij_mean[:, 0], bias_mean[:, 0], pi_mean[:, 0], pj_mean[:, 0], pij_mean[:, 0], ei_mean[:, 0], ej_mean[:, 0], eij_mean[:, 0], \
+            zi_mean[:, 0], zj_mean[:, 0], spre_mean[:, 0], spost_mean[:, 0]]
+
+    title = 'Mean weight'
+    extra_txt = 'Average traces over %d cell pairs' % (n_traces)
+    TP.plot_trace_with_spikes(mean_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=None, \
+            color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
+            extra_txt=extra_txt, w_title=title)
+    output_fn = params['figures_folder'] + 'bcpnn_trace_mean_xpre%.2f_xpost%.2f_tauzi%03d_tauzj%03d_taue%03d_taup%05d.png' % ( tp_pre[0], tp_post[0], \
             bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
+
     pylab.show()
 

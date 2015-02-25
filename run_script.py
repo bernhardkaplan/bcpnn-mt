@@ -4,50 +4,31 @@ import numpy as np
 import os
 t1 = time.time()
 
-script_name = 'toy_experiment.py'
+#script_name = 'PlottingScripts/PlotCurrents.py'
+script_name = 'main_test.py'
+conn_fn_1 = 'connection_matrix_20x2_taui5_v0.8.dat'
+conn_fn_2 = 'connection_matrix_20x2_taui200_v0.8.dat'
+#conn_fn_2 = 'connection_matrix_20x2_taui150_v0.8.dat'
+#bcpnn_gain_range = [1.0, 1.5, 2.0, 2.5]
+bcpnn_gain_range = [2.0]
+w_ie_factor_range = [-5.] # FACTOR
+w_ei_range = [1.] 
+ampa_nmda_ratio_range = [1.]#, 0.2, 0.1, 0.05, 0.03, 0.01]
+w_input_exc_range = [10., 12.]
+n_runs = len(bcpnn_gain_range) * len(w_ie_factor_range) * len(w_ei_range) * len(ampa_nmda_ratio_range) * len(w_input_exc_range)
+it_cnt = 0
 
-#tau_zis = [10, 100, 1000, 5000]
-#tau_zis = [10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000]
-#tau_zis = [10, 100, 500, 1000, 2500, 5000]
-#tau_zis = [1000]
-#tau_zis = [10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000]
-#tau_zjs = [10, 100, 250, 500, 1000, 2000, 3000, 4000, 5000]
-tau_zjs = [10]
-#tau_es = [10, 100, 500, 1000, 2500, 5000]
-tau_es = [10]
-tau_ps = [100000]
-#dxs = [.5]
-dxs = np.around(np.arange(0.8, -.2, -.2), decimals=2)
-#dvs = [.0]
-dvs = np.around(np.arange(.0, .20, .05), decimals=2)
-#v_stims = np.around(np.arange(0.1, 2.00, 0.05), decimals=2)
-#v_stims = [.2, 0.5, 1.0, 2.0]
-v_stims = [2.0, 1.0, .5, .2]
-#v_stims = [0.1]
-#n_tau_zis = len(tau_zis)
-
-n_tau_zis = 6
-n_runs = len(tau_ps) * len(tau_es) * len(dxs) * len(v_stims) * n_tau_zis * len(tau_zjs) * len(dvs)
-it_cnt = 0 
-#x0, u0 = .5, .5
-for tau_p in tau_ps:
-    for tau_e in tau_es:
-        for tau_zj in tau_zjs:
-            for dv in dvs:
-                for dx in dxs:
-                    for v_stim in v_stims:
-                        x0, u0 = .0 + .5 * v_stim, v_stim # stimulus starts at 0
-                        tau_zis = [1. / v_stim * i * 20 for i in [1, 2, 5, 10, 15, 20]]
-                        for tau_zi in tau_zis:
-#                            output_folder = 'TwoCellTauZiZjESweep_taup%d_vstim%.2f_prex%.2f_u%.2f_dx%.2f_%.2f/' % (tau_p, v_stim, x0, u0, dx, dv)
-#                            output_folder = 'TwoCell_dxdvSweep_tauzi%d_tauzj%d_taup%d_taue%d_vstim%.2f_prex%.2f_u%.2f/' % (tau_zi, tau_zj, tau_p, tau_p, v_stim, x0, u0)
-#                            output_folder = 'TwoCell_combined_dxdv_tauzizj_Sweep_taue%d_taup%d_vstim%.2f_prex%.2f_u%.2f/' % (tau_e, tau_p, v_stim, x0, u0)
-                            output_folder = 'TwoCellSweep_dx%.2f_dv%.2f/' % (dx, dv)
-                            command = 'python %s %d %f %f %f %d %d %d %f %f %s' % (script_name, tau_zi, v_stim, dx, dv, tau_zj, tau_e, tau_p, x0, u0, output_folder)
-                            print '\n-------------------\n\tIteration: %d / %d\tdv = %.1f\n----------------------\n' % (it_cnt, n_runs, dv)
-                            print command
-                            os.system(command)
-                            it_cnt += 1
+for bcpnn_gain in bcpnn_gain_range:
+    for w_ie_factor in w_ie_factor_range:
+        for w_ei in w_ei_range:
+            w_ie = w_ie_factor * w_ei
+            for ampa_nmda_ratio in ampa_nmda_ratio_range:
+                for w_input_exc in w_input_exc_range:
+                    command = 'mpirun -np 8 python %s %s %s %f %f %f %f %f > delme' % (script_name, conn_fn_1, conn_fn_2, bcpnn_gain, w_ie, w_ei, ampa_nmda_ratio, w_input_exc)
+                    print '\n\n-------------------\n\n\tIteration: %d / %d \n\n----------------------\n\n' % (it_cnt + 1, n_runs)
+                    print command
+                    os.system(command)
+                    it_cnt += 1
 
 t2 = time.time() - t1
 print "Sweep with %d runs took %.2f seconds or %.2f minutes" % (n_runs, t2, t2/60.)
