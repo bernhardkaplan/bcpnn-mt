@@ -31,7 +31,7 @@ class NetworkModel(object):
 
 
     def update_bcpnn_params(self):
-        self.params['taup_bcpnn'] = self.params['t_sim'] / 2.
+        self.params['taup_bcpnn'] = self.params['t_sim'] * self.params['ratio_tsim_taup']
         self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         self.params['bcpnn_params']['epsilon'] = epsilon
@@ -641,8 +641,8 @@ class NetworkModel(object):
             # setup long-range connectivity based on trained connection matrix
             print 'Connecting recorder neurons'
             self.connect_recorder_neurons()
-#            print 'Connecting exc - exc '
-#            self.connect_ee_testing()
+            print 'Connecting exc - exc '
+            self.connect_ee_testing()
 
 
 

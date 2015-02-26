@@ -11,6 +11,11 @@ import json
 import itertools
 import matplotlib
 
+def print0(msg, comm):
+    if comm.rank == 0:
+        print msg
+
+
 def compute_stim_time(stim_params):
     """
     Based on the stim params, one the training stimulus takes different time to stimulate

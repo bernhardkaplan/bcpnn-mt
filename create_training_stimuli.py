@@ -146,8 +146,9 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
         cnt_ += 1
 
     idx = range(params['n_stim'])
-    np.random.shuffle(idx)
-    mp = mp[idx, :]
+    if params['random_training_order']:
+        np.random.shuffle(idx)
+        mp = mp[idx, :]
 #    print 'Saving traingin stimuli to:', params['training_stimuli_fn']
     np.savetxt(params['training_stimuli_fn'], mp)
     training_stim_duration = np.zeros(params['n_stim'])
