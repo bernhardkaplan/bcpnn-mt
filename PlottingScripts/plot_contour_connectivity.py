@@ -47,6 +47,78 @@ class ConnectivityPlotter(object):
                       'figure.figsize': utils.get_figsize(1000, portrait=False)}
         pylab.rcParams.update(plot_params)
 
+    def plot_incoming_connections_exc(self, tp_params=None, clim=None):
+        """
+        tp_params -- select cells near these parameters in the tuning property space
+        """
+        markersize_cell = 30
+        markersize_min = 1
+        markersize_max = 15
+        conn_type = 'ee'
+        self.load_conn_list(conn_type)
+        d = self.conn_lists[conn_type]
+        print 'd:', d
+        tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
+        gids, dist = utils.get_gids_near_stim_nest(tp_params, tp, n=1)
+        tgt_gid = gids[0]
+        # get the targets for this cell
+        src_with_weights = utils.get_sources(d, tgt_gid)
+        source_gids = np.array(src_with_weights[:, 1], dtype=int) - 1
+        x_srcs = tp[source_gids, 0]
+        vx_srcs = tp[source_gids, 2]
+        print 'Target cell %d (+ 1) receives input from:' % (tgt_gid), source_gids 
+        weights = src_with_weights[:, 2]
+
+        fig = pylab.figure()
+        ax = fig.add_subplot(111)
+        abs_max = max(abs(weights.min()), weights.max())
+        print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
+        if weights.min() == weights.max():
+            markersizes = np.ones(weights.size)
+            print '\n\nWARNING\n\tAll weights are equal! Training probably failed\n\n'
+        else:
+            markersizes = utils.transform_linear(abs(weights), (markersize_min, markersize_max))
+        if clim == None:
+            clim = (weights.min(), weights.max())
+        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.bwr) # large weights -- black, small weights -- white
+        m.set_array(weights)
+        rgba_colors = m.to_rgba(weights)
+
+        ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=0, c='k', markersize=1, ls='')
+        for i_, tgt in enumerate(source_gids):
+            ax.plot(x_srcs[i_], vx_srcs[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
+
+        ax.set_xlabel('Position')
+        ax.set_ylabel('Preferred speed')
+        ax.set_title('Outgoing connections, $\\tau_i = %d$' % self.params['bcpnn_params']['tau_i'])
+        cbar = fig.colorbar(m)
+        cbar.set_label('$w_{out}^{BCPNN}$')
+
+        annotate = False
+        if annotate:
+            sort_idx = np.argsort(weights)
+            n_ = 3
+            idx = np.array(np.round(np.linspace(0, weights.size, n_, endpoint=False)), dtype=int)
+            for i_ in xrange(n_):
+                gid_ = sort_idx[idx[i_]]
+                x_, y_ = tp[gid_, 0], tp[gid_, 2]
+                ax.text(x_, y_, '%d, w=%.2f' % (gid_, weights[idx[i_]]))
+                print 'weight:', weights[idx[i_]]
+           
+        sort_idx = np.argsort(weights)
+        print 'min and max weights:'
+        print 'GID weight'
+        for i_ in xrange(5):
+            print '%d\t%.2f' % (source_gids[sort_idx[-(i_+1)]], weights[sort_idx[-(i_+1)]])
+        for i_ in xrange(5):
+            print '%d\t%.2f' % (source_gids[sort_idx[i_]], weights[sort_idx[i_]])
+
+        ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
+        output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
+        print 'Saving fig to:', output_fn
+        pylab.savefig(output_fn, dpi=200)
+
 
     def plot_outgoing_connections_exc(self, tp_params=None, clim=None):
         """
@@ -61,8 +133,6 @@ class ConnectivityPlotter(object):
         d = self.conn_lists[conn_type]
         print 'd:', d
         tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
-        src_gids = d[:, 0]
-        tgt_gids = d[:, 0]
         gids, dist = utils.get_gids_near_stim_nest(tp_params, tp, n=1)
         src_gid = gids[0]
         

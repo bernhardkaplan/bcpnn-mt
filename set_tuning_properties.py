@@ -572,8 +572,10 @@ def get_receptive_field_sizes_v_const_fovea(params, rf_v):
             rf_size_v[pos_idx.size+2:] = dv_pos_half # for 21
         else:
             rf_size_v[pos_idx.size+1:] = dv_pos_half # for 20
-        rf_size_v[pos_idx.size] = dv_pos_half[0]
-        rf_size_v[idx.size / 2 - 1] = dv_pos_half[0]
+#        rf_size_v[pos_idx.size] = dv_pos_half[0]
+        rf_size_v[pos_idx.size] = np.min(np.abs(rf_v))      # use the distance to 0 as the minimal RF size
+        rf_size_v[idx.size / 2 - 1] = np.min(np.abs(rf_v))
+#        rf_size_v[idx.size / 2 - 1] = dv_pos_half[0]
     #    rf_size_v *= params['rf_size_v_multiplicator']
     #    print 'rf_size_v', rf_size_v
         return rf_size_v

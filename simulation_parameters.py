@@ -20,7 +20,7 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = False
+        self.params['training_run'] = True
         self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
@@ -40,7 +40,7 @@ class parameter_storage(object):
             self.params['sim_id'] += 'withSTP_'
         else:
             self.params['sim_id'] += 'noSTP_'
-        self.params['sim_id'] += 'tauNMDA200_'
+        self.params['sim_id'] += 'isoConn_tauNMDA200_'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -50,7 +50,7 @@ class parameter_storage(object):
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
         self.params['n_rf'] = 20 
-        self.params['n_v'] = 2 # == N_MC_PER_HC
+        self.params['n_v'] = 4 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -90,7 +90,7 @@ class parameter_storage(object):
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 0.80  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.80  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_min_tp'] = 0.20  # [a.u.] minimal velocity in visual space for tuning property distribution
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 

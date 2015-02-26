@@ -313,10 +313,10 @@ class PlotPrediction(object):
             vx_pred = self.vx_confidence_binned[:, i] * self.vx_tuning
             vy_pred = self.vy_confidence_binned[:, i] * self.vy_tuning
 
-            self.vx_avg[i] = self.get_average_of_circular_quantity(self.vx_confidence_binned[:, i], self.vx_tuning, xv='v')
-            self.vy_avg[i] = self.get_average_of_circular_quantity(self.vy_confidence_binned[:, i], self.vy_tuning, xv='v')
-#            self.vx_avg[i] = np.sum(vx_pred)
-#            self.vy_avg[i] = np.sum(vy_pred)
+            #self.vx_avg[i] = self.get_average_of_circular_quantity(self.vx_confidence_binned[:, i], self.vx_tuning, xv='v')
+            #self.vy_avg[i] = self.get_average_of_circular_quantity(self.vy_confidence_binned[:, i], self.vy_tuning, xv='v')
+            self.vx_avg[i] = np.sum(vx_pred)
+            self.vy_avg[i] = np.sum(vy_pred)
             if self.params['n_grid_dimensions'] == 2:
                 self.vdiff_avg[i] = np.sqrt((mp[2] - self.vx_avg[i])**2 + (mp[3] - self.vy_avg[i])**2)
             else:
@@ -501,7 +501,7 @@ class PlotPrediction(object):
         return spiketimes, nspikes
 
 
-    def plot_rasterplot(self, cell_type, fig_cnt=1, show_blank=None, time_range=None):
+    def plot_rasterplot(self, cell_type, fig_cnt=1, show_blank=None, time_range=None, title=None):
         spiketimes, nspikes = self.load_spiketimes(cell_type)
         if show_blank == None:
             show_blank = self.show_blank
@@ -512,7 +512,9 @@ class PlotPrediction(object):
             
         ylim = ax.get_ylim()
         ax.set_ylim((0, self.params['n_%s' % cell_type]))
-        ax.set_title('Rasterplot of %s neurons' % cell_type)
+        if title == None:
+            title = 'Rasterplot of %s neurons' % cell_type
+        ax.set_title(title)
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('Neuron GID')
 
@@ -1260,8 +1262,8 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=3, sort_idx=2)
         plotter.plot_raster_sorted(stim_range, fig_cnt=3, title='Exc cells sorted by $v_x$', sort_idx=2)
-        vx_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ie}=%.1f\ w_{ei}=%.1f\ w_{exc}^{input}=%.1f$' % ( \
-                params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
+        vx_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ie}=%.1f\ w_{ei}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
+                params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         plotter.plot_vx_grid_vs_time(4, time_range=time_range, title=vx_title)
         output_fn = output_fn_base + '_stim%d.png' % stim
         print 'Saving figure to:', output_fn
@@ -1287,7 +1289,8 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
             plotter.n_fig_x = 1
             plotter.n_fig_y = 1
             plotter.create_fig()
-            plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range)
+            title = 'Inh cells $gain_{BCPNN}=%.2f\ w_{ei}=%.2f\ w_{ie}=%.2f\ w_{ii}=%.2f$' % (params['bcpnn_gain'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'])
+            plotter.plot_rasterplot(cell_type='inh_unspec', fig_cnt=1, time_range=time_range, title=title)
             output_fn = '%sraster_inhibitory_cells_stim%d.png' % (params['figures_folder'], stim)
             print 'Saving figure to:', output_fn
             pylab.savefig(output_fn, dpi=200)
@@ -1297,12 +1300,11 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
 if __name__ == '__main__':
 
     if len(sys.argv) == 2:
-        print 'Case 1'
+        print 'Case 1, loading parameters from', sys.argv[1]
         params = utils.load_params(sys.argv[1])
         stim_range = params['stim_range']
         plot_prediction(params=params, stim_range=stim_range)
     elif len(sys.argv) == 4:
-        print 'Case 2'
         print '\nPlotting the default parameters give in simulation_parameters.py\n'
         params = utils.load_params(sys.argv[1])
         stim_range = (int(sys.argv[2]), int(sys.argv[3]))

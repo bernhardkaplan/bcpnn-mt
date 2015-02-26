@@ -64,8 +64,8 @@ if __name__ == '__main__':
         w_ie = float(sys.argv[4])
         w_ei = float(sys.argv[5])
         ampa_nmda_ratio = float(sys.argv[6])
-        w_ii = -1. #float(sys.argv[7])
         w_input_exc = float(sys.argv[7])#15.
+        w_ii = float(sys.argv[8])
 
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
@@ -76,17 +76,19 @@ if __name__ == '__main__':
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_input_exc'] = w_input_exc
+        params['w_ii_unspec'] = w_ii
         ps.w_input_exc = w_input_exc
-        #params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wie%.1f_wei%.1f_winput%.1f' % ( \
-                params['sim_id'], params['n_test_stim'], 
+        folder_name = 'TestSim_%s_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wie%.1f_wei%.1f_wii%.2f_winput%.1f' % ( \
+                params['sim_id'], params['v_min_tp'], 
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
-                params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
+                params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
     else:
         ps.set_filenames() 
 
+    params['conn_fn_ampa'] = conn_fn_ampa
+    params['conn_fn_nmda'] = conn_fn_nmda
     ps.create_folders()
     ps.write_parameters_to_file()
     if pc_id == 0:
