@@ -98,7 +98,7 @@ def get_spiking_weight_and_bias(pre_trace, post_trace, bcpnn_params, dt=.1, K_ve
         dpij = dt * K_vec[i] * (eij[i] - pij[i-1]) / bcpnn_params['tau_p']
         pij[i] = pij[i-1] + dpij
     
-    print 'DEBUG BCPNN K_vec', K_vec, K_vec.mean(), '+-', K_vec.std()
+    print 'DEBUG BCPNN K_vec mean:', K_vec.mean(), '+-', K_vec.std()
 
     # weights
     wij = gain * np.log(pij / (pi * pj))

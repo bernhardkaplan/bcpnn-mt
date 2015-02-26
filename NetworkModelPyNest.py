@@ -40,7 +40,6 @@ class NetworkModel(object):
     def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
-#        self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
         self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 
         if self.pc_id == 0:
@@ -153,6 +152,15 @@ class NetworkModel(object):
         nest.CopyModel('static_synapse', 'trigger_synapse', \
                 {'weight': self.params['w_trigger'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
 
+        # noise synapses
+        nest.CopyModel('static_synapse', 'noise_syn_exc', \
+                {'weight': self.params['w_noise_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
+#        nest.CopyModel('static_synapse', 'noise_syn_exc', \
+#                {'weight': self.params['w_noise_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['nmda']})  # numbers must be consistent with cell_params_exc
+        nest.CopyModel('static_synapse', 'noise_syn_inh', \
+                {'weight': self.params['w_noise_inh'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['gaba']})  # numbers must be consistent with cell_params_exc
+
+
         # exc - inh unspecific (within one hypercolumn) AMPA
         nest.CopyModel('static_synapse', 'exc_inh_unspec_fast', \
                 {'weight': self.params['w_ei_unspec'], 'delay': self.params['delay_ei_unspec'], 'receptor_type': self.params['syn_ports']['ampa']})
@@ -207,6 +215,10 @@ class NetworkModel(object):
             else:
                 nest.CopyModel('static_synapse', 'exc_exc_global_fast', \
                         {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
+#                self.params['bcpnn_params']['gain'] = self.params['bcpnn_gain']
+#                self.params['bcpnn_params']['K'] = 0.
+#                nest.CopyModel('bcpnn_synapse', 'exc_exc_global_fast', \
+#                        {'delay': self.params['delay_ee_local'], 'receptor_type': self.params['syn_ports']['ampa']})
 
             # exc - exc slow: AMPA
             if self.params['with_stp']:
@@ -324,6 +336,15 @@ class NetworkModel(object):
         for hc in xrange(self.params['n_hc']):
             for mc in xrange(self.params['n_mc_per_hc']):
                 nest.DivergentConnect(self.trigger_spike_source, self.list_of_exc_pop[hc][mc], model='trigger_synapse')
+
+        self.background_noise_exc = nest.Create('poisson_generator', 1)
+        self.background_noise_inh = nest.Create('poisson_generator', 1)
+        nest.SetStatus(self.background_noise_exc, {'rate': self.params['f_noise_exc']})
+        nest.SetStatus(self.background_noise_inh, {'rate': self.params['f_noise_inh']})
+        for hc in xrange(self.params['n_hc']):
+            for mc in xrange(self.params['n_mc_per_hc']):
+                nest.DivergentConnect(self.background_noise_exc, self.list_of_exc_pop[hc][mc], model='noise_syn_exc')
+                nest.DivergentConnect(self.background_noise_inh, self.list_of_exc_pop[hc][mc], model='noise_syn_inh')
 
         if self.comm != None:
             self.comm.Barrier()
@@ -1132,10 +1153,9 @@ class NetworkModel(object):
                                     conn_txt_ee += '%d\t%d\t%.4e\n' % (cp[0]['source'], cp[0]['target'], cp[0]['weight'])
                                     n_conns_ee += 1
 
-
             print 'Proc %d holds %d E->E connections' % (self.pc_id, n_conns_ee)
-            fn_out_ee = self.params['conn_list_ee_fn_base'] + '%d.txt' % (self.pc_id)
-            print 'Writing E-I connections to:', fn_out_ee
+            fn_out_ee = self.params['conn_list_ee_fn_base'] + 'debug_%d.txt' % (self.pc_id)
+            print 'Writing E-E connections to:', fn_out_ee
             conn_f_ee = file(fn_out_ee, 'w')
             conn_f_ee.write(conn_txt_ee)
             conn_f_ee.flush()
@@ -1157,6 +1177,7 @@ class NetworkModel(object):
         conn_f_ie.write(conn_txt_ie)
         conn_f_ie.flush()
         conn_f_ie.close()
+
         print 'Proc %d holds %d I->I connections' % (self.pc_id, n_conns_ii)
         fn_out_ii = self.params['conn_list_ii_fn_base'] + '%d.txt' % (self.pc_id)
         print 'Writing E-I connections to:', fn_out_ii

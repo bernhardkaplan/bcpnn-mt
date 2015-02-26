@@ -81,6 +81,7 @@ def set_vx_tau_transformation_params(params, vmin, vmax):
 def load_params(param_fn):
     if os.path.isdir(param_fn):
         param_fn = os.path.abspath(param_fn) + '/Parameters/simulation_parameters.json'
+    assert (param_fn.find('.json') != -1), 'Parameter file name provided not correct: %s ' % (param_fn)
     params = json.load(file(param_fn, 'r')) 
     return params
 
@@ -1771,6 +1772,17 @@ def get_figsize(fig_width_pt, portrait=True):
     return fig_size
 
 
+def get_figsize_A4(portrait=True):
+    """
+    For getting a figure with an 'aesthetic' ratio
+    """
+    if portrait:
+        fig_size =  (8.27, 11.69)
+    else:
+        fig_size =  (11.69, 8.27)
+    return fig_size
+
+
 def get_colorlist(n_colors=17):
     colorlist = ['k', 'b', 'r', 'g', 'm', 'c', 'y', \
             '#00FF99', \
@@ -1869,4 +1881,13 @@ def get_mc_index_for_gid(params, gid):
     return mc_idx
 
 
+
+def plot_blank(params, ax, lw=2, ls='--', color='k'):
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+
+    t0 = params['t_start_blank']
+    t1 = params['t_start_blank'] + params['t_blank']
+    ax.plot((t0, t0), ylim, ls=ls, lw=lw, c=color)
+    ax.plot((t1, t1), ylim, ls=ls, lw=lw, c=color)
 

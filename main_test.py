@@ -47,22 +47,25 @@ if __name__ == '__main__':
     # if training_run is set, you might end up with other wrong parameters (e.g. n_stim)
 
     if not params['debug']:
-        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
-        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
-        bcpnn_gain = 5.0
-        w_ie = -10.
-        w_ei = 2.
-        w_ii = -1.
-        ampa_nmda_ratio = 1.
-        w_input_exc = 12.
+#        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
+#        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
+#        conn_fn_ampa = 'connection_matrix_20x2_taui5.dat'
+#        conn_fn_nmda = 'connection_matrix_20x2_taui150.dat'
+#        bcpnn_gain = 1.5
+#        w_ei = 5.
+#        w_ie = -5. * w_ei
+#        w_ii = -1.
+#        ampa_nmda_ratio = 4.
+#        w_input_exc = 12.
           
-#        conn_fn_ampa = sys.argv[1]
-#        conn_fn_nmda = sys.argv[2]
-#        bcpnn_gain = float(sys.argv[3])
-#        w_ie = float(sys.argv[4])
-#        w_ei = float(sys.argv[5])
-#        ampa_nmda_ratio = float(sys.argv[6])
-#        w_ii = float(sys.argv[7])
+        conn_fn_ampa = sys.argv[1]
+        conn_fn_nmda = sys.argv[2]
+        bcpnn_gain = float(sys.argv[3])
+        w_ie = float(sys.argv[4])
+        w_ei = float(sys.argv[5])
+        ampa_nmda_ratio = float(sys.argv[6])
+        w_input_exc = float(sys.argv[7])#15.
+        w_ii = float(sys.argv[8])
 
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
@@ -73,17 +76,19 @@ if __name__ == '__main__':
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_input_exc'] = w_input_exc
+        params['w_ii_unspec'] = w_ii
         ps.w_input_exc = w_input_exc
-        #params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d_nExcPerMc%d_gain%.2f_ratio%.1f_pee%.2f_wie%.1f_wei%.1f_winput%.1f' % ( \
-                params['sim_id'], params['n_test_stim'], 
+        folder_name = 'TestSim_%s_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wie%.1f_wei%.1f_wii%.2f_winput%.1f' % ( \
+                params['sim_id'], params['v_min_tp'], 
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
-                params['w_ie_unspec'], params['w_ei_unspec'], params['w_input_exc'])
+                params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
     else:
         ps.set_filenames() 
 
+    params['conn_fn_ampa'] = conn_fn_ampa
+    params['conn_fn_nmda'] = conn_fn_nmda
     ps.create_folders()
     ps.write_parameters_to_file()
     if pc_id == 0:
@@ -122,14 +127,19 @@ if __name__ == '__main__':
     NM.collect_spikes()
     if record:
         NM.collect_vmem_data()
-    NM.get_weights_static()
+#    NM.get_weights_static()
 
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
-#    if pc_id == 0 and not params['Cluster']:
-#        print "Calling python PlottingScripts/PlotPrediction.py"
-#        os.system('python PlottingScripts/PlotPrediction.py %s' % params['folder_name'])
+    if pc_id == 0 and not params['Cluster']:
+        print "Calling python PlottingScripts/PlotPrediction.py"
+        stim_range = params['stim_range']
+        for i_ in xrange(stim_range[0], stim_range[1]):
+            os.system('python PlottingScripts/PlotPrediction.py %s %d %d' % (params['folder_name'], i_, i_ + 1))
+        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
+#        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']
+#        os.system(display_cmd)
 
     if comm != None:
         comm.barrier()

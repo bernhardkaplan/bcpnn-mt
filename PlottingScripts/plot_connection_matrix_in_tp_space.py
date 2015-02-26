@@ -78,29 +78,29 @@ if __name__ == '__main__':
         params = utils.load_params(sys.argv[1])
 
     v_tolerance = .1
-#    v_range = (-0.0, .2)
-    v_range = (0.5, 2.)
+    v_range = (-0.0, 2.)
+#    v_range = (0.5, 2.)
     tau_i = 150
 #    conn_fn = sys.argv[2]
-    conn_fn = 'connection_matrix_20x16_taui%d_trained_with_AMPA_input_only.dat' % (tau_i)
-    output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%d.png' % (tau_i)
+    conn_fn = params['conn_matrix_mc_fn']
+    if not os.path.exists(conn_fn):
+        print 'ERROR! Could not find:', conn_fn
+        conn_fn = raw_input('\n Please enter connection matrix (mc-mc) filename!\n')
     print 'Loading:', conn_fn, 
-    print 'done'
     W = np.loadtxt(conn_fn)
+    print 'done'
+
+    output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%d.png' % (tau_i)
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     # get the average tp for a mc
     avg_tp = get_avg_tp(params, tp)
 
-#    colorlist = utils.get_colorlist(params['n_mc'])
-
     clim = (v_range[0], v_range[1])
-#    clim = (.0, 1.) # tuning speed limit for colorcode
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
     m.set_array(avg_tp[:, 1])
     colorlist= m.to_rgba(avg_tp[:, 1])
-#    colorlist= m.to_rgba(np.abs(avg_tp[:, 1]))
 
     fig = pylab.figure(figsize=(12, 12))
     ax = fig.add_subplot(111)#, aspect='equal', autoscale_on=False)
@@ -108,7 +108,6 @@ if __name__ == '__main__':
     linestyles = ['-', '--', ':', '-.']
 
     for mc_src in xrange(params['n_mc']):
-#    for mc_src in xrange(10):
         v_src = avg_tp[mc_src, 1]
         if (v_src > v_range[0]) and (v_src < v_range[1]):
             x_src = avg_tp[mc_src, 0]
@@ -116,8 +115,6 @@ if __name__ == '__main__':
             x_tgt = avg_tp[:, 0]
             w_out = W[mc_src, :]
             valid_mc_idx = np.where(np.abs((v_tgt - v_src) / v_src) < v_tolerance)[0]
-#            if x_tgt 
-#            ls = 
             ax.plot(x_tgt[valid_mc_idx] - x_src, w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 #            ax.plot(x_src - x_tgt[valid_mc_idx], w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 
@@ -130,6 +127,9 @@ if __name__ == '__main__':
     offset = -2
     skew_pos = A * functions.skew_normal(x, mu, sigma, alpha) + offset
     ax.plot(x, skew_pos, label='Skew normal distribution $\sigma=%.1f\ \\alpha=%.1f$' % (sigma, alpha), c='k', lw=4)
+
+      
+#    ax.plot(x, x * skew_pos, label='Skew normal * x', c='g', lw=4)
 
     xlim = ax.get_xlim()
     ax.plot((xlim[0], xlim[1]), (0., 0.), '--', c='k', lw=2)

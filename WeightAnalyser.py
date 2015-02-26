@@ -57,31 +57,38 @@ class WeightAnalyser(object):
         np.savetxt(output_fn, M)
         print 'Plotting'
         plot_conn_list_as_colormap.plot_matrix(M)
+        output_fn = params['figures_folder'] + 'connection_matrix_mc_mc_taui%d.png' % (params['bcpnn_params']['tau_i'])
+        print 'Saving to:', output_fn
+        pylab.savefig(output_fn)
         return M
 
 
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1:
-        param_fn = sys.argv[1]
-        if os.path.isdir(param_fn):
-            param_fn += '/Parameters/simulation_parameters.json'
-        import json
-        f = file(param_fn, 'r')
-        print 'Loading parameters from', param_fn
-        params = json.load(f)
-
-    else:
-        import simulation_parameters
-        param_tool = simulation_parameters.parameter_storage()
-        params = param_tool.params
 
     iteration = 0
-    WA = WeightAnalyser(params, iteration=iteration)
-    WA.get_weight_matrix_mc_mc(plotting=True)
-
-    pylab.show()
+    if len(sys.argv) == 1:
+        import simulation_parameters
+        ps = simulation_parameters.parameter_storage()
+        params = ps.params
+        show = True
+        WA = WeightAnalyser(params, iteration=iteration)
+        WA.get_weight_matrix_mc_mc(plotting=show)
+    elif len(sys.argv) == 2: 
+        folder_name = sys.argv[1]
+        params = utils.load_params(folder_name)
+        show = False
+        WA = WeightAnalyser(params, iteration=iteration)
+        WA.get_weight_matrix_mc_mc(plotting=show)
+    else:
+        for folder_name in sys.argv[1:]:
+            params = utils.load_params(folder_name)
+            show = False
+            WA = WeightAnalyser(params, iteration=iteration)
+            WA.get_weight_matrix_mc_mc(plotting=show)
+    if show:
+        pylab.show()
 
 #    WA.load_adj_lists(src_tgt='tgt', verbose=True)
 
