@@ -78,10 +78,10 @@ if __name__ == '__main__':
         params['w_input_exc'] = w_input_exc
         params['w_ii_unspec'] = w_ii
         ps.w_input_exc = w_input_exc
-        folder_name = 'TestSim_%s_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wie%.1f_wei%.1f_wii%.2f_winput%.1f' % ( \
+        folder_name = 'TestSim_%s_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
                 params['sim_id'], params['v_min_tp'], 
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
-                params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'], params['w_input_exc'])
+                params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
     else:

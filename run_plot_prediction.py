@@ -35,6 +35,7 @@ for f in folders:
             os.system(cmd)
     pure_names += '%s ' % f
 
+
 if USE_MPI:
     # distribute the commands among processes
     my_idx = utils.distribute_n(len(list_of_jobs), n_proc, pc_id) # this holds the indices for the jobs to be run by this processor
@@ -43,6 +44,8 @@ if USE_MPI:
         job_name = list_of_jobs[i_]
         print 'pc_id %d runs:' % pc_id, job_name
         os.system(job_name)
+else:
+    print 'No MPI found'
 
 
 if pc_id == 0:

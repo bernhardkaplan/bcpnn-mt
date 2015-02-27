@@ -1888,6 +1888,7 @@ def plot_blank(params, ax, lw=2, ls='--', color='k'):
 
     t0 = params['t_start_blank']
     t1 = params['t_start_blank'] + params['t_blank']
-    ax.plot((t0, t0), ylim, ls=ls, lw=lw, c=color)
-    ax.plot((t1, t1), ylim, ls=ls, lw=lw, c=color)
+    ax.plot((t0, t0), (ylim[0], ylim[1]), ls=ls, lw=lw, c=color)
+    ax.plot((t1, t1), (ylim[0], ylim[1]), ls=ls, lw=lw, c=color)
+    ax.set_ylim(ylim)
 

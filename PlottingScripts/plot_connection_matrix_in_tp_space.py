@@ -69,18 +69,11 @@ def get_avg_tp(params, tp):
     return avg_tp
 
 
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print 'Case 1: default parameters'
-        GP = simulation_parameters.parameter_storage()
-        params = GP.params
-    else:
-        params = utils.load_params(sys.argv[1])
-
+def plot_connections_out(params):
     v_tolerance = .1
     v_range = (-0.0, 2.)
 #    v_range = (0.5, 2.)
-    tau_i = 150
+    tau_i = params['bcpnn_params']['tau_i']
 #    conn_fn = sys.argv[2]
     conn_fn = params['conn_matrix_mc_fn']
     if not os.path.exists(conn_fn):
@@ -90,7 +83,6 @@ if __name__ == '__main__':
     W = np.loadtxt(conn_fn)
     print 'done'
 
-    output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%d.png' % (tau_i)
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     # get the average tp for a mc
@@ -135,13 +127,35 @@ if __name__ == '__main__':
     ax.plot((xlim[0], xlim[1]), (0., 0.), '--', c='k', lw=2)
     ylim = ax.get_ylim()
     ax.plot((0., 0.), (ylim[0], ylim[1]), '--', c='k', lw=2)
-    ax.set_title('Outgoing weights depending on target position')
+    title = 'Outgoing weights depending on target position'
+    title += '\n $\\tau_{i}=%d\ v_{i}=%.1f$' % (params['bcpnn_params']['tau_i'], params['v_min_tp'])
+    ax.set_title(title)
     ax.set_ylabel('$w_{out}$')
     ax.set_xlabel('Distance to source')
     cb = pylab.colorbar(m)
     cb.set_label('$v_{src}$')
 #    pylab.legend()
+    output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%d_v%.1f.png' % (tau_i, params['v_min_tp'])
     print 'Saving fig to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    pylab.show()
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print 'Case 1: default parameters'
+        GP = simulation_parameters.parameter_storage()
+        params = GP.params
+        plot_connections_out(params)
+        show = True
+    elif len(sys.argv) == 2:
+        params = utils.load_params(sys.argv[1])
+        plot_connections_out(params)
+        show = True
+    else:
+        for folder in sys.argv[1:]:
+            params = utils.load_params(folder)
+            plot_connections_out(params)
+            show = False
+
+    if show:
+        pylab.show()
 
