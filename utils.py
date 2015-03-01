@@ -1147,15 +1147,28 @@ def get_grid_pos(x0, y0, xedges, yedges):
             break
     return (x_index, y_index)
 
-def get_grid_pos_1d(x0, xedges):
 
+def get_grid_pos_1d(x0, xedges):
     x_index = len(xedges)-1
     for (ix, x) in enumerate(xedges[1:]):
         if x0 <= x:
             x_index = ix
             break
-            
     return x_index
+
+
+def bin_array(d, bins):
+    """
+    If d is a one-dimensional data array that is to be binned into bins,
+    bin_array returns an array of size d.size indicating the respective bin for each data element
+    """
+    bin_idx = bins.size * np.ones(d.size)
+#    for i_bin in xrange(bins.size - 1):
+    for i_bin in xrange(bins.size):
+        idx_smaller_than_edge = np.where(d < bins[i_bin])[0]
+        bin_idx[idx_smaller_than_edge] -= 1
+    return bin_idx
+
 
 def convert_hsl_to_rgb(h, s, l):
     """
