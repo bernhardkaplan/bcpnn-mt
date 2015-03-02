@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False

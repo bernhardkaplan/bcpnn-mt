@@ -12,7 +12,7 @@ import json
 import set_tuning_properties
 from copy import deepcopy
 import WeightAnalyser
-from create_training_stimuli import create_training_stimuli_based_on_tuning_prop
+import create_training_stimuli as CS
 
 class NetworkModel(object):
 
@@ -41,9 +41,9 @@ class NetworkModel(object):
 #        if training_params != None:
 #            self.training_params = training_params
         if self.params['regular_tuning_prop']:
-            self.tp, self.rfs = set_tuning_properties.set_tuning_properties_regular(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_regular(self.params)
         else:
-            self.tp, self.rfs = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
@@ -56,7 +56,10 @@ class NetworkModel(object):
             
         if self.params['training_run']:
             if training_stimuli == None:
-                training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
+                if self.params['regular_tuning_prop']:
+                    training_stimuli = CS.create_regular_training_stimuli(self.params, self.tuning_prop_exc)
+                else:
+                    training_stimuli = CS.create_training_stimuli_based_on_tuning_prop(self.params)
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
@@ -860,7 +863,9 @@ class NetworkModel(object):
     def connect_ee_training(self):
         # setup a sparse all-to-all connectivity
 
+        print 'Connect E-E for training...'
         for i_hc_src in xrange(self.params['n_hc']):
+            print 'i_hc_src:', i_hc_src, 'pc_id:', self.pc_id
             for i_mc_src in xrange(self.params['n_mc_per_hc']):
                 mc_idx_src  = i_hc_src * self.params['n_mc_per_hc'] + i_mc_src
                 for i_hc_tgt in xrange(self.params['n_hc']):

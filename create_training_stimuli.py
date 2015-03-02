@@ -196,6 +196,7 @@ def create_regular_training_stimuli(params, tp=None):
         training_stim_duration[i_] = min(t_exit, params['t_training_max']) + params['t_stim_pause']
     print 'Saving training stim durations to:', params['stim_durations_fn']
     np.savetxt(params['stim_durations_fn'], training_stim_duration)
+    return mp
 
 
 if __name__ == '__main__':

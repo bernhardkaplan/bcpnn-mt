@@ -161,10 +161,7 @@ def get_speed_tuning_regular(params):
     v_max = params['v_max_tp']
     v_pos = np.linspace(v_min, v_max, n_v / 2, endpoint=True)
     v_neg= -np.linspace(v_min, v_max, n_v / 2, endpoint=True)
-    print 'debug v_pos', v_pos
-    print 'debug v_neg', v_neg
     v = np.concatenate((v_neg, v_pos))
-    print 'debug v:', v
     return v
 
 
@@ -180,10 +177,10 @@ def set_tuning_properties_regular(params):
     rf_size_x = get_receptive_field_sizes_x(params, x_pos)
     rf_size_v = get_receptive_field_sizes_v(params, v_rho)
     index = 0
-    for i_mc in xrange(params['n_mc_per_hc']):
-        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+    #for i_mc in xrange(params['n_mc_per_hc']):
+        #print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
     for i_hc in xrange(params['n_hc']):
-        print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
+        #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], v_rho[i_mc]
             for i_exc in xrange(params['n_exc_per_mc']):
@@ -453,10 +450,10 @@ def plot_tuning_prop(params):
     patches_mc = []
     patches_ = []
     index = 0
-    for i_mc in xrange(params['n_mc_per_hc']):
-        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+    #for i_mc in xrange(params['n_mc_per_hc']):
+        #print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
     for i_hc in xrange(params['n_hc']):
-        print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
+        #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], v_rho[i_mc]
             p_mc, = ax.plot(x, u, 'o', c='r', markersize=5, markeredgewidth=0)
