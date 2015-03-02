@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
@@ -40,7 +40,7 @@ class parameter_storage(object):
             self.params['sim_id'] += 'withSTP_'
         else:
             self.params['sim_id'] += 'noSTP_'
-        self.params['sim_id'] += 'isoConn_tauNMDA200_'
+        self.params['sim_id'] += ''
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -50,7 +50,7 @@ class parameter_storage(object):
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
         self.params['n_rf'] = 20 
-        self.params['n_v'] = 4 # == N_MC_PER_HC
+        self.params['n_v'] = 6 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -77,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['record_tuning_prop_v'] = [.95]
@@ -386,7 +386,7 @@ class parameter_storage(object):
         self.params['n_stim_per_direction'] = 1 
 #        self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction']
         self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
-        self.params['random_training_order'] = False # if true, stimuli within a cycle get shuffled
+        self.params['random_training_order'] = True # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])

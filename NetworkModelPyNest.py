@@ -1400,7 +1400,7 @@ class NetworkModel(object):
             if self.pc_id == 0:
                 print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent) mp:' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.), self.motion_params[stim_idx, :]
             self.create_input_for_stim(stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
-            self.create_input_for_recorder_neurons(stim_idx, with_blank=not self.params['training_run'])
+            self.create_input_for_recorder_neurons(stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]

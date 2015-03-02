@@ -520,7 +520,6 @@ def set_tuning_prop_1D_with_const_fovea_and_const_velocity(params, cell_type='ex
     v_rho_half_ = list(v_rho_half)
     v_rho_half_.reverse()
     RF_v[:n_rf_v_log / 2] = v_rho_half_
-#    print 'debug RF_v:', RF_v, v_rho_half
     RF_v[idx_upper:] = -v_rho_half
     RF_v[n_rf_v_log / 2 : n_rf_v_log / 2 + params['n_rf_v_fovea']] = RF_v_const
 
@@ -550,7 +549,7 @@ def set_tuning_prop_1D_with_const_fovea_and_const_velocity(params, cell_type='ex
                 rf_sizes[index, 2] = rf_sizes_v[i_v_rho]
                 index += 1
 
-    assert (index == n_cells), 'ERROR, index != n_cells, %d, %d' % (index, n_cells)
+    assert (index == n_cells), 'ERROR, index != n_cells, index=%d, n_cells=%d, n_rf_x=%d, RF_v.size=%d' % (index, n_cells, n_rf_x, RF_v.size)
     return tuning_prop, rf_sizes
 
 
