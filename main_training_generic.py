@@ -28,7 +28,6 @@ if __name__ == '__main__':
 
 
     t_0 = time.time()
-    record = False
 
     t0 = time.time()
     old_params = None
@@ -109,7 +108,7 @@ if __name__ == '__main__':
         NM.set_weights(old_params)
     if comm != None:
         comm.Barrier()
-    if record:
+    if params['record_v']:
         NM.record_v_exc()
         NM.record_v_inh_unspec()
     GP.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called before every simulation

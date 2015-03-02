@@ -457,38 +457,37 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
                     -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2)
                     -.5 * (tuning_prop[:, 3] - v_stim)**2 / (blur_V**2 + rfs_v**2))
         else:
-#            print 'Debug', tuning_prop[:, 0].shape, x_stim, x_stim.shape, n_cells
-#            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
-#            d_ij = np.abs(tuning_prop[:, 0] - x_stim * np.ones(n_cells))
-            d_ij = tuning_prop[:, 0] - x_stim * np.ones(n_cells)
-            L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
-                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
+            L = gauss_2D_blur(x_stim, u_stim, tuning_prop[:, 0], tuning_prop[:, 2], rfs_x, rfs_v, blur_X, blur_V)
+#            d_ij = tuning_prop[:, 0] - x_stim * np.ones(n_cells)
+#            L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
+#                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
 
-
-#    if motion=='bar':
-#        if params['n_grid_dimensions'] == 2:
-#            d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
-#        else:
-#            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
-#        L = np.exp(-.5 * (d_ij)**2 / blur_X**2
-#                -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
-#                -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2
-#                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
-
-        # ######## if bar is composed of several dots
-#        x_init = np.round(np.linspace(0, 0.2, 5), decimals=2)# to control the height of bar with x_init range
-#        y_init = np.arctan(orientation) * x_init
-#        x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-#        L = np.zeros(n_cells)
-#        for x_i ,y_i in zip(x, y):
-#            L_ = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_i * np.ones(n_cells), tuning_prop[:, 1], y_i * np.ones(n_cells)))**2/blur_X**2)
-#                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
-#                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
-#                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
-#            L += L_
-                          
     return L
 
+
+def gauss_2D(x, y, mu_x, sigma_x, mu_y, sigma_y, rho=0.):
+    """
+    http://en.wikipedia.org/wiki/Multivariate_normal_distribution
+    x = np.arange(0, 1., 0.01) 
+    y = np.arange(-1, 2., 0.01) 
+    [X, Y] = np.meshgrid(x, y)
+    M = gauss_2D(X, Y, mu_x, sigma_x, mu_y, sigma_y, rho)
+    --> pylab.pcolormesh(M)
+    """
+    f_xy = 1. / (2 * np.pi * sigma_x * sigma_y * np.sqrt(1. - rho)) * \
+            np.exp(- 1. / (2. * (1. - rho**2)) * \
+            ((x - mu_x)**2 / sigma_x**2 + (y - mu_y)**2 / sigma_y**2 - 2. * rho * (x - mu_x) * (y - mu_y) / (sigma_x * sigma_y)) )
+    return f_xy
+
+
+def gauss_2D_blur(x, y, mu_x, sigma_x, mu_y, sigma_y, blur_x, blur_v):
+    """
+    http://en.wikipedia.org/wiki/Multivariate_normal_distribution
+    """
+    f_xy = 1. / (2 * np.pi * np.sqrt(sigma_x**2 + blur_x**2) * np.sqrt(sigma_y** 2 + blur_v**2)) * \
+            np.exp(- 1. / 2. * \
+            ( (x - mu_x)**2 / (sigma_x**2 + blur_x**2) + (y - mu_y)**2 / (sigma_y**2 + blur_v**2) ))
+    return f_xy
 
 
 def distribute_list(l, n_proc, pid):
