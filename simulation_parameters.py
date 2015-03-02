@@ -50,7 +50,7 @@ class parameter_storage(object):
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
         self.params['n_rf'] = 20 
-        self.params['n_v'] = 2 # == N_MC_PER_HC
+        self.params['n_v'] = 4 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -69,7 +69,7 @@ class parameter_storage(object):
         assert (self.params['n_rf_x_log'] % 2 == 0), 'ERROR: please make sure that n_rf_x_log is an even number (as n_rf_x_fovea), so please change n_hc (=n_rf_x) or frac_rf_x_fovea'
 
         # assert (self.params['n_v'] % 2 == 0), 'n_v must be an even number (for equal number of negative and positive speeds)'
-        self.params['frac_rf_v_fovea'] = 0.0 # this fraction of all n_rf_v cells will have constant (minimum) RF size
+        self.params['frac_rf_v_fovea'] = 0.4 # this fraction of all n_rf_v cells will have constant (minimum) RF size
         self.params['n_rf_v_fovea'] = np.int(np.round(self.params['frac_rf_v_fovea'] * self.params['n_v']))
         if self.params['n_rf_v_fovea'] % 2:
             self.params['n_rf_v_fovea'] += 1
@@ -77,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['record_tuning_prop_v'] = [.95]
@@ -89,8 +89,8 @@ class parameter_storage(object):
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
-        self.params['v_max_tp'] = 0.50  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.50  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_max_tp'] = 0.60  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.20  # [a.u.] minimal velocity in visual space for tuning property distribution
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
@@ -99,14 +99,14 @@ class parameter_storage(object):
         # receptive field sizes are determined by their relative position (for x/y relative to .5, for u/v relative to 0.)
         # rf_size = rf_size_gradient * |relative_rf_pos| + min_rf_size
         # check for reference: Dow 1981 "Magnification Factor and Receptive Field Size in Foveal Striate Cortex of the Monkey"
-        self.params['regular_tuning_prop'] = False
+        self.params['regular_tuning_prop'] = True
         self.params['rf_x_center_distance'] = 0.0001   
         self.params['xpos_hc_0'] = 0.05 # the position of the first HC index (distance from the 'border')
 
         self.params['rf_x_distribution_steepness'] = 0.4 # 'free' parameter determining the steep-ness of the exponential distribution for x-pos
         if self.params['regular_tuning_prop']:
-            self.params['sigma_rf_pos'] = .001 # some variability in the position of RFs
-            self.params['sigma_rf_speed'] = .001 # some variability in the speed of RFs
+            self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+            self.params['sigma_rf_speed'] = .05 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
             self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
             # regular tuning prop
@@ -144,6 +144,8 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
+        self.params['rf_size_x_multiplicator'] = 1.
+        self.params['rf_size_v_multiplicator'] = 0.5  # means basically no effective overlap
         self.params['save_input'] = False #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
