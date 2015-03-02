@@ -161,7 +161,10 @@ def get_speed_tuning_regular(params):
     v_max = params['v_max_tp']
     v_pos = np.linspace(v_min, v_max, n_v / 2, endpoint=True)
     v_neg= -np.linspace(v_min, v_max, n_v / 2, endpoint=True)
+    print 'debug v_pos', v_pos
+    print 'debug v_neg', v_neg
     v = np.concatenate((v_neg, v_pos))
+    print 'debug v:', v
     return v
 
 

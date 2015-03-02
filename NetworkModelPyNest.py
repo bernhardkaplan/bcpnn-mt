@@ -40,7 +40,10 @@ class NetworkModel(object):
     def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
-        self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
+        if self.params['regular_tuning_prop']:
+            self.tp, self.rfs = set_tuning_properties.set_tuning_properties_regular(self.params)
+        else:
+            self.tp, self.rfs = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
