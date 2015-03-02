@@ -51,7 +51,6 @@ def get_gids_to_mc(params, pyr_gid):
 
 
 def get_avg_tp(params, tp):
-
     avg_tp = np.zeros((params['n_mc'], 2))
     cnt_cells= np.zeros(params['n_mc'])
     for i_ in xrange(tp[:, 0].size):
@@ -61,26 +60,18 @@ def get_avg_tp(params, tp):
         cnt_cells[mc_idx] += 1
 
     for i_mc in xrange(params['n_mc']):
-
         # check if gid - mc mapping was correctly
         assert cnt_cells[i_mc] == params['n_exc_per_mc']
         avg_tp[i_mc, :] /= cnt_cells[i_mc]
-
     return avg_tp
 
 
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print 'Case 1: default parameters'
-        GP = simulation_parameters.parameter_storage()
-        params = GP.params
-    else:
-        params = utils.load_params(sys.argv[1])
 
+def plot_connections_out(params, ax=None):
     v_tolerance = .1
-    v_range = (-0.0, 2.)
+    v_range = (-0.0, 1.)
 #    v_range = (0.5, 2.)
-    tau_i = 150
+    tau_i = params['bcpnn_params']['tau_i']
 #    conn_fn = sys.argv[2]
     conn_fn = params['conn_matrix_mc_fn']
     if not os.path.exists(conn_fn):
@@ -90,7 +81,6 @@ if __name__ == '__main__':
     W = np.loadtxt(conn_fn)
     print 'done'
 
-    output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%d.png' % (tau_i)
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     # get the average tp for a mc
@@ -102,8 +92,9 @@ if __name__ == '__main__':
     m.set_array(avg_tp[:, 1])
     colorlist= m.to_rgba(avg_tp[:, 1])
 
-    fig = pylab.figure(figsize=(12, 12))
-    ax = fig.add_subplot(111)#, aspect='equal', autoscale_on=False)
+    if ax == None:
+        fig = pylab.figure(figsize=(12, 12))
+        ax = fig.add_subplot(111)#, aspect='equal', autoscale_on=False)
 
     linestyles = ['-', '--', ':', '-.']
 
@@ -119,15 +110,14 @@ if __name__ == '__main__':
 #            ax.plot(x_src - x_tgt[valid_mc_idx], w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 
 
-    x = np.arange(-1., 1., 0.01)
-    mu = 0.
-    sigma = 0.2
-    alpha = 6.0
-    A = 1.5
-    offset = -2
-    skew_pos = A * functions.skew_normal(x, mu, sigma, alpha) + offset
-    ax.plot(x, skew_pos, label='Skew normal distribution $\sigma=%.1f\ \\alpha=%.1f$' % (sigma, alpha), c='k', lw=4)
-
+#    x = np.arange(-1., 1., 0.01)
+#    mu = 0.
+#    sigma = 0.2
+#    alpha = 6.0
+#    A = 1.5
+#    offset = -2
+#    skew_pos = A * functions.skew_normal(x, mu, sigma, alpha) + offset
+#    ax.plot(x, skew_pos, label='Skew normal distribution $\sigma=%.1f\ \\alpha=%.1f$' % (sigma, alpha), c='k', lw=4)
       
 #    ax.plot(x, x * skew_pos, label='Skew normal * x', c='g', lw=4)
 
@@ -135,13 +125,42 @@ if __name__ == '__main__':
     ax.plot((xlim[0], xlim[1]), (0., 0.), '--', c='k', lw=2)
     ylim = ax.get_ylim()
     ax.plot((0., 0.), (ylim[0], ylim[1]), '--', c='k', lw=2)
-    ax.set_title('Outgoing weights depending on target position')
+    title = 'Outgoing weights depending on target position'
+    title += '\n $\\tau_{i}=%d\ v_{i}=%.1f$' % (params['bcpnn_params']['tau_i'], params['v_min_tp'])
+    ax.set_title(title)
     ax.set_ylabel('$w_{out}$')
     ax.set_xlabel('Distance to source')
     cb = pylab.colorbar(m)
     cb.set_label('$v_{src}$')
 #    pylab.legend()
+    output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
     print 'Saving fig to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    pylab.show()
+    return ax
+
+
+
+
+if __name__ == '__main__':
+
+    ax = None
+    if len(sys.argv) == 1:
+        print 'Case 1: default parameters'
+        GP = simulation_parameters.parameter_storage()
+        params = GP.params
+        plot_connections_out(params)
+        show = True
+    elif len(sys.argv) == 2:
+        params = utils.load_params(sys.argv[1])
+        plot_connections_out(params)
+        show = True
+    else:
+        for folder in sys.argv[1:]:
+            params = utils.load_params(folder)
+            ax = plot_connections_out(params, ax)
+            show = False
+    if show:
+        pylab.show()
+
+
 

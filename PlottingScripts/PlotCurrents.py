@@ -125,7 +125,7 @@ def run_plot_currents(params):
         ax.set_ylabel(ylabel)
         ax.set_xlim((t_axis[0], t_axis[-1]))
         utils.plot_blank(params, ax)
-        pylab.legend()
+#        pylab.legend()
 
     for i_, gid in enumerate(gids_in_range_nest):
         ax2.plot(net_currents[:, i_], c=colorlist[i_])

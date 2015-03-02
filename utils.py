@@ -459,7 +459,8 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
         else:
 #            print 'Debug', tuning_prop[:, 0].shape, x_stim, x_stim.shape, n_cells
 #            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
-            d_ij = np.sqrt((tuning_prop[:, 0] - x_stim * np.ones(n_cells))**2)
+#            d_ij = np.abs(tuning_prop[:, 0] - x_stim * np.ones(n_cells))
+            d_ij = tuning_prop[:, 0] - x_stim * np.ones(n_cells)
             L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
                        -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
 
@@ -1147,15 +1148,28 @@ def get_grid_pos(x0, y0, xedges, yedges):
             break
     return (x_index, y_index)
 
-def get_grid_pos_1d(x0, xedges):
 
+def get_grid_pos_1d(x0, xedges):
     x_index = len(xedges)-1
     for (ix, x) in enumerate(xedges[1:]):
         if x0 <= x:
             x_index = ix
             break
-            
     return x_index
+
+
+def bin_array(d, bins):
+    """
+    If d is a one-dimensional data array that is to be binned into bins,
+    bin_array returns an array of size d.size indicating the respective bin for each data element
+    """
+    bin_idx = bins.size * np.ones(d.size)
+#    for i_bin in xrange(bins.size - 1):
+    for i_bin in xrange(bins.size):
+        idx_smaller_than_edge = np.where(d < bins[i_bin])[0]
+        bin_idx[idx_smaller_than_edge] -= 1
+    return bin_idx
+
 
 def convert_hsl_to_rgb(h, s, l):
     """
@@ -1888,6 +1902,7 @@ def plot_blank(params, ax, lw=2, ls='--', color='k'):
 
     t0 = params['t_start_blank']
     t1 = params['t_start_blank'] + params['t_blank']
-    ax.plot((t0, t0), ylim, ls=ls, lw=lw, c=color)
-    ax.plot((t1, t1), ylim, ls=ls, lw=lw, c=color)
+    ax.plot((t0, t0), (ylim[0], ylim[1]), ls=ls, lw=lw, c=color)
+    ax.plot((t1, t1), (ylim[0], ylim[1]), ls=ls, lw=lw, c=color)
+    ax.set_ylim(ylim)
 
