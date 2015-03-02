@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
@@ -373,10 +373,8 @@ class parameter_storage(object):
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        #self.params['n_training_v_slow_speeds'] = 6 * self.params['n_rf_v_fovea'] # how often the slow speeds (in the 'speed fovea') are trained (--> WARNING: Extra long training run!)
-        self.params['n_training_v_slow_speeds'] = 0
-        #self.params['n_training_v'] = 8 * self.params['n_v'] + self.params['n_training_v_slow_speeds'] # how many different speeds are trained per cycle
         self.params['n_training_v'] = 50 * self.params['n_v']
+        self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
