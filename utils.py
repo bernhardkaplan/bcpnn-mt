@@ -9,6 +9,12 @@ import copy
 import re
 import json
 import itertools
+import matplotlib
+
+def print0(msg, comm):
+    if comm.rank == 0:
+        print msg
+
 
 def compute_stim_time(stim_params):
     """
@@ -75,6 +81,7 @@ def set_vx_tau_transformation_params(params, vmin, vmax):
 def load_params(param_fn):
     if os.path.isdir(param_fn):
         param_fn = os.path.abspath(param_fn) + '/Parameters/simulation_parameters.json'
+    assert (param_fn.find('.json') != -1), 'Parameter file name provided not correct: %s ' % (param_fn)
     params = json.load(file(param_fn, 'r')) 
     return params
 
@@ -185,6 +192,9 @@ def get_spikes_within_interval(d, t0, t1, time_axis=1, gid_axis=0):
     spikes = d[idx, time_axis]
     gids = d[idx, gid_axis]
     return (spikes, gids)
+
+
+
 
 def get_spikes_for_gid(spike_data, gid, t_range=None):
     if t_range == None:
@@ -447,37 +457,37 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
                     -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2)
                     -.5 * (tuning_prop[:, 3] - v_stim)**2 / (blur_V**2 + rfs_v**2))
         else:
-#            print 'Debug', tuning_prop[:, 0].shape, x_stim, x_stim.shape, n_cells
-#            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
-            d_ij = np.sqrt((tuning_prop[:, 0] - x_stim * np.ones(n_cells))**2)
-            L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
-                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
+            L = gauss_2D_blur(x_stim, u_stim, tuning_prop[:, 0], tuning_prop[:, 2], rfs_x, rfs_v, blur_X, blur_V)
+#            d_ij = tuning_prop[:, 0] - x_stim * np.ones(n_cells)
+#            L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
+#                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
 
-
-#    if motion=='bar':
-#        if params['n_grid_dimensions'] == 2:
-#            d_ij = torus_distance2D_vec(tuning_prop[:, 0], x_stim * np.ones(n_cells), tuning_prop[:, 1], y_stim * np.ones(n_cells))
-#        else:
-#            d_ij = torus_distance_array(tuning_prop[:, 0], x_stim * np.ones(n_cells))
-#        L = np.exp(-.5 * (d_ij)**2 / blur_X**2
-#                -.5 * (tuning_prop[:, 2] - u_stim)**2 / blur_V**2
-#                -.5 * (tuning_prop[:, 3] - v_stim)**2 / blur_V**2
-#                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
-
-        # ######## if bar is composed of several dots
-#        x_init = np.round(np.linspace(0, 0.2, 5), decimals=2)# to control the height of bar with x_init range
-#        y_init = np.arctan(orientation) * x_init
-#        x, y = (x_init + u0*t) % params['torus_width'], (y_init + v0*t) % params['torus_height'] # current position of the blob at time t assuming a perfect translation
-#        L = np.zeros(n_cells)
-#        for x_i ,y_i in zip(x, y):
-#            L_ = np.exp(-.5 * ((torus_distance2D_vec(tuning_prop[:, 0], x_i * np.ones(n_cells), tuning_prop[:, 1], y_i * np.ones(n_cells)))**2/blur_X**2)
-#                -.5 * (tuning_prop[:, 2] - u0)**2/blur_V**2 
-#                -.5 * (tuning_prop[:, 3] - v0)**2/blur_V**2
-#                -.5 * (tuning_prop[:, 4] - orientation)**2 / blur_theta**2)
-#            L += L_
-                          
     return L
 
+
+def gauss_2D(x, y, mu_x, sigma_x, mu_y, sigma_y, rho=0.):
+    """
+    http://en.wikipedia.org/wiki/Multivariate_normal_distribution
+    x = np.arange(0, 1., 0.01) 
+    y = np.arange(-1, 2., 0.01) 
+    [X, Y] = np.meshgrid(x, y)
+    M = gauss_2D(X, Y, mu_x, sigma_x, mu_y, sigma_y, rho)
+    --> pylab.pcolormesh(M)
+    """
+    f_xy = 1. / (2 * np.pi * sigma_x * sigma_y * np.sqrt(1. - rho)) * \
+            np.exp(- 1. / (2. * (1. - rho**2)) * \
+            ((x - mu_x)**2 / sigma_x**2 + (y - mu_y)**2 / sigma_y**2 - 2. * rho * (x - mu_x) * (y - mu_y) / (sigma_x * sigma_y)) )
+    return f_xy
+
+
+def gauss_2D_blur(x, y, mu_x, sigma_x, mu_y, sigma_y, blur_x, blur_v):
+    """
+    http://en.wikipedia.org/wiki/Multivariate_normal_distribution
+    """
+    f_xy = 1. / (2 * np.pi * np.sqrt(sigma_x**2 + blur_x**2) * np.sqrt(sigma_y** 2 + blur_v**2)) * \
+            np.exp(- 1. / 2. * \
+            ( (x - mu_x)**2 / (sigma_x**2 + blur_x**2) + (y - mu_y)**2 / (sigma_y**2 + blur_v**2) ))
+    return f_xy
 
 
 def distribute_list(l, n_proc, pid):
@@ -1137,15 +1147,28 @@ def get_grid_pos(x0, y0, xedges, yedges):
             break
     return (x_index, y_index)
 
-def get_grid_pos_1d(x0, xedges):
 
+def get_grid_pos_1d(x0, xedges):
     x_index = len(xedges)-1
     for (ix, x) in enumerate(xedges[1:]):
         if x0 <= x:
             x_index = ix
             break
-            
     return x_index
+
+
+def bin_array(d, bins):
+    """
+    If d is a one-dimensional data array that is to be binned into bins,
+    bin_array returns an array of size d.size indicating the respective bin for each data element
+    """
+    bin_idx = bins.size * np.ones(d.size)
+#    for i_bin in xrange(bins.size - 1):
+    for i_bin in xrange(bins.size):
+        idx_smaller_than_edge = np.where(d < bins[i_bin])[0]
+        bin_idx[idx_smaller_than_edge] -= 1
+    return bin_idx
+
 
 def convert_hsl_to_rgb(h, s, l):
     """
@@ -1492,6 +1515,7 @@ def merge_connection_files(params, conn_type='ee', iteration=None):
     fn_out = params['merged_conn_list_%s' % conn_type]
 #    merge_files(merge_pattern, fn_out)
     merge_and_sort_files(merge_pattern, fn_out)
+    return fn_out
 
 def merge_spike_files_exc(params):
     cell_type = 'exc'
@@ -1761,6 +1785,17 @@ def get_figsize(fig_width_pt, portrait=True):
     return fig_size
 
 
+def get_figsize_A4(portrait=True):
+    """
+    For getting a figure with an 'aesthetic' ratio
+    """
+    if portrait:
+        fig_size =  (8.27, 11.69)
+    else:
+        fig_size =  (11.69, 8.27)
+    return fig_size
+
+
 def get_colorlist(n_colors=17):
     colorlist = ['k', 'b', 'r', 'g', 'm', 'c', 'y', \
             '#00FF99', \
@@ -1790,6 +1825,26 @@ def get_colorlist(n_colors=17):
         for i_ in xrange(n_colors - 17):
             colorlist.append('#%02X%02X%02X' % (r(),r(),r()))
 
+    return colorlist
+
+
+def get_colorlist_sorted(value_range, mapped_axis):
+    """
+    value_range is a tuple representing the (min, max) value of the interval to be color-mapped
+    mapped_axis is an array which is to be mapped.
+    returns a colorlist of the same size as mapped_axis
+    Example:
+        100 cells have positions between (0, 1), but you everything below 0.2 and above 0.5 is unimportant:
+
+        v_range = (0.2, 0.5)
+        mapped_axis = np.random.rand(100) # random positions
+        return value:
+        colorlist[cell_idx] --> color of cell_idx in the interval v_range
+    """
+    norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m.set_array(mapped_axis)
+    colorlist= m.to_rgba(mapped_axis)
     return colorlist
 
 
@@ -1839,4 +1894,14 @@ def get_mc_index_for_gid(params, gid):
     return mc_idx
 
 
+
+def plot_blank(params, ax, lw=2, ls='--', color='k'):
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+
+    t0 = params['t_start_blank']
+    t1 = params['t_start_blank'] + params['t_blank']
+    ax.plot((t0, t0), (ylim[0], ylim[1]), ls=ls, lw=lw, c=color)
+    ax.plot((t1, t1), (ylim[0], ylim[1]), ls=ls, lw=lw, c=color)
+    ax.set_ylim(ylim)
 

@@ -6,6 +6,8 @@ import numpy.random as rnd
 import utils
 import PlottingScripts.FigureCreator
 from PlottingScripts.FigureCreator import plot_params
+
+
 def get_xpos_exponential_distr(params):
     """
     Returns n_hc positions
@@ -18,7 +20,6 @@ def get_xpos_exponential_distr(params):
     assert (0 < eps_half)
     assert (.5 > eps_0)
     assert (.5 > eps_half)
-
     C = params['rf_x_distribution_steepness']# 'free' parameter determining the steep-ness of the exponential distribution for x-pos
     z = (n_hc / 2 - 1.) # half of the indices
     A = (.5 - eps_half - eps_0) / (1. - np.exp(-C * z))
@@ -27,12 +28,9 @@ def get_xpos_exponential_distr(params):
     idx_2 = np.arange(n_hc / 2, n_hc)    
     # f_idx = the x position of the HC depending on the index of the HC
     f_idx = A * (1. - np.exp(-C * idx)) + eps_0
-
     B = (.5 - eps_0 - eps_half) / (np.exp(C * (n_hc / 2 - 1)) - 1)
-
     D = .5 + eps_half - B
     g_idx = B * np.exp(C * idx) + D
-
     x_pos = np.zeros(n_hc)
     x_pos[:n_hc / 2] = f_idx
     x_pos[-n_hc / 2:] = g_idx
@@ -93,10 +91,12 @@ def get_receptive_field_sizes_v(params, v_rho):
     dv_rho_half[:-1] = v_half[1:] - v_half[:-1]
     dv_rho_half[-1] = v_half[-1] - v_half[-2]
 #    dv_rho_half[-1] = 1.5 * dv_rho_half[-2]
-    dv_rho_half[0] = params['v_min_tp']
+    # if you want to have smaller overlap for the smallest speed:
+#    dv_rho_half[0] = params['v_min_tp']
     rf_size_v[:params['n_mc_per_hc'] / 2] = dv_rho_half
     rf_size_v[params['n_mc_per_hc'] / 2:] = dv_rho_half
-    rf_size_v *= .9
+    rf_size_v *= params['rf_size_v_multiplicator']
+#    rf_size_v *= .9
 
 #    rf_size_v[:-1] = v_rho[1:] - v_rho[:-1]
 #    rf_size_v[-1] = rf_size_v[-2]
@@ -116,15 +116,16 @@ def get_receptive_field_sizes_x(params, x_pos):
 
 #    dx_pos_half[1:] = x_half[1:] - x_half[:-1]
 #    dx_pos_half[0] = x_half[1] - x_half[0]
-    print 'debug x_pos', x_pos
+#    print 'debug x_pos', x_pos
 #    print 'debug x_half', x_half
-    print 'debug dx_pos_half', dx_pos_half
+#    print 'debug dx_pos_half', dx_pos_half
 #    dx_pos_half[-1] = .5 * dx_pos_half[-2]
     rf_size_x[:params['n_hc'] / 2] = dx_pos_half
     dx_pos_upper_half = list(dx_pos_half)
     dx_pos_upper_half.reverse()
-    print 'debug dx_pos_upper_half', len(dx_pos_upper_half), len(rf_size_x[params['n_hc'] / 2:]), len(rf_size_x)
+#    print 'debug dx_pos_upper_half', len(dx_pos_upper_half), len(rf_size_x[params['n_hc'] / 2:]), len(rf_size_x)
     rf_size_x[params['n_hc'] / 2:] = dx_pos_upper_half
+    rf_size_x *= params['rf_size_x_multiplicator']
 #    rf_size_x *= 1.5
 #    rf_size_x *= 0.8
 #    rf_size_x[params['n_hc'] / 2:] = dx_pos_half
@@ -143,24 +144,49 @@ def get_relative_distance_error(rf_centers):
         rel[i_-1] = np.abs(diff) / np.abs(rf_centers[i_-1])
     return rel
 
+def get_xpos_regular(params):
+    """
+    Returns n_mc_per_hc preferred speeds.
+    """
+    n_x = params['n_hc']
+    x_min = params['x_min_tp']
+    x_max = 1. - params['x_min_tp']
+    x_pos = np.linspace(x_min, x_max, n_x, endpoint=True)
+    return x_pos
 
-def set_tuning_properties(params):
+
+def get_speed_tuning_regular(params):
+    n_v = params['n_mc_per_hc']
+    v_min = params['v_min_tp']
+    v_max = params['v_max_tp']
+    v_pos = np.linspace(v_min, v_max, n_v / 2, endpoint=True)
+    v_neg= -np.linspace(v_min, v_max, n_v / 2, endpoint=True)
+    v = np.concatenate((v_neg, v_pos))
+    return v
+
+
+
+
+def set_tuning_properties_regular(params):
     tuning_prop = np.zeros((params['n_exc'], 4))
     rfs = np.zeros((params['n_exc'], 4))
-    x_pos = get_xpos_log_distr(params)
-    v_rho = get_speed_tuning(params)
+#    x_pos = get_xpos_log_distr(params)
+#    v_rho = get_speed_tuning(params)
+    x_pos = get_xpos_regular(params)
+    v_rho = get_speed_tuning_regular(params)
     rf_size_x = get_receptive_field_sizes_x(params, x_pos)
     rf_size_v = get_receptive_field_sizes_v(params, v_rho)
     index = 0
-    for i_mc in xrange(params['n_mc_per_hc']):
-        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+    #for i_mc in xrange(params['n_mc_per_hc']):
+        #print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
     for i_hc in xrange(params['n_hc']):
-        print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
+        #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], v_rho[i_mc]
             for i_exc in xrange(params['n_exc_per_mc']):
                 x, u = x_pos[i_hc], v_rho[i_mc]
-                tuning_prop[index, 0] = (x + np.abs(x - .5) / .5 * rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])) % params['torus_width']
+#                tuning_prop[index, 0] = (x + np.abs(x - .5) / .5 * rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])) % params['torus_width']
+                tuning_prop[index, 0] = x + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
                 tuning_prop[index, 1] = 0.5 
                 tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
                 tuning_prop[index, 3] = 0. 
@@ -187,7 +213,7 @@ def get_receptive_field_sizes_x_const_fovea(params, rf_x):
         rf_size_x[pos_idx.size+1:] = dx_pos_half # for 20
     rf_size_x[pos_idx.size] = dx_pos_half[0]
     rf_size_x[idx.size / 2 - 1] = dx_pos_half[0]
-#    rf_size_x *= params['rf_size_x_multiplicator']
+    rf_size_x *= params['rf_size_x_multiplicator']
     return rf_size_x
 
 
@@ -424,10 +450,10 @@ def plot_tuning_prop(params):
     patches_mc = []
     patches_ = []
     index = 0
-    for i_mc in xrange(params['n_mc_per_hc']):
-        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+    #for i_mc in xrange(params['n_mc_per_hc']):
+        #print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
     for i_hc in xrange(params['n_hc']):
-        print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
+        #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], v_rho[i_mc]
             p_mc, = ax.plot(x, u, 'o', c='r', markersize=5, markeredgewidth=0)
@@ -551,33 +577,39 @@ def set_tuning_prop_1D_with_const_fovea_and_const_velocity(params, cell_type='ex
                 rf_sizes[index, 2] = rf_sizes_v[i_v_rho]
                 index += 1
 
-    assert (index == n_cells), 'ERROR, index != n_cells, %d, %d' % (index, n_cells)
+    assert (index == n_cells), 'ERROR, index != n_cells, index=%d, n_cells=%d, n_rf_x=%d, RF_v.size=%d' % (index, n_cells, n_rf_x, RF_v.size)
     return tuning_prop, rf_sizes
 
 
 def get_receptive_field_sizes_v_const_fovea(params, rf_v):
-    idx = np.argsort(rf_v)
-    rf_size_v = np.zeros(rf_v.size)
-    pos_idx = (rf_v[idx] > 0.0).nonzero()[0]
-    neg_idx = (rf_v[idx] < 0.0).nonzero()[0]
-    dv_pos_half = np.zeros(pos_idx.size)
-    dv_neg_half = np.zeros(neg_idx.size)
-    dv_pos_half = rf_v[idx][pos_idx][1:] - rf_v[idx][pos_idx][:-1]
-    dv_neg_half = np.abs(rf_v[idx][neg_idx][1:] - rf_v[idx][neg_idx][:-1])
-
-    dv_neg_reverse = list(dv_neg_half)
-    dv_neg_reverse.reverse()
-    rf_size_v[:neg_idx.size-1] = dv_neg_half
-    rf_size_v[neg_idx.size] = dv_neg_half[-1]
-    if params['n_v'] % 2:
-        rf_size_v[pos_idx.size+2:] = dv_pos_half # for 21
+    if (params['n_v'] >= 4):
+        idx = np.argsort(rf_v)
+        rf_size_v = np.zeros(rf_v.size)
+        pos_idx = (rf_v[idx] > 0.0).nonzero()[0]
+        neg_idx = (rf_v[idx] < 0.0).nonzero()[0]
+        dv_pos_half = np.zeros(pos_idx.size)
+        dv_neg_half = np.zeros(neg_idx.size)
+        dv_pos_half = rf_v[idx][pos_idx][1:] - rf_v[idx][pos_idx][:-1]
+        dv_neg_half = np.abs(rf_v[idx][neg_idx][1:] - rf_v[idx][neg_idx][:-1])
+        dv_neg_reverse = list(dv_neg_half)
+        dv_neg_reverse.reverse()
+        rf_size_v[:neg_idx.size-1] = dv_neg_half
+        rf_size_v[neg_idx.size] = dv_neg_half[-1]
+        if params['n_v'] % 2:
+            rf_size_v[pos_idx.size+2:] = dv_pos_half # for 21
+        else:
+            rf_size_v[pos_idx.size+1:] = dv_pos_half # for 20
+#        rf_size_v[pos_idx.size] = dv_pos_half[0]
+        rf_size_v[pos_idx.size] = np.min(np.abs(rf_v))      # use the distance to 0 as the minimal RF size
+        rf_size_v[idx.size / 2 - 1] = np.min(np.abs(rf_v))
+#        rf_size_v[idx.size / 2 - 1] = dv_pos_half[0]
+#        rf_size_v *= params['rf_size_v_multiplicator']
+    #    print 'rf_size_v', rf_size_v
+        return rf_size_v
     else:
-        rf_size_v[pos_idx.size+1:] = dv_pos_half # for 20
-    rf_size_v[pos_idx.size] = dv_pos_half[0]
-    rf_size_v[idx.size / 2 - 1] = dv_pos_half[0]
-#    rf_size_v *= params['rf_size_v_multiplicator']
-#    print 'rf_size_v', rf_size_v
-    return rf_size_v
+        rf_size_v = np.zeros(rf_v.size)
+        print 'rf_v:', rf_v
+        return rf_v
 
 
 if __name__ == '__main__':
