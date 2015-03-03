@@ -41,7 +41,7 @@ if USE_MPI:
     print 'pc_id %d job indices:' % pc_id, my_idx
     for i_ in xrange(my_idx[0], my_idx[1]):
         job_name = list_of_jobs[i_]
-        print 'pc_id %d runs:' % pc_id, job_name
+        print 'pc_id %d runs job nr %d / %d' % (pc_id, i_, my_idx[1] - my_idx[0]), job_name
         os.system(job_name)
 
 

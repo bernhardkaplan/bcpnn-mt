@@ -549,6 +549,11 @@ class PlotPrediction(object):
         elif sort_idx == 2:
             ax.set_ylabel('Preferred speed')
 
+        if sort_idx == 0:
+            ax.set_ylim((0., 1.))
+        elif sort_idx == 2:
+            ax.set_ylim((-self.params['v_max_tp'], self.params['v_max_tp']))
+
         if not self.params['training_run']:
             for i_stim in xrange(stim_range[0], stim_range[1]):
                 if self.params['n_stim'] > 1:
@@ -560,11 +565,6 @@ class PlotPrediction(object):
                 time_range = (t0, t1)
             self.plot_blank(ax, time_range)
             ax.set_xlim((t0, t1))
-
-        if sort_idx == 0:
-            ax.set_ylim((0., 1.))
-        elif sort_idx == 2:
-            ax.set_ylim((-self.params['v_max_tp'], self.params['v_max_tp']))
 
 
     def plot_input_spikes_sorted(self, time_range=None, fig_cnt=1, title='', sort_idx=0):
