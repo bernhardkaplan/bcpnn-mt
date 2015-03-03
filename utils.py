@@ -445,9 +445,6 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
             as a function of the distance between 
              - the center of the receptive fields,
              - the current position of the blob.
-             
-            # TODO : prove this analytically to disentangle the different blurs (size of RF / size of dot)
-            
             L range between 0 and 1
         """
         # to translate the initial static line at each time step with motion parameters
@@ -457,7 +454,7 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
                     -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2)
                     -.5 * (tuning_prop[:, 3] - v_stim)**2 / (blur_V**2 + rfs_v**2))
         else:
-            L = gauss_2D_blur(x_stim, u_stim, tuning_prop[:, 0], tuning_prop[:, 2], rfs_x, rfs_v, blur_X, blur_V)
+            L = gauss_2D_blur(x_stim, u_stim, tuning_prop[:, 0], rfs_x, tuning_prop[:, 2], rfs_v, blur_X, blur_V)
 #            d_ij = tuning_prop[:, 0] - x_stim * np.ones(n_cells)
 #            L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
 #                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))

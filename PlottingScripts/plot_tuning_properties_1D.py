@@ -190,8 +190,8 @@ class Plotter(object):
             ax.plot((x_start, x_stop), (mp[i_, 2], mp[i_, 2]), '--', c='k', lw=3)
             ax.plot(x_start, mp[i_, 2], 'o', c='b', ms=8)
             ax.plot(x_stop, mp[i_, 2], 'o', c='r', ms=8)
-#            ax.text(x_start, mp[i_, 2] + 0.1, 'Start %d' % i_)
-#            ax.text(x_stop, mp[i_, 2] + 0.1, 'Stop %d' % i_)
+            ax.text(x_start, mp[i_, 2] + 0.01, 'Start %d' % i_)
+            ax.text(x_stop, mp[i_, 2] + 0.01, 'Stop %d' % i_)
 
 
 if __name__ == '__main__':

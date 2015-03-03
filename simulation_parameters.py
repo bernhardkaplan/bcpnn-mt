@@ -26,7 +26,7 @@ class parameter_storage(object):
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
-        self.w_input_exc = 20.0
+        self.w_input_exc = 8.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -144,8 +144,8 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['rf_size_x_multiplicator'] = 1.
-        self.params['rf_size_v_multiplicator'] = 0.5  # means basically no effective overlap
+        self.params['rf_size_x_multiplicator'] = 0.25
+        self.params['rf_size_v_multiplicator'] = 0.25  # means basically no effective overlap
         self.params['save_input'] = True #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
@@ -374,7 +374,7 @@ class parameter_storage(object):
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
 #        self.params['n_training_v'] = 50 * self.params['n_v']
-        self.params['n_training_v'] = 2
+        self.params['n_training_v'] = 4
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
@@ -507,7 +507,7 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 3000.       # [Hz]
+        self.params['f_max_stim'] = 100.       # [Hz]
         self.params['w_input_exc'] = self.w_input_exc
         #self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
