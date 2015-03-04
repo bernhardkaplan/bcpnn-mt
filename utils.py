@@ -39,6 +39,35 @@ def compute_time_until_stim_reaches(xlim, stim_params):
     return t_exit 
 
 
+def get_gids_to_mc(params, pyr_gid):
+    """
+    Return the HC, MC within the HC in which the cell with pyr_gid is in
+    and the min and max gid of pyr cells belonging to the same MC.
+    """
+    mc_idx = pyr_gid / params['n_exc_per_mc']
+    hc_idx = mc_idx / params['n_mc_per_hc']
+    gid_min = mc_idx * params['n_exc_per_mc']
+    gid_max = (mc_idx + 1) * params['n_exc_per_mc']  # here no +1 because it's used for randrange and +1 would include a false cell
+    return (hc_idx, mc_idx, gid_min, gid_max)
+
+
+def get_avg_tp(params, tp):
+    avg_tp = np.zeros((params['n_mc'], 4))
+    cnt_cells= np.zeros(params['n_mc'])
+    for i_ in xrange(tp[:, 0].size):
+        (hc_idx, mc_idx, gid_min, gid_max) = get_gids_to_mc(params, i_)
+        avg_tp[mc_idx, 0] += tp[i_, 0] # position
+        avg_tp[mc_idx, 1] += tp[i_, 1] # position
+        avg_tp[mc_idx, 2] += tp[i_, 2] # speed
+        avg_tp[mc_idx, 3] += tp[i_, 3] # speed
+        cnt_cells[mc_idx] += 1
+    for i_mc in xrange(params['n_mc']):
+        # check if gid - mc mapping was correctly
+        assert cnt_cells[i_mc] == params['n_exc_per_mc']
+        avg_tp[i_mc, :] /= cnt_cells[i_mc]
+    return avg_tp
+
+
 def get_gids_near_stim_nest(mp, tp_cells, n=1, ndim=1):
     """
     Get the cell GIDS (0 - aligned) from n cells,
@@ -878,7 +907,7 @@ def get_nspikes(spiketimes_fn_or_array, n_cells=0, cell_offset=0, get_spiketrain
     if pynest == True:
         gid_axis = 0
         time_axis = 1
-        gid_offset = 0 + cell_offset
+        gid_offset = 1 + cell_offset
     else: # it's likely PyNN
         gid_axis = 1
         time_axis = 0
@@ -911,7 +940,7 @@ def get_nspikes(spiketimes_fn_or_array, n_cells=0, cell_offset=0, get_spiketrain
         gids = np.unique(d[:, gid_axis])
         for i_, gid in enumerate(gids):
             indices = (d[:, gid_axis] == gid).nonzero()[0]
-            idx = int(gid - 1 - cell_offset) # if not pynest --> remove -1
+            idx = int(gid - gid_offset) # if not pynest --> remove -1
             spiketrains[idx] = d[indices, time_axis] 
             nspikes[idx] = spiketrains[idx].size
 
@@ -1887,6 +1916,9 @@ def get_indices_for_gid(params, gid):
 
 
 def get_mc_index_for_gid(params, gid):
+    """
+    gid = NEST - gid
+    """
     mc_idx = (gid - 1) / params['n_exc_per_mc']
     return mc_idx
 

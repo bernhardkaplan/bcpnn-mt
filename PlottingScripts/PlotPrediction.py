@@ -594,7 +594,7 @@ class PlotPrediction(object):
             if m:
                 gid = int(m.groups()[0])
                 if (gid < self.params['n_exc']):
-                    y_pos_of_cell = tp[gid, sort_idx]
+                    y_pos_of_cell = tp[gid-1, sort_idx]
                     fn_ = self.params['input_folder'] + fn
                     d = np.loadtxt(fn_)
                     ax.plot(d, y_pos_of_cell * np.ones(d.size), 'o', markersize=self.raster_dotsize, markeredgewidth=0., alpha=.1, color='b')

@@ -38,32 +38,6 @@ plot_params = {'backend': 'png',
 pylab.rcParams.update(plot_params)
 
 
-def get_gids_to_mc(params, pyr_gid):
-    """
-    Return the HC, MC within the HC in which the cell with pyr_gid is in
-    and the min and max gid of pyr cells belonging to the same MC.
-    """
-    mc_idx = pyr_gid / params['n_exc_per_mc']
-    hc_idx = mc_idx / params['n_mc_per_hc']
-    gid_min = mc_idx * params['n_exc_per_mc']
-    gid_max = (mc_idx + 1) * params['n_exc_per_mc']  # here no +1 because it's used for randrange and +1 would include a false cell
-    return (hc_idx, mc_idx, gid_min, gid_max)
-
-
-def get_avg_tp(params, tp):
-    avg_tp = np.zeros((params['n_mc'], 2))
-    cnt_cells= np.zeros(params['n_mc'])
-    for i_ in xrange(tp[:, 0].size):
-        (hc_idx, mc_idx, gid_min, gid_max) = get_gids_to_mc(params, i_)
-        avg_tp[mc_idx, 0] += tp[i_, 0] # position
-        avg_tp[mc_idx, 1] += tp[i_, 2] # speed
-        cnt_cells[mc_idx] += 1
-
-    for i_mc in xrange(params['n_mc']):
-        # check if gid - mc mapping was correctly
-        assert cnt_cells[i_mc] == params['n_exc_per_mc']
-        avg_tp[i_mc, :] /= cnt_cells[i_mc]
-    return avg_tp
 
 
 
@@ -89,8 +63,8 @@ def plot_connections_out(params, ax=None):
     clim = (v_range[0], v_range[1])
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
-    m.set_array(avg_tp[:, 1])
-    colorlist= m.to_rgba(avg_tp[:, 1])
+    m.set_array(avg_tp[:, 2])
+    colorlist= m.to_rgba(avg_tp[:, 2])
 
     if ax == None:
         fig = pylab.figure(figsize=(12, 12))
@@ -102,7 +76,7 @@ def plot_connections_out(params, ax=None):
         v_src = avg_tp[mc_src, 1]
         if (v_src > v_range[0]) and (v_src < v_range[1]):
             x_src = avg_tp[mc_src, 0]
-            v_tgt = avg_tp[:, 1]
+            v_tgt = avg_tp[:, 2]
             x_tgt = avg_tp[:, 0]
             w_out = W[mc_src, :]
             valid_mc_idx = np.where(np.abs((v_tgt - v_src) / v_src) < v_tolerance)[0]

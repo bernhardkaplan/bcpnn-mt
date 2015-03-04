@@ -165,9 +165,10 @@ if __name__ == '__main__':
     n_cells = 10
     ms = 4
 
-    print 'Merging spike files...', 
-    utils.merge_spike_files_exc(params)
-    print 'done'
+    if not os.path.exists(params['exc_spiketimes_fn_merged']):
+        print 'Merging spike files...', 
+        utils.merge_spike_files_exc(params)
+        print 'done'
     print 'Loading spike data...', 
     spike_data = np.loadtxt(params['exc_spiketimes_fn_merged'])
     print 'done'

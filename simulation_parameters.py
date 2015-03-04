@@ -30,7 +30,7 @@ class parameter_storage(object):
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'DEBUG'
+            self.params['sim_id'] = 'DEBUG_2'
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
@@ -49,8 +49,8 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 6 
-        self.params['n_v'] = 4 # == N_MC_PER_HC
+        self.params['n_rf'] = 4
+        self.params['n_v'] = 6 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -89,8 +89,8 @@ class parameter_storage(object):
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.1  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
-        self.params['v_max_tp'] = 0.60  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.30  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_max_tp'] = 1.00  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.10  # [a.u.] minimal velocity in visual space for tuning property distribution
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
@@ -144,8 +144,10 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['rf_size_x_multiplicator'] = 0.25
-        self.params['rf_size_v_multiplicator'] = 0.25  # means basically no effective overlap
+        self.params['increase_rf_size_with_speed'] = True
+        self.params['rf_x_increase_max'] = 2.
+        self.params['rf_size_x_multiplicator'] = 1.00
+        self.params['rf_size_v_multiplicator'] = 0.50  # means basically no effective overlap
         self.params['save_input'] = True #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
@@ -369,12 +371,12 @@ class parameter_storage(object):
         self.params['v_min_training'] = self.params['v_min_tp']
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
-        self.params['training_stim_noise_v'] = 0.10 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
 #        self.params['n_training_v'] = 50 * self.params['n_v']
-        self.params['n_training_v'] = 4
+        self.params['n_training_v'] = 6
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
@@ -387,7 +389,7 @@ class parameter_storage(object):
         self.params['n_stim_per_direction'] = 1 
 #        self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction']
         self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
-        self.params['random_training_order'] = True # if true, stimuli within a cycle get shuffled
+        self.params['random_training_order'] = False # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
@@ -507,7 +509,7 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 100.       # [Hz]
+        self.params['f_max_stim'] = 200.       # [Hz]
         self.params['w_input_exc'] = self.w_input_exc
         #self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
@@ -535,12 +537,12 @@ class parameter_storage(object):
         if folder_name == None:
             if self.params['training_run']:
 #                folder_name = 'TrainingSim_tauzimin%d_max%d' % (self.params['tau_zi_min'], self.params['tau_zi_max'])
-                folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_vmin%.2f' % ( \
+                folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_v%.2f-%.1f_fmax%d' % ( \
                         self.params['sim_id'], self.params['n_training_cycles'], self.params['n_training_v'], self.params['n_training_x'], \
                         self.params['stim_range'][0], self.params['stim_range'][1], \
                         self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], \
-                        self.params['bcpnn_init_val'], self.params['v_min_tp'])
+                        self.params['bcpnn_init_val'], self.params['v_min_tp'], self.params['v_max_tp'], self.params['f_max_stim'])
             else:
                 folder_name = 'TestSim_%s_%d_taui%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
                         self.params['sim_id'], self.params['n_test_stim'], 

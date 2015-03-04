@@ -92,7 +92,7 @@ def get_receptive_field_sizes_v(params, v_rho):
     dv_rho_half[-1] = v_half[-1] - v_half[-2]
 #    dv_rho_half[-1] = 1.5 * dv_rho_half[-2]
     # if you want to have smaller overlap for the smallest speed:
-#    dv_rho_half[0] = params['v_min_tp']
+    dv_rho_half[0] = params['v_min_tp']
     rf_size_v[:params['n_mc_per_hc'] / 2] = dv_rho_half
     rf_size_v[params['n_mc_per_hc'] / 2:] = dv_rho_half
     rf_size_v *= params['rf_size_v_multiplicator']
@@ -179,6 +179,7 @@ def set_tuning_properties_regular(params):
     index = 0
     #for i_mc in xrange(params['n_mc_per_hc']):
         #print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+
     for i_hc in xrange(params['n_hc']):
         #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
@@ -192,6 +193,10 @@ def set_tuning_properties_regular(params):
                 tuning_prop[index, 3] = 0. 
                 rfs[index, 0] = rf_size_x[i_hc]
                 rfs[index, 2] = rf_size_v[i_mc]
+                if params['increase_rf_size_with_speed']:
+                    rf_size_x_increase = utils.transform_linear(np.abs(tuning_prop[index, 2]), (1., params['rf_x_increase_max']), x_range=(params['v_min_tp'], params['v_max_tp']))
+                    print 'debug rf_size_x_increase :', rf_size_x_increase 
+                    rfs[index, 0] *= rf_size_x_increase
                 index += 1
     return tuning_prop, rfs
 
