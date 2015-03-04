@@ -754,7 +754,7 @@ class PlotPrediction(object):
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         ax.set_title('Position prediction error: \n $|\\vec{x}_{diff}(t)| = |\\vec{x}_{stim}(t) - \\vec{x}_{predicted}(t)|$')#, fontsize=self.plot_params['title_fs'])
-        print 'debug self.xdiff_avg:', self.xdiff_avg
+#        print 'debug self.xdiff_avg:', self.xdiff_avg
         ax.plot(self.t_axis, self.xdiff_avg, ls='-', lw=2, label='Prediction')
         ax.set_xlabel('Time [ms]')
         ax.set_ylabel('$|\\vec{x}_{diff}|$')
@@ -945,8 +945,8 @@ class PlotPrediction(object):
         if show_blank:
             self.plot_blank(ax, time_range)
 
-        output_data = np.zeros((self.t_axis.size, 3))
-        output_data[:, 0] = self.t_axis
+        output_data = np.zeros((t_axis.size, 3))
+        output_data[:, 0] = t_axis
         output_data[:, 1] = self.x_avg[bin_idx[0]:bin_idx[1]]
         output_data[:, 2] = x_stim
         output_fn = 'x-estimates_stim%d.dat' % (stim_idx)
@@ -1027,8 +1027,8 @@ class PlotPrediction(object):
             self.plot_blank(ax, time_range)
 
 #        output_data = np.array((self.t_axis, self.vx_avg))
-        output_data = np.zeros((self.t_axis.size, 3))
-        output_data[:, 0] = self.t_axis
+        output_data = np.zeros((t_axis.size, 3))
+        output_data[:, 0] = t_axis
         output_data[:, 1] = self.vx_avg[bin_idx[0]:bin_idx[1]]
         output_data[:, 2] = vx
         self.data_to_store['vx_linear_vs_time.dat'] = {'data' : output_data}

@@ -20,7 +20,7 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
@@ -49,7 +49,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
 
-        self.params['n_rf'] = 4
+        self.params['n_rf'] = 20
         self.params['n_v'] = 4 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
@@ -396,7 +396,8 @@ class parameter_storage(object):
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
-        self.params['test_stim_range'] = (0, 1)
+        #   TODO: fix create_test_stim_grid for (1, 2)
+        self.params['test_stim_range'] = (0, 2)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -435,7 +436,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_stim_pause'] = 1000.
         else:
-            self.params['t_stim_pause'] = 100.
+            self.params['t_stim_pause'] = 500.
         # a test stim is presented for t_test_stim - t_stim_pause
 
         # [ms] total simulation time -- will be overwritten depending on how long a stimulus will be presented 
@@ -546,8 +547,8 @@ class parameter_storage(object):
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['blur_X'], self.params['blur_V'], \
                         self.params['bcpnn_init_val'], self.params['v_min_tp'], self.params['v_max_tp'], self.params['f_max_stim'])
             else:
-                folder_name = 'TestSim_%s_%d_taui%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
-                        self.params['sim_id'], self.params['n_test_stim'], 
+                folder_name = 'TestSim_%s_%d-%d_taui%d_nHC%d_nMC%d_nExcPerMc%d_wee%.2f_wei%.2f' % ( \
+                        self.params['sim_id'], self.params['stim_range'][0], self.params['stim_range'][1], \
                         self.params['bcpnn_params']['tau_i'], \
                         self.params['n_hc'], self.params['n_mc_per_hc'], self.params['n_exc_per_mc'], self.params['w_ee_global_max'], \
                         self.params['w_ei_unspec'])

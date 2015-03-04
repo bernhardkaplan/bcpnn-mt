@@ -55,10 +55,10 @@ def plot_connections_out(params, ax=None):
     W = np.loadtxt(conn_fn)
     print 'done'
 
-
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     # get the average tp for a mc
-    avg_tp = get_avg_tp(params, tp)
+    avg_tp = utils.get_avg_tp(params, tp)
+    print 'avg_tp:', avg_tp
 
     clim = (v_range[0], v_range[1])
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
@@ -73,13 +73,16 @@ def plot_connections_out(params, ax=None):
     linestyles = ['-', '--', ':', '-.']
 
     for mc_src in xrange(params['n_mc']):
-        v_src = avg_tp[mc_src, 1]
+        v_src = avg_tp[mc_src, 2]
+        print 'v_src:', v_src
         if (v_src > v_range[0]) and (v_src < v_range[1]):
             x_src = avg_tp[mc_src, 0]
             v_tgt = avg_tp[:, 2]
             x_tgt = avg_tp[:, 0]
             w_out = W[mc_src, :]
             valid_mc_idx = np.where(np.abs((v_tgt - v_src) / v_src) < v_tolerance)[0]
+#            print 'debug valid_mc_idx', valid_mc_idx
+
             ax.plot(x_tgt[valid_mc_idx] - x_src, w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 #            ax.plot(x_src - x_tgt[valid_mc_idx], w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 
