@@ -20,7 +20,6 @@ def create_training_stim_in_tp_space():
     GP = simulation_parameters.parameter_storage()
     params = GP.params
     GP.write_parameters_to_file(params['params_fn_json'], params) # write_parameters_to_file MUST be called before every simulation
-    print 'n_cycles', params['n_training_cycles']
     np.random.seed(params['visual_stim_seed'])
     CI = CreateInput.CreateInput(params)
 

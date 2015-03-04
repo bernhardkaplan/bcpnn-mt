@@ -510,8 +510,10 @@ def gauss_2D_blur(x, y, mu_x, sigma_x, mu_y, sigma_y, blur_x, blur_v):
     """
     http://en.wikipedia.org/wiki/Multivariate_normal_distribution
     """
-    f_xy = 1. / (2 * np.pi * np.sqrt(sigma_x**2 + blur_x**2) * np.sqrt(sigma_y** 2 + blur_v**2)) * \
-            np.exp(- 1. / 2. * \
+#    f_xy = 1. / (2 * np.pi * np.sqrt(sigma_x**2 + blur_x**2) * np.sqrt(sigma_y** 2 + blur_v**2)) * \
+#            np.exp(- 1. / 2. * \
+#            ( (x - mu_x)**2 / (sigma_x**2 + blur_x**2) + (y - mu_y)**2 / (sigma_y**2 + blur_v**2) ))
+    f_xy = np.exp(- 1. / 2. * \
             ( (x - mu_x)**2 / (sigma_x**2 + blur_x**2) + (y - mu_y)**2 / (sigma_y**2 + blur_v**2) ))
     return f_xy
 

@@ -27,10 +27,10 @@ plot_params = {'backend': 'png',
               'font.size': 12,
               'path.simplify': False,
               'figure.subplot.left':.15,
-              'figure.subplot.bottom':.13,
-              'figure.subplot.right':.94,
-              'figure.subplot.top':.92,
-              'figure.subplot.hspace':.30,
+              'figure.subplot.bottom':.15,
+              'figure.subplot.right':.90,
+              'figure.subplot.top':.90,
+              'figure.subplot.hspace':.36,
               'figure.subplot.wspace':.30}
 
 #              'figure.figsize': get_fig_size(800)}

@@ -12,8 +12,8 @@ import simulation_parameters
 import utils
 
 plot_params = {'backend': 'png',
-              'axes.labelsize': 24,
-              'axes.titlesize': 24,
+              'axes.labelsize': 20,
+              'axes.titlesize': 20,
               'text.fontsize': 20,
               'xtick.labelsize': 20,
               'ytick.labelsize': 20,
@@ -26,14 +26,14 @@ plot_params = {'backend': 'png',
               'path.simplify': False,
               'figure.subplot.left':.15,
               'figure.subplot.bottom':.13,
-              'figure.subplot.right':.94,
-              'figure.subplot.top':.92,
-              'figure.subplot.hspace':.30,
+              'figure.subplot.right':.90,
+              'figure.subplot.top':.88,
+              'figure.subplot.hspace':.36,
               'figure.subplot.wspace':.30}
 
 
 def plot_rates(params):
-    time_binsize = 50. # [ms]
+    time_binsize = 100. # [ms]
 
     pylab.rcParams.update(plot_params)
     data_fn = params['exc_spiketimes_fn_merged']
@@ -64,9 +64,9 @@ def plot_rates(params):
     colorlist = m.to_rgba(tuning_prop[:, 2])
     colorlist_mc = m.to_rgba(avg_tp[:, 2])
 
-    fig = pylab.figure()
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
+    fig = pylab.figure(figsize=utils.get_figsize_A4(portrait=False))
+    ax1 = fig.add_subplot(221)
+    ax2 = fig.add_subplot(223)
     for gid in xrange(params['n_exc']):
         if (nspikes[gid] > 0):
             count, bins = np.histogram(spiketrains[gid], bins=n_bins, range=(0, params['t_sim']))
@@ -81,21 +81,23 @@ def plot_rates(params):
         ax2.plot(t_axis, nspikes_mc[mc_idx, :] * rate_factor / params['n_exc_per_mc'], 'o-', c=colorlist_mc[mc_idx])
         print 'MC: %d v=%.2f fires in total: %d spikes' % (mc_idx, avg_tp[mc_idx, 2], nspikes_mc[mc_idx, :].sum())
 
-    ax1.set_xlabel('Time [ms]')
+#    ax1.set_xlabel('Time [ms]')
     ax2.set_xlabel('Time [ms]')
     if plot_rates:
-        ax1.set_ylabel('Rate [Hz]')
-        ax2.set_ylabel('Rate [Hz]')
+        ax1.set_title('Rate[Hz] vs. Time [ms]')
     else:
-        ax1.set_ylabel('Number of spikes')
-        ax2.set_ylabel('Number of spikes')
+        ax1.set_title('Number of spikes vs. Time [ms]')
+    ax1.set_ylabel('Cell activity')
+    ax2.set_ylabel('MC avg activity')
 
 #    mc_idx_sorted_v = np.argsort(avg_tp[:, 2])
-    fig2 = pylab.figure()
-    ax = fig2.add_subplot(111)
-    for mc_idx in xrange(params['n_mc']):
-        ax.plot(avg_tp[mc_idx, 2], nspikes_mc[mc_idx, :].sum(), 'o', ms=4, c=colorlist_mc[mc_idx])
-
+#    fig2 = pylab.figure()
+    ax = fig.add_subplot(122)
+    colors = m.to_rgba(tuning_prop[:, 2])
+    ax.scatter(tuning_prop[:, 2], nspikes, c=colors, linewidths=0)
+    ax.set_xlabel('$v_i$')
+    ax.set_ylabel('Number of spikes fired')
+    ax.set_title('Cell activity during training \n(integrated over all training)')
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:

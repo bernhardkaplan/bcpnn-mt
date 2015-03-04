@@ -25,22 +25,6 @@ class CreateInput(object):
         self.tuning_prop = np.loadtxt(self.params['tuning_prop_exc_fn'])
         self.rf_sizes = np.loadtxt(self.params['receptive_fields_exc_fn'])
 
-#        if tuning_prop_fn == None:
-#            self.tuning_prop, self.rf_sizes = set_tuning_properties.set_tuning_properties_and_rfs_const_fovea(self.params)
-#            print 'Saving tuning prop to:', self.params['tuning_prop_exc_fn']
-#            np.savetxt(self.params['tuning_prop_exc_fn'], self.tuning_prop)
-#            print 'Saving receptive fields to:', self.params['receptive_fields_exc_fn']
-#            np.savetxt(self.params['receptive_fields_exc_fn'], self.rf_sizes)
-#        else:
-
-#    def compute_input(self, motion_params, gids, tuning_prop):
-#        """
-#        motion_params -- (x, y, u, v)
-#        gids -- zero aligned indices of cells to get the tuning_prop
-#        tuning_prop -- full np.array for receptive fields (x, y, u, v)
-#        returns list of (spike_trains, spike rate envelope)
-#        """
-
 
     def create_training_sequence_iteratively(self):
         """
@@ -196,11 +180,6 @@ class CreateInput(object):
             x0 = self.RNG.uniform(test_params['x_min_training'], test_params['x_max_training'])
             all_starting_pos[stim_cnt, 0] = x0
             all_speeds[stim_cnt] = v0
-#            for cycle in xrange(test_params['n_training_cycles']):
-#                for i_speed, speed in enumerate(speeds):
-#                    for i_ in xrange(test_params['n_stim_per_direction']):
-                    # add noise for the speed
-#                        stim_cnt += 1
         stim_params[:, 0] = all_starting_pos[:, 0]
         stim_params[:, 1] = all_starting_pos[:, 1]
         stim_params[:, 2] = all_speeds
@@ -223,7 +202,7 @@ class CreateInput(object):
         visual_stim_seed = params['visual_stim_seed']
         self.RNG = np.random.RandomState(visual_stim_seed)
         self.n_stim_per_direction = params['n_stim_per_direction']  # direction = speed in 1-D
-        n_stim_total = params['n_stim_training']  # = n_training_cycles * n_training_v * n_stim_per_direction
+        n_stim_total = params['n_stim_training']  
         
         # arrays to be filled by the stimulus creation loops below
         self.all_speeds = np.zeros(n_stim_total)
@@ -256,7 +235,8 @@ class CreateInput(object):
 #        print '\n\n'
         stim_cnt = 0
         stim_params = np.zeros((n_stim_total, 4))
-        for cycle in xrange(params['n_training_cycles']):
+        n_training_cycles = 1
+        for cycle in xrange(n_training_cycles):
             for i_speed, speed in enumerate(speeds):
                 # add noise for the speed
                 v0 = speed * self.RNG.uniform(1. - params['training_stim_noise_v'], 1. + params['training_stim_noise_v'])
@@ -441,6 +421,12 @@ if __name__ == '__main__':
                 params = training_params
                 CI.create_test_stim_1D_not_trained(training_params)
         else:
+            if params['regular_tuning_prop']:
+                tuning_prop_exc, rf_sizes = set_tuning_properties.set_tuning_properties_regular(params)
+                training_stimuli = CI.create_regular_training_stimuli(params, tuning_prop_exc)
+            else:
+                tuning_prop_exc, rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(params)
+                training_stimuli = CI.create_training_stimuli_based_on_tuning_prop(params)
             CI.create_motion_sequence_1D_training(params, random_order)
 
     import pylab

@@ -173,12 +173,23 @@ def set_tuning_properties_regular(params):
 #    x_pos = get_xpos_log_distr(params)
 #    v_rho = get_speed_tuning(params)
     x_pos = get_xpos_regular(params)
+    x_pos_diff = x_pos[1] - x_pos[0] # rf_x spacing
+#    print 'x_pos_diff:', x_pos_diff
     v_rho = get_speed_tuning_regular(params)
-    rf_size_x = get_receptive_field_sizes_x(params, x_pos)
-    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
+    v_rho_diff = v_rho[1] - v_rho[0]
+#    rf_size_x = get_receptive_field_sizes_x(params, x_pos)
+#    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
+    rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
+
+    rf_size_v = np.sqrt(-v_rho_diff**2 / (2 * np.log(params['target_overlap_v']))) * np.ones(params['n_mc_per_hc'])
+    # The target overlap of tuning curves does NOT hold for the transition from left-rightward movement -- or should it?
+    if v_rho[0] < 0.1:
+        rf_size_v[params['n_mc_per_hc'] / 2] = params['v_min_tp']
+        rf_size_v[0] = params['v_min_tp']
+
     index = 0
-    #for i_mc in xrange(params['n_mc_per_hc']):
-        #print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
+    for i_mc in xrange(params['n_mc_per_hc']):
+        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
 
     for i_hc in xrange(params['n_hc']):
         #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
@@ -189,13 +200,16 @@ def set_tuning_properties_regular(params):
 #                tuning_prop[index, 0] = (x + np.abs(x - .5) / .5 * rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])) % params['torus_width']
                 tuning_prop[index, 0] = x + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
                 tuning_prop[index, 1] = 0.5 
-                tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
+                tuning_prop[index, 2] = u + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed'])
+#                tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
                 tuning_prop[index, 3] = 0. 
-                rfs[index, 0] = rf_size_x[i_hc]
+#                rfs[index, 0] = rf_size_x[i_hc]
                 rfs[index, 2] = rf_size_v[i_mc]
+                rfs[index, 0] = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
+#                rfs[index, 2] = np.sqrt(-v_rho_diff**2 / (2 * np.log(params['target_overlap_v'])))
                 if params['increase_rf_size_with_speed']:
                     rf_size_x_increase = utils.transform_linear(np.abs(tuning_prop[index, 2]), (1., params['rf_x_increase_max']), x_range=(params['v_min_tp'], params['v_max_tp']))
-                    print 'debug rf_size_x_increase :', rf_size_x_increase 
+#                    print 'debug rf_size_x_increase :', rf_size_x_increase 
                     rfs[index, 0] *= rf_size_x_increase
                 index += 1
     return tuning_prop, rfs

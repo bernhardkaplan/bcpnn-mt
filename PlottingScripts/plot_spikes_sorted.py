@@ -40,9 +40,9 @@ def plot_spikes_sorted(params):
         plotter.n_fig_y = 1
         plotter.create_fig()  # create an empty figure
         title = 'Exc cells sorted by x-position, Stim %d $x_{stim}=%.2f\ v_{stim}=%.2f$' % (stim, mp[stim, 0], mp[stim, 2])
-        plotter.plot_raster_sorted(stim_range, fig_cnt=1, title=title, sort_idx=0)
         if input_folder_exists:
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
+        plotter.plot_raster_sorted(stim_range, fig_cnt=1, title=title, sort_idx=0)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:

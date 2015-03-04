@@ -258,20 +258,20 @@ if __name__ == '__main__':
     dt = 2.
     bcpnn_params['tau_e'] = dt
 
-    assert dt <= bcpnn_params['tau_i'], 'Not allowed due to numberical instability'
-    assert dt <= bcpnn_params['tau_j'], 'Not allowed due to numberical instability'
-    assert dt <= bcpnn_params['tau_e'], 'Not allowed due to numberical instability'
-    assert dt <= bcpnn_params['tau_p'], 'Not allowed due to numberical instability'
+    assert dt <= bcpnn_params['tau_i'], 'Not allowed due to numerical instability'
+    assert dt <= bcpnn_params['tau_j'], 'Not allowed due to numerical instability'
+    assert dt <= bcpnn_params['tau_e'], 'Not allowed due to numerical instability'
+    assert dt <= bcpnn_params['tau_p'], 'Not allowed due to numerical instability'
 
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
-    t_range_trace_computation = (0, 100000)
-#    t_range_trace_computation = (0, params['t_sim']) 
+#    t_range_trace_computation = (0, 100000)
+    t_range_trace_computation = (0, params['t_sim']) 
 
-    tp_pre = [0.25, 0.5, 0.8, .0]
-    tp_post = [0.4, 0.5, 0.8, .0]
-    n_cells_pre = 5
-    n_cells_post = 5
+    tp_pre = [0.2, 0.5, 0.8, .0]
+    tp_post = [0.6, 0.5, 0.8, .0]
+    n_cells_pre = 2
+    n_cells_post = 2
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
     gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=n_cells_pre)
     gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=n_cells_post)
@@ -424,10 +424,8 @@ if __name__ == '__main__':
     if not params['debug']:
         w_nest = TP.get_nest_weight(gid_pre, gid_post)
         print 'w_nest:', w_nest
-
     mean_traces  = [wij_mean[:, 0], bias_mean[:, 0], pi_mean[:, 0], pj_mean[:, 0], pij_mean[:, 0], ei_mean[:, 0], ej_mean[:, 0], eij_mean[:, 0], \
             zi_mean[:, 0], zj_mean[:, 0], spre_mean[:, 0], spost_mean[:, 0]]
-
     title = 'Mean weight'
     extra_txt = 'Average traces over %d cell pairs' % (n_traces)
     TP.plot_trace_with_spikes(mean_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=None, \
