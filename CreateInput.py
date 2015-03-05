@@ -126,10 +126,8 @@ class CreateInput(object):
 #        n_stim = params['n_stim']
         n_stim = params['stim_range'][1]
         vlim = (params['v_min_training'], params['v_max_training'])
-        v_test = np.linspace(vlim[1], vlim[0], params['n_stim'], endpoint=True)
-        mp_test = np.zeros((params['n_stim'], 4))
-#        print 'debug n_stim', n_stim, params['stim_range']
-#        print 'v_test', v_test
+        v_test = np.linspace(vlim[1], vlim[0], n_stim, endpoint=True)
+        mp_test = np.zeros((n_stim, 4))
         x_idx_pos = (v_test > 0.).nonzero()[0]
         x_idx_neg = (v_test <= 0.).nonzero()[0]
         x_test = np.zeros(n_stim)
@@ -139,8 +137,13 @@ class CreateInput(object):
             x_test[i_] = 1.0
         for i_ in xrange(n_stim):
             mp_test[i_, :] = x_test[i_], .5, v_test[i_], .0
+#        mp_test = mp_test[params['stim_range'][0]:params['stim_range'][1], :]
         if n_stim == 1:
             mp_test.reshape((1, 4))
+#        print 'debug n_stim', n_stim, params['stim_range'], params['n_stim']
+#        print 'v_test', v_test
+#        print 'x_test', x_test
+#        print 'mp_test:', mp_test
         return mp_test
 
 

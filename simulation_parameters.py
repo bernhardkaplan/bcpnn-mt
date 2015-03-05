@@ -20,7 +20,7 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = False
         self.params['debug'] = True
         self.params['with_inhibitory_neurons'] = True
@@ -30,7 +30,7 @@ class parameter_storage(object):
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'DEBUG_tuneRFx'
+            self.params['sim_id'] = 'DEBUG'
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
@@ -77,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['record_tuning_prop_v'] = [.95]
@@ -150,7 +150,7 @@ class parameter_storage(object):
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves meet, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves meet, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['save_input'] = True #not self.params['Cluster']
+        self.params['save_input'] = self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
