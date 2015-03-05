@@ -180,10 +180,10 @@ def set_tuning_properties_regular(params):
 #    rf_size_x = get_receptive_field_sizes_x(params, x_pos)
 #    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
     rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
-
     rf_size_v = np.sqrt(-v_rho_diff**2 / (2 * np.log(params['target_overlap_v']))) * np.ones(params['n_mc_per_hc'])
     # The target overlap of tuning curves does NOT hold for the transition from left-rightward movement -- or should it?
-    if v_rho[0] < 0.1:
+    if np.abs(v_rho[0]) < 0.1:
+        print 'Setting rf_size[0] to', params['v_min_tp']
         rf_size_v[params['n_mc_per_hc'] / 2] = params['v_min_tp']
         rf_size_v[0] = params['v_min_tp']
 
