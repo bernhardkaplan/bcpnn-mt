@@ -49,14 +49,15 @@ if __name__ == '__main__':
     if not params['debug']:
 #        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
 #        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
-#        conn_fn_ampa = 'connection_matrix_20x2_taui5.dat'
-#        conn_fn_nmda = 'connection_matrix_20x2_taui150.dat'
-#        bcpnn_gain = 1.5
-#        w_ei = 5.
-#        w_ie = -5. * w_ei
-#        w_ii = -1.
-#        ampa_nmda_ratio = 4.
-#        w_input_exc = 12.
+
+        #conn_fn_ampa = 'connection_matrix_20x4_taui5_v0.4_0.8.dat'
+        #conn_fn_nmda = 'connection_matrix_20x4_taui200_v0.4_0.8.dat'
+        #bcpnn_gain = 1.0
+        #w_ei = 2.
+        #w_ie = -5. * w_ei
+        #w_ii = -1.
+        #ampa_nmda_ratio = .1
+        #w_input_exc = 10.
           
         conn_fn_ampa = sys.argv[1]
         conn_fn_nmda = sys.argv[2]
@@ -78,8 +79,8 @@ if __name__ == '__main__':
         params['w_input_exc'] = w_input_exc
         params['w_ii_unspec'] = w_ii
         ps.w_input_exc = w_input_exc
-        folder_name = 'TestSim_%s_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
-                params['sim_id'], params['v_min_tp'], 
+        folder_name = 'TestSim_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
+                params['sim_id'], params['stim_range'][0], params['stim_range'][1], params['v_min_tp'], \
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
                 params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'

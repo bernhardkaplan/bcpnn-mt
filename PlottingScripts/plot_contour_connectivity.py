@@ -233,12 +233,12 @@ if __name__ == '__main__':
 
 #    tp_params = (0.5, 0.5, 1.0, 0.)
 
-    tp_params_fast = (0.5, 0.5, 1.0, 0.)
-    tp_params_slow = (0.5, 0.5, 0.1, 0.)
+    tp_params_fast = (0.5, 0.5, 0.8, 0.)
+    tp_params_slow = (0.5, 0.5, 0.4, 0.)
 #    tp_params = (0.5, 0.5, 1.0, 0.)
 #    tp_params = (0.5, 0.5, 1.0, 0.)
     
-#    tp_params = np.array([tp_params_fast, tp_params_slow])
+    tp_params = np.array([tp_params_fast, tp_params_slow])
 
     clim = [-6., 6.]
 #    clim = None #[-5., 5.]

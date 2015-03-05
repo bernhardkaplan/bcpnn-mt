@@ -249,6 +249,8 @@ if __name__ == '__main__':
         params = param_tool.params
 
     bcpnn_params = params['bcpnn_params']
+
+    bcpnn_params['tau_p'] = params['t_sim'] * params['ratio_tsim_taup']
 #    bcpnn_params['tau_p'] = 500.
     #bcpnn_params['p_i'] = 1e-3
     bcpnn_params['gain'] = 1.
@@ -268,7 +270,7 @@ if __name__ == '__main__':
 #    t_range_trace_computation = (0, 100000)
     t_range_trace_computation = (0, params['t_sim']) 
 
-    tp_pre = [0.2, 0.5, 0.8, .0]
+    tp_pre = [0.4, 0.5, 0.8, .0]
     tp_post = [0.6, 0.5, 0.8, .0]
     n_cells_pre = 2
     n_cells_post = 2
@@ -356,6 +358,7 @@ if __name__ == '__main__':
     spre_all = np.zeros((n+1, n_traces))
     spost_all = np.zeros((n+1, n_traces))
     for i_, (gid_pre, gid_post) in enumerate(combinations):
+        print 'Trace pair: %d / %d' % (i_ + 1, n_traces)
         bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation, dt)
         [wij, bias, pi, pj, pij, ei, ej, eij, zi, zj, s_pre, s_post] = bcpnn_traces
         wij_all[:, i_] = wij
@@ -378,63 +381,64 @@ if __name__ == '__main__':
             bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-
-    print 'Computing mean traces...'
-    wij_mean = np.zeros((n+1, 2))
-    bias_mean = np.zeros((n+1, 2))
-    pi_mean = np.zeros((n+1, 2))
-    pj_mean = np.zeros((n+1, 2))
-    pij_mean = np.zeros((n+1, 2))
-    ei_mean = np.zeros((n+1, 2))
-    ej_mean = np.zeros((n+1, 2))
-    eij_mean = np.zeros((n+1, 2))
-    zi_mean = np.zeros((n+1, 2))
-    zj_mean = np.zeros((n+1, 2))
-    spre_mean = np.zeros((n+1, 2))
-    spost_mean = np.zeros((n+1, 2))
-    for i_ in xrange(n + 1):
-        if i_ % 1000 == 0:
-            print 't:', i_ * dt
-        wij_mean[i_, 0] = wij_all[i_, :].mean()
-        wij_mean[i_, 1] = wij_all[i_, :].std()
-        bias_mean[i_, 0] = bias_all[i_, :].mean()
-        bias_mean[i_, 1] = bias_all[i_, :].std()
-        pi_mean[i_, 0] = pi_all[i_, :].mean()
-        pi_mean[i_, 1] = pi_all[i_, :].std()
-        pj_mean[i_, 0] = pj_all[i_, :].mean()
-        pj_mean[i_, 1] = pj_all[i_, :].std()
-        pij_mean[i_, 0] = pij_all[i_, :].mean()
-        pij_mean[i_, 1] = pij_all[i_, :].std()
-        ei_mean[i_, 0] = ei_all[i_, :].mean()
-        ei_mean[i_, 1] = ei_all[i_, :].std()
-        ej_mean[i_, 0] = ej_all[i_, :].mean()
-        ej_mean[i_, 1] = ej_all[i_, :].std()
-        eij_mean[i_, 0] = eij_all[i_, :].mean()
-        eij_mean[i_, 1] = eij_all[i_, :].std()
-        zi_mean[i_, 0] = zi_all[i_, :].mean()
-        zi_mean[i_, 1] = zi_all[i_, :].std()
-        zj_mean[i_, 0] = zj_all[i_, :].mean()
-        zj_mean[i_, 1] = zj_all[i_, :].std()
-        spre_mean[i_, 0] = spre_all[i_, :].mean()
-        spre_mean[i_, 1] = spre_all[i_, :].std()
-        spost_mean[i_, 0] = spost_all[i_, :].mean()
-        spost_mean[i_, 1] = spost_all[i_, :].std()
-    print 'done'
-
-    if not params['debug']:
-        w_nest = TP.get_nest_weight(gid_pre, gid_post)
-        print 'w_nest:', w_nest
-    mean_traces  = [wij_mean[:, 0], bias_mean[:, 0], pi_mean[:, 0], pj_mean[:, 0], pij_mean[:, 0], ei_mean[:, 0], ej_mean[:, 0], eij_mean[:, 0], \
-            zi_mean[:, 0], zj_mean[:, 0], spre_mean[:, 0], spost_mean[:, 0]]
-    title = 'Mean weight'
-    extra_txt = 'Average traces over %d cell pairs' % (n_traces)
-    TP.plot_trace_with_spikes(mean_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=None, \
-            color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
-            extra_txt=extra_txt, w_title=title)
-    output_fn = params['figures_folder'] + 'bcpnn_trace_mean_xpre%.2f_xpost%.2f_tauzi%03d_tauzj%03d_taue%03d_taup%05d.png' % ( tp_pre[0], tp_post[0], \
-            bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])
-    print 'Saving figure to:', output_fn
-    pylab.savefig(output_fn, dpi=200)
+    
+    plot_mean_traces = True
+    if plot_mean_traces:
+        print 'Computing mean traces...'
+        wij_mean = np.zeros((n+1, 2))
+        bias_mean = np.zeros((n+1, 2))
+        pi_mean = np.zeros((n+1, 2))
+        pj_mean = np.zeros((n+1, 2))
+        pij_mean = np.zeros((n+1, 2))
+        ei_mean = np.zeros((n+1, 2))
+        ej_mean = np.zeros((n+1, 2))
+        eij_mean = np.zeros((n+1, 2))
+        zi_mean = np.zeros((n+1, 2))
+        zj_mean = np.zeros((n+1, 2))
+        spre_mean = np.zeros((n+1, 2))
+        spost_mean = np.zeros((n+1, 2))
+        for i_ in xrange(n + 1):
+            if i_ % 1000 == 0:
+                print 't:', i_ * dt
+            wij_mean[i_, 0] = wij_all[i_, :].mean()
+            wij_mean[i_, 1] = wij_all[i_, :].std()
+            bias_mean[i_, 0] = bias_all[i_, :].mean()
+            bias_mean[i_, 1] = bias_all[i_, :].std()
+            pi_mean[i_, 0] = pi_all[i_, :].mean()
+            pi_mean[i_, 1] = pi_all[i_, :].std()
+            pj_mean[i_, 0] = pj_all[i_, :].mean()
+            pj_mean[i_, 1] = pj_all[i_, :].std()
+            pij_mean[i_, 0] = pij_all[i_, :].mean()
+            pij_mean[i_, 1] = pij_all[i_, :].std()
+            ei_mean[i_, 0] = ei_all[i_, :].mean()
+            ei_mean[i_, 1] = ei_all[i_, :].std()
+            ej_mean[i_, 0] = ej_all[i_, :].mean()
+            ej_mean[i_, 1] = ej_all[i_, :].std()
+            eij_mean[i_, 0] = eij_all[i_, :].mean()
+            eij_mean[i_, 1] = eij_all[i_, :].std()
+            zi_mean[i_, 0] = zi_all[i_, :].mean()
+            zi_mean[i_, 1] = zi_all[i_, :].std()
+            zj_mean[i_, 0] = zj_all[i_, :].mean()
+            zj_mean[i_, 1] = zj_all[i_, :].std()
+            spre_mean[i_, 0] = spre_all[i_, :].mean()
+            spre_mean[i_, 1] = spre_all[i_, :].std()
+            spost_mean[i_, 0] = spost_all[i_, :].mean()
+            spost_mean[i_, 1] = spost_all[i_, :].std()
+        print 'done'
+        if not params['debug']:
+            w_nest = TP.get_nest_weight(gid_pre, gid_post)
+            print 'w_nest:', w_nest
+        mean_traces  = [wij_mean[:, 0], bias_mean[:, 0], pi_mean[:, 0], pj_mean[:, 0], pij_mean[:, 0], ei_mean[:, 0], ej_mean[:, 0], eij_mean[:, 0], \
+                zi_mean[:, 0], zj_mean[:, 0], spre_mean[:, 0], spost_mean[:, 0]]
+        title = 'Mean weight'
+        extra_txt = 'Average traces over %d cell pairs' % (n_traces)
+        TP.plot_trace_with_spikes(mean_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=None, \
+                color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
+                extra_txt=extra_txt, w_title=title)
+        output_fn = params['figures_folder'] + 'bcpnn_trace_mean_xpre%.2f_xpost%.2f_tauzi%03d_tauzj%03d_taue%03d_taup%05d.png' % ( tp_pre[0], tp_post[0], \
+                bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])
+        print 'Saving figure to:', output_fn
+        pylab.savefig(output_fn, dpi=200)
 
     pylab.show()
 

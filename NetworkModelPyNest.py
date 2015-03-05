@@ -73,6 +73,7 @@ class NetworkModel(object):
 
         self.stim_durations = np.zeros(self.params['n_stim'])
         for i_ in xrange(self.params['stim_range'][0], self.params['stim_range'][1]):
+            # TODO: fix the size of motion_params  according to n_stim (or rather: 
             if self.params['training_run']:
                 stim_params = training_stimuli[i_, :]
                 t_exit = utils.compute_stim_time(stim_params)

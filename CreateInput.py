@@ -123,10 +123,13 @@ class CreateInput(object):
         
 
     def create_test_stim_grid(self, params):
-        n_stim = params['n_stim']
+#        n_stim = params['n_stim']
+        n_stim = params['stim_range'][1]
         vlim = (params['v_min_training'], params['v_max_training'])
         v_test = np.linspace(vlim[1], vlim[0], params['n_stim'], endpoint=True)
         mp_test = np.zeros((params['n_stim'], 4))
+#        print 'debug n_stim', n_stim, params['stim_range']
+#        print 'v_test', v_test
         x_idx_pos = (v_test > 0.).nonzero()[0]
         x_idx_neg = (v_test <= 0.).nonzero()[0]
         x_test = np.zeros(n_stim)
