@@ -22,7 +22,7 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['training_run'] = False
         self.params['Cluster'] = False
-        self.params['debug'] = False
+        self.params['debug'] = True
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
@@ -397,7 +397,7 @@ class parameter_storage(object):
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         #   TODO: fix create_test_stim_grid for (1, 2)
-        self.params['test_stim_range'] = (1, 2)
+        self.params['test_stim_range'] = (0, 2)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
