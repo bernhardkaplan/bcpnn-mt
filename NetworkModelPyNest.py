@@ -411,11 +411,7 @@ class NetworkModel(object):
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         print 'Computing input for stim_idx=%d' % stim_idx, 'mp:', x0, v0
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-        if with_blank:
-            #idx_t_stop = np.int(self.stim_durations[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
-            idx_t_stop = np.int(self.params['t_test_stim'] / dt)
-        else:
-            idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
+        idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((self.params['n_recorder_neurons'], idx_t_stop))
         # compute the trajectory
         for i_time in xrange(idx_t_stop):
@@ -472,11 +468,7 @@ class NetworkModel(object):
             my_units = np.array(self.local_idx_exc) - 1
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-        if with_blank:
-            #idx_t_stop = np.int(self.stim_durations[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
-            idx_t_stop = np.int(self.params['t_test_stim'] / dt)
-        else:
-            idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
+        idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
         # compute the trajectory
