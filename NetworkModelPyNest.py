@@ -404,11 +404,11 @@ class NetworkModel(object):
 
 
 
-    def create_input_for_recorder_neurons(self, stim_idx, with_blank=False, save_output=True):
+    def create_input_for_recorder_neurons(self, stim_idx, mp_idx, with_blank=False, save_output=True):
 
         mapped_gids = np.array(self.recorder_neuron_gid_mapping.values()) - 1
         tp = self.tuning_prop_exc[mapped_gids, :]
-        x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
+        x0, v0 = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2]
         print 'Computing input for stim_idx=%d' % stim_idx, 'mp:', x0, v0
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
@@ -449,7 +449,7 @@ class NetworkModel(object):
 #                    print 'debug', i*dt + t_offset, t_offset
 
             if len(spike_times) > 0:
-#                print 'DEBUGINPUT nspikes into cell %d (%d): %d' % (tgt_gid_nest, i_, len(spike_times)), ' tp : ', self.tuning_prop_exc[tgt_gid_nest-1, :], self.motion_params[stim_idx, :]
+#                print 'DEBUGINPUT nspikes into cell %d (%d): %d' % (tgt_gid_nest, i_, len(spike_times)), ' tp : ', self.tuning_prop_exc[tgt_gid_nest-1, :], self.motion_params[mp_idx, :]
                 nest.SetStatus([self.recorder_stimulus[i_]], {'spike_times' : np.around(np.sort(spike_times), decimals=1)})
                 if save_output and self.pc_id == 0:
                     output_fn = self.params['recorder_neuron_input_rate_fn_base'] + '%d_%d.dat' % (tgt_gid_nest, stim_idx)
@@ -462,11 +462,11 @@ class NetworkModel(object):
 
 
 
-    def create_input_for_stim(self, stim_idx, save_output=False, with_blank=False, my_units=None):
+    def create_input_for_stim(self, stim_idx, mp_idx, save_output=False, with_blank=False, my_units=None):
 
         if my_units == None:
             my_units = np.array(self.local_idx_exc) - 1
-        x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
+        x0, v0 = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
@@ -1402,10 +1402,10 @@ class NetworkModel(object):
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             if self.pc_id == 0:
                 print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent) mp:' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.), self.motion_params[stim_idx, :]
-            self.create_input_for_stim(i_stim, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
-#            self.create_input_for_stim(stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
-            self.create_input_for_recorder_neurons(i_stim, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
-#            self.create_input_for_recorder_neurons(stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+            #self.create_input_for_stim(i_stim, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
+            self.create_input_for_stim(i_stim, stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
+            #self.create_input_for_recorder_neurons(i_stim, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+            self.create_input_for_recorder_neurons(i_stim, stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]

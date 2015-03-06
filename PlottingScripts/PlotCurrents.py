@@ -114,7 +114,7 @@ def run_plot_currents(params):
             (avg_before_blank, std_before_blank, avg_during_blank, std_during_blank) = get_averages(params, trace_data)
             label = '$\\overline{I}_{stim}=%.1e \ \\overline{I}_{blank}=%.1e$' % (avg_before_blank, avg_during_blank)
             x_pos_cell = tp[gid - 1, 0]
-            print 'gid: %d x_pos: %.2f  avg(%s) before blank = %.2e  during blank = %.2e' % (gid, x_pos_cell, measurable, avg_before_blank, avg_during_blank)
+#            print 'gid: %d x_pos: %.2f  avg(%s) before blank = %.2e  during blank = %.2e' % (gid, x_pos_cell, measurable, avg_before_blank, avg_during_blank)
             ax.plot(t_axis, d[measurable][idx, 1], c=colorlist[i_], label=label)
             ylim = ax.get_ylim()
             net_currents[:, i_] += trace_data
