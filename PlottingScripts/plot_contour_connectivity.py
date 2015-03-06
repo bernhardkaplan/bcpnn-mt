@@ -120,7 +120,7 @@ class ConnectivityPlotter(object):
         pylab.savefig(output_fn, dpi=200)
 
 
-    def plot_outgoing_connections_exc(self, tp_params=None, clim=None):
+    def plot_outgoing_connections_exc(self, tp_params, clim=None):
         """
         tp_params -- select cells near these parameters in the tuning property space
         """
@@ -131,16 +131,18 @@ class ConnectivityPlotter(object):
         conn_type = 'ee'
         self.load_conn_list(conn_type)
         d = self.conn_lists[conn_type]
-        print 'd:', d
+#        print 'd:', d
         tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
         gids, dist = utils.get_gids_near_stim_nest(tp_params, tp, n=1)
         src_gid = gids[0]
         
+        print 'Given tp:', tp_params
+        print 'Plotting outgoing connections for gid: %d tp: ' % src_gid, tp[src_gid-1, :]
         # get the targets for this cell
 
         tgts_with_weights = utils.get_targets(d, src_gid)
         target_gids = np.array(tgts_with_weights[:, 1], dtype=int) - 1
-        print 'Source cell %d (+ 1) projects to:' % (src_gid), target_gids 
+#        print 'Source cell %d (+ 1) projects to:' % (src_gid), target_gids 
         weights = tgts_with_weights[:, 2]
 
         fig = pylab.figure()
@@ -150,7 +152,7 @@ class ConnectivityPlotter(object):
         vx_tgts = tp[target_gids, 2]
         abs_max = max(abs(weights.min()), weights.max())
 #        markersizes = utils.transform_linear(weights, (0., abs_max))
-        print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
+#        print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
         if weights.min() == weights.max():
             markersizes = np.ones(weights.size)
             print 'WARNING all weights are equal!'
@@ -205,7 +207,7 @@ class ConnectivityPlotter(object):
             print '%d\t%.2f' % (target_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
 
-        ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
+        ax.plot(tp[src_gid-1, 0], tp[src_gid-1, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
         output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
         print 'Saving fig to:', output_fn
         pylab.savefig(output_fn, dpi=200)

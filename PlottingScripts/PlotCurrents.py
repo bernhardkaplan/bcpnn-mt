@@ -68,8 +68,9 @@ def run_plot_currents(params):
 
     # get the blank position 
     mp = np.loadtxt(params['test_sequence_fn'])
-    if params['n_stim'] == 1:
-        mp = mp.reshape((1, 4))
+    mp = mp[params['stim_range'][0]:params['stim_range'][1], :]
+#    if params['n_stim'] == 1:
+#        mp = mp.reshape((1, 4))
     stim_idx = 0
     x_start_blank = params['t_start_blank'] * mp[stim_idx, 2] / params['t_stimulus'] + mp[stim_idx, 0]
     print 'x_start_blank:', x_start_blank

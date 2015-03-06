@@ -20,7 +20,7 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
@@ -30,7 +30,7 @@ class parameter_storage(object):
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'DEBUG_tuneRFx'
+            self.params['sim_id'] = 'DEBUG2_'
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
@@ -149,7 +149,7 @@ class parameter_storage(object):
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves meet, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves meet, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['save_input'] = False #not self.params['Cluster']
+        self.params['save_input'] = self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -396,7 +396,7 @@ class parameter_storage(object):
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         #   TODO: fix create_test_stim_grid for (1, 2)
-        self.params['test_stim_range'] = (0, 2)
+        self.params['test_stim_range'] = (1, 2)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -446,7 +446,7 @@ class parameter_storage(object):
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
             self.params['t_blank'] = 400.
-        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:
             self.params['t_sim'] = self.params['n_stim_training'] * (self.params['t_training_max'] + self.params['t_stim_pause']) # will be overwritten

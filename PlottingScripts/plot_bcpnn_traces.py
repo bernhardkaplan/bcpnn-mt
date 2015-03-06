@@ -272,8 +272,8 @@ if __name__ == '__main__':
 
     tp_pre = [0.4, 0.5, 0.8, .0]
     tp_post = [0.6, 0.5, 0.8, .0]
-    n_cells_pre = 2
-    n_cells_post = 2
+    n_cells_pre = 3
+    n_cells_post = 3
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
     gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=n_cells_pre)
     gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=n_cells_post)
@@ -338,6 +338,7 @@ if __name__ == '__main__':
 #    bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data_pre, spike_data_post, t_range_trace_computation)
 
 
+    plot_mean_traces = False
     fig = None
     traces = {}
     combinations = itertools.product(gids_pre, gids_post)
@@ -345,35 +346,38 @@ if __name__ == '__main__':
     n = int((t_range_trace_computation[1] - t_range_trace_computation[0]) / dt)
     n_traces = len(gids_pre) * len(gids_post)
     print 'debug n:', n
-    wij_all = np.zeros((n+1, n_traces))
-    bias_all = np.zeros((n+1, n_traces))
-    pi_all = np.zeros((n+1, n_traces))
-    pj_all = np.zeros((n+1, n_traces))
-    pij_all = np.zeros((n+1, n_traces))
-    ei_all = np.zeros((n+1, n_traces))
-    ej_all = np.zeros((n+1, n_traces))
-    eij_all = np.zeros((n+1, n_traces))
-    zi_all = np.zeros((n+1, n_traces))
-    zj_all = np.zeros((n+1, n_traces))
-    spre_all = np.zeros((n+1, n_traces))
-    spost_all = np.zeros((n+1, n_traces))
+    if plot_mean_traces:
+        wij_all = np.zeros((n+1, n_traces))
+        bias_all = np.zeros((n+1, n_traces))
+        pi_all = np.zeros((n+1, n_traces))
+        pj_all = np.zeros((n+1, n_traces))
+        pij_all = np.zeros((n+1, n_traces))
+        ei_all = np.zeros((n+1, n_traces))
+        ej_all = np.zeros((n+1, n_traces))
+        eij_all = np.zeros((n+1, n_traces))
+        zi_all = np.zeros((n+1, n_traces))
+        zj_all = np.zeros((n+1, n_traces))
+        spre_all = np.zeros((n+1, n_traces))
+        spost_all = np.zeros((n+1, n_traces))
     for i_, (gid_pre, gid_post) in enumerate(combinations):
         print 'Trace pair: %d / %d' % (i_ + 1, n_traces)
         bcpnn_traces = TP.compute_traces(gid_pre, gid_post, spike_data, spike_data, t_range_trace_computation, dt)
-        [wij, bias, pi, pj, pij, ei, ej, eij, zi, zj, s_pre, s_post] = bcpnn_traces
-        wij_all[:, i_] = wij
-        bias_all[:, i_] = bias
-        pi_all[:, i_] = pi
-        pj_all[:, i_] = pj
-        pij_all[:, i_] = pij
-        eij_all[:, i_] = eij
-        ei_all[:, i_] = ei
-        ej_all[:, i_] = ej
-        zi_all[:, i_] = zi
-        zj_all[:, i_] = zj
-        spre_all[:, i_] = s_pre
-        spost_all[:, i_] = s_post
-        traces[(gid_pre, gid_post)] = bcpnn_traces
+
+        if plot_mean_traces:
+            [wij, bias, pi, pj, pij, ei, ej, eij, zi, zj, s_pre, s_post] = bcpnn_traces
+            wij_all[:, i_] = wij
+            bias_all[:, i_] = bias
+            pi_all[:, i_] = pi
+            pj_all[:, i_] = pj
+            pij_all[:, i_] = pij
+            eij_all[:, i_] = eij
+            ei_all[:, i_] = ei
+            ej_all[:, i_] = ej
+            zi_all[:, i_] = zi
+            zj_all[:, i_] = zj
+            spre_all[:, i_] = s_pre
+            spost_all[:, i_] = s_post
+            traces[(gid_pre, gid_post)] = bcpnn_traces
         fig = TP.plot_trace_with_spikes(bcpnn_traces, bcpnn_params, dt, t_offset=0., output_fn=None, fig=fig, \
                 color_pre='b', color_post='g', color_joint='r', style_joint='-', K_vec=None, \
                 extra_txt=None, w_title=None)
@@ -381,8 +385,8 @@ if __name__ == '__main__':
             bcpnn_params['tau_i'], bcpnn_params['tau_j'], bcpnn_params['tau_e'], bcpnn_params['tau_p'])
     print 'Saving figure to:', output_fn
     pylab.savefig(output_fn, dpi=200)
-    
-    plot_mean_traces = True
+
+
     if plot_mean_traces:
         print 'Computing mean traces...'
         wij_mean = np.zeros((n+1, 2))

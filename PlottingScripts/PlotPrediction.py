@@ -43,6 +43,7 @@ class PlotPrediction(object):
 #        self.time_binsize = 50# [ms] 
 
         self.trace_length = 4 * self.time_binsize # [ms] window length for moving average 
+
         self.n_bins = int((self.params['t_sim'] / self.time_binsize) )
         self.time_bins = [self.time_binsize * i for i in xrange(self.n_bins)]
         self.t_axis = np.arange(0, self.n_bins * self.time_binsize, self.time_binsize)
@@ -133,14 +134,15 @@ class PlotPrediction(object):
             n_bins = self.stim_duration / self.time_binsize
             x_ = self.all_motion_params[0, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[0, 2]
             t_axis = np.arange(n_bins) * self.time_binsize
-            self.trajectories_x[0] = (x_, t_axis)
+            self.trajectories_x[self.params['stim_range'][0]] = (x_, t_axis)
             self.bins_per_stim[0] = self.stim_duration / self.time_binsize
         else:
-            for stim_idx in xrange(self.params['n_stim']):
+            for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
                 n_bins = self.stim_duration[stim_idx] / self.time_binsize
                 self.bins_per_stim[stim_idx] = n_bins
                 t_axis = np.arange(self.stim_duration[:stim_idx].sum(), self.stim_duration[:stim_idx+1].sum(), self.time_binsize)
                 x_ = self.all_motion_params[stim_idx, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[stim_idx, 2]
+#                print 'DEBUG reading stim_duration[%d]: %d -- setting bins_per_stim=%d x-trj shape:' % (stim_idx, self.stim_duration[stim_idx], self.bins_per_stim[stim_idx]), x_.shape
                 self.trajectories_x[stim_idx] = (x_, t_axis)
 
 

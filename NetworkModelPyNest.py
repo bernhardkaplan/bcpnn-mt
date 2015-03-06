@@ -72,17 +72,12 @@ class NetworkModel(object):
             self.comm.Barrier()
 
         self.stim_durations = np.zeros(self.params['n_stim'])
-        for i_ in xrange(self.params['stim_range'][0], self.params['stim_range'][1]):
-            # TODO: fix the size of motion_params  according to n_stim (or rather: 
-            if self.params['training_run']:
-                stim_params = training_stimuli[i_, :]
-                t_exit = utils.compute_stim_time(stim_params)
-                self.stim_durations[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
-            else:
-                stim_params = self.motion_params[i_, :]
-                self.stim_durations[i_] = self.params['t_test_stim']
-                lim = .5
-                #utils.compute_time_until_stim_reaches(xlim, stim_params) + self.params['t_stim_pause']]
+        print 'DEBUG stim_durations:'
+        for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
+            stim_params = self.motion_params[i_, :]
+            t_exit = utils.compute_stim_time(stim_params) + self.params['t_stim_pause']
+            self.stim_durations[i_] = t_exit
+            print 'stim_idx %d (%d) t_exit: %d stim_duration: %d' % (i_, stim_idx, t_exit, self.stim_durations[i_])
 
         t_sim = self.stim_durations.sum()
         self.params['t_sim'] = t_sim
@@ -414,6 +409,7 @@ class NetworkModel(object):
         mapped_gids = np.array(self.recorder_neuron_gid_mapping.values()) - 1
         tp = self.tuning_prop_exc[mapped_gids, :]
         x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
+        print 'Computing input for stim_idx=%d' % stim_idx, 'mp:', x0, v0
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         if with_blank:
             #idx_t_stop = np.int(self.stim_durations[stim_idx] + self.params['t_start'] + self.params['t_before_blank'] / dt)
@@ -428,9 +424,12 @@ class NetworkModel(object):
             L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
                     self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, v0, 0, 0))
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
+#        print 't_offset:', t_offset
+#        print 'self.stim_durations', self.stim_durations
+#        print 'self.stim_durations[:%d]' % stim_idx, self.stim_durations[:stim_idx]
 
         if with_blank:
-            start_blank = 1. / dt * self.params['t_start_blank']
+            start_blank = 1. / dt * (self.params['t_start_blank'])
             stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
             blank_idx = np.arange(start_blank, stop_blank)
             before_stim_idx = np.arange(self.params['t_start'] * 1. / dt)
@@ -451,7 +450,7 @@ class NetworkModel(object):
                 r = nprnd.rand()
                 if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
                     spike_times.append(i * dt + t_offset)
-#                    print i*dt + t_offset, t_offset
+#                    print 'debug', i*dt + t_offset, t_offset
 
             if len(spike_times) > 0:
 #                print 'DEBUGINPUT nspikes into cell %d (%d): %d' % (tgt_gid_nest, i_, len(spike_times)), ' tp : ', self.tuning_prop_exc[tgt_gid_nest-1, :], self.motion_params[stim_idx, :]
@@ -487,6 +486,9 @@ class NetworkModel(object):
             L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
                     self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
+        print 't_offset:', t_offset
+        print 'self.stim_durations', self.stim_durations
+        print 'self.stim_durations[:%d]' % stim_idx, self.stim_durations[:stim_idx]
 
         if with_blank:
             start_blank = 1. / dt * self.params['t_start_blank']
@@ -510,7 +512,7 @@ class NetworkModel(object):
                 r = nprnd.rand()
                 if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
                     spike_times.append(i * dt + t_offset)
-#                    print i*dt + t_offset, t_offset
+#                    print 'debug', i*dt + t_offset, t_offset
 
             self.spike_times_container[i_] = np.array(spike_times)
             if len(spike_times) > 0:
@@ -1408,8 +1410,10 @@ class NetworkModel(object):
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             if self.pc_id == 0:
                 print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent) mp:' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.), self.motion_params[stim_idx, :]
-            self.create_input_for_stim(stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
-            self.create_input_for_recorder_neurons(stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+            self.create_input_for_stim(i_stim, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
+#            self.create_input_for_stim(stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
+            self.create_input_for_recorder_neurons(i_stim, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+#            self.create_input_for_recorder_neurons(stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]
@@ -1424,7 +1428,8 @@ class NetworkModel(object):
                 self.get_weights_after_learning_cycle(iteration=stim_idx)
 
         if not self.params['training_run']:
-            np.savetxt(self.params['test_sequence_fn'], np.array(mp))
+#            np.savetxt(self.params['test_sequence_fn'], np.array(mp))
+            np.savetxt(self.params['test_sequence_fn'], self.motion_params)
         t_stop = time.time()
         t_diff = t_stop - t_start
         print "Simulation finished on proc %d after: %d [sec]" % (self.pc_id, t_diff)
