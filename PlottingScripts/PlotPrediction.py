@@ -135,16 +135,14 @@ class PlotPrediction(object):
             x_ = self.all_motion_params[0, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[0, 2]
             t_axis = np.arange(n_bins) * self.time_binsize
             self.trajectories_x[self.params['stim_range'][0]] = (x_, t_axis)
-#            self.trajectories_x[0] = (x_, t_axis)
             self.bins_per_stim[0] = self.stim_duration / self.time_binsize
         else:
-#            for stim_idx in xrange(self.params['n_stim']):
             for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
                 n_bins = self.stim_duration[stim_idx] / self.time_binsize
                 self.bins_per_stim[stim_idx] = n_bins
                 t_axis = np.arange(self.stim_duration[:stim_idx].sum(), self.stim_duration[:stim_idx+1].sum(), self.time_binsize)
                 x_ = self.all_motion_params[stim_idx, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[stim_idx, 2]
-                print 'DEBUG reading stim_duration[%d]: %d -- setting bins_per_stim=%d x-trj shape:' % (stim_idx, self.stim_duration[stim_idx], self.bins_per_stim[stim_idx]), x_.shape
+#                print 'DEBUG reading stim_duration[%d]: %d -- setting bins_per_stim=%d x-trj shape:' % (stim_idx, self.stim_duration[stim_idx], self.bins_per_stim[stim_idx]), x_.shape
                 self.trajectories_x[stim_idx] = (x_, t_axis)
 
 
@@ -908,7 +906,6 @@ class PlotPrediction(object):
 
     def plot_x_estimates(self, fig_cnt=1, show_blank=None, time_range=None, stim_idx=0):
 
-        print 'debug stim_idx', stim_idx
         if show_blank == None:
             show_blank = self.show_blank
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
@@ -917,10 +914,6 @@ class PlotPrediction(object):
             bin_idx = (0, self.bins_per_stim[0])
         else:
             bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
-        print 'debug t_axis.shape:', t_axis.shape
-        print 'debug x_avg.shape:', self.x_avg.shape
-        print 'debug x_avg[bins..].shape:', self.x_avg[bin_idx[0]:bin_idx[1]].shape
-        print 'debug bins:', bin_idx[0], bin_idx[1]
         ax.plot(t_axis, self.x_avg[bin_idx[0]:bin_idx[1]], ls='-', lw=2, label='linear')
         x_stim = self.trajectories_x[stim_idx][0]
         ax.plot(t_axis, x_stim, ls='-', c='k', lw=2, label='$x_{stim}$')
