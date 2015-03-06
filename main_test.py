@@ -125,6 +125,8 @@ if __name__ == '__main__':
     if comm != None:
         comm.barrier()
 
+    ps.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called after the simulation, as t_sim is computed and updated
+
     NM.collect_spikes()
     if record:
         NM.collect_vmem_data()

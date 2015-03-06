@@ -72,19 +72,13 @@ class NetworkModel(object):
             self.comm.Barrier()
 
         self.stim_durations = np.zeros(self.params['n_stim'])
+        print 'DEBUG stim_durations:'
         for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
-            # TODO: fix the size of motion_params  according to n_stim (or rather: 
-            if self.params['training_run']:
-                stim_params = training_stimuli[i_, :]
-                t_exit = utils.compute_stim_time(stim_params)
-                self.stim_durations[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
-            else:
-                stim_params = self.motion_params[i_, :]
-                self.stim_durations[i_] = self.params['t_test_stim'] + self.params['t_stim_pause']
-                lim = .5
-                #utils.compute_time_until_stim_reaches(xlim, stim_params) + self.params['t_stim_pause']]
+            stim_params = self.motion_params[i_, :]
+            t_exit = utils.compute_stim_time(stim_params) + self.params['t_stim_pause']
+            self.stim_durations[i_] = t_exit
+            print 'stim_idx %d (%d) t_exit: %d stim_duration: %d' % (i_, stim_idx, t_exit, self.stim_durations[i_])
 
-        print 'DEBUG stim_durations:', self.stim_durations
         t_sim = self.stim_durations.sum()
         self.params['t_sim'] = t_sim
         self.update_bcpnn_params()

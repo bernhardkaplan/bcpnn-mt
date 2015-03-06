@@ -22,7 +22,7 @@ class parameter_storage(object):
     def set_default_params(self):
         self.params['training_run'] = False
         self.params['Cluster'] = False
-        self.params['debug'] = True
+        self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
@@ -30,7 +30,7 @@ class parameter_storage(object):
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
-            self.params['sim_id'] = 'DEBUG'
+            self.params['sim_id'] = 'DEBUG2_'
         elif not self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'Cluster'
         elif not self.params['debug'] and not self.params['Cluster']:
@@ -397,7 +397,7 @@ class parameter_storage(object):
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         #   TODO: fix create_test_stim_grid for (1, 2)
-        self.params['test_stim_range'] = (0, 2)
+        self.params['test_stim_range'] = (1, 2)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -447,7 +447,7 @@ class parameter_storage(object):
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
             self.params['t_blank'] = 400.
-        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = t_stimulus + t_blank
+        self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:
             self.params['t_sim'] = self.params['n_stim_training'] * (self.params['t_training_max'] + self.params['t_stim_pause']) # will be overwritten
