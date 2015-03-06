@@ -76,7 +76,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['record_tuning_prop_v'] = [.95]
@@ -88,8 +88,8 @@ class parameter_storage(object):
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
-        self.params['v_max_tp'] = 0.80  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.40  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_max_tp'] = 0.60  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.20  # [a.u.] minimal velocity in visual space for tuning property distribution
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
 
@@ -376,12 +376,12 @@ class parameter_storage(object):
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-#        self.params['n_training_v'] = 50 * self.params['n_v']
-        self.params['n_training_v'] = 4
+        self.params['n_training_v'] = 50 * self.params['n_v']
+        #self.params['n_training_v'] = 4
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
 #        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
-        self.params['n_training_x'] = 50 * self.params['n_training_v'] # number of different starting positions per trained  speed
+        self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 

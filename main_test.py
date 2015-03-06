@@ -65,8 +65,8 @@ if __name__ == '__main__':
         w_ie = float(sys.argv[4])
         w_ei = float(sys.argv[5])
         ampa_nmda_ratio = float(sys.argv[6])
-        w_input_exc = float(sys.argv[7])#15.
-        w_ii = float(sys.argv[8])
+        w_ii = float(sys.argv[7])
+        #w_input_exc = float(sys.argv[7])#15.
 
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
@@ -76,9 +76,9 @@ if __name__ == '__main__':
         params['bcpnn_gain'] = bcpnn_gain
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
-        params['w_input_exc'] = w_input_exc
         params['w_ii_unspec'] = w_ii
-        ps.w_input_exc = w_input_exc
+        #params['w_input_exc'] = w_input_exc
+        #ps.w_input_exc = w_input_exc
         folder_name = 'TestSim_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
                 params['sim_id'], params['stim_range'][0], params['stim_range'][1], params['v_min_tp'], \
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
@@ -133,6 +133,7 @@ if __name__ == '__main__':
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
+    #if pc_id == 0:
     if pc_id == 0 and not params['Cluster']:
         print "Calling python PlottingScripts/PlotPrediction.py"
         stim_range = params['stim_range']

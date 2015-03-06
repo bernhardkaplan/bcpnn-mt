@@ -43,12 +43,12 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         params['taui_bcpnn'] = float(sys.argv[1])
         params['bcpnn_params']['tau_i'] = params['taui_bcpnn']
-        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_vmintp%.2f/' % ( \
+        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_vmin%.1f_vmax%.1f/' % ( \
                 params['sim_id'], params['n_training_cycles'], params['n_training_v'], params['n_training_x'], \
                 params['stim_range'][0], params['stim_range'][1], \
                 params['bcpnn_params']['tau_i'], \
                 params['n_hc'], params['n_mc_per_hc'], params['blur_X'], params['blur_V'], \
-                params['bcpnn_init_val'], params['v_min_tp'])
+                params['bcpnn_init_val'], params['v_min_tp'], params['v_max_tp'])
         GP.set_filenames(folder_name=folder_name)
 
 #    trained_stimuli = []

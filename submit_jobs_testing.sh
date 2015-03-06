@@ -1,110 +1,27 @@
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 2.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 2.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 2.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 2.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 2.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 2.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 2.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 2.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 2.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 2.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 2.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 2.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 2.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 2.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 2.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 2.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 2.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 2.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 3.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 3.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 3.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 3.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 3.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 3.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 3.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 3.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 3.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 3.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 3.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 3.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 3.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 3.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 3.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 3.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 3.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 3.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 4.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 4.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -6.0 2.0 4.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 4.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 4.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -10.0 2.0 4.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 4.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 4.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -15.0 5.0 4.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 4.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 4.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -25.0 5.0 4.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 4.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 4.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -30.0 10.0 4.00 -5.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 4.00 -1.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 4.00 -2.00
-sleep 0.1
-sbatch jobfile_testing_milner_with_params.sh 1.0 -50.0 10.0 4.00 -5.001
+sbatch jobfile_testing_milner_with_params.sh 0.5 -5.0 1.0 0.10 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.5 -10.0 2.0 0.10 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.5 -25.0 5.0 0.10 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.5 -5.0 1.0 1.00 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.5 -10.0 2.0 1.00 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.5 -25.0 5.0 1.00 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.8 -5.0 1.0 0.10 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.8 -10.0 2.0 0.10 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.8 -25.0 5.0 0.10 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.8 -5.0 1.0 1.00 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.8 -10.0 2.0 1.00 -1.00
+sleep 0.2
+sbatch jobfile_testing_milner_with_params.sh 0.8 -25.0 5.0 1.00 -1.00
+sleep 0.2
 
 #n=1
 #for w_ie in -0.1 -0.2 -0.5 -1.0 
