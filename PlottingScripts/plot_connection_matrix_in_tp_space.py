@@ -40,10 +40,76 @@ pylab.rcParams.update(plot_params)
 
 
 
+def plot_connections_incoming(params, ax=None):
+    """
+    Target perspective, trying to estimate the different amounts of 
+    excitation arriving at a target cell.
+    Maybe a speed (v_i/j) specific gain for bcpnn-weights can be derived 
+    in order to find good regimes for motion extrapolation and: finding a 
+    ratio for ampa/nmda weights that is in agreement with experiments
+    Ref. Watt, van Rossum et al 2000 "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses"
+    """
+
+    v_tolerance = .1
+    v_range = (-1.0, 1.)
+    tau_i = params['bcpnn_params']['tau_i']
+    conn_fn = params['conn_matrix_mc_fn']
+    if not os.path.exists(conn_fn):
+        print 'ERROR! Could not find:', conn_fn
+        conn_fn = raw_input('\n Please enter connection matrix (mc-mc) filename!\n')
+    print 'Loading:', conn_fn, 
+    W = np.loadtxt(conn_fn)
+    print 'done'
+
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
+    # get the average tp for a mc
+    avg_tp = utils.get_avg_tp(params, tp)
+
+    clim = (v_range[0], v_range[1])
+    norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m.set_array(avg_tp[:, 2])
+    colorlist= m.to_rgba(avg_tp[:, 2])
+
+    if ax == None:
+        fig = pylab.figure(figsize=(12, 12))
+        ax = fig.add_subplot(111)#, aspect='equal', autoscale_on=False)
+
+    for mc_tgt in xrange(params['n_mc']):
+        v_tgt = avg_tp[mc_tgt, 2]
+        print 'v_tgt:', v_tgt
+        x_tgt = avg_tp[mc_tgt, 0]
+        v_src = avg_tp[:, 2]
+        x_src = avg_tp[:, 0]
+        w_in = W[:, mc_tgt]
+        valid_mc_idx = np.where(np.abs((v_src - v_tgt) / v_tgt) < v_tolerance)[0]
+        if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
+            ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
+        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_tgt), linewidths=0)
+#            ax.plot(x_tgt - x_src[valid_mc_idx], w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
+
+    xlim = ax.get_xlim()
+    ax.plot((xlim[0], xlim[1]), (0., 0.), '--', c='k', lw=2)
+    ylim = ax.get_ylim()
+    ax.plot((0., 0.), (ylim[0], ylim[1]), '--', c='k', lw=2)
+    title = 'Incoming weights depending on target position'
+    title += '\n $\\tau_{i}=%d\ v_{i}=%.1f$' % (params['bcpnn_params']['tau_i'], params['v_min_tp'])
+    ax.set_title(title)
+    ax.set_ylabel('$w_{in}$')
+    ax.set_xlabel('Distance to target')
+    cb = pylab.colorbar(m)
+    cb.set_label('$v_{tgt}$')
+#    pylab.legend()
+    output_fn = 'ingoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
+    print 'Saving fig to:', output_fn
+    pylab.savefig(output_fn, dpi=200)
+    return ax
+
+
 
 def plot_connections_out(params, ax=None):
     v_tolerance = .1
-    v_range = (-0.0, 1.)
+    v_range = (-1.0, 1.)
 #    v_range = (0.5, 2.)
     tau_i = params['bcpnn_params']['tau_i']
 #    conn_fn = sys.argv[2]
@@ -75,15 +141,16 @@ def plot_connections_out(params, ax=None):
     for mc_src in xrange(params['n_mc']):
         v_src = avg_tp[mc_src, 2]
         print 'v_src:', v_src
+        w_out = W[mc_src, :]
+        x_src = avg_tp[mc_src, 0]
+        v_tgt = avg_tp[:, 2]
+        x_tgt = avg_tp[:, 0]
+        valid_mc_idx = np.where(np.abs((v_tgt - v_src) / v_src) < v_tolerance)[0]
         if (v_src > v_range[0]) and (v_src < v_range[1]):
-            x_src = avg_tp[mc_src, 0]
-            v_tgt = avg_tp[:, 2]
-            x_tgt = avg_tp[:, 0]
-            w_out = W[mc_src, :]
-            valid_mc_idx = np.where(np.abs((v_tgt - v_src) / v_src) < v_tolerance)[0]
-#            print 'debug valid_mc_idx', valid_mc_idx
-
             ax.plot(x_tgt[valid_mc_idx] - x_src, w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
+
+        ax.scatter(x_tgt - x_src, w_out, c=m.to_rgba(v_tgt), linewidths=0)
+#        ax.scatter(d[:, 0], w_out, 1], c=colors, linewidths=0)
 #            ax.plot(x_src - x_tgt[valid_mc_idx], w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 
 
@@ -121,20 +188,31 @@ def plot_connections_out(params, ax=None):
 if __name__ == '__main__':
 
     ax = None
+    in_out = 'incoming'
+#    in_out = 'outgoing'
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         GP = simulation_parameters.parameter_storage()
         params = GP.params
-        plot_connections_out(params)
+        if in_out == 'incoming':
+            plot_connections_incoming(params)
+        else:
+            plot_connections_out(params)
         show = True
     elif len(sys.argv) == 2:
         params = utils.load_params(sys.argv[1])
-        plot_connections_out(params)
+        if in_out == 'incoming':
+            plot_connections_incoming(params)
+        else:
+            plot_connections_out(params)
         show = True
     else:
         for folder in sys.argv[1:]:
             params = utils.load_params(folder)
-            ax = plot_connections_out(params, ax)
+            if in_out == 'incoming':
+                plot_connections_incoming(params)
+            else:
+                ax = plot_connections_out(params, ax)
             show = False
     if show:
         pylab.show()
