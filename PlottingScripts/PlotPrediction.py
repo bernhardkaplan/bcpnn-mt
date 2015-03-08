@@ -132,7 +132,7 @@ class PlotPrediction(object):
         self.bins_per_stim = np.zeros(self.params['n_stim'])
         if self.params['n_stim'] == 1:
             n_bins = self.stim_duration / self.time_binsize
-            x_ = self.all_motion_params[0, 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[0, 2]
+            x_ = self.all_motion_params[self.params['stim_range'][0], 0] + np.arange(n_bins) * self.time_binsize / self.params['t_stimulus'] * self.all_motion_params[self.params['stim_range'][0], 2]
             t_axis = np.arange(n_bins) * self.time_binsize
             self.trajectories_x[self.params['stim_range'][0]] = (x_, t_axis)
             self.bins_per_stim[0] = self.stim_duration / self.time_binsize
@@ -914,6 +914,7 @@ class PlotPrediction(object):
             bin_idx = (0, self.bins_per_stim[0])
         else:
             bin_idx = (self.bins_per_stim[:stim_idx].sum(), self.bins_per_stim[:stim_idx+1].sum())
+        print 'DEBUG: '
         ax.plot(t_axis, self.x_avg[bin_idx[0]:bin_idx[1]], ls='-', lw=2, label='linear')
         x_stim = self.trajectories_x[stim_idx][0]
         ax.plot(t_axis, x_stim, ls='-', c='k', lw=2, label='$x_{stim}$')

@@ -20,7 +20,7 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
@@ -80,7 +80,7 @@ class parameter_storage(object):
         self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['record_tuning_prop_v'] = [.95]
+        self.params['record_tuning_prop_v'] = [.8, .4]
         self.params['n_recorder_neurons_per_speed'] = 10 
         self.params['n_recorder_neurons'] = len(self.params['record_tuning_prop_v']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 
@@ -398,7 +398,7 @@ class parameter_storage(object):
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         #   TODO: fix create_test_stim_grid for (1, 2)
-        self.params['test_stim_range'] = (1, 2)
+        self.params['test_stim_range'] = (0, 2)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']

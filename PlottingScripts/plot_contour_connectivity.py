@@ -57,16 +57,18 @@ class ConnectivityPlotter(object):
         conn_type = 'ee'
         self.load_conn_list(conn_type)
         d = self.conn_lists[conn_type]
-        print 'd:', d
+#        print 'd:', d
         tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
         gids, dist = utils.get_gids_near_stim_nest(tp_params, tp, n=1)
         tgt_gid = gids[0]
+        print 'Target gid:', tgt_gid
         # get the targets for this cell
         src_with_weights = utils.get_sources(d, tgt_gid)
-        source_gids = np.array(src_with_weights[:, 1], dtype=int) - 1
+        print 'debug', src_with_weights
+        source_gids = np.array(src_with_weights[:, 0], dtype=int) - 1
         x_srcs = tp[source_gids, 0]
         vx_srcs = tp[source_gids, 2]
-        print 'Target cell %d (+ 1) receives input from:' % (tgt_gid), source_gids 
+        print 'Target cell %d (- 1) receives input from:' % (tgt_gid), source_gids 
         weights = src_with_weights[:, 2]
 
         fig = pylab.figure()
@@ -114,8 +116,8 @@ class ConnectivityPlotter(object):
         for i_ in xrange(5):
             print '%d\t%.2f' % (source_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
-        ax.plot(tp[src_gid, 0], tp[src_gid, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
-        output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
+        ax.plot(tp[tgt_gid-1, 0], tp[tgt_gid-1, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
+        output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], tgt_gid)
         print 'Saving fig to:', output_fn
         pylab.savefig(output_fn, dpi=200)
 
@@ -242,8 +244,11 @@ if __name__ == '__main__':
     
     tp_params = np.array([tp_params_fast, tp_params_slow])
 
-    clim = [-6., 6.]
-#    clim = None #[-5., 5.]
+    in_out = 'incoming'
+#    in_out = 'outgoing'
+
+    clim = [-5., 5.]
+#    clim = None 
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters
@@ -251,16 +256,20 @@ if __name__ == '__main__':
         params = GP.params
         P = ConnectivityPlotter(params)
         for tp_params_ in tp_params:
-            P.plot_outgoing_connections_exc(tp_params_, clim=clim)
-#        P.plot_outgoing_connections_exc(tp_params, clim=clim)
+            if in_out == 'incoming':
+                P.plot_incoming_connections_exc(tp_params_, clim=clim)
+            else:
+                P.plot_outgoing_connections_exc(tp_params_, clim=clim)
     elif len(sys.argv) == 2:
         print 'Case 2'
         if sys.argv[1].endswith('.json') or os.path.isdir(sys.argv[1]):
             params = utils.load_params(sys.argv[1])
             P = ConnectivityPlotter(params)
             for tp_params_ in tp_params:
-                P.plot_outgoing_connections_exc(tp_params_, clim=clim)
-#            P.plot_outgoing_connections_exc(tp_params, clim=clim)
+                if in_out == 'incoming':
+                    P.plot_incoming_connections_exc(tp_params_, clim=clim)
+                else:
+                    P.plot_outgoing_connections_exc(tp_params_, clim=clim)
         else:          
             print 'Please provide the folder / simulation_parameters.json file and not the conn_list.dat file!'
             exit(1)
@@ -270,8 +279,10 @@ if __name__ == '__main__':
             params = utils.load_params(fn)
             P = ConnectivityPlotter(params)
             for tp_params_ in tp_params:
-                P.plot_outgoing_connections_exc(tp_params_, clim=clim)
-#            P.plot_outgoing_connections_exc(tp_params, clim=clim)
+                if in_out == 'incoming':
+                    P.plot_incoming_connections_exc(tp_params_, clim=clim)
+                else:
+                    P.plot_outgoing_connections_exc(tp_params_, clim=clim)
             del P 
     pylab.show()
 
