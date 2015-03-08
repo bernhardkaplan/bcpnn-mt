@@ -2,18 +2,18 @@
 # The -l above is required to get the full environment with modules
 
 # The name of the script is myjob
-#SBATCH -J 2v_taui200_50
+#SBATCH -J 2v_taui50_50
 
 # Only 1 hour wall-clock time will be given to this job
-#SBATCH -t 07:59:00
+#SBATCH -t 03:59:00
 
 # Number of cores per node to be allocated
 #SBATCH -N 6
 #SBATCH -n 120
 #SBATCH --ntasks-per-node=20
 
-#SBATCH -e error_file_v0.2-0.8_taui5.e
-#SBATCH -o output_file_v0.2-0.8_taui5.o
+#SBATCH -e error_file_v0.2-0.8_taui50.e
+#SBATCH -o output_file_v0.2-0.8_taui50.o
 #SBATCH --mail-type=END,FAIL
 
 # Run the executable named myexe 
@@ -31,10 +31,10 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cfs/milner/scratch/b/bkaplan/BCPNN-Modu
 export PYTHONPATH=/pdc/vol/nest/2.2.2/lib/python2.7/site-packages:/pdc/vol/python/2.7.6-gnu/lib/python2.7/site-packages
 
 #aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 5 > delme_training_taui5_pi1e-4_4nodes_v0.4-0.8_50 2>&1
-aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 200 > delme_training_taui200_pi1e-4_4nodes_v0.4-0.8_50 2>&1
+aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 50 > delme_training_taui50_pi1e-4_4nodes_v0.4-0.8_50 2>&1
 
 #aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 100 > delme_training_taui100_pi1e-4_4nodes_v0.2-0.8 2>&1
-#aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 150 > delme_training_taui150_pi1e-4_4nodes_v0.2-0.8 2>&1
+#aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 100 > delme_training_taui100_pi1e-4_4nodes_v0.2-0.8 2>&1
 #aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 250 > delme_training_taui250_pi1e-4_4nodes_v0.2-0.8 2>&1
 #aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 500 > delme_training_taui500_pi1e-4_4nodes_v0.2-0.8 2>&1
 #aprun -n 120 -N 20 -S 10 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/main_training_generic.py 10 > delme_training_taui10_pi1e-4_4nodes_v0.2-0.8 2>&1

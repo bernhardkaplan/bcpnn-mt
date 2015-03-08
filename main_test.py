@@ -89,8 +89,8 @@ if __name__ == '__main__':
     params['conn_fn_ampa'] = conn_fn_ampa
     params['conn_fn_nmda'] = conn_fn_nmda
     ps.create_folders()
-    ps.write_parameters_to_file()
     if pc_id == 0:
+        ps.write_parameters_to_file()
         utils.remove_files_from_folder(params['spiketimes_folder'])
         utils.remove_files_from_folder(params['connections_folder'])
         utils.remove_files_from_folder(params['volt_folder'])
@@ -120,10 +120,10 @@ if __name__ == '__main__':
 
     NM.run_sim()
 
+    if pc_id == 0:
+        ps.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called after the simulation, as t_sim is computed and updated
     if comm != None:
         comm.barrier()
-
-    ps.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called after the simulation, as t_sim is computed and updated
 
     NM.collect_spikes()
     if record:

@@ -5,7 +5,7 @@
 #SBATCH -J test_32
 
 # Only 1 hour wall-clock time will be given to this job
-#SBATCH -t 0:29:00
+#SBATCH -t 0:10:00
 
 # Number of cores to be allocated (multiple of 20)
 #SBATCH -N 1
