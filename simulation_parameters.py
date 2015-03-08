@@ -80,7 +80,7 @@ class parameter_storage(object):
         self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['record_tuning_prop_v'] = [.95]
+        self.params['record_tuning_prop_v'] = [.8, .4]
         self.params['n_recorder_neurons_per_speed'] = 10 
         self.params['n_recorder_neurons'] = len(self.params['record_tuning_prop_v']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 

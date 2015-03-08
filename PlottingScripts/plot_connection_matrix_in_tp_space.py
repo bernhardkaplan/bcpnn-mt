@@ -51,7 +51,6 @@ def plot_connections_incoming(params, ax=None):
     """
 
     v_tolerance = .1
-    v_range = (-1.0, 1.)
     tau_i = params['bcpnn_params']['tau_i']
     conn_fn = params['conn_matrix_mc_fn']
     if not os.path.exists(conn_fn):
@@ -61,10 +60,13 @@ def plot_connections_incoming(params, ax=None):
     W = np.loadtxt(conn_fn)
     print 'done'
 
+    W_in_sum = np.zeros(params['n_mc'])
+    W_in_exc = np.zeros((params['n_mc'], 3))
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     # get the average tp for a mc
     avg_tp = utils.get_avg_tp(params, tp)
 
+    v_range = (-1.0, 1.)
     clim = (v_range[0], v_range[1])
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
@@ -82,11 +84,23 @@ def plot_connections_incoming(params, ax=None):
         v_src = avg_tp[:, 2]
         x_src = avg_tp[:, 0]
         w_in = W[:, mc_tgt]
+        exc_idx = np.where(w_in > 0.)[0]
+        print 'debug w_in[exc_idx]:', w_in[exc_idx]
+        W_in_exc[mc_tgt, 0] = x_tgt
+        W_in_exc[mc_tgt, 1] = v_tgt
+        W_in_exc[mc_tgt, 2] = w_in[exc_idx].sum()
+        W_in_sum[mc_tgt] = w_in.sum()
         valid_mc_idx = np.where(np.abs((v_src - v_tgt) / v_tgt) < v_tolerance)[0]
         if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
             ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
-        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_tgt), linewidths=0)
+        ax.scatter(x_src - x_tgt, w_in, c='k', linewidths=0)
+
+#        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
 #            ax.plot(x_tgt - x_src[valid_mc_idx], w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
+
+    output_fn = params['data_folder'] + 'w_in_exc_taui%d.dat' % (params['bcpnn_params']['tau_i'])
+    print 'Saving incoming excitation to:', output_fn
+    np.savetxt(output_fn, W_in_exc)
 
     xlim = ax.get_xlim()
     ax.plot((xlim[0], xlim[1]), (0., 0.), '--', c='k', lw=2)
@@ -149,7 +163,7 @@ def plot_connections_out(params, ax=None):
         if (v_src > v_range[0]) and (v_src < v_range[1]):
             ax.plot(x_tgt[valid_mc_idx] - x_src, w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 
-        ax.scatter(x_tgt - x_src, w_out, c=m.to_rgba(v_tgt), linewidths=0)
+        ax.scatter(x_tgt - x_src, w_out, c=m.to_rgba(v_src), linewidths=0)
 #        ax.scatter(d[:, 0], w_out, 1], c=colors, linewidths=0)
 #            ax.plot(x_src - x_tgt[valid_mc_idx], w_out[valid_mc_idx], '-o', ms=3, c=colorlist[mc_src], lw=1)#, label='$x_{src}=%.2f\ v_{src}=%.2f$' % (x_src, v_src))
 

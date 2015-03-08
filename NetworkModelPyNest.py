@@ -968,6 +968,13 @@ class NetworkModel(object):
         w_nmda_max = np.max(self.W_nmda)
         w_nmda_min = np.min(self.W_nmda)
 
+        if self.params['with_stp']:
+            U_ampa = self.params['stp_params']['ampa']['U']
+            U_nmda = self.params['stp_params']['nmda']['U']
+        else:
+            U_ampa = 1.
+            U_nmda = 1.
+
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 print 'DEBUG connect_ee_testing: src_hc _mc', src_hc, src_mc
@@ -986,12 +993,12 @@ class NetworkModel(object):
                                     weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
                                     model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
                         else:
-                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / self.params['stp_params']['ampa']['U']
+                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / U_ampa
                             nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                     weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] / self.params['stp_params']['nmda']['U'])
+                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
@@ -1321,6 +1328,13 @@ class NetworkModel(object):
         Must be called after the normal connect
         """
 
+        if self.params['with_stp']:
+            U_ampa = self.params['stp_params']['ampa']['U']
+            U_nmda = self.params['stp_params']['nmda']['U']
+        else:
+            U_ampa = 1.
+            U_nmda = 1.
+
         for rec_gid in self.recorder_neurons:
             hc_idx, mc_idx_in_hc, idx_in_mc = self.get_indices_for_gid(self.recorder_neuron_gid_mapping[rec_gid])
             tgt_pop_idx = hc_idx * self.params['n_mc_per_hc'] + mc_idx_in_hc
@@ -1336,12 +1350,12 @@ class NetworkModel(object):
                                 weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
                                 model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
                     else:
-                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / self.params['stp_params']['ampa']['U']
+                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / U_ampa
                         nest.RandomConvergentConnect(src_pop, [rec_gid], n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                    w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] / self.params['stp_params']['nmda']['U'])
+                    w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
                     nest.RandomConvergentConnect(src_pop, [rec_gid], n=self.params['n_conn_ee_global_out_per_pyr'],\
                             weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                             model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
