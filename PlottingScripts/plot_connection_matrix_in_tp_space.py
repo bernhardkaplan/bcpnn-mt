@@ -79,13 +79,12 @@ def plot_connections_incoming(params, ax=None):
 
     for mc_tgt in xrange(params['n_mc']):
         v_tgt = avg_tp[mc_tgt, 2]
-        print 'v_tgt:', v_tgt
+#        print 'v_tgt:', v_tgt
         x_tgt = avg_tp[mc_tgt, 0]
         v_src = avg_tp[:, 2]
         x_src = avg_tp[:, 0]
         w_in = W[:, mc_tgt]
         exc_idx = np.where(w_in > 0.)[0]
-        print 'debug w_in[exc_idx]:', w_in[exc_idx]
         W_in_exc[mc_tgt, 0] = x_tgt
         W_in_exc[mc_tgt, 1] = v_tgt
         W_in_exc[mc_tgt, 2] = w_in[exc_idx].sum()
@@ -102,6 +101,8 @@ def plot_connections_incoming(params, ax=None):
     print 'Saving incoming excitation to:', output_fn
     np.savetxt(output_fn, W_in_exc)
 
+    ax.set_ylim((W.min(), W.max()))
+    ax.set_xlim((-1., 1.))
     xlim = ax.get_xlim()
     ax.plot((xlim[0], xlim[1]), (0., 0.), '--', c='k', lw=2)
     ylim = ax.get_ylim()
@@ -114,7 +115,8 @@ def plot_connections_incoming(params, ax=None):
     cb = pylab.colorbar(m)
     cb.set_label('$v_{tgt}$')
 #    pylab.legend()
-    output_fn = 'ingoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
+    output_fn = params['figures_folder'] + 'ingoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
+#    output_fn = 'ingoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
     print 'Saving fig to:', output_fn
     pylab.savefig(output_fn, dpi=200)
     return ax

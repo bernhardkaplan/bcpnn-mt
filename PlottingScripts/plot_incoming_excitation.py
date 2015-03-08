@@ -132,15 +132,42 @@ def plot_sum_w_in_exc(folder_names):
     d1 = w_in[tauis[0]]
     d2 = w_in[tauis[1]]
 
-    ratio_win= d1[:, 2] / d2[:, 2]
+    ratio_win= d2[:, 2] / d1[:, 2]
+#    ratio_win= d1[:, 2] / d2[:, 2]
     avg_x = .5 * (d1[:, 0] + d2[:, 0])
     avg_v = .5 * (d1[:, 1] + d2[:, 1])
 
     for j_ in xrange(d[:, 0].size):
-        ax1.plot(avg_x[j_], ratio_win[j_], 'o', ls='', ms=5, c=colors_v[j_])
-        ax2.plot(avg_v[j_], ratio_win[j_], 'o', ls='', ms=5, c=colors_x[j_])
+        ax1.plot(avg_x[j_], ratio_win[j_], 'o', ls='', ms=8, c=colors_v[j_])
+        ax2.plot(avg_v[j_], ratio_win[j_], 'o', ls='', ms=8, c=colors_x[j_])
 
-    title = 'Ratio tau_i = %d / %d ' % (tauis[0], tauis[1])
+    # average the ratio of incoming AMPA/NMDA excitation for different speeds
+    speeds = [-.8, -.4, .4, .8]
+    x0_idx_offset = 3 # start position for averaging, discard hypercolumns left / right of that idx depending on speed
+    dv = 0.05
+
+    mean_ratios = np.zeros(len(speeds))
+    for i_, v_ in enumerate(speeds):
+        valid_idx = np.where(np.abs(avg_v - v_) < dv)[0]
+        v_mean = avg_v[valid_idx].mean()
+        if v_ > 0.:
+            ratio_mean = ratio_win[valid_idx][x0_idx_offset :].mean()
+        else:
+            ratio_mean = ratio_win[valid_idx][:-x0_idx_offset].mean()
+        mean_ratios[i_] = ratio_mean
+        print 'Cells with speed: %.1f +- %.2f have an average ratio of %.1f for incoming AMPA/NMDA weights' % (v_mean, dv, ratio_mean) 
+        ax1.plot((0, 1), (ratio_mean, ratio_mean), '--', lw=3, c=m_v.to_rgba(v_mean))
+    print 'Total mean ratio:', mean_ratios.mean(), ' +- ', mean_ratios.std()
+    p, = ax1.plot((0, 1), (mean_ratios.mean(), mean_ratios.mean()), '-', lw=5, c='k')
+    ax1.plot((0, 1), (mean_ratios.mean() + mean_ratios.std(), mean_ratios.mean() + mean_ratios.std()), '--', lw=2, c='k')
+    ax1.plot((0, 1), (mean_ratios.mean() - mean_ratios.std(), mean_ratios.mean() - mean_ratios.std()), '--', lw=2, c='k')
+    label='mean ratio=%.2f +- %.2f' % (mean_ratios.mean(), mean_ratios.std())
+    ax1.legend([p], [label])
+
+    avg_ratio = ratio_win.mean()
+    std_ratio = ratio_win.mean()
+
+    title = 'Ratio $\\tau_i = %d / %d $' % (tauis[1], tauis[0])
     ax1.set_title(title)
     ax1.set_ylabel('Ratio of incoming excitation')
     ax2.set_ylabel('Ratio of incoming excitation')
@@ -151,8 +178,20 @@ def plot_sum_w_in_exc(folder_names):
 
 if __name__ == '__main__':
 
+#    folder_names = ['TrainingSim_ClusternoSTP__1x200x1_0-200_taui5_nHC20_nMC4_blurXV_0.00_0.00_pi1.0e-04_vmintp0.40', \
+#            'TrainingSim_ClusternoSTP__1x200x1_0-200_taui200_nHC20_nMC4_blurXV_0.00_0.00_pi1.0e-04_vmintp0.40']
+
     folder_names = ['TrainingSim_ClusternoSTP__1x200x1_0-200_taui5_nHC20_nMC4_blurXV_0.00_0.00_pi1.0e-04_vmintp0.40', \
-            'TrainingSim_ClusternoSTP__1x200x1_0-200_taui200_nHC20_nMC4_blurXV_0.00_0.00_pi1.0e-04_vmintp0.40']
+#            'TrainingSim_Clusterv04_tuning_1x200x1_0-200_taui20_nHC20_nMC4_vmin0.4_vmax0.8', \
+#            'TrainingSim_Clusterv04_tuning_1x200x1_0-200_taui50_nHC20_nMC4_vmin0.4_vmax0.8', \
+#            'TrainingSim_Clusterv04_tuning_1x200x1_0-200_taui100_nHC20_nMC4_vmin0.4_vmax0.8', \
+#            'TrainingSim_Clusterv04_tuning_1x200x1_0-200_taui150_nHC20_nMC4_vmin0.4_vmax0.8'
+            'TrainingSim_Clusterv04_tuning_1x200x1_0-200_taui200_nHC20_nMC4_vmin0.4_vmax0.8'
+            ]
+#            'TrainingSim_ClusternoSTP__1x200x1_0-200_taui200_nHC20_nMC4_blurXV_0.00_0.00_pi1.0e-04_vmintp0.40']
+
+
+
     plot_sum_w_in_exc(folder_names)
 
 #    markers = ['o', '*', '^']

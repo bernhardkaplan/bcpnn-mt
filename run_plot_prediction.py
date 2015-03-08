@@ -16,7 +16,8 @@ except:
     print "MPI not used"
 
 
-script_name = 'PlottingScripts/PlotPrediction.py'
+#script_name = 'PlottingScripts/PlotPrediction.py'
+script_name = 'PlottingScripts/PlotCurrents.py'
 
 list_of_jobs = []
 
@@ -40,7 +41,8 @@ if USE_MPI:
     # distribute the commands among processes
     my_idx = utils.distribute_n(len(list_of_jobs), n_proc, pc_id) # this holds the indices for the jobs to be run by this processor
     print 'pc_id %d job indices:' % pc_id, my_idx
-    for i_ in enumerate(range(my_idx[0], my_idx[1])):
+    for j_, i_ in enumerate(range(my_idx[0], my_idx[1])):
+#        print 'debug list_of_jobs:', list_of_jobs, 'i_', i_
         job_name = list_of_jobs[i_]
         print 'pc_id %d runs job nr %d / %d' % (pc_id, i_, my_idx[1] - my_idx[0]), job_name
         os.system(job_name)

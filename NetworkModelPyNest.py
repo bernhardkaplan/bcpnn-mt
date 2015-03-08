@@ -30,13 +30,6 @@ class NetworkModel(object):
             self.comm.Barrier()
 
 
-    def update_bcpnn_params(self):
-        self.params['taup_bcpnn'] = self.params['t_sim'] * self.params['ratio_tsim_taup']
-        self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
-        epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
-        self.params['bcpnn_params']['epsilon'] = epsilon
-
-
     def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
@@ -751,8 +744,6 @@ class NetworkModel(object):
 
             spike_times = input_spikes_for_recorder_neurons[i_]
 
-        f = file(self.params['recorder_neurons_gid_mapping'], 'w')
-        json.dump(self.recorder_neuron_gid_mapping, f, indent=2)
         """
 
 
@@ -1360,6 +1351,9 @@ class NetworkModel(object):
                             weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                             model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
 
+        f = file(self.params['recorder_neurons_gid_mapping'], 'w')
+        json.dump(self.recorder_neuron_gid_mapping, f, indent=2)
+
 
 
 #        my_adj_list = {}
@@ -1587,5 +1581,12 @@ class NetworkModel(object):
                 else:
                     self.comm.send(nest.GetStatus(recorder)[0]['events']['senders'],dest=0)
 
-
         print 'done'
+
+
+    def update_bcpnn_params(self):
+        self.params['taup_bcpnn'] = self.params['t_sim'] * self.params['ratio_tsim_taup']
+        self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
+        epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
+        self.params['bcpnn_params']['epsilon'] = epsilon
+

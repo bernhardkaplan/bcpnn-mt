@@ -74,8 +74,9 @@ def run_plot_currents(params):
     stim_idx = 0
     x_start_blank = params['t_start_blank'] * mp[stim_idx, 2] / params['t_stimulus'] + mp[stim_idx, 0]
     print 'x_start_blank:', x_start_blank
-    dx = 0.05
-    pos_range = (x_start_blank - 3 * dx, x_start_blank + dx)
+    dx = 0.10
+#    pos_range = (x_start_blank - 2 * dx, x_start_blank + dx)
+    pos_range = (0., 1.)
     # extract the gids that are 1) recorded (=gids) and 2) between x_start_blank and +dx
     idx_in_gids_in_range = filter_tuning_prop(tp[gids - 1, :], (pos_range[0], pos_range[1]))
     gids_in_range_nest = gids[idx_in_gids_in_range]
