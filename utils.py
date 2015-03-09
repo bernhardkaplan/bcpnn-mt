@@ -1050,6 +1050,7 @@ def get_cond_in(nspikes, conn_list, target_gid):
     return cond_in
 
 
+
 #def get_spiketrains(spiketimes_fn_or_array, n_cells=0, pynest=True):
 #    """
 #    Returns a list of spikes fired by each cell
@@ -1925,6 +1926,11 @@ def get_mc_index_for_gid(params, gid):
     return mc_idx
 
 
+def get_blank_pos(params, mp):
+    x_start_blank = mp[0] + mp[2] * params['t_start_blank'] / params['t_stimulus']
+    x_stop_blank = mp[0] + mp[2] *(params['t_start_blank'] + params['t_blank']) / params['t_stimulus']
+    return x_start_blank, x_stop_blank
+    
 
 def plot_blank(params, ax, lw=2, ls='--', color='k'):
     xlim = ax.get_xlim()

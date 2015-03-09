@@ -24,7 +24,7 @@ plot_params = {'backend': 'png',
                'lines.linewidth': 3,
               'font.size': 12,
               'path.simplify': False,
-              'figure.subplot.left':.15,
+              'figure.subplot.left':.20,
               'figure.subplot.bottom':.14,
               'figure.subplot.right':.90,
               'figure.subplot.top':.90,
@@ -59,8 +59,8 @@ class Experiment(object):
         spike_times = [50.]
 
         nest.SetStatus([input_spikes[0]], {'spike_times' : spike_times})
-        weight_bcpnn = 3.
-        ampa_nmda_ratio = .2
+        weight_bcpnn = 2.
+        ampa_nmda_ratio = 5.
         w_ampa = weight_bcpnn * params['bcpnn_gain'] / params['tau_syn']['ampa']
         nest.CopyModel('static_synapse', 'ampa_synapse', \
                 {'weight': w_ampa, 'delay': 0.1, 'receptor_type': params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
@@ -71,8 +71,8 @@ class Experiment(object):
 
         nest.Connect(input_spikes, [neurons[0]], model='ampa_synapse')
         nest.Connect(input_spikes, [neurons[1]], model='nmda_synapse')
-
-        nest.Simulate(2000.)
+        t_sim = 2000.
+        nest.Simulate(t_sim)
         gid_vec = nest.GetStatus(recorder)[0]['events']['senders']
         gids = np.unique(gid_vec)
         time = nest.GetStatus(recorder, 'events')[0]['times']
@@ -81,34 +81,47 @@ class Experiment(object):
         n_plots = len(record_from)
 #        integrals = np.zeros((n_plots, 2))
         integrals = {}
-#        observable_latex = ['V_m', 'I_{AMPA}', 'I_{NMDA}', 'I_{NMDA}^{NEG}', 'I_{AMPA}^{NEG}', 'I_{GABA}']
-        observable_latex = ['I_{AMPA}', 'I_{NMDA}', 'I_{NMDA}^{NEG}', 'I_{AMPA}^{NEG}', 'I_{GABA}']
-        for i_plot, observable in enumerate(record_from):
-            ax = fig.add_subplot(n_plots, 1, i_plot + 1)
-            d = nest.GetStatus(recorder)[0]['events'][observable]
-            ax.set_ylabel('$%s$' % (observable_latex[i_plot]))
+        integrals['V_m'] = {}
+        integrals['I_AMPA'] = {}
+        integrals['I_NMDA'] = {}
+        title = 'Effect of AMPA and NMDA currents (%.1f) \n$R(\\frac{w_{AMPA}}{w_{NMDA}})=\\frac{%.2e}{%.2e}=%.2f$' % (ampa_nmda_ratio, w_ampa, w_nmda, w_ampa/w_nmda)
+        ax1 = fig.add_subplot(2, 1, 1)
+        ax2 = fig.add_subplot(2, 1, 2)
+        ax1.set_title(title)
+        ax1.set_ylabel('$V_m(t)$ [mV]')
+        ax2.set_ylabel('$I(t)$ [pA]')
 
-            for j_, gid in enumerate(gids):
-                print 'GID:', gid
-                idx = np.where(gid_vec == gid)[0]
-#                integrals[i_plot, j_] = d[idx].sum() * dt_volt
-                if not observable in integrals.keys():
-                    integrals[observable] = {}
-                integrals[observable][gid] = d[idx].sum() * dt_volt
-                label = '$\int\ dt\ %s(t) = %.3e$' % (observable_latex[i_plot], integrals[observable][gid])
-                ax.plot(time[idx], d[idx], label=label)
-            pylab.legend()
+        v = nest.GetStatus(recorder)[0]['events']['V_m']
+        i_ampa = nest.GetStatus(recorder)[0]['events']['I_AMPA']
+        i_nmda = nest.GetStatus(recorder)[0]['events']['I_NMDA']
+
+        for j_, gid in enumerate(gids):
+            print 'GID:', gid
+            idx = np.where(gid_vec == gid)[0]
+            integrals['I_AMPA'][gid] = i_ampa[idx].sum() * dt_volt
+            integrals['I_NMDA'][gid] = i_nmda[idx].sum() * dt_volt
+            if gid == neurons[0]:
+                label_ampa = '$\int\ dt\ I_{AMPA}(t) = %.3e\ pA \cdot ms$' % (integrals['I_AMPA'][gid])
+                ax2.plot(time[idx], i_ampa[idx], label=label_ampa)
+            elif gid == neurons[1]:
+                label_nmda = '$\int\ dt\ I_{NMDA}(t) = %.3e\ pA \cdot ms$' % (integrals['I_NMDA'][gid])
+                ax2.plot(time[idx], i_nmda[idx], label=label_nmda)
+            ax1.plot(time[idx], v[idx])
+
 
         print 'Integrals:', integrals
-        ratio_ampa_nmda = integrals['I_AMPA'][1] / integrals['I_NMDA'][2]
-        info_txt = 'Ratio (AMPA / NMDA):\n%.3e / %.3e = %.3e' % (integrals['I_AMPA'][1], integrals['I_NMDA'][2], ratio_ampa_nmda)
-        ax0 = fig.get_axes()[0]
-        ax0.set_title(info_txt)
+        ratio_nmda_ampa = integrals['I_NMDA'][2] / integrals['I_AMPA'][1] 
+        info_txt = 'Ratio of integrated currents (NMDA / AMPA):\n%.2e / %.2e = %.3f' % (integrals['I_NMDA'][2], integrals['I_AMPA'][1], ratio_nmda_ampa)
+#        ax1 = fig.get_axes()[0]
+        ax2.set_title(info_txt)
         print info_txt
         print 'w_nmda:', w_nmda
         print 'w_ampa:', w_ampa
 
-        ax.set_xlabel('Time [ms]')
+        ax2.set_xlabel('Time [ms]')
+        ax1.set_xlim((0., 500.))
+        ax2.set_xlim((0., 500.))
+        pylab.legend()
         pylab.show()
 
 

@@ -108,8 +108,8 @@ def plot_sum_w_in_exc(folder_names):
 #    ax2.legend(plots2, labels, scatterpoints=1, loc='upper left', ncol=1)
 
     ax1.xaxis.set_major_locator(MultipleLocator(.2))
-    divider2 = make_axes_locatable(ax1)
-    cax1 = divider2.append_axes("right", size="5%", pad=0.15)
+    divider1 = make_axes_locatable(ax1)
+    cax1 = divider1.append_axes("right", size="5%", pad=0.15)
 
     ax2.xaxis.set_major_locator(MultipleLocator(.2))
     divider2 = make_axes_locatable(ax2)
@@ -132,8 +132,8 @@ def plot_sum_w_in_exc(folder_names):
     d1 = w_in[tauis[0]]
     d2 = w_in[tauis[1]]
 
-    ratio_win= d2[:, 2] / d1[:, 2]
-#    ratio_win= d1[:, 2] / d2[:, 2]
+#    ratio_win= d2[:, 2] / d1[:, 2]
+    ratio_win= d1[:, 2] / d2[:, 2]
     avg_x = .5 * (d1[:, 0] + d2[:, 0])
     avg_v = .5 * (d1[:, 1] + d2[:, 1])
 
@@ -167,7 +167,7 @@ def plot_sum_w_in_exc(folder_names):
     avg_ratio = ratio_win.mean()
     std_ratio = ratio_win.mean()
 
-    title = 'Ratio $\\tau_i = %d / %d $' % (tauis[1], tauis[0])
+    title = 'Ratio $\\tau_i = %d / %d (\\approx \\frac{I_{AMPA}}{I_{NMDA}})$\n' % (tauis[0], tauis[1])
     ax1.set_title(title)
     ax1.set_ylabel('Ratio of incoming excitation')
     ax2.set_ylabel('Ratio of incoming excitation')
