@@ -19,7 +19,9 @@ import json
 import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
-
+from PlottingScripts.PlotPrediction import plot_prediction
+from PlottingScripts.PlotCurrents import run_plot_currents
+from PlottingScripts.plot_incoming_currents import plot_incoming_currents
 
 try: 
     from mpi4py import MPI
@@ -77,7 +79,7 @@ if __name__ == '__main__':
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.1e_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
+        folder_name = 'TestSim_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.2f_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
                 params['sim_id'], params['stim_range'][0], params['stim_range'][1], params['v_min_tp'], \
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
                 params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
@@ -133,13 +135,12 @@ if __name__ == '__main__':
     t_end = time.time()
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
-    #if pc_id == 0:
-    if pc_id == 0 and not params['Cluster']:
-        print "Calling python PlottingScripts/PlotPrediction.py"
-        stim_range = params['stim_range']
-        for i_ in xrange(stim_range[0], stim_range[1]):
-            os.system('python PlottingScripts/PlotPrediction.py %s %d %d' % (params['folder_name'], i_, i_ + 1))
-        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
+    #if pc_id == 0 and not params['Cluster']:
+    if pc_id == 0:
+        plot_prediction(params=NM.params, stim_range=params['stim_range'])
+        run_plot_currents(NM.params)
+        plot_incoming_currents(NM.params)
+#        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
 #        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']
 #        os.system(display_cmd)
 

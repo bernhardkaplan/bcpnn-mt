@@ -1,5 +1,4 @@
 import time
-t0 = time.time()
 import numpy as np
 import numpy.random as nprnd
 import sys
@@ -7,12 +6,11 @@ import sys
 import os
 import utils
 import nest
-import CreateInput
+from CreateInput import CreateInput
 import json
-import set_tuning_properties
+from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity
 from copy import deepcopy
-import WeightAnalyser
-import create_training_stimuli as CS
+from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop
 
 class NetworkModel(object):
 
@@ -30,20 +28,13 @@ class NetworkModel(object):
             self.comm.Barrier()
 
 
-    def update_bcpnn_params(self):
-        self.params['taup_bcpnn'] = self.params['t_sim'] * self.params['ratio_tsim_taup']
-        self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
-        epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
-        self.params['bcpnn_params']['epsilon'] = epsilon
-
-
     def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
         if self.params['regular_tuning_prop']:
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_regular(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties_regular(self.params)
         else:
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
@@ -57,13 +48,13 @@ class NetworkModel(object):
         if self.params['training_run']:
             if training_stimuli == None:
                 if self.params['regular_tuning_prop']:
-                    training_stimuli = CS.create_regular_training_stimuli(self.params, self.tuning_prop_exc)
+                    training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
                 else:
-                    training_stimuli = CS.create_training_stimuli_based_on_tuning_prop(self.params)
+                    training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
-            self.CI = CreateInput.CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
+            self.CI = CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
 #            self.motion_params = self.CI.create_test_stim_1D_from_training_stim(self.params, self.training_params)
             self.motion_params = self.CI.create_test_stim_grid(self.params)
             np.savetxt(self.params['test_sequence_fn'], self.motion_params)
@@ -751,8 +742,6 @@ class NetworkModel(object):
 
             spike_times = input_spikes_for_recorder_neurons[i_]
 
-        f = file(self.params['recorder_neurons_gid_mapping'], 'w')
-        json.dump(self.recorder_neuron_gid_mapping, f, indent=2)
         """
 
 
@@ -975,6 +964,9 @@ class NetworkModel(object):
             U_ampa = 1.
             U_nmda = 1.
 
+        # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
+        # the total currents only depend on bcpnn gain
+        c = self.params['ampa_nmda_ratio'] / self.params['target_ratio_ampa_nmda']
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 print 'DEBUG connect_ee_testing: src_hc _mc', src_hc, src_mc
@@ -998,7 +990,7 @@ class NetworkModel(object):
                                     weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
+                        w_nmda_ = c * w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
@@ -1360,6 +1352,9 @@ class NetworkModel(object):
                             weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                             model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
 
+        f = file(self.params['recorder_neurons_gid_mapping'], 'w')
+        json.dump(self.recorder_neuron_gid_mapping, f, indent=2)
+
 
 
 #        my_adj_list = {}
@@ -1587,5 +1582,12 @@ class NetworkModel(object):
                 else:
                     self.comm.send(nest.GetStatus(recorder)[0]['events']['senders'],dest=0)
 
-
         print 'done'
+
+
+    def update_bcpnn_params(self):
+        self.params['taup_bcpnn'] = self.params['t_sim'] * self.params['ratio_tsim_taup']
+        self.params['bcpnn_params']['tau_p'] = self.params['taup_bcpnn']
+        epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
+        self.params['bcpnn_params']['epsilon'] = epsilon
+

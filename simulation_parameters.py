@@ -192,7 +192,10 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 5.
+            self.params['ampa_nmda_ratio'] = 3.
+            self.params['target_ratio_ampa_nmda'] = 5.   # seen in experiments Watt "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses" 2000 Neuron
+            # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
+            # the total currents only depend on bcpnn gain
             self.params['tau_syn'] = {'ampa': 5., 'nmda': 200., 'gaba': 5.}
             self.params['syn_ports'] = {'ampa':1, 'nmda':2, 'gaba': 3}
             self.params['neuron_model'] = 'aeif_cond_exp_multisynapse'
@@ -525,16 +528,16 @@ class parameter_storage(object):
         # ######
         # NOISE
         # ######
-#        self.params['w_noise_exc'] = 1.5 # [nS] mean value for noise ---< columns
-#        self.params['f_noise_exc'] = 1000. # [Hz] 
-#        self.params['w_noise_inh'] = -0.5 # [nS] mean value for noise ---< columns
-#        self.params['f_noise_inh'] = 1000. # [Hz]
-
         # no noise:
-        self.params['w_noise_exc'] = 1.          # [uS] mean value for noise ---< columns
-        self.params['w_noise_inh'] = -1.
+#        self.params['w_noise_exc'] = 1.5 # [nS] mean value for noise ---< columns
+#        self.params['f_noise_exc'] = 1. # [Hz] 
+#        self.params['w_noise_inh'] = -0.5 # [nS] mean value for noise ---< columns
+#        self.params['f_noise_inh'] = 1. # [Hz]
+
         self.params['f_noise_inh'] = 1000.# [Hz]
         self.params['f_noise_exc'] = 1000.# [Hz]
+        self.params['w_noise_exc'] = 1.          # [uS] mean value for noise ---< columns
+        self.params['w_noise_inh'] = -1.
 
 
     def set_folder_name(self, folder_name=None):

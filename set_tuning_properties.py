@@ -1,10 +1,11 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
 import numpy.random as rnd
 import utils
-import PlottingScripts.FigureCreator
 from PlottingScripts.FigureCreator import plot_params
 
 

@@ -16,11 +16,15 @@ except:
     print "MPI not used"
 
 
-script_name = 'PlottingScripts/PlotPrediction.py'
-
+curr = sys.argv[1]
+if curr == 'current' or curr == 'currents':
+    script_name = 'PlottingScripts/PlotCurrents.py'
+    folders = sys.argv[2:]
+else:
+    script_name = 'PlottingScripts/PlotPrediction.py'
+    folders = sys.argv[1:]
 list_of_jobs = []
 
-folders = sys.argv[1:]
 pure_names = ''
 for f in folders:
     params = utils.load_params(f)
@@ -39,11 +43,12 @@ for f in folders:
 if USE_MPI:
     # distribute the commands among processes
     my_idx = utils.distribute_n(len(list_of_jobs), n_proc, pc_id) # this holds the indices for the jobs to be run by this processor
+    n_my_jobs = len(range(my_idx[0], my_idx[1]))
     print 'pc_id %d job indices:' % pc_id, my_idx
     for i_ in xrange(my_idx[0], my_idx[1]):
-        print 'debug i_', i_
+#        print 'debug list_of_jobs:', list_of_jobs, 'i_', i_
         job_name = list_of_jobs[i_]
-        print 'pc_id %d runs job nr %d / %d' % (pc_id, i_ + 1, my_idx[1] - my_idx[0]), job_name
+        print 'pc_id %d runs job nr %d / %d' % (pc_id, i_ + 1, n_my_jobs), job_name
         os.system(job_name)
 else:
     print 'No MPI found'
@@ -53,6 +58,8 @@ if USE_MPI:
     comm.barrier()
 
 if pc_id == 0:
+    if curr == 'currents' or curr == 'current':
+        display_cmd = 'ristretto $(find %s -name prediction_stim*.png)' % pure_names
     display_cmd = 'ristretto $(find %s -name prediction_stim*.png)' % pure_names
     print 'display_cmd:', display_cmd
     os.system(display_cmd)

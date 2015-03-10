@@ -8,6 +8,7 @@ import utils
 import pylab
 import matplotlib
 from PlottingScripts.plot_spikes_sorted import plot_spikes_sorted
+import json
 
 
 plot_params = {'backend': 'png',
@@ -43,11 +44,13 @@ def filter_tuning_prop(tp, v_range, axis=0):
 def get_averages(params, trace_data):
     idx_start_blank = int(params['t_start_blank'] / params['dt_volt'])
     idx_stop_blank = int((params['t_start_blank'] + params['t_blank']) / params['dt_volt'])
+    sum_before_blank = trace_data[:idx_start_blank].sum()
     avg_before_blank = trace_data[:idx_start_blank].mean()
     std_before_blank = trace_data[:idx_start_blank].std()
+    sum_during_blank = trace_data[idx_start_blank:idx_stop_blank].sum()
     avg_during_blank = trace_data[idx_start_blank:idx_stop_blank].mean()
     std_during_blank = trace_data[idx_start_blank:idx_stop_blank].std()
-    return (avg_before_blank, std_before_blank, avg_during_blank, std_during_blank)
+    return (sum_before_blank, avg_before_blank, std_before_blank, sum_during_blank, avg_during_blank, std_during_blank)
 
 
 def run_plot_currents(params):
@@ -55,8 +58,9 @@ def run_plot_currents(params):
     pylab.rcParams.update(plot_params)
     # LOAD MEASURABLES
     d = {}
-    measurables = ['AMPA', 'NMDA', 'GABA', 'AMPA_NEG', 'NMDA_NEG']
-#    measurables = ['AMPA', 'NMDA']
+#    measurables = ['AMPA', 'NMDA', 'GABA', 'AMPA_NEG', 'NMDA_NEG']
+#    measurables = ['AMPA', 'NMDA', 'GABA', 'NMDA_NEG']
+    measurables = ['AMPA', 'NMDA']
     tau_syn = [params['tau_syn']['ampa'], params['tau_syn']['nmda'], params['tau_syn']['gaba'], params['tau_syn']['ampa'], params['tau_syn']['nmda']]
     for m in measurables:
         fn = params['volt_folder'] + 'exc_I_%s.dat' % m
@@ -68,14 +72,21 @@ def run_plot_currents(params):
 
     # get the blank position 
     mp = np.loadtxt(params['test_sequence_fn'])
-    mp = mp[params['stim_range'][0]:params['stim_range'][1], :]
+#    stim_params = np.loadtxt(params['test_sequence_fn'])
+    if params['n_stim'] == 1 and params['stim_range'][0] != 0:
+        mp = mp[params['stim_range'][0]:params['stim_range'][1], :]
+    elif params['n_stim'] == 1 and params['stim_range'][0] == 0:
+        mp = mp.reshape((1, 4))
+#        mp = mp[0, :]
+
+#    mp = mp[params['stim_range'][0]:params['stim_range'][1], :]
 #    if params['n_stim'] == 1:
-#        mp = mp.reshape((1, 4))
     stim_idx = 0
     x_start_blank = params['t_start_blank'] * mp[stim_idx, 2] / params['t_stimulus'] + mp[stim_idx, 0]
     print 'x_start_blank:', x_start_blank
-    dx = 0.05
-    pos_range = (x_start_blank - 3 * dx, x_start_blank + dx)
+    dx = 0.10
+#    pos_range = (x_start_blank - 2 * dx, x_start_blank + dx)
+    pos_range = (0., 1.)
     # extract the gids that are 1) recorded (=gids) and 2) between x_start_blank and +dx
     idx_in_gids_in_range = filter_tuning_prop(tp[gids - 1, :], (pos_range[0], pos_range[1]))
     gids_in_range_nest = gids[idx_in_gids_in_range]
@@ -85,7 +96,8 @@ def run_plot_currents(params):
 
     n_plots = len(measurables)
     fig2 = pylab.figure(figsize=utils.get_figsize_A4(portrait=False))
-    ax2 = fig2.add_subplot(111)
+    ax2 = fig2.add_subplot(211)
+    ax3 = fig2.add_subplot(212)
     fig = pylab.figure(figsize=utils.get_figsize_A4(portrait=False))
 
     #colorlist= utils.get_colorlist_sorted((pos_range[0], pos_range[1]), tp[gids_in_range - 1, 0])
@@ -103,15 +115,32 @@ def run_plot_currents(params):
     trace_example = d[measurables[0]][idx, 1]
     n_steps = trace_example.size
     net_currents = np.zeros((n_steps, len(gids_in_range_nest)))
+    ratio_nmda_ampa_currents = np.zeros((n_steps, len(gids_in_range_nest)))
 
+    output_data = {}
     for i_plot, measurable in enumerate(measurables):
         ax = fig.add_subplot(n_plots, 1, i_plot + 1)
         axes.append(ax)
+        output_data[measurable] = {}
+        output_data[measurable]['sum_before_blank'] = {}
+        output_data[measurable]['avg_before_blank'] = {}
+        output_data[measurable]['std_before_blank'] = {}
+        output_data[measurable]['sum_during_blank'] = {}
+        output_data[measurable]['avg_during_blank'] = {}
+        output_data[measurable]['std_during_blank'] = {}
+        output_data[measurable]['full_integral'] = {}
         for i_, gid in enumerate(gids_in_range_nest):
             idx = np.where(d[measurable][:, 0] == gid)[0]
             t_axis = np.arange(idx.size) * params['dt_volt']
             trace_data = d[measurable][idx, 1]
-            (avg_before_blank, std_before_blank, avg_during_blank, std_during_blank) = get_averages(params, trace_data)
+            (sum_before_blank, avg_before_blank, std_before_blank, sum_during_blank, avg_during_blank, std_during_blank) = get_averages(params, trace_data)
+            output_data[measurable]['sum_during_blank'][gid] = sum_during_blank
+            output_data[measurable]['avg_during_blank'][gid] = avg_during_blank
+            output_data[measurable]['std_during_blank'][gid] = std_during_blank
+            output_data[measurable]['sum_before_blank'][gid] = sum_before_blank
+            output_data[measurable]['avg_before_blank'][gid] = avg_before_blank
+            output_data[measurable]['std_before_blank'][gid] = std_before_blank
+            output_data[measurable]['full_integral'][gid] = trace_data.sum()
             label = '$\\overline{I}_{stim}=%.1e \ \\overline{I}_{blank}=%.1e$' % (avg_before_blank, avg_during_blank)
             x_pos_cell = tp[gid - 1, 0]
 #            print 'gid: %d x_pos: %.2f  avg(%s) before blank = %.2e  during blank = %.2e' % (gid, x_pos_cell, measurable, avg_before_blank, avg_during_blank)
@@ -128,20 +157,47 @@ def run_plot_currents(params):
         utils.plot_blank(params, ax)
 #        pylab.legend()
 
+
+    n_stop_plot = int(0.7 * n_steps)
+    average_ratios = np.zeros((len(gids_in_range_nest), 2))
     for i_, gid in enumerate(gids_in_range_nest):
         ax2.plot(net_currents[:, i_], c=colorlist[i_])
+        idx = np.where(d['AMPA'][:, 0] == gid)[0]
+        ampa_trace = d['AMPA'][idx, 1]
+        nmda_trace = d['NMDA'][idx, 1]
+        nonzero_idx = np.nonzero(ampa_trace)[0]
+        ratio_nmda_ampa_currents[nonzero_idx, i_] = nmda_trace[nonzero_idx] / ampa_trace[nonzero_idx]
+        average_ratios[i_, 0] = ratio_nmda_ampa_currents[:n_stop_plot].mean()
+        average_ratios[i_, 1] = ratio_nmda_ampa_currents[:n_stop_plot].std()
+#        print 'Average ratio %d: ' % gid, average_ratios[i_, 0], '+-', average_ratios[i_, 1]
+        ax3.plot(t_axis[:n_stop_plot], ratio_nmda_ampa_currents[:n_stop_plot, i_], c=colorlist[i_])
+
+        ax3.plot((t_axis[0], t_axis[n_stop_plot]), (average_ratios[i_, 0], average_ratios[i_, 0]), '-', lw=3, c=colorlist[i_])
+
+#    ax3.set_ylim((0, 10))
+    # output data
+    output_fn = params['data_folder'] + 'input_currents.json'
+    print 'Writing current data to:', output_fn
+    f = file(output_fn, 'w')
+    json.dump(output_data, f, indent=2)
 
     ax2.set_xlim((t_axis[0], t_axis[-1]))
     utils.plot_blank(params, ax2)
     ax2.set_xlabel('Time [ms]')
     ax2.set_ylabel('Net current')
 
-    if params['with_stp']:
-        title = 'With STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
-    else:
-        title = 'No STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
+    ax3.set_xlabel('Time [ms]')
+    ax3.set_ylabel('Ratio NMDA/AMPA')
 
+#    if params['with_stp']:
+#        title = 'With STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
+#    else:
+#        title = 'No STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
+
+    title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
+            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
     axes[0].set_title(title)
+    ax2.set_title(title)
     
     fig.subplots_adjust(right=0.75)
     cbar_ax = fig.add_axes([0.78, 0.15, 0.05, 0.7])

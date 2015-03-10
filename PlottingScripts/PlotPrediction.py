@@ -16,6 +16,7 @@ import json
 class PlotPrediction(object):
     def __init__(self, params=None, data_fn=None):
 
+
         if params == None:
             self.network_params = simulation_parameters.parameter_storage()  # network_params class containing the simulation parameters
             self.params = self.network_params.load_params()                       # params stores cell numbers, etc as a dictionary
@@ -491,9 +492,17 @@ class PlotPrediction(object):
 
     def create_fig(self):
         print "plotting ...."
+        plot_params = {'backend': 'png',
+                      'figure.subplot.hspace':.40,
+                      'figure.subplot.wspace':.35}
+                      #'figure.subplot.left':.15,
+                      #'figure.subplot.bottom':.08,
+                      #'figure.subplot.right':.80,
+                      #'figure.subplot.top':.90,
+        pylab.rcParams.update(plot_params)
         self.fig = pylab.figure(figsize=self.fig_size)
-        pylab.subplots_adjust(hspace=0.4)
-        pylab.subplots_adjust(wspace=0.35)
+        #pylab.subplots_adjust(hspace=0.4)
+        #pylab.subplots_adjust(wspace=0.35)
 
 
 
@@ -904,7 +913,7 @@ class PlotPrediction(object):
         pylab.colorbar(self.cax)
 
 
-    def plot_x_estimates(self, fig_cnt=1, show_blank=None, time_range=None, stim_idx=0):
+    def plot_x_estimates(self, fig_cnt=1, show_blank=None, time_range=None, stim_idx=0, add_title=''):
 
         if show_blank == None:
             show_blank = self.show_blank
@@ -936,8 +945,9 @@ class PlotPrediction(object):
             ylim = (0, 1.1 * max(max(x_stim), max(x_stim)))
             ax.set_ylim(ylim)
             mp = self.all_motion_params[stim_idx, :]
-            title += ' Stim: $x_0=%.2f v_0=%.2f$' % (mp[0], mp[2])
+            title += ' Stim: $x_0=%.2f\ v_0=%.2f$' % (mp[0], mp[2])
 
+        title += '\n' + add_title
         ax.set_title(title)#: avg, moving_avg, nonlinear')
 
         ax.set_xticks(x_ticks)
@@ -1229,7 +1239,7 @@ class PlotPrediction(object):
 #            ax.annotate(txt, (txt_pos_x, txt_pos_y), fontsize=14, color='w')
 
 
-def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None):
+def plot_prediction(params=None, stim_range=None, data_fn=None, inh_spikes=None):
     """
     Make use of the PlotPrediction class
     """
@@ -1277,7 +1287,19 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         time_range = (t0, t1)
         stim_range = (stim, stim + 1)
 
-        pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
+
+        plot_params = {
+                      'figure.subplot.hspace':.20,
+                      'figure.subplot.wspace':.30, 
+                      'figure.subplot.left':.07,
+                      'figure.subplot.bottom':.07,
+                      'figure.subplot.right':.97,
+                      'figure.subplot.top':.93}
+        pylab.rcParams.update(plot_params)
+        #pylab.subplots_adjust(hspace=0.4)
+        #pylab.subplots_adjust(wspace=0.35)
+
+        #pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.3, hspace=.2)
         plotter.n_fig_x = 2
         plotter.n_fig_y = 2
         plotter.create_fig()  # create an empty figure
@@ -1299,8 +1321,19 @@ def plot_prediction(stim_range=None, params=None, data_fn=None, inh_spikes=None)
         plotter.n_fig_y = 2
         plotter.create_fig()
         pylab.rcParams['legend.fontsize'] = 12
-        pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.9, wspace=0.3, hspace=.35)
-        plotter.plot_x_estimates(1, time_range=time_range, stim_idx=stim)
+
+        plot_params = {
+                      'figure.subplot.hspace':.35,
+                      'figure.subplot.wspace':.30, 
+                      'figure.subplot.left':.07,
+                      'figure.subplot.bottom':.07,
+                      'figure.subplot.right':.97,
+                      'figure.subplot.top':.9}
+        pylab.rcParams.update(plot_params)
+        #pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.9, wspace=0.3, hspace=.35)
+        add_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
+            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
+        plotter.plot_x_estimates(1, time_range=time_range, stim_idx=stim, add_title=add_title)
         plotter.plot_xdiff(2, time_range=time_range, stim_idx=stim)
         plotter.plot_vx_estimates(3, time_range=time_range, stim_idx=stim)
         plotter.plot_vdiff(4, time_range=time_range, stim_idx=stim)
