@@ -5,7 +5,7 @@
 #SBATCH -J test_32
 
 # Only 1 hour wall-clock time will be given to this job
-#SBATCH -t 0:10:00
+#SBATCH -t 0:29:00
 
 # Number of cores to be allocated (multiple of 20)
 #SBATCH -N 1
@@ -16,7 +16,7 @@
 
 #SBATCH -e error_file_testing.e
 #SBATCH -o output_file_testing.o
-#SBATCH --mail-type=END,FAIL
+# /// # SBATCH --mail-type=END,FAIL
 
 # Run the executable named myexe 
 # and write the output into my_output_file

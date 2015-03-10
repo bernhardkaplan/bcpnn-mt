@@ -26,7 +26,7 @@ class parameter_storage(object):
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
-        self.w_input_exc = 12.0
+        self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -41,7 +41,7 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'v04_tuning'
+        self.params['sim_id'] += 'withNoise_wStim%.1f' % self.w_input_exc
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -77,7 +77,7 @@ class parameter_storage(object):
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
         self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8# must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 60 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
         self.params['record_tuning_prop_v'] = [.8, .4]
@@ -398,7 +398,8 @@ class parameter_storage(object):
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         #   TODO: fix create_test_stim_grid for (1, 2)
-        self.params['test_stim_range'] = (0, 2)
+        self.params['test_stim_range'] = (0, 1)
+        #self.params['test_stim_range'] = (0, 1)
         self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
@@ -530,10 +531,10 @@ class parameter_storage(object):
 #        self.params['f_noise_inh'] = 1000. # [Hz]
 
         # no noise:
-        self.params['w_noise_exc'] = 1e-5          # [uS] mean value for noise ---< columns
-        self.params['f_noise_exc'] = 1.# [Hz]
-        self.params['w_noise_inh'] = 1e-5          # [uS] mean value for noise ---< columns
-        self.params['f_noise_inh'] = 1.# [Hz]
+        self.params['w_noise_exc'] = 1.          # [uS] mean value for noise ---< columns
+        self.params['w_noise_inh'] = -1.
+        self.params['f_noise_inh'] = 1000.# [Hz]
+        self.params['f_noise_exc'] = 1000.# [Hz]
 
 
     def set_folder_name(self, folder_name=None):

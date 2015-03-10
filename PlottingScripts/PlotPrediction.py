@@ -4,7 +4,7 @@ cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(insp
 if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import pylab
 import numpy as np
 import simulation_parameters
