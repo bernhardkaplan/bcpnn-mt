@@ -9,7 +9,7 @@ import copy
 import re
 import json
 import itertools
-import matplotlib
+#import matplotlib
 
 def print0(msg, comm):
     if comm.rank == 0:
@@ -1857,8 +1857,8 @@ def get_colorlist(n_colors=17):
     return colorlist
 
 
-def get_colorlist_sorted(value_range, mapped_axis):
     """
+def get_colorlist_sorted(value_range, mapped_axis):
     value_range is a tuple representing the (min, max) value of the interval to be color-mapped
     mapped_axis is an array which is to be mapped.
     returns a colorlist of the same size as mapped_axis
@@ -1869,12 +1869,12 @@ def get_colorlist_sorted(value_range, mapped_axis):
         mapped_axis = np.random.rand(100) # random positions
         return value:
         colorlist[cell_idx] --> color of cell_idx in the interval v_range
-    """
     norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
     m.set_array(mapped_axis)
     colorlist= m.to_rgba(mapped_axis)
     return colorlist
+    """
 
 
 def convert_to_NEST_conform_dict(json_dict):

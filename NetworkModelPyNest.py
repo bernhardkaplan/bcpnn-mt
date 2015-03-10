@@ -1,5 +1,4 @@
 import time
-t0 = time.time()
 import numpy as np
 import numpy.random as nprnd
 import sys
@@ -7,12 +6,11 @@ import sys
 import os
 import utils
 import nest
-import CreateInput
+from CreateInput import CreateInput
 import json
-import set_tuning_properties
+from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity
 from copy import deepcopy
-import WeightAnalyser
-import create_training_stimuli as CS
+from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop
 
 class NetworkModel(object):
 
@@ -34,9 +32,9 @@ class NetworkModel(object):
 #        if training_params != None:
 #            self.training_params = training_params
         if self.params['regular_tuning_prop']:
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_properties_regular(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties_regular(self.params)
         else:
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
+            self.tuning_prop_exc, self.rf_sizes = set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 
         if self.pc_id == 0:
             print "Saving tuning_prop to file:", self.params['tuning_prop_exc_fn']
@@ -50,13 +48,13 @@ class NetworkModel(object):
         if self.params['training_run']:
             if training_stimuli == None:
                 if self.params['regular_tuning_prop']:
-                    training_stimuli = CS.create_regular_training_stimuli(self.params, self.tuning_prop_exc)
+                    training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
                 else:
-                    training_stimuli = CS.create_training_stimuli_based_on_tuning_prop(self.params)
+                    training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
-            self.CI = CreateInput.CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
+            self.CI = CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
 #            self.motion_params = self.CI.create_test_stim_1D_from_training_stim(self.params, self.training_params)
             self.motion_params = self.CI.create_test_stim_grid(self.params)
             np.savetxt(self.params['test_sequence_fn'], self.motion_params)

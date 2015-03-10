@@ -7,9 +7,6 @@ import numpy as np
 import time
 import os
 import utils
-import matplotlib
-matplotlib.use('Agg')
-import pylab
 from PlottingScripts.plot_training_samples import Plotter
 import random
 import set_tuning_properties
@@ -153,11 +150,6 @@ def create_training_stimuli_based_on_tuning_prop(params, tp=None):
     print 'Saving training stim durations to:', params['stim_durations_fn']
     np.savetxt(params['stim_durations_fn'], training_stim_duration)
 
-    #fig = pylab.figure()
-    #ax = fig.add_subplot(111)
-    #cnt, bins = np.histogram(mp[:, 2], bins=100)
-    #ax.bar(bins[:-1], cnt, width=(bins[1]-bins[0]))
-
     return mp[idx, :]
 
 
@@ -219,4 +211,5 @@ if __name__ == '__main__':
         create_training_stimuli_based_on_tuning_prop(params)
 #    else:
 #        create_training_stim_in_tp_space()
-#    pylab.show()
+
+
