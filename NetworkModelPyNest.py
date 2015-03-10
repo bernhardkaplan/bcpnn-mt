@@ -966,6 +966,9 @@ class NetworkModel(object):
             U_ampa = 1.
             U_nmda = 1.
 
+        # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
+        # the total currents only depend on bcpnn gain
+        c = self.params['ampa_nmda_ratio'] / self.params['target_ratio_ampa_nmda']
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
                 print 'DEBUG connect_ee_testing: src_hc _mc', src_hc, src_mc
@@ -989,7 +992,7 @@ class NetworkModel(object):
                                     weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                     model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
+                        w_nmda_ = c * w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})

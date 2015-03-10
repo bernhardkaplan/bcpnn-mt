@@ -169,7 +169,7 @@ def run_plot_currents(params):
         ratio_nmda_ampa_currents[nonzero_idx, i_] = nmda_trace[nonzero_idx] / ampa_trace[nonzero_idx]
         average_ratios[i_, 0] = ratio_nmda_ampa_currents[:n_stop_plot].mean()
         average_ratios[i_, 1] = ratio_nmda_ampa_currents[:n_stop_plot].std()
-        print 'Average ratio %d: ' % gid, average_ratios[i_, 0], '+-', average_ratios[i_, 1]
+#        print 'Average ratio %d: ' % gid, average_ratios[i_, 0], '+-', average_ratios[i_, 1]
         ax3.plot(t_axis[:n_stop_plot], ratio_nmda_ampa_currents[:n_stop_plot, i_], c=colorlist[i_])
 
         ax3.plot((t_axis[0], t_axis[n_stop_plot]), (average_ratios[i_, 0], average_ratios[i_, 0]), '-', lw=3, c=colorlist[i_])
@@ -189,12 +189,15 @@ def run_plot_currents(params):
     ax3.set_xlabel('Time [ms]')
     ax3.set_ylabel('Ratio NMDA/AMPA')
 
-    if params['with_stp']:
-        title = 'With STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
-    else:
-        title = 'No STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
+#    if params['with_stp']:
+#        title = 'With STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
+#    else:
+#        title = 'No STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
 
+    title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
+            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
     axes[0].set_title(title)
+    ax2.set_title(title)
     
     fig.subplots_adjust(right=0.75)
     cbar_ax = fig.add_axes([0.78, 0.15, 0.05, 0.7])

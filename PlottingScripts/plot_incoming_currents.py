@@ -27,16 +27,16 @@ plot_params = {'backend': 'png',
                'lines.linewidth': 1,
               'font.size': 12,
               'path.simplify': False,
-              'figure.subplot.left':.25,
+              'figure.subplot.left':.20,
               'figure.subplot.bottom':.08,
-              'figure.subplot.right':.80,
+              'figure.subplot.right':.90,
               'figure.subplot.top':.90,
               'figure.subplot.hspace':.30,
               'figure.subplot.wspace':.30}
 pylab.rcParams.update(plot_params)
 
 
-def plot_currents(params):
+def plot_incoming_currents(params):
 
     fn = params['data_folder'] + 'input_currents.json'
     f = file(fn, 'r')
@@ -109,7 +109,7 @@ def plot_currents(params):
     ax1.plot((x_stop_blank, x_stop_blank), (ylim[0], ylim[1]), ls='--', c='k', lw=2)
 
 #    ax2.set_ylim((0., mean_ampa_nmda_ratio + 1 * std_ampa_nmda_ratio))
-    ax2.set_ylim((0., 3.))
+#    ax2.set_ylim((0., 3.))
     ylim2 = ax2.get_ylim()
     xlim2 = ax2.get_xlim()
     ax2.plot((x_start_blank, x_start_blank), (ylim2[0], ylim2[1]), ls='--', c='k', lw=2)
@@ -140,6 +140,12 @@ def plot_currents(params):
     ax2.set_ylabel('Ratio AMPA/NMDA')
     ax2.set_xlabel('Target cell position $x_j$')
 
+    title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
+            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
+    ax1.set_title(title)
+
+    output_fn = params['figures_folder'] + 'incoming_currents.png'
+    pylab.savefig(output_fn, dpi=100)
 #    ax3 = ax2.twiny()
 #    ax3 
 
@@ -152,17 +158,17 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()
         params = ps.params
         show = True
-        plot_currents(params)
+        plot_incoming_currents(params)
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
         show = True
-        plot_currents(params)
+        plot_incoming_currents(params)
     else:
         for folder_name in sys.argv[1:]:
             params = utils.load_params(folder_name)
             show = False
-            plot_currents(params)
+            plot_incoming_currents(params)
     if show:
         pylab.show()
 
