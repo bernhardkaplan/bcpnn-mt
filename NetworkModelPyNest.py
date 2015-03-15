@@ -8,9 +8,9 @@ import utils
 import nest
 from CreateInput import CreateInput
 import json
-from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity
+from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity, set_tuning_prop_with_orientation
 from copy import deepcopy
-from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop
+from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_orientation_training_stimuli
 
 class NetworkModel(object):
 
@@ -31,8 +31,12 @@ class NetworkModel(object):
     def setup(self, training_stimuli=None):
 #        if training_params != None:
 #            self.training_params = training_params
+
         if self.params['regular_tuning_prop']:
-            self.tuning_prop_exc, self.rf_sizes = set_tuning_properties_regular(self.params)
+            if self.params['with_orientation']:
+                self.tuning_prop_exc, self.rf_sizes = set_tuning_prop_with_orientation(self.params)
+            else:
+                self.tuning_prop_exc, self.rf_sizes = set_tuning_properties_regular(self.params)
         else:
             self.tuning_prop_exc, self.rf_sizes = set_tuning_prop_1D_with_const_fovea_and_const_velocity(self.params)
 
@@ -47,10 +51,13 @@ class NetworkModel(object):
             
         if self.params['training_run']:
             if training_stimuli == None:
-                if self.params['regular_tuning_prop']:
+                if self.params['with_orientation']:
                     training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
                 else:
-                    training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
+                    if self.params['regular_tuning_prop']:
+                        training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
+                    else:
+                        training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
@@ -82,7 +89,7 @@ class NetworkModel(object):
         self.projections['ii'] = []
 
         # update 
-        utils.set_vx_tau_transformation_params(self.params, self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
+#        utils.set_vx_tau_transformation_params(self.params, self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
 
 #        exit(1)
         # # # # # # # # # # # #
@@ -399,22 +406,30 @@ class NetworkModel(object):
 
         mapped_gids = np.array(self.recorder_neuron_gid_mapping.values()) - 1
         tp = self.tuning_prop_exc[mapped_gids, :]
-        x0, v0 = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2]
+        if self.params['with_orientation']:
+            motion_type = 'bar'
+            x0, v0, orientation = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2], self.motion_params[mp_idx, 4]
+        else:
+            motion_type = 'dot'
+            x0, v0 = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2]
+
         print 'Computing input for stim_idx=%d' % stim_idx, 'mp:', x0, v0
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((self.params['n_recorder_neurons'], idx_t_stop))
-        # compute the trajectory
+
         for i_time in xrange(idx_t_stop):
             time_ = (i_time * dt) / self.params['t_stimulus']
+            # compute the trajectory
             x_stim = (x0 + time_ * v0)
-            L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
-                    self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, v0, 0, 0))
+            if self.params['with_orientation']:
+                L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
+                        self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, v0, 0, 0), motion=motion_type)
+            else:
+                L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
+                        self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, 0, 0, orientation), motion=motion_type)
+            
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
-#        print 't_offset:', t_offset
-#        print 'self.stim_durations', self.stim_durations
-#        print 'self.stim_durations[:%d]' % stim_idx, self.stim_durations[:stim_idx]
-
         if with_blank:
             start_blank = 1. / dt * (self.params['t_start_blank'])
             stop_blank = 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
@@ -424,7 +439,6 @@ class NetworkModel(object):
             # blanking
             for i_time in blank_idx:
                 L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-#                L_input[:, i_time] = 0.
 
         L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
@@ -462,12 +476,16 @@ class NetworkModel(object):
         idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
+        if self.params['with_orientation']:
+            motion_type = 'bar'
+        else:
+            motion_type = 'dot'
         # compute the trajectory
         for i_time in xrange(idx_t_stop):
             time_ = (i_time * dt) / self.params['t_stimulus']
             x_stim = (x0 + time_ * v0)
             L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
-                    self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
+                    self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0), motion=motion_type)
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
         print 't_offset:', t_offset
         print 'self.stim_durations', self.stim_durations

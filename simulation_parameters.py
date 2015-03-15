@@ -20,12 +20,13 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = False
+        self.params['training_run'] = True
         self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
+        self.params['with_orientation'] = True
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -41,7 +42,7 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'withNoise_wStim%.1f' % self.w_input_exc
+        self.params['sim_id'] += 'withOrientation' % self.w_input_exc
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -49,8 +50,7 @@ class parameter_storage(object):
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
-        self.params['n_rf'] = 20 # == N_HC
-        self.params['n_v'] = 4 # == N_MC_PER_HC
+        self.params['n_rf'] = 10 # == N_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -59,7 +59,14 @@ class parameter_storage(object):
         else:
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
-            self.params['n_theta'] = 1
+            if self.params['with_orientation']:
+                self.params['n_theta'] = 6 # == N_MC_PER_HC
+            else:
+                self.params['n_theta'] = 1 # == N_MC_PER_HC
+        if self.params['with_orientation']:
+            self.params['n_v'] = 1 # self.params['n_theta'] # == N_MC_PER_HC
+        else:
+            self.params['n_v'] = 4 # self.params['n_theta'] # == N_MC_PER_HC
 
         self.params['frac_rf_x_fovea'] = 0.4 # this fraction of all n_rf_x cells will have constant (minimum) RF size
         self.params['n_rf_x_fovea'] = np.int(np.round(self.params['frac_rf_x_fovea'] * self.params['n_rf_x']))
@@ -75,7 +82,10 @@ class parameter_storage(object):
             self.params['n_rf_v_fovea'] += 1
 
         self.params['n_hc'] = self.params['n_rf_x'] * self.params['n_rf_y']
-        self.params['n_mc_per_hc'] = self.params['n_v'] * self.params['n_theta']
+        if self.params['with_orientation']:
+            self.params['n_mc_per_hc'] = self.params['n_theta']
+        else:
+            self.params['n_mc_per_hc'] = self.params['n_v'] 
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
         self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
@@ -85,12 +95,14 @@ class parameter_storage(object):
         self.params['n_recorder_neurons'] = len(self.params['record_tuning_prop_v']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
-        self.params['n_orientation'] = 1 # number of preferred orientations
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 0.80  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.40  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['theta_max_tp'] = 180.0  # [degree]
+        self.params['theta_min_tp'] = 0. # [degree]
+        #[rad] --> angle_in_degree = angle_in_radians * 180 / pi
 
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
@@ -149,8 +161,9 @@ class parameter_storage(object):
         self.params['rf_x_increase_max'] = 1.
         self.params['rf_size_x_multiplicator'] = 1.00
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
-        self.params['target_overlap_x'] = 0.4 # where two RF gauss curves meet, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['target_overlap_v'] = 0.05 # where two RF gauss curves meet, depends also on the density and decides the rf_size_x_multiplicator
+        self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
+        self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
+        self.params['target_overlap_theta'] = 0.4 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['save_input'] = self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 

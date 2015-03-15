@@ -11,6 +11,10 @@ from PlottingScripts.plot_training_samples import Plotter
 import random
 import set_tuning_properties
 
+
+def create_orientation_training_stimuli(params):
+
+
 def create_training_stim_in_tp_space():
     print 'Using standard params'
     import simulation_parameters

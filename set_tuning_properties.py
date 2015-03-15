@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import pylab
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection
@@ -631,6 +631,120 @@ def get_receptive_field_sizes_v_const_fovea(params, rf_v):
         print 'rf_v:', rf_v
         return rf_v
 
+def get_xpos_log_distr_const_fovea(logscale, n_x, x_min=1e-6, x_max=.5):
+    """
+    Returns the n_hc positions
+    n_x = params['n_mc_per_hc']
+    x_min = params['rf_x_center_distance']
+    x_max = .5 - params['xpos_hc_0']
+    """
+    logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2 + 1, base=logscale)
+    logspace = list(logspace)
+    logspace.reverse()
+    x_lower = .5 - np.array(logspace)
+    logspace = np.logspace(np.log(x_min) / np.log(logscale), np.log(x_max) / np.log(logscale), n_x / 2 + 1, base=logscale)
+    x_upper =  logspace + .5
+    x_rho = np.zeros(n_x)
+    x_rho[:n_x/2] = x_lower[:-1]
+    if n_x % 2:
+        x_rho[n_x/2+1:] = x_upper[1:]
+    else:
+        x_rho[n_x/2:] = x_upper[1:]
+    return x_rho
+
+
+def get_orientation_tuning_regular(params):
+    n_theta = params['n_mc_per_hc']
+    theta_min = params['theta_min_tp']
+    theta_max = params['theta_max_tp']
+    theta = np.linspace(theta_min, theta_max, n_theta, endpoint=False)
+    return theta
+
+
+def set_tuning_prop_with_orientation(params):
+    """
+    Returns 3-dimensional tuning properties
+    """
+
+    tuning_prop = np.zeros((params['n_exc'], 3))
+    rfs = np.zeros((params['n_exc'], 3))
+    x_pos = get_xpos_regular(params)
+    x_pos_diff = x_pos[1] - x_pos[0] # rf_x spacing
+    theta = get_orientation_tuning_regular(params)
+    theta_diff = theta[1] - theta[0]
+    rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
+    rf_size_theta = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta']))) * np.ones(params['n_mc_per_hc'])
+    # The target overlap of tuning curves does NOT hold for the transition from left-rightward movement -- or should it?
+#    if np.abs(theta[0]) < 0.1:
+#        print 'Setting rf_size[0] to', params['v_min_tp']
+#        rf_size_theta[params['n_mc_per_hc'] / 2] = params['v_min_tp']
+#        rf_size_theta[0] = params['v_min_tp']
+
+    index = 0
+#    for i_mc in xrange(params['n_mc_per_hc']):
+#        print 'DEBUG rf_size_theta[%d] = %.3e' % (i_mc, rf_size_theta[i_mc])
+
+    for i_hc in xrange(params['n_hc']):
+        #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
+        for i_mc in xrange(params['n_mc_per_hc']):
+            x, u = x_pos[i_hc], theta[i_mc]
+            for i_exc in xrange(params['n_exc_per_mc']):
+#                tuning_prop[index, 0] = (x + np.abs(x - .5) / .5 * rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])) % params['torus_width']
+                tuning_prop[index, 0] = x + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
+                tuning_prop[index, 1] = 0.5 
+                tuning_prop[index, 2] = u + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed'])
+#                tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
+#                tuning_prop[index, 3] = 0. 
+#                rfs[index, 0] = rf_size_x[i_hc]
+#                rfs[index, 2] = rf_size_theta[i_mc]
+                rfs[index, 0] = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
+                rfs[index, 2] = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta'])))
+                if params['increase_rf_size_with_speed']:
+                    rf_size_x_increase = utils.transform_linear(np.abs(tuning_prop[index, 2]), (1., params['rf_x_increase_max']), x_range=(params['v_min_tp'], params['v_max_tp']))
+#                    print 'debug rf_size_x_increase :', rf_size_x_increase 
+                    rfs[index, 0] *= rf_size_x_increase
+                index += 1
+    return tuning_prop, rfs
+
+
+def plot_orientation_tuning(params, tp, rfs):
+
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+    fig2 = pylab.figure()
+    ax3 = fig2.add_subplot(111)
+
+    pos_axis = np.arange(0., 1., 0.01)
+    theta_axis = np.arange(params['theta_min_tp'], params['theta_max_tp'], 0.01)
+    patches = []
+    for i_ in xrange(tp[:, 0].size):
+        x_rf = tp[i_, 0]
+        theta_rf = tp[i_, 2]
+        sigma_x = rfs[i_, 0]
+        sigma_theta = rfs[i_, 2]
+        x_tuning_curve = utils.gauss(pos_axis, x_rf, sigma_x)
+        theta_tuning_curve = utils.gauss(theta_axis, theta_rf, sigma_theta)
+        ax1.plot(pos_axis, x_tuning_curve)
+        ax2.plot(theta_axis, theta_tuning_curve)
+        ax3.plot(x_rf, theta_rf, 'o', c='k', ms=3)
+        ellipse = mpatches.Ellipse((x_rf, theta_rf), sigma_x, sigma_theta)
+        patches.append(ellipse)
+
+
+    ax1.set_title('Tuning curves for position')
+    ax2.set_title('Tuning curves for orientation')
+
+#    collection = PatchCollection(patches, alpha=0.2, facecolor='b', edgecolor='k', linewidth=4)
+    collection = PatchCollection(patches, alpha=0.1, facecolor='b', edgecolor=None)
+    ax3.add_collection(collection)
+
+#    ylim = ax.get_ylim()
+#    ax.set_ylim((1.1 * ylim[0], 1.1 * ylim[1]))
+#    ax.set_xlabel('Receptive field position x')
+#    ax.set_ylabel('Preferred speed $v_x$')
+#    pylab.savefig('tuning_properties.png', dpi=200)
+
 
 if __name__ == '__main__':
 
@@ -643,5 +757,9 @@ if __name__ == '__main__':
     import simulation_parameters
     param_tool = simulation_parameters.parameter_storage()
     params = param_tool.params
-    plot_tuning_prop_const_fovea(params)
+#    plot_tuning_prop_const_fovea(params)
+
+    tp, rfs = set_tuning_prop_with_orientation(params)
+    plot_orientation_tuning(params, tp, rfs)
+    pylab.show()
 
