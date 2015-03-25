@@ -12,9 +12,6 @@ import random
 import set_tuning_properties
 
 
-def create_orientation_training_stimuli(params):
-
-
 def create_training_stim_in_tp_space():
     print 'Using standard params'
     import simulation_parameters
@@ -194,6 +191,45 @@ def create_regular_training_stimuli(params, tp=None):
     return mp
 
 
+def create_regular_training_stimuli_with_orientation(params, tp=None):
+    x_pos = set_tuning_properties.get_xpos_regular(params) # N_HC
+    theta_train = set_tuning_properties.get_orientation_tuning_regular(params) # N_MC
+
+    np.random.seed(params['visual_stim_seed'])
+    mp = np.zeros((params['n_stim'], 5))
+    mp[:, 2] = params['v_stim_training']
+    if tp == None:
+        tp = np.loadtxt(params['tuning_prop_exc_fn'])
+    else:
+        tp, rfs = set_tuning_properties.set_tuning_prop_with_orientation(params)
+    
+    for i_ in xrange(params['n_stim']):
+        theta_ = theta_train[i_ % len(theta_train)]
+        theta_noise = 1. + (2 * params['training_stim_noise_theta'] * np.random.random_sample() - params['training_stim_noise_theta'])
+        if theta_ > 0.:
+            x_start = params['training_stim_noise_x']
+        else:
+            x_start = 1. - params['training_stim_noise_x']
+        x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
+        mp[i_, 0] = x_start + x_noise
+        mp[i_, 4] = theta_ * theta_noise
+
+    idx = range(params['n_stim'])
+    if params['random_training_order']:
+        np.random.shuffle(idx)
+        mp = mp[idx, :]
+
+    np.savetxt(params['training_stimuli_fn'], mp)
+    training_stim_duration = np.zeros(params['n_stim'])
+    for i_ in xrange(params['n_stim']):
+        t_exit = utils.compute_stim_time(mp[i_, :])
+#        t_exit = utils.compute_stim_time([mp[i_, 0], mp[i_, 1], v_train, 0.])
+        training_stim_duration[i_] = min(t_exit, params['t_training_max']) + params['t_stim_pause']
+    print 'Saving training stim durations to:', params['stim_durations_fn']
+    np.savetxt(params['stim_durations_fn'], training_stim_duration)
+    return mp
+
+
 if __name__ == '__main__':
 
 #    if len(sys.argv) == 2:
@@ -204,10 +240,10 @@ if __name__ == '__main__':
     params = GP.params
     GP.write_parameters_to_file(params['params_fn_json'], params) # write_parameters_to_file MUST be called before every simulation
     if params['regular_tuning_prop']:
-        tp, rfs = set_tuning_properties.set_tuning_properties_regular(params)
+        tp, rfs = set_tuning_properties.set_tuning_prop_with_orientation(params)
         np.savetxt(params['tuning_prop_exc_fn'], tp)
         np.savetxt(params['receptive_fields_exc_fn'], rfs)
-        create_regular_training_stimuli(params)
+        create_regular_training_stimuli_with_orientation(params)
     else:
         tp, rfs = set_tuning_properties.set_tuning_prop_1D_with_const_fovea_and_const_velocity(params)
         np.savetxt(params['tuning_prop_exc_fn'], tp)

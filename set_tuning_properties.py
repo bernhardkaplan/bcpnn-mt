@@ -665,9 +665,9 @@ def set_tuning_prop_with_orientation(params):
     """
     Returns 3-dimensional tuning properties
     """
-
-    tuning_prop = np.zeros((params['n_exc'], 3))
-    rfs = np.zeros((params['n_exc'], 3))
+    tuning_prop = np.zeros((params['n_exc'], 5))
+    rfs = np.zeros((params['n_exc'], 5))
+    np.random.seed(params['tuning_prop_seed'])
     x_pos = get_xpos_regular(params)
     x_pos_diff = x_pos[1] - x_pos[0] # rf_x spacing
     theta = get_orientation_tuning_regular(params)
@@ -675,18 +675,16 @@ def set_tuning_prop_with_orientation(params):
     rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
     rf_size_theta = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta']))) * np.ones(params['n_mc_per_hc'])
     index = 0
-
     for i_hc in xrange(params['n_hc']):
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], theta[i_mc]
             for i_exc in xrange(params['n_exc_per_mc']):
                 tuning_prop[index, 0] = x + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
                 tuning_prop[index, 1] = 0.5 
-                r_ = rnd.uniform(-params['sigma_rf_orientation'] , params['sigma_rf_orientation'])
-                print 'debug r_', r_, u, u + r_
-                tuning_prop[index, 2] = u + r_
+                rnd_rotation = rnd.uniform(-params['sigma_rf_orientation'] , params['sigma_rf_orientation'])
+                tuning_prop[index, 4] = (u + rnd_rotation) % 180.
                 rfs[index, 0] = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
-                rfs[index, 2] = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta'])))
+                rfs[index, 4] = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta'])))
                 index += 1
     return tuning_prop, rfs
 
@@ -704,9 +702,9 @@ def plot_orientation_tuning(params, tp, rfs):
     patches = []
     for i_ in xrange(tp[:, 0].size):
         x_rf = tp[i_, 0]
-        theta_rf = tp[i_, 2]
+        theta_rf = tp[i_, 4]
         sigma_x = rfs[i_, 0]
-        sigma_theta = rfs[i_, 2]
+        sigma_theta = rfs[i_, 4]
         x_tuning_curve = utils.gauss(pos_axis, x_rf, sigma_x)
         theta_tuning_curve = utils.gauss(theta_axis, theta_rf, sigma_theta)
         ax1.plot(pos_axis, x_tuning_curve)

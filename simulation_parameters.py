@@ -45,6 +45,7 @@ class parameter_storage(object):
         self.params['sim_id'] += 'withOrientation'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
+        self.params['v_stim_training'] = 0.4
 
         # ###################
         # HEXGRID PARAMETERS
@@ -123,7 +124,7 @@ class parameter_storage(object):
             self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .1 * 180 / np.pi # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .1 * 180 # some variability in the direction of RFs
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
@@ -394,6 +395,7 @@ class parameter_storage(object):
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_theta'] = 0.04 * 180. # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v'] = 50 * self.params['n_v']
