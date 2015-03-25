@@ -92,7 +92,7 @@ def plot_connections_incoming(params, ax=None):
         valid_mc_idx = np.where(np.abs((v_src - v_tgt) / v_tgt) < v_tolerance)[0]
         if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
             ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
-        ax.scatter(x_src - x_tgt, w_in, c='k', linewidths=0)
+        #ax.scatter(x_src - x_tgt, w_in, c='k', linewidths=0)
 
 #        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
 #            ax.plot(x_tgt - x_src[valid_mc_idx], w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))

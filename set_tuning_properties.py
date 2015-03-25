@@ -674,35 +674,19 @@ def set_tuning_prop_with_orientation(params):
     theta_diff = theta[1] - theta[0]
     rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
     rf_size_theta = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta']))) * np.ones(params['n_mc_per_hc'])
-    # The target overlap of tuning curves does NOT hold for the transition from left-rightward movement -- or should it?
-#    if np.abs(theta[0]) < 0.1:
-#        print 'Setting rf_size[0] to', params['v_min_tp']
-#        rf_size_theta[params['n_mc_per_hc'] / 2] = params['v_min_tp']
-#        rf_size_theta[0] = params['v_min_tp']
-
     index = 0
-#    for i_mc in xrange(params['n_mc_per_hc']):
-#        print 'DEBUG rf_size_theta[%d] = %.3e' % (i_mc, rf_size_theta[i_mc])
 
     for i_hc in xrange(params['n_hc']):
-        #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
         for i_mc in xrange(params['n_mc_per_hc']):
             x, u = x_pos[i_hc], theta[i_mc]
             for i_exc in xrange(params['n_exc_per_mc']):
-#                tuning_prop[index, 0] = (x + np.abs(x - .5) / .5 * rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])) % params['torus_width']
                 tuning_prop[index, 0] = x + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
                 tuning_prop[index, 1] = 0.5 
-                tuning_prop[index, 2] = u + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed'])
-#                tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
-#                tuning_prop[index, 3] = 0. 
-#                rfs[index, 0] = rf_size_x[i_hc]
-#                rfs[index, 2] = rf_size_theta[i_mc]
+                r_ = rnd.uniform(-params['sigma_rf_orientation'] , params['sigma_rf_orientation'])
+                print 'debug r_', r_, u, u + r_
+                tuning_prop[index, 2] = u + r_
                 rfs[index, 0] = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
                 rfs[index, 2] = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta'])))
-                if params['increase_rf_size_with_speed']:
-                    rf_size_x_increase = utils.transform_linear(np.abs(tuning_prop[index, 2]), (1., params['rf_x_increase_max']), x_range=(params['v_min_tp'], params['v_max_tp']))
-#                    print 'debug rf_size_x_increase :', rf_size_x_increase 
-                    rfs[index, 0] *= rf_size_x_increase
                 index += 1
     return tuning_prop, rfs
 
@@ -730,7 +714,6 @@ def plot_orientation_tuning(params, tp, rfs):
         ax3.plot(x_rf, theta_rf, 'o', c='k', ms=3)
         ellipse = mpatches.Ellipse((x_rf, theta_rf), sigma_x, sigma_theta)
         patches.append(ellipse)
-
 
     ax1.set_title('Tuning curves for position')
     ax2.set_title('Tuning curves for orientation')

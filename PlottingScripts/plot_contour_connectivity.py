@@ -93,7 +93,7 @@ class ConnectivityPlotter(object):
 
         ax.set_xlabel('Position')
         ax.set_ylabel('Preferred speed')
-        ax.set_title('Outgoing connections, $\\tau_i = %d$' % self.params['bcpnn_params']['tau_i'])
+        ax.set_title('Incoming connections, $\\tau_i = %d$' % self.params['bcpnn_params']['tau_i'])
         cbar = fig.colorbar(m)
         cbar.set_label('$w_{out}^{BCPNN}$')
 
@@ -244,11 +244,11 @@ if __name__ == '__main__':
     
     tp_params = np.array([tp_params_fast, tp_params_slow])
 
-    in_out = 'incoming'
-#    in_out = 'outgoing'
+#    in_out = 'incoming'
+    in_out = 'outgoing'
 
-    clim = [-5., 5.]
-#    clim = None 
+#    clim = [-5., 5.]
+    clim = None 
     if len(sys.argv) == 1:
         print 'Case 1: default parameters'
         import simulation_parameters

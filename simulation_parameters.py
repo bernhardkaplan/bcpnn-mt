@@ -42,7 +42,7 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'withOrientation' % self.w_input_exc
+        self.params['sim_id'] += 'withOrientation'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -98,6 +98,8 @@ class parameter_storage(object):
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
+        self.params['y_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
+        self.params['y_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['v_max_tp'] = 0.80  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
         self.params['v_min_tp'] = 0.40  # [a.u.] minimal velocity in visual space for tuning property distribution
         self.params['theta_max_tp'] = 180.0  # [degree]
@@ -121,7 +123,7 @@ class parameter_storage(object):
             self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .1 * np.pi # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .1 * 180 / np.pi # some variability in the direction of RFs
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
