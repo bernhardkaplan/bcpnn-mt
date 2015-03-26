@@ -45,10 +45,10 @@ if USE_MPI:
     my_idx = utils.distribute_n(len(list_of_jobs), n_proc, pc_id) # this holds the indices for the jobs to be run by this processor
     n_my_jobs = len(range(my_idx[0], my_idx[1]))
     print 'pc_id %d job indices:' % pc_id, my_idx
-    for i_ in xrange(my_idx[0], my_idx[1]):
+    for j_, i_ in enumerate(range(my_idx[0], my_idx[1])):
 #        print 'debug list_of_jobs:', list_of_jobs, 'i_', i_
         job_name = list_of_jobs[i_]
-        print 'pc_id %d runs job nr %d / %d' % (pc_id, i_ + 1, n_my_jobs), job_name
+        print 'pc_id %d runs job nr %d / %d' % (pc_id, j_ + 1, n_my_jobs), job_name
         os.system(job_name)
 else:
     print 'No MPI found'

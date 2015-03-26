@@ -125,18 +125,26 @@ class CreateInput(object):
     def create_test_stim_grid(self, params):
 #        n_stim = params['n_stim']
         n_stim = params['stim_range'][1]
-        vlim = (params['v_min_training'], params['v_max_training'])
-        v_test = np.linspace(vlim[1], vlim[0], n_stim, endpoint=True)
-        mp_test = np.zeros((n_stim, 4))
-        x_idx_pos = (v_test > 0.).nonzero()[0]
-        x_idx_neg = (v_test <= 0.).nonzero()[0]
-        x_test = np.zeros(n_stim)
-        for i_ in x_idx_pos:
-            x_test[i_] = 0.0
-        for i_ in x_idx_neg:
-            x_test[i_] = 1.0
-        for i_ in xrange(n_stim):
-            mp_test[i_, :] = x_test[i_], .5, v_test[i_], .0
+        if params['with_orientation']:
+            mp_test = np.zeros((n_stim, 3))
+            x_test = np.random
+            vlim = (params['theta_min_training'], params['theta_max_training'])
+            theta_test = np.linspace(vlim[0], vlim[1], n_stim, endpoint=False)
+            for i_ in xrange(n_stim):
+                mp_test[i_, :] = x_test[i_], .5, theta_test[i_]
+        else:
+            x_test = np.zeros(n_stim)
+            mp_test = np.zeros((n_stim, 4))
+            vlim = (params['v_min_training'], params['v_max_training'])
+            v_test = np.linspace(vlim[1], vlim[0], n_stim, endpoint=True)
+            x_idx_pos = (v_test > 0.).nonzero()[0]
+            x_idx_neg = (v_test <= 0.).nonzero()[0]
+            for i_ in x_idx_pos:
+                x_test[i_] = 0.0
+            for i_ in x_idx_neg:
+                x_test[i_] = 1.0
+            for i_ in xrange(n_stim):
+                mp_test[i_, :] = x_test[i_], .5, v_test[i_], .0
 #        mp_test = mp_test[params['stim_range'][0]:params['stim_range'][1], :]
         if n_stim == 1:
             mp_test.reshape((1, 4))

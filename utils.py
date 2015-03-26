@@ -488,6 +488,9 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
 #            L = np.exp(-.5 * (d_ij)**2 / (blur_X**2 + rfs_x**2)\
 #                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
 
+    elif motion == 'bar':
+        L = np.exp(- 1. / 2. * \
+                ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_x**2) + ((orientation - tuning_prop[:, 2]) % 90.)**2 / (rfs_v**2 + blur_v**2) ))
     return L
 
 
