@@ -458,9 +458,10 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
 
     """
     n_cells = tuning_prop[:, 0].size
-    blur_X, blur_V = params['blur_X'], params['blur_V'] #0.5, 0.5
+    blur_X, blur_V, blur_theta = params['blur_X'], params['blur_V'], params['blur_theta']
     rfs_x = rfs[:, 0]
     rfs_v = rfs[:, 2]
+    rfs_theta = rfs[:, 4]
     blur_theta = params['blur_theta']
     # get the current stimulus parameters
     x_stim, y_stim, u_stim, v_stim, orientation = predictor_params[0], predictor_params[1], predictor_params[2], predictor_params[3], predictor_params[4]
@@ -490,7 +491,7 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
 
     elif motion == 'bar':
         L = np.exp(- 1. / 2. * \
-                ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_x**2) + ((orientation - tuning_prop[:, 2]) % 90.)**2 / (rfs_v**2 + blur_v**2) ))
+                ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_X**2) + ((orientation - tuning_prop[:, 4]) % 180.)**2 / (rfs_theta**2 + blur_theta**2) ))
     return L
 
 

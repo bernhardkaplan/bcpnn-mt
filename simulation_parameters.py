@@ -51,7 +51,7 @@ class parameter_storage(object):
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
-        self.params['n_rf'] = 10 # == N_HC
+        self.params['n_rf'] = 6 # == N_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -61,9 +61,10 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             if self.params['with_orientation']:
-                self.params['n_theta'] = 6 # == N_MC_PER_HC
+                self.params['n_theta'] = 4 # == N_MC_PER_HC
             else:
                 self.params['n_theta'] = 1 # == N_MC_PER_HC
+
         if self.params['with_orientation']:
             self.params['n_v'] = 1 # self.params['n_theta'] # == N_MC_PER_HC
         else:
@@ -124,7 +125,7 @@ class parameter_storage(object):
             self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .1 * 180 # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .01 * 180 # some variability in the direction of RFs
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
@@ -378,7 +379,7 @@ class parameter_storage(object):
         assert (self.params['motion_type'] == 'bar' or self.params['motion_type'] == 'dot'), 'Wrong motion type'
 
         self.params['blur_X'], self.params['blur_V'] = .0, .0
-        self.params['blur_theta'] = 1.0
+        self.params['blur_theta'] = 0.0
         self.params['torus_width'] = 1.
         self.params['torus_height'] = 1.
         # the blur parameter represents the input selectivity:
@@ -395,14 +396,13 @@ class parameter_storage(object):
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_theta'] = 0.04 * 180. # percentage of noise for each individual training speed
+        self.params['training_stim_noise_theta'] = 0.01 * 180. # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 50 * self.params['n_v']
-        #self.params['n_training_v'] = 4
+        self.params['n_training_v'] = 2 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
-#        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
+        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']

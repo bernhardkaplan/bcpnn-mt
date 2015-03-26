@@ -22,7 +22,7 @@ def plot_prediction(params, stim_range):
     plotter.load_motion_params()
     output_fn_base = '%sprediction' % (params['figures_folder'])
     stim_duration = np.loadtxt(params['stim_durations_fn'])
-    print 'trajectories:', plotter.trajectories_x
+#    print 'trajectories:', plotter.trajectories_x
 
 #    for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
 #        plotter.compute_pos_and_v_estimates(stim)

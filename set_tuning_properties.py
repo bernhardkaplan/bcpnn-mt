@@ -682,7 +682,7 @@ def set_tuning_prop_with_orientation(params):
                 tuning_prop[index, 0] = x + rnd.uniform(-params['sigma_rf_pos'] , params['sigma_rf_pos'])
                 tuning_prop[index, 1] = 0.5 
                 rnd_rotation = rnd.uniform(-params['sigma_rf_orientation'] , params['sigma_rf_orientation'])
-                tuning_prop[index, 4] = (u + rnd_rotation) % 180.
+                tuning_prop[index, 4] = u + rnd_rotation
                 rfs[index, 0] = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
                 rfs[index, 4] = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta'])))
                 index += 1

@@ -197,28 +197,33 @@ def create_regular_training_stimuli_with_orientation(params, tp=None):
 
     np.random.seed(params['visual_stim_seed'])
     mp = np.zeros((params['n_stim'], 5))
-    mp[:, 2] = params['v_stim_training']
     if tp == None:
         tp = np.loadtxt(params['tuning_prop_exc_fn'])
     else:
         tp, rfs = set_tuning_properties.set_tuning_prop_with_orientation(params)
     
-    for i_ in xrange(params['n_stim']):
-        theta_ = theta_train[i_ % len(theta_train)]
-        theta_noise = 1. + (2 * params['training_stim_noise_theta'] * np.random.random_sample() - params['training_stim_noise_theta'])
-        if theta_ > 0.:
-            x_start = params['training_stim_noise_x']
-        else:
-            x_start = 1. - params['training_stim_noise_x']
-        x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
-        mp[i_, 0] = x_start + x_noise
-        mp[i_, 4] = theta_ * theta_noise
+    i_stim = 0 
+    for i_theta in xrange(params['n_theta_training']):
+        for i_v in xrange(params['n_training_v']):
+            v_training = (-1)**(i_v % 2) * params['v_stim_training']
+            mp[i_stim, 2] = v_training
+            theta_ = theta_train[i_theta % len(theta_train)]
+            theta_noise = np.random.uniform(-params['training_stim_noise_theta'], params['training_stim_noise_theta'])
+            if v_training > 0.:
+                x_start = params['training_stim_noise_x']
+            else:
+                x_start = 1. - params['training_stim_noise_x']
+            x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
+            mp[i_stim, 0] = x_start + x_noise
+            mp[i_stim, 4] = (theta_ + theta_noise) % 180.
+            i_stim += 1
 
     idx = range(params['n_stim'])
     if params['random_training_order']:
         np.random.shuffle(idx)
         mp = mp[idx, :]
 
+    print 'Saving the training parameters to:', params['training_stimuli_fn']
     np.savetxt(params['training_stimuli_fn'], mp)
     training_stim_duration = np.zeros(params['n_stim'])
     for i_ in xrange(params['n_stim']):

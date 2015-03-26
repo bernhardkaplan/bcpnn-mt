@@ -10,7 +10,7 @@ from CreateInput import CreateInput
 import json
 from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity, set_tuning_prop_with_orientation
 from copy import deepcopy
-from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_orientation_training_stimuli
+from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_regular_training_stimuli_with_orientation
 
 class NetworkModel(object):
 
@@ -52,7 +52,7 @@ class NetworkModel(object):
         if self.params['training_run']:
             if training_stimuli == None:
                 if self.params['with_orientation']:
-                    training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
+                    training_stimuli = create_regular_training_stimuli_with_orientation(self.params, self.tuning_prop_exc)
                 else:
                     if self.params['regular_tuning_prop']:
                         training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
