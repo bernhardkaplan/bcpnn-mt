@@ -1309,8 +1309,9 @@ def plot_prediction(params=None, stim_range=None, data_fn=None, inh_spikes=None)
         plotter.plot_raster_sorted(stim_range, fig_cnt=1, title='Exc cells sorted by x-position', sort_idx=0)
         plotter.plot_x_grid_vs_time(2, time_range=time_range, stim_idx=stim)
         plotter.plot_raster_sorted(stim_range, fig_cnt=3, title='Exc cells sorted by $v_x$', sort_idx=2)
-        vx_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ie}=%.1f\ w_{ei}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
-                params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'], params['w_input_exc'])
+        vx_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ie}=%.1f\ w_{ei}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f\ b=%d$' % ( \
+                params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ie_unspec'], params['w_ei_unspec'], params['w_ii_unspec'], params['w_input_exc'], \
+                params['cell_params_exc']['b'])
         plotter.plot_vx_grid_vs_time(4, time_range=time_range, title=vx_title, stim_idx=stim)
         output_fn = output_fn_base + '_stim%d.png' % stim
         print 'Saving figure to:', output_fn
@@ -1331,8 +1332,9 @@ def plot_prediction(params=None, stim_range=None, data_fn=None, inh_spikes=None)
                       'figure.subplot.top':.9}
         pylab.rcParams.update(plot_params)
         #pylab.subplots_adjust(left=0.07, bottom=0.07, right=0.97, top=0.9, wspace=0.3, hspace=.35)
-        add_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
-            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
+        add_title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f\ b=%d$' % ( \
+            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'], \
+            params['cell_params_exc']['b'])
         plotter.plot_x_estimates(1, time_range=time_range, stim_idx=stim, add_title=add_title)
         plotter.plot_xdiff(2, time_range=time_range, stim_idx=stim)
         plotter.plot_vx_estimates(3, time_range=time_range, stim_idx=stim)

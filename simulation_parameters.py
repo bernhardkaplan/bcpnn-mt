@@ -20,10 +20,11 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = False
+        self.params['training_run'] = True
+        self.params['train_iso'] = False
+        self.params['with_inhibitory_neurons'] = False
         self.params['Cluster'] = True
         self.params['debug'] = False
-        self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
         self.w_input_exc = 10.0
@@ -41,7 +42,10 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'withNoise_wStim%.1f' % self.w_input_exc
+        if self.params['train_iso']:
+            self.params['sim_id'] += 'isoConn' #b_wStim%.1f' % self.w_input_exc
+        else:
+            self.params['sim_id'] += 'anisoConn' #b_wStim%.1f' % self.w_input_exc
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
 
@@ -50,7 +54,7 @@ class parameter_storage(object):
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
         self.params['n_rf'] = 20 # == N_HC
-        self.params['n_v'] = 4 # == N_MC_PER_HC
+        self.params['n_v'] = 2 # == N_MC_PER_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -89,8 +93,8 @@ class parameter_storage(object):
 
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
-        self.params['v_max_tp'] = 0.80  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
-        self.params['v_min_tp'] = 0.40  # [a.u.] minimal velocity in visual space for tuning property distribution
+        self.params['v_max_tp'] = 1.01  # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
+        self.params['v_min_tp'] = 0.20  # [a.u.] minimal velocity in visual space for tuning property distribution
 
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
@@ -311,19 +315,19 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 20.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 1.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
-        self.params['w_ie_unspec'] = -40. * self.params['w_ei_unspec']  # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -5. * self.params['w_ei_unspec']  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .70     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_inh_unspec_per_hc'])) # RandomConvergentConnect
 
         # ie_spec effective only after training
-        self.params['w_ie_spec'] = -50.     # RSNP -> PYR, effective only after training
+        self.params['w_ie_spec'] = -5.     # RSNP -> PYR, effective only after training
         self.params['p_ie_spec'] = 1.       # RSNP -> PYR
         self.params['delay_ie_spec'] = 1.
 
@@ -378,10 +382,10 @@ class parameter_storage(object):
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 50 * self.params['n_v']
+        self.params['n_training_v'] = 100 * self.params['n_v']
         #self.params['n_training_v'] = 4
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
@@ -395,7 +399,7 @@ class parameter_storage(object):
         self.params['n_stim_per_direction'] = 1 
 #        self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction']
         self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
-        self.params['random_training_order'] = True # if true, stimuli within a cycle get shuffled
+        self.params['random_training_order'] = False # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
@@ -463,7 +467,7 @@ class parameter_storage(object):
         self.params['delay_range'] = (0.1, 10.) # allowed range of delays
         self.params['dt_sim'] = self.params['delay_range'][0] * 1 # [ms] time step for simulation
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
-        self.params['dt_volt'] = .5
+        self.params['dt_volt'] = 1.
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
         self.params['record_v'] = False
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
@@ -494,7 +498,7 @@ class parameter_storage(object):
                 'fmax': self.params['fmax_bcpnn'],\
                 'delay': 1.0, \
                 'tau_i': self.params['taui_bcpnn'], \
-                'tau_j': 2.,\
+                'tau_j': 1.,\
                 'tau_e': 1.,\
                 'tau_p': self.params['taup_bcpnn'],\
                 'epsilon': epsilon, \

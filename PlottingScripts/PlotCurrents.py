@@ -194,8 +194,9 @@ def run_plot_currents(params):
 #    else:
 #        title = 'No STP $gain_{BCPNN}=%.1f $ \n $R\\frac{AMPA}{NMDA}=%.1e$' % (params['bcpnn_gain'], params['ampa_nmda_ratio'])
 
-    title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f$' % ( \
-            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
+    title = '$gain=%.2f\ R(\\frac{AMPA}{NMDA})=%.1e\ n_{exc}^{per MC}=%d\ p_{ee}=%.2f$ \n $w_{ei}=%.1f\ w_{ie}=%.1f\ w_{ii}=%.2f\ w_{exc}^{input}=%.1f\ b=%d$' % ( \
+            params['bcpnn_gain'], params['ampa_nmda_ratio'], params['n_exc_per_mc'], params['p_ee_global'], params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'], \
+            params['cell_params_exc']['b'])
     axes[0].set_title(title)
     ax2.set_title(title)
     

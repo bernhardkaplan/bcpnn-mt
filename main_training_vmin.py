@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
 
     t_0 = time.time()
+    record = False
 
     t0 = time.time()
     old_params = None
@@ -35,22 +36,38 @@ if __name__ == '__main__':
 
     params = GP.params
     params['training_run'] = True
-    #if params['n_exc_per_mc'] != 4:
-        #print 'Wrong n_exc_per_mc -- too high for training! Will quit now, please set n_exc_per_mc = 4'
-        #exit(1)
-    #params['training_run'] = True
 
     if len(sys.argv) > 1:
         params['taui_bcpnn'] = float(sys.argv[1])
+        params['v_min_tp'] = float(sys.argv[2])
+        params['v_max_tp'] = params['v_min_tp'] + 0.01
+        params['v_min_training'] = params['v_min_tp']
+        params['v_max_training'] = params['v_max_tp']
+        params['n_v'] = 2 # == N_MC_PER_HC
+        params['n_training_v'] = 100 * params['n_v']
+        params['n_rf_v_fovea'] = np.int(np.round(params['frac_rf_v_fovea'] * params['n_v']))
+        params['n_exc_per_mc'] = 8
+        params['n_mc_per_hc'] = params['n_v']
+        params['n_exc_per_hc'] = params['n_mc_per_hc'] * params['n_exc_per_mc']
+        params['n_mc'] = params['n_hc'] * params['n_mc_per_hc']  # total number of minicolumns
+        params['n_exc'] = params['n_mc'] * params['n_exc_per_mc']
+        params['n_cells'] = params['n_exc'] + params['n_inh']
         params['bcpnn_params']['tau_i'] = params['taui_bcpnn']
         if params['train_iso']:
             params['bcpnn_params']['tau_j'] = params['taui_bcpnn']
-        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_vmin%.1f_vmax%.1f/' % ( \
+        params['n_stim_training'] = params['n_training_v'] * params['n_training_x']
+        params['n_stim'] = params['n_stim_training']
+        params['stim_range'] = [0, params['n_stim']] # naming the training folder, but params['stim_range'] will be overwritten 
+        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_blurXV_%.2f_%.2f_pi%.1e_vmintp%.2f/' % ( \
                 params['sim_id'], params['n_training_cycles'], params['n_training_v'], params['n_training_x'], \
                 params['stim_range'][0], params['stim_range'][1], \
                 params['bcpnn_params']['tau_i'], \
-                params['n_hc'], params['n_mc_per_hc'], \
-                params['v_min_tp'], params['v_max_tp'])
+                params['n_hc'], params['n_mc_per_hc'], params['blur_X'], params['blur_V'], \
+                params['bcpnn_init_val'], params['v_min_tp'])
+        print 'debug folder_name:', folder_name
+        print 'n_cells:', params['n_cells']
+        print 'n_exc', params['n_exc']
+        GP.params = params
         GP.set_filenames(folder_name=folder_name)
 
 #    trained_stimuli = []
@@ -110,7 +127,7 @@ if __name__ == '__main__':
         NM.set_weights(old_params)
     if comm != None:
         comm.Barrier()
-    if params['record_v']:
+    if record:
         NM.record_v_exc()
         NM.record_v_inh_unspec()
     if NM.pc_id == 0:

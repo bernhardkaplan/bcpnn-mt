@@ -283,10 +283,10 @@ class NetworkModel(object):
                     gid_to_column['exc'][gid] = (hc, mc)
                     gid_to_type[gid] = 'exc'
 
-        local_gids_dict = {}
-        local_gids_dict.update({gid : self.pc_id for gid in self.local_idx_exc})
-        f = file(self.params['local_gids_fn_base'] + '%d.json' % (self.pc_id), 'w')
-        json.dump(local_gids_dict, f, indent=2)
+        #local_gids_dict = {}
+        #local_gids_dict.update({gid : self.pc_id for gid in self.local_idx_exc})
+        #f = file(self.params['local_gids_fn_base'] + '%d.json' % (self.pc_id), 'w')
+        #json.dump(local_gids_dict, f, indent=2)
 
         if self.params['with_inhibitory_neurons']:
         ##### UNSPECIFIC INHIBITORY CELLS
