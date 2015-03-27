@@ -21,12 +21,13 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = True
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
         self.params['with_orientation'] = True
+        self.params['symmetric_tauij'] = True
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -45,13 +46,13 @@ class parameter_storage(object):
         self.params['sim_id'] += 'withOrientation'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
-        self.params['v_stim_training'] = 0.4
+        self.params['v_stim_training'] = 0.8
 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
         self.params['n_grid_dimensions'] = 1     # decide on the spatial layout of the network
-        self.params['n_rf'] = 6 # == N_HC
+        self.params['n_rf'] = 20 # == N_HC
         if self.params['n_grid_dimensions'] == 2:
             self.params['n_rf_x'] = np.int(np.sqrt(self.params['n_rf'] * np.sqrt(3)))
             self.params['n_rf_y'] = np.int(np.sqrt(self.params['n_rf'])) 
@@ -61,7 +62,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             if self.params['with_orientation']:
-                self.params['n_theta'] = 4 # == N_MC_PER_HC
+                self.params['n_theta'] = 8 # == N_MC_PER_HC
             else:
                 self.params['n_theta'] = 1 # == N_MC_PER_HC
 
@@ -399,7 +400,7 @@ class parameter_storage(object):
         self.params['training_stim_noise_theta'] = 0.01 * 180. # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 2 #* self.params['n_v']
+        self.params['n_training_v'] = 10 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
         assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
@@ -491,7 +492,7 @@ class parameter_storage(object):
         # ########################
         self.params['fmax_bcpnn'] = 200.0   # should be as the maximum output rate (with inhibitory feedback)
         self.params['taup_bcpnn'] = self.params['t_sim']# / 2.
-        self.params['taui_bcpnn'] = 5.0
+        self.params['taui_bcpnn'] = 20.0
         epsilon = 1 / (self.params['fmax_bcpnn'] * self.params['taup_bcpnn'])
         #self.params['bcpnn_init_val'] = epsilon
         self.params['bcpnn_init_val'] = 0.0001
