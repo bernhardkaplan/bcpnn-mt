@@ -37,10 +37,18 @@ plot_params = {'backend': 'png',
 
 pylab.rcParams.update(plot_params)
 
+def load_conn_list(params, conn_type='ee'):
+    conn_list_fn = params['merged_conn_list_%s' % conn_type]
+    if not os.path.exists(conn_list_fn):
+        print 'Merging connection files...'
+        utils.merge_connection_files(params, conn_type, iteration=None)
+    print 'Loading ', conn_list_fn
 
 
 
-def plot_connections_incoming(params, ax=None):
+
+
+def plot_connections_incoming(params, feature_dimension=2, ax=None):
     """
     Target perspective, trying to estimate the different amounts of 
     excitation arriving at a target cell.
@@ -50,12 +58,18 @@ def plot_connections_incoming(params, ax=None):
     Ref. Watt, van Rossum et al 2000 "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses"
     """
 
-    v_tolerance = .1
+    if feature_dimension==4:
+        v_range = (.0, 180.)
+        v_tolerance = 5.
+    else:
+        v_tolerance = .1
+        v_range = (-1.0, 1.)
     tau_i = params['bcpnn_params']['tau_i']
     conn_fn = params['conn_matrix_mc_fn']
     if not os.path.exists(conn_fn):
-        print 'ERROR! Could not find:', conn_fn
-        conn_fn = raw_input('\n Please enter connection matrix (mc-mc) filename!\n')
+        utils.merge_connection_files(params, 'ee', iteration=None)
+#        print 'ERROR! Could not find:', conn_fn
+#        conn_fn = raw_input('\n Please enter connection matrix (mc-mc) filename!\n')
     print 'Loading:', conn_fn, 
     W = np.loadtxt(conn_fn)
     print 'done'
@@ -66,22 +80,21 @@ def plot_connections_incoming(params, ax=None):
     # get the average tp for a mc
     avg_tp = utils.get_avg_tp(params, tp)
 
-    v_range = (-1.0, 1.)
     clim = (v_range[0], v_range[1])
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
-    m.set_array(avg_tp[:, 2])
-    colorlist= m.to_rgba(avg_tp[:, 2])
+    m.set_array(avg_tp[:, feature_dimension])
+    colorlist= m.to_rgba(avg_tp[:, feature_dimension])
 
     if ax == None:
         fig = pylab.figure(figsize=(12, 12))
         ax = fig.add_subplot(111)#, aspect='equal', autoscale_on=False)
 
     for mc_tgt in xrange(params['n_mc']):
-        v_tgt = avg_tp[mc_tgt, 2]
+        v_tgt = avg_tp[mc_tgt, feature_dimension]
 #        print 'v_tgt:', v_tgt
         x_tgt = avg_tp[mc_tgt, 0]
-        v_src = avg_tp[:, 2]
+        v_src = avg_tp[:, feature_dimension]
         x_src = avg_tp[:, 0]
         w_in = W[:, mc_tgt]
         exc_idx = np.where(w_in > 0.)[0]
@@ -90,10 +103,12 @@ def plot_connections_incoming(params, ax=None):
         W_in_exc[mc_tgt, 2] = w_in[exc_idx].sum()
         W_in_sum[mc_tgt] = w_in.sum()
         valid_mc_idx = np.where(np.abs((v_src - v_tgt) / v_tgt) < v_tolerance)[0]
-        if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
-            ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
+#        if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
+#            ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
+
         #ax.scatter(x_src - x_tgt, w_in, c='k', linewidths=0)
 
+        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
 #        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
 #            ax.plot(x_tgt - x_src[valid_mc_idx], w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
 
@@ -113,7 +128,11 @@ def plot_connections_incoming(params, ax=None):
     ax.set_ylabel('$w_{in}$')
     ax.set_xlabel('Distance to target')
     cb = pylab.colorbar(m)
-    cb.set_label('$v_{tgt}$')
+    if feature_dimension == 4:
+        cblabel = '$\\theta_{tgt}$'
+    else:
+        cblabel = '$v_{tgt}$'
+    cb.set_label(cblabel)
 #    pylab.legend()
     output_fn = params['figures_folder'] + 'ingoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
 #    output_fn = 'ingoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
@@ -123,16 +142,21 @@ def plot_connections_incoming(params, ax=None):
 
 
 
-def plot_connections_out(params, ax=None):
-    v_tolerance = .1
-    v_range = (-1.0, 1.)
+def plot_connections_out(params, feature_dimension=2, ax=None):
+    if feature_dimension==4:
+        v_range = (.0, 180.)
+        v_tolerance = 10.
+    else:
+        v_tolerance = .1
+        v_range = (-1.0, 1.)
 #    v_range = (0.5, 2.)
     tau_i = params['bcpnn_params']['tau_i']
 #    conn_fn = sys.argv[2]
     conn_fn = params['conn_matrix_mc_fn']
     if not os.path.exists(conn_fn):
-        print 'ERROR! Could not find:', conn_fn
-        conn_fn = raw_input('\n Please enter connection matrix (mc-mc) filename!\n')
+        utils.merge_connection_files(params, 'ee', iteration=None)
+#        print 'ERROR! Could not find:', conn_fn
+#        conn_fn = raw_input('\n Please enter connection matrix (mc-mc) filename!\n')
     print 'Loading:', conn_fn, 
     W = np.loadtxt(conn_fn)
     print 'done'
@@ -145,8 +169,8 @@ def plot_connections_out(params, ax=None):
     clim = (v_range[0], v_range[1])
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
-    m.set_array(avg_tp[:, 2])
-    colorlist= m.to_rgba(avg_tp[:, 2])
+    m.set_array(avg_tp[:, feature_dimension])
+    colorlist= m.to_rgba(avg_tp[:, feature_dimension])
 
     if ax == None:
         fig = pylab.figure(figsize=(12, 12))
@@ -155,11 +179,11 @@ def plot_connections_out(params, ax=None):
     linestyles = ['-', '--', ':', '-.']
 
     for mc_src in xrange(params['n_mc']):
-        v_src = avg_tp[mc_src, 2]
+        v_src = avg_tp[mc_src, feature_dimension]
         print 'v_src:', v_src
         w_out = W[mc_src, :]
         x_src = avg_tp[mc_src, 0]
-        v_tgt = avg_tp[:, 2]
+        v_tgt = avg_tp[:, feature_dimension]
         x_tgt = avg_tp[:, 0]
         valid_mc_idx = np.where(np.abs((v_tgt - v_src) / v_src) < v_tolerance)[0]
         if (v_src > v_range[0]) and (v_src < v_range[1]):
@@ -191,7 +215,11 @@ def plot_connections_out(params, ax=None):
     ax.set_ylabel('$w_{out}$')
     ax.set_xlabel('Distance to source')
     cb = pylab.colorbar(m)
-    cb.set_label('$v_{src}$')
+    if feature_dimension == 4:
+        cblabel = '$\\theta_{tgt}$'
+    else:
+        cblabel = '$v_{tgt}$'
+    cb.set_label(cblabel)
 #    pylab.legend()
     output_fn = 'outgoing_bcpnn_weights_vs_pos_taui%04d_v%.1f.png' % (tau_i, params['v_min_tp'])
     print 'Saving fig to:', output_fn
@@ -210,25 +238,31 @@ if __name__ == '__main__':
         print 'Case 1: default parameters'
         GP = simulation_parameters.parameter_storage()
         params = GP.params
+        if params['with_orientation']:
+            feature_dimension = 4
         if in_out == 'incoming':
-            plot_connections_incoming(params)
+            plot_connections_incoming(params, feature_dimension=feature_dimension)
         else:
-            plot_connections_out(params)
+            plot_connections_out(params, feature_dimension=feature_dimension)
         show = True
     elif len(sys.argv) == 2:
         params = utils.load_params(sys.argv[1])
+        if params['with_orientation']:
+            feature_dimension = 4
         if in_out == 'incoming':
-            plot_connections_incoming(params)
+            plot_connections_incoming(params, feature_dimension=feature_dimension)
         else:
-            plot_connections_out(params)
+            plot_connections_out(params, feature_dimension=feature_dimension)
         show = True
     else:
         for folder in sys.argv[1:]:
             params = utils.load_params(folder)
+            if params['with_orientation']:
+                feature_dimension = 4
             if in_out == 'incoming':
-                plot_connections_incoming(params)
+                plot_connections_incoming(params, feature_dimension=feature_dimension)
             else:
-                ax = plot_connections_out(params, ax)
+                ax = plot_connections_out(params, feature_dimension=feature_dimension, ax=ax)
             show = False
     if show:
         pylab.show()

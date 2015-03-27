@@ -406,12 +406,11 @@ class NetworkModel(object):
 
         mapped_gids = np.array(self.recorder_neuron_gid_mapping.values()) - 1
         tp = self.tuning_prop_exc[mapped_gids, :]
+        x0, v0, orientation = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2], self.motion_params[mp_idx, 4]
         if self.params['with_orientation']:
-            motion_type = 'bar'
-            x0, v0, orientation = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2], self.motion_params[mp_idx, 4]
+            motion_type = 'bar' # speed selectivity is ignored
         else:
             motion_type = 'dot'
-            x0, v0 = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2]
 
         print 'Computing input for stim_idx=%d' % stim_idx, 'mp:', x0, v0
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
@@ -422,12 +421,8 @@ class NetworkModel(object):
             time_ = (i_time * dt) / self.params['t_stimulus']
             # compute the trajectory
             x_stim = (x0 + time_ * v0)
-            if self.params['with_orientation']:
-                L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
-                        self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, v0, 0, 0), motion=motion_type)
-            else:
-                L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
-                        self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, 0, 0, orientation), motion=motion_type)
+            L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[mapped_gids, :], \
+                    self.rf_sizes[mapped_gids, :], self.params, (x_stim, 0, v0, 0, orientation), motion=motion_type)
             
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
         if with_blank:
@@ -471,13 +466,13 @@ class NetworkModel(object):
 
         if my_units == None:
             my_units = np.array(self.local_idx_exc) - 1
-        x0, v0 = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2]
+        x0, v0, orientation = self.motion_params[mp_idx, 0], self.motion_params[mp_idx, 2], self.motion_params[mp_idx, 4]
         dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
         idx_t_stop = np.int(self.stim_durations[stim_idx] / dt)
         L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
 
         if self.params['with_orientation']:
-            motion_type = 'bar'
+            motion_type = 'bar'# speed selectivity is ignored
         else:
             motion_type = 'dot'
         # compute the trajectory
@@ -485,7 +480,7 @@ class NetworkModel(object):
             time_ = (i_time * dt) / self.params['t_stimulus']
             x_stim = (x0 + time_ * v0)
             L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
-                    self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, 0), motion=motion_type)
+                    self.rf_sizes[my_units, :], self.params, (x_stim, 0, v0, 0, orientation), motion=motion_type)
         t_offset = self.stim_durations[:stim_idx].sum() #+ stim_idx * self.params['t_stim_pause']
         print 't_offset:', t_offset
         print 'self.stim_durations', self.stim_durations
@@ -526,91 +521,6 @@ class NetworkModel(object):
                     print 'Saving output to:', output_fn
                     np.savetxt(output_fn, np.array(spike_times))
 
-
-    def create_training_input(self, my_units=None, load_files=False, save_output=False, with_blank=False):
-
-        if load_files:
-            self.load_input()
-            return True
-
-        #else:
-        if self.pc_id == 0:
-            print "Computing input spiketrains..."
-
-        if my_units == None:
-            my_units = np.array(self.local_idx_exc) - 1
-        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-
-        time = np.arange(0, self.params['t_sim'], dt)
-        n_cells = len(my_units)
-        L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
-        n_stim_total = self.params['n_stim_training']
-
-        self.trained_stimuli = []
-        for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
-            print 'Calculating OLD training input signal for %d cells in training stim %d / %d (%.1f percent)' % (n_cells, i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            x0, v0 = self.motion_params[stim_idx, 0], self.motion_params[stim_idx, 2]
-            self.trained_stimuli.append((x0, .5, v0, .0, 0.))
-
-#            self.compute_input(my_units)
-
-            # get the input signal
-            idx_t_start = np.int(self.stim_durations[:i_stim].sum() / dt)
-            idx_t_stop = np.int(self.stim_durations[:i_stim+1].sum() / dt)
-            idx_within_stim = 0
-            for i_time in xrange(idx_t_start, idx_t_stop):
-                time_ = (idx_within_stim * dt) / self.params['t_stimulus']
-                x_stim = (x0 + time_ * v0) % self.params['torus_width']
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[my_units, :], self.params, (x_stim, 0, v0, 0, 0))
-                L_input[:, i_time] *= self.params['f_max_stim']
-                if (i_time % 5000 == 0):
-                    print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
-                idx_within_stim += 1
-
-            if with_blank:
-                start_blank = idx_t_start + 1. / dt * self.params['t_start_blank']
-                stop_blank = idx_t_start + 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
-                blank_idx = np.arange(start_blank, stop_blank)
-                before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
-#                    print 'debug stim before_stim_idx', i_stim, before_stim_idx, before_stim_idx.size
-#                    print 'debug stim blank_idx', i_stim, blank_idx, blank_idx.size
-                blank_idx = np.concatenate((blank_idx, before_stim_idx))
-                # blanking
-                for i_time in blank_idx:
-                    L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-
-            idx_t_start_pause = np.int((self.stim_durations[:i_stim+1].sum() - self.params['t_stim_pause'])/ dt)
-            idx_t_stop_pause = np.int(self.stim_durations[:i_stim+1].sum() / dt)
-#            print 'Debug idx_t_start_pause', idx_t_start_pause
-#            print 'Debug idx_t_stop_pause', idx_t_stop_pause
-            L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
-        
-        nprnd.seed(self.params['input_spikes_seed'])
-        # create the spike trains
-        print 'Creating input spiketrains...'
-        for i_, unit in enumerate(my_units):
-            if not (i_ % 10):
-                print 'Creating input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(my_units), float(i_) / len(my_units) * 100.)
-            rate_of_t = np.array(L_input[i_, :])
-            # each cell will get its own spike train stored in the following file + cell gid
-            n_steps = rate_of_t.size
-            spike_times = []
-            for i in xrange(n_steps):
-                r = nprnd.rand()
-                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
-                    spike_times.append(i * dt)
-            self.spike_times_container[i_] = np.array(spike_times)
-            if save_output:
-                if len(spike_times) > 0:
-                    output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
-                    np.savetxt(output_fn, rate_of_t)
-                    output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
-                    print 'Saving output to:', output_fn
-                    np.savetxt(output_fn, np.array(spike_times))
-        self.params['trained_stimuli'] = self.trained_stimuli
-        np.savetxt(self.params['presented_stim_fn'], np.array(self.trained_stimuli))
-        return True
-    
 
 
     def load_input(self):
@@ -761,71 +671,6 @@ class NetworkModel(object):
             spike_times = input_spikes_for_recorder_neurons[i_]
 
         """
-
-
-    def create_training_input_for_cells(self, stim_idx, gids, with_blank):
-        n_cells = len(gids)
-        spike_times_container = [ np.array([]) for i in xrange(len(gids))]
-        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
-        time = np.arange(0, self.params['t_sim'], dt)
-        L_input = np.zeros((n_cells, time.shape[0]))  # the envelope of the Poisson process
-
-        np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
-        n_stim_total = self.params['n_stim_training']
-        for i_stim in xrange(n_stim_total):
-            print 'Re-Calculating input signal for training stim %d / %d (%.1f percent)' % (i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            x0, v0 = self.motion_params[i_stim, 0], self.motion_params[i_stim, 2]
-
-            # get the input signal
-            idx_t_start = np.int(self.stim_durations[:i_stim].sum() / dt)
-            idx_t_stop = np.int(self.stim_durations[:i_stim+1].sum() / dt)
-            idx_within_stim = 0
-            for i_time in xrange(idx_t_start, idx_t_stop):
-                time_ = (idx_within_stim * dt) / self.params['t_stimulus']
-                x_stim = (x0 + time_ * v0) % self.params['torus_width']
-                L_input[:, i_time] = utils.get_input(self.tuning_prop_exc[gids, :], self.rf_sizes[gids, :], self.params, (x_stim, 0, v0, 0, 0))
-#                L_input[:, i_time] = utils.get_input(tp, self.params, (x_stim, 0, v0, 0, 0))
-                L_input[:, i_time] *= self.params['f_max_stim']
-                if (i_time % 5000 == 0):
-                    print "t: %.2f [ms]" % (time_ * self.params['t_stimulus'])
-                idx_within_stim += 1
-        
-            if with_blank:
-                start_blank = idx_t_start + 1. / dt * self.params['t_start_blank']
-                stop_blank = idx_t_start + 1. / dt * (self.params['t_start_blank'] + self.params['t_blank'])
-                blank_idx = np.arange(start_blank, stop_blank)
-                before_stim_idx = np.arange(idx_t_start, self.params['t_start'] * 1./dt + idx_t_start)
-                blank_idx = np.concatenate((blank_idx, before_stim_idx))
-                # blanking
-                for i_time in blank_idx:
-                    L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
-
-            idx_t_start_pause = np.int(((i_stim + 1) * self.params['t_test_stim']  - self.params['t_stim_pause'])/ dt) 
-            idx_t_stop_pause = np.int((i_stim + 1) * self.params['t_test_stim'] / dt) 
-#            print 'Debug idx_t_start_pause', idx_t_start_pause
-#            print 'Debug idx_t_stop_pause', idx_t_stop_pause
-            L_input[:, idx_t_start_pause:idx_t_stop_pause] = 0.
-
-        # create the spike trains
-        print 'Creating input spiketrains...'
-        for i_, unit in enumerate(gids):
-            if not (i_ % 10):
-                print 'Creating input spiketrain for unit %d (%d / %d) (%.1f percent)' % (unit, i_, len(gids), float(i_) / len(gids) * 100.)
-            rate_of_t = np.array(L_input[i_, :])
-            # each cell will get its own spike train stored in the following file + cell gid
-            n_steps = rate_of_t.size
-            spike_times = []
-            for i in xrange(n_steps):
-                r = self.RNG.rand()
-                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
-                    spike_times.append(i * dt)
-            spike_times_container[i_] = np.array(spike_times)
-            output_fn = self.params['input_rate_fn_base'] + str(unit) + '.dat'
-            np.savetxt(output_fn, rate_of_t)
-            output_fn = self.params['input_st_fn_base'] + str(unit) + '.dat'
-            np.savetxt(output_fn, np.array(spike_times))
-        return spike_times_container
-
 
 
     def connect_ee_sparse(self):

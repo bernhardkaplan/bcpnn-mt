@@ -104,7 +104,7 @@ class Plotter(object):
 
 
 
-    def plot_tuning_space(self):
+    def plot_tuning_space(self, feature_dimension=2):
 
 #        fig = pylab.figure(figsize=utils.get_figsize(800, portrait=False))
         fig = pylab.figure(figsize=(9, 9))
@@ -115,9 +115,9 @@ class Plotter(object):
         ax.set_ylabel('Preferred speed $v_x$')
         patches = []
         for gid in xrange(self.tp[:, 0].size):
-            ax.plot(self.tp[gid, 0], self.tp[gid, 2], 'o', c='k', markersize=3)
+            ax.plot(self.tp[gid, 0], self.tp[gid, feature_dimension], 'o', c='k', markersize=3)
 #            print 'debug', self.tp[gid, 0], self.tp[gid, 2]
-            ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, 2]), self.rfs[gid, 0], self.rfs[gid, 2], linewidth=1.)
+            ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, feature_dimension]), self.rfs[gid, 0], self.rfs[gid, feature_dimension], linewidth=1.)
             patches.append(ellipse)
 
         collection = PatchCollection(patches, alpha=0.2, facecolor='blue', linewidth=1)
@@ -177,7 +177,7 @@ class Plotter(object):
         ax2.set_title('Preferred speeds')
 
 
-    def plot_stimuli(self, ax):
+    def plot_stimuli(self, ax, feature_dimension=2):
         mp = np.loadtxt(self.params['training_stimuli_fn'])
 
         stim_duration = np.loadtxt(self.params['stim_durations_fn']) 
@@ -187,11 +187,11 @@ class Plotter(object):
         for i_ in xrange(self.params['n_stim']):
             x_start = mp[i_, 0]
             x_stop = mp[i_, 0] + mp[i_, 2] * (stim_duration[i_] - self.params['t_stim_pause']) / self.params['t_stimulus']
-            ax.plot((x_start, x_stop), (mp[i_, 2], mp[i_, 2]), '--', c='k', lw=3)
-            ax.plot(x_start, mp[i_, 2], 'o', c='b', ms=8)
-            ax.plot(x_stop, mp[i_, 2], 'o', c='r', ms=8)
-            ax.text(x_start, mp[i_, 2] + 0.01, 'Start %d' % i_)
-            ax.text(x_stop, mp[i_, 2] + 0.01, 'Stop %d' % i_)
+            ax.plot((x_start, x_stop), (mp[i_, feature_dimension], mp[i_, feature_dimension]), '--', c='k', lw=3)
+            ax.plot(x_start, mp[i_, feature_dimension], 'o', c='b', ms=8)
+            ax.plot(x_stop, mp[i_, feature_dimension], 'o', c='r', ms=8)
+            ax.text(x_start, mp[i_, feature_dimension] + 0.01, 'Start %d' % i_)
+            ax.text(x_stop, mp[i_, feature_dimension] + 0.01, 'Stop %d' % i_)
 
 
 if __name__ == '__main__':
@@ -210,9 +210,10 @@ if __name__ == '__main__':
         params = param_tool.params
 
     Plotter = Plotter(params)#, it_max=1)
-    ax = Plotter.plot_tuning_space()
+    feature_dimension = 4
+    ax = Plotter.plot_tuning_space(feature_dimension)
     if os.path.exists(params['training_stimuli_fn']):
-        Plotter.plot_stimuli(ax)
+        Plotter.plot_stimuli(ax, feature_dimension)
 #    Plotter.plot_tuning_prop()
 #    Plotter.plot_tuning_width_distribution()
 

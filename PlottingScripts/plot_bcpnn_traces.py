@@ -267,13 +267,15 @@ if __name__ == '__main__':
 
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
-#    t_range_trace_computation = (0, 100000)
+#    t_range_trace_computation = (0, 50000)
     t_range_trace_computation = (0, params['t_sim']) 
 
-    tp_pre = [0.4, 0.5, 0.8, .0]
-    tp_post = [0.6, 0.5, 0.8, .0]
-    n_cells_pre = 3
-    n_cells_post = 3
+    tp_pre = [0.45, 0.5, 0.0, .0, 120.0]
+    tp_post = [0.6, 0.5, 0.0, .0, 120.0]
+#    tp_pre = [0.4, 0.5, 0.8, .0]
+#    tp_post = [0.6, 0.5, 0.8, .0]
+    n_cells_pre = 1
+    n_cells_post = 1
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
     gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=n_cells_pre)
     gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=n_cells_post)
@@ -290,6 +292,9 @@ if __name__ == '__main__':
         print 'GID post: ', gid_post, TP.tuning_prop[gid_post- 1, :]
         spike_data[gid_post] = []
         spike_data[gid_post] = TP.get_spikes_for_gid(gid_post, t_range_trace_computation)
+
+    assert len(spike_data.keys()) > 1, 'ERROR: only one gid found, check gids returned by get_gids_near_stim_nest (tp too close?)'
+#    exit(1)
 
     # SELECT CELLS THAT SPIKED
 #    gids, nspikes = TP.get_cells_that_spiked()

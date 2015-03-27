@@ -52,7 +52,7 @@ def get_gids_to_mc(params, pyr_gid):
 
 
 def get_avg_tp(params, tp):
-    avg_tp = np.zeros((params['n_mc'], 4))
+    avg_tp = np.zeros((params['n_mc'], 5))
     cnt_cells= np.zeros(params['n_mc'])
     for i_ in xrange(tp[:, 0].size):
         (hc_idx, mc_idx, gid_min, gid_max) = get_gids_to_mc(params, i_)
@@ -60,6 +60,7 @@ def get_avg_tp(params, tp):
         avg_tp[mc_idx, 1] += tp[i_, 1] # position
         avg_tp[mc_idx, 2] += tp[i_, 2] # speed
         avg_tp[mc_idx, 3] += tp[i_, 3] # speed
+        avg_tp[mc_idx, 4] += tp[i_, 4] # speed
         cnt_cells[mc_idx] += 1
     for i_mc in xrange(params['n_mc']):
         # check if gid - mc mapping was correctly
@@ -82,11 +83,14 @@ def get_gids_near_stim_nest(mp, tp_cells, n=1, ndim=1):
     if ndim == 1:
         dx = np.abs(tp_cells[:, 0] - mp[0])
         velocity_dist = np.abs(tp_cells[:, 2] - mp[2])
-        summed_dist = dx + velocity_dist
+        orientation_dist = np.abs(tp_cells[:, 4] - mp[4]) / 180.  # normalize distance in tp space, otherwise orientation difference overweighs the other feature distances
+        summed_dist = dx + orientation_dist + velocity_dist
+#        summed_dist = dx + velocity_dist
     elif ndim == 2:
         dy = (tp_cells[:, 1] - mp[1])**2
         dx = np.abs(tp_cells[:, 0] - mp[0])
         velocity_dist = np.sqrt((tp_cells[:, 2] - mp[2])**2 + (tp_cells[:, 3] - mp[3])**2)
+        orientation_dist = np.abs(tp_cells[:, 4] - mp[4])
         summed_dist = dx + dy + velocity_dist
     gids_sorted = np.argsort(summed_dist)[:n] # 0 .. n-1
     nest_gids = gids_sorted + 1
@@ -490,6 +494,7 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
 #                       -.5 * (tuning_prop[:, 2] - u_stim)**2 / (blur_V**2 + rfs_v**2))
 
     elif motion == 'bar':
+        # speed selectivity is ignored
         L = np.exp(- 1. / 2. * \
                 ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_X**2) + ((orientation - tuning_prop[:, 4]) % 180.)**2 / (rfs_theta**2 + blur_theta**2) ))
     return L
