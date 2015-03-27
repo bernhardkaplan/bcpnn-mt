@@ -270,8 +270,8 @@ if __name__ == '__main__':
 #    t_range_trace_computation = (0, 50000)
     t_range_trace_computation = (0, params['t_sim']) 
 
-    tp_pre = [0.45, 0.5, 0.0, .0, 120.0]
-    tp_post = [0.6, 0.5, 0.0, .0, 120.0]
+    tp_pre = [0.65, 0.5, 0.0, .0, 0.0]
+    tp_post = [0.8, 0.5, 0.0, .0, 0.0]
 #    tp_pre = [0.4, 0.5, 0.8, .0]
 #    tp_post = [0.6, 0.5, 0.8, .0]
     n_cells_pre = 1
