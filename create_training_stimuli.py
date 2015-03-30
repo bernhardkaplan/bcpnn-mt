@@ -215,7 +215,7 @@ def create_regular_training_stimuli_with_orientation(params, tp=None):
                 x_start = 1. - params['training_stim_noise_x']
             x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
             mp[i_stim, 0] = x_start + x_noise
-            mp[i_stim, 4] = (theta_ + theta_noise) % 180.
+            mp[i_stim, 4] = theta_ + theta_noise
             i_stim += 1
 
     idx = range(params['n_stim'])

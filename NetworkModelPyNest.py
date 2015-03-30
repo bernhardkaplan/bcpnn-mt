@@ -621,10 +621,15 @@ class NetworkModel(object):
         self.recorder_neuron_gid_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
         self.recorder_neuron_mc_mapping = {} # {recorder_neuron_gid : original_neuron_gid}
         i_rec_nrn = 0
-        for speed in self.params['record_tuning_prop_v']:
+        feature_dimension = 4 # orientation
+        for v_ in self.params['recorder_tuning_prop']:
             pos = np.linspace(self.params['x_min_tp'], self.params['x_max_tp'], self.params['n_recorder_neurons_per_speed'], endpoint=True)
             for x_, i_ in enumerate(pos):
-                gid = utils.get_gids_near_stim_nest([x_, .5, speed, .0], self.tuning_prop_exc)
+                if feature_dimension == 4:
+                    tp = [x_, .5, 0., 0., v_]
+                else:
+                    tp = [x_, .5, v_, 0., 0]
+                gid = utils.get_gids_near_stim_nest(tp, self.tuning_prop_exc)
 
                 self.recorder_neuron_gid_mapping[self.recorder_neurons[i_rec_nrn]] = gid[0][0]
 #                print 'DEBUG setup_recorder_neurons ', self.recorder_neurons[i_rec_nrn], self.recorder_neuron_gid_mapping[self.recorder_neurons[i_rec_nrn]], 'xpos v:', x_, speed
