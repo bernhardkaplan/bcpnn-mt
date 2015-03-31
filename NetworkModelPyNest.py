@@ -111,22 +111,6 @@ class NetworkModel(object):
 
         self.setup_synapse_types()
 
-#    def set_receptive_fields(self, cell_type):
-#        """
-#        Can be called only after set_tuning_prop.
-#        Receptive field sizes increase linearly depending on their relative position.
-#        TODO: receptive field sizes for inhibitory neurons
-#        """
-#        n_cells = self.params['n_exc']
-#        rfs = np.zeros((n_cells, 4))
-#        rfs[:, 0] = self.params['rf_size_x_gradient'] * np.abs(self.tuning_prop_exc[:, 0] - .5) + self.params['rf_size_x_min']
-#        rfs[:, 1] = self.params['rf_size_y_gradient'] * np.abs(self.tuning_prop_exc[:, 1] - .5) + self.params['rf_size_y_min']
-#        rfs[:, 2] = self.params['rf_size_vx_gradient'] * np.abs(self.tuning_prop_exc[:, 2]) + self.params['rf_size_vx_min']
-#        rfs[:, 3] = self.params['rf_size_vy_gradient'] * np.abs(self.tuning_prop_exc[:, 3]) + self.params['rf_size_vy_min']
-
-#        return rfs
-
-
 
 
     def setup_synapse_types(self):

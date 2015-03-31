@@ -180,8 +180,14 @@ def set_tuning_properties_regular(params):
     v_rho_diff = v_rho[1] - v_rho[0]
 #    rf_size_x = get_receptive_field_sizes_x(params, x_pos)
 #    rf_size_v = get_receptive_field_sizes_v(params, v_rho)
-    rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
-    rf_size_v = np.sqrt(-v_rho_diff**2 / (2 * np.log(params['target_overlap_v']))) * np.ones(params['n_mc_per_hc'])
+    if params['fixed_rfs']:
+        # UNTESTED
+        rf_size_x = params['rfs_x_fixed']
+        rf_size_v = params['rfs_v_fixed']
+        rf_size_theta = params['rfs_theta_fixed']
+    else:
+        rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
+        rf_size_v = np.sqrt(-v_rho_diff**2 / (2 * np.log(params['target_overlap_v']))) * np.ones(params['n_mc_per_hc'])
     # The target overlap of tuning curves does NOT hold for the transition from left-rightward movement -- or should it?
     if np.abs(v_rho[0]) < 0.1:
         print 'Setting rf_size[0] to', params['v_min_tp']
@@ -189,8 +195,6 @@ def set_tuning_properties_regular(params):
         rf_size_v[0] = params['v_min_tp']
 
     index = 0
-    for i_mc in xrange(params['n_mc_per_hc']):
-        print 'DEBUG rf_size_v[%d] = %.3e' % (i_mc, rf_size_v[i_mc])
 
     for i_hc in xrange(params['n_hc']):
         #print 'DEBUG rf_size_x[%d] = %.3e' % (i_hc, rf_size_x[i_hc])
@@ -205,7 +209,10 @@ def set_tuning_properties_regular(params):
 #                tuning_prop[index, 2] = u * (1. + rnd.uniform(-params['sigma_rf_speed'] , params['sigma_rf_speed']))
                 tuning_prop[index, 3] = 0. 
 #                rfs[index, 0] = rf_size_x[i_hc]
-                rfs[index, 2] = rf_size_v[i_mc]
+                if params['fixed_rfs']:
+                    rfs[index, 2] = rf_size_v
+                else:
+                    rfs[index, 2] = rf_size_v[i_mc]
                 rfs[index, 0] = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
 #                rfs[index, 2] = np.sqrt(-v_rho_diff**2 / (2 * np.log(params['target_overlap_v'])))
                 if params['increase_rf_size_with_speed']:
@@ -672,8 +679,12 @@ def set_tuning_prop_with_orientation(params):
     x_pos_diff = x_pos[1] - x_pos[0] # rf_x spacing
     theta = get_orientation_tuning_regular(params)
     theta_diff = theta[1] - theta[0]
-    rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
-    rf_size_theta = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta']))) * np.ones(params['n_mc_per_hc'])
+    if params['fixed_rfs']:
+        rf_size_x = params['rfs_x_fixed']
+        rf_size_theta = params['rfs_theta_fixed']
+    else:
+        rf_size_x = np.sqrt(-x_pos_diff**2 / (2 * np.log(params['target_overlap_x'])))
+        rf_size_theta = np.sqrt(-theta_diff**2 / (2 * np.log(params['target_overlap_theta']))) * np.ones(params['n_mc_per_hc'])
     index = 0
     for i_hc in xrange(params['n_hc']):
         for i_mc in xrange(params['n_mc_per_hc']):

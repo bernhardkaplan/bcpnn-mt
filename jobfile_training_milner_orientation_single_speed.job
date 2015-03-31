@@ -5,7 +5,7 @@
 #SBATCH -J o_v0.8
 
 # Only 1 hour wall-clock time will be given to this job
-#SBATCH -t 03:59:00
+#SBATCH -t 01:59:00
 
 # Number of cores per node to be allocated
 #SBATCH -N 5
