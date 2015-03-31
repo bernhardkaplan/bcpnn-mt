@@ -44,6 +44,7 @@ def plot_spikes_sorted(params):
             plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
         plotter.plot_raster_sorted(stim_range, fig_cnt=1, title=title, sort_idx=0)
 
+
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         print 'Case 1'

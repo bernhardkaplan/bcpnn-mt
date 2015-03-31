@@ -268,22 +268,22 @@ if __name__ == '__main__':
     # SELECT CELLS BY TUNING PROPERTIES
     TP.load_tuning_prop()
 #    t_range_trace_computation = (0, 50000)
-    t_range_trace_computation = (0, params['t_sim']) 
+    t_range_trace_computation = (0, params['t_sim'] + 100.) 
 
     tp_pre = [0.65, 0.5, 0.0, .0, 0.0]
     tp_post = [0.8, 0.5, 0.0, .0, 0.0]
 #    tp_pre = [0.4, 0.5, 0.8, .0]
 #    tp_post = [0.6, 0.5, 0.8, .0]
-    n_cells_pre = 3
-    n_cells_post = 3
+    n_cells_pre = 1
+    n_cells_post = 1
     print 'Time range:', t_range_trace_computation, ' is: ', t_range_trace_computation[1] - t_range_trace_computation[0], ' ms'
     gids_pre, dist = utils.get_gids_near_stim_nest(tp_pre, TP.tuning_prop, n=n_cells_pre)
     gids_post, dist = utils.get_gids_near_stim_nest(tp_post, TP.tuning_prop, n=n_cells_post)
 #    gid_pre = gids_pre[0]
 #    gid_post = gids_post[0]
 
-#    gids_pre = [311]
-#    gids_post = [211]
+    gids_pre = [226]
+    gids_post = [100]
 
     spike_data = {}
     print 'Tuning properties:'

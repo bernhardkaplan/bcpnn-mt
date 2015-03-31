@@ -8,6 +8,7 @@ import matplotlib
 import pylab
 import numpy as np
 import utils 
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def plot_weights_colored(params):
@@ -27,7 +28,7 @@ def plot_weights_colored(params):
 
     limit_tp = False
     v_tolerance = 10
-    v_target = 10
+    v_target = 0
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     feature_dimension = 4
@@ -38,7 +39,7 @@ def plot_weights_colored(params):
     colorlist= m.to_rgba(tp[:, feature_dimension])
 
     fig = pylab.figure()
-    ax = fig.add_subplot(111)
+    ax = Axes3D(fig)
     for gid in xrange(1, params['n_exc'] + 1):
 
         if limit_tp and np.abs(tp[gid-1, feature_dimension] - v_target) < v_tolerance:
@@ -64,8 +65,7 @@ def plot_weights_colored(params):
             distances = tp[gid - 1, 0] - tp[other_gids - 1, 0]
             weights = d[idx_0, 2]
             orientation_distance = tp[gid - 1, feature_dimension] - tp[other_gids - 1, feature_dimension]
-            ax.scatter(distances, weights, c=m.to_rgba(tp[other_gids - 1, feature_dimension]), linewidths=0, s=2)
-#            ax.scatter(distances, weights, c=m.to_rgba(orientation_distance), linewidths=0, s=2)
+            ax.scatter(distances, orientation_distance, weights, c=m.to_rgba(tp[gid-1, feature_dimension]), linewidths=0, s=2)
 
 
 if __name__ == '__main__':

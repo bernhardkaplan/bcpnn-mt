@@ -112,10 +112,13 @@ class Plotter(object):
         ax = fig.add_subplot(111)
         ax.set_title('Feature space')
         ax.set_xlabel('Receptive field center $x$')
-        ax.set_ylabel('Preferred speed $v_x$')
+        if feature_dimension == 2:
+            ax.set_ylabel('Preferred speed $v_x$')
+        elif feature_dimension == 4:
+            ax.set_ylabel('Preferred orientation $\\theta$')
         patches = []
         for gid in xrange(self.tp[:, 0].size):
-            ax.plot(self.tp[gid, 0], self.tp[gid, feature_dimension], 'o', c='k', markersize=3)
+            ax.plot(self.tp[gid, 0], self.tp[gid, feature_dimension], 'o', c='k', markersize=4)
 #            print 'debug', self.tp[gid, 0], self.tp[gid, 2]
             ellipse = mpatches.Ellipse((self.tp[gid, 0], self.tp[gid, feature_dimension]), self.rfs[gid, 0], self.rfs[gid, feature_dimension], linewidth=1.)
             patches.append(ellipse)
@@ -187,7 +190,7 @@ class Plotter(object):
         for i_ in xrange(self.params['n_stim']):
             x_start = mp[i_, 0]
             x_stop = mp[i_, 0] + mp[i_, 2] * (stim_duration[i_] - self.params['t_stim_pause']) / self.params['t_stimulus']
-            ax.plot((x_start, x_stop), (mp[i_, feature_dimension], mp[i_, feature_dimension]), '--', c='k', lw=3)
+            ax.plot((x_start, x_stop), (mp[i_, feature_dimension], mp[i_, feature_dimension]), '--', c='k', lw=1)
             ax.plot(x_start, mp[i_, feature_dimension], 'o', c='b', ms=8)
             ax.plot(x_stop, mp[i_, feature_dimension], 'o', c='r', ms=8)
             ax.text(x_start, mp[i_, feature_dimension] + 0.01, 'Start %d' % i_)
@@ -196,11 +199,13 @@ class Plotter(object):
 
     def plot_non_spiking_cells(self, ax, feature_dimension):
         d = np.loadtxt(params['exc_spiketimes_fn_merged'])
-        cnt, bins = np.histogram(d, bins=np.arange(1, params['n_exc'] + 1))
+        cnt, bins = np.histogram(d[:, 0], bins=np.arange(1, params['n_exc'] + 1))
         non_spiking_idx = np.where(cnt <= 1)[0]
 #        tp_nonspiking = tp[non_spiking_idx, :]
 
+        print 'Non spiking cells:'
         for gid in non_spiking_idx:
+            print 'gid: %d tp:' % gid, self.tp[gid, :]
             ax.plot(self.tp[gid, 0], self.tp[gid, feature_dimension], '*', c='r', ms=15)
 
 

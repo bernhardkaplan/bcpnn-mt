@@ -143,8 +143,13 @@ class NetworkModel(object):
 
         # STATIC SYNAPSES 
         # input -> exc: AMPA
-        nest.CopyModel('static_synapse', 'input_exc_fast', \
-                {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
+
+        if self.params['with_stp_for_input']:
+            nest.CopyModel('tsodyks_synapse', 'input_exc_fast', \
+                    {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa'], 'tau_psc': self.params['tau_syn']['ampa']}) 
+        else:
+            nest.CopyModel('static_synapse', 'input_exc_fast', \
+                    {'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['ampa']})  # numbers must be consistent with cell_params_exc
         # input -> exc: NMDA
         #nest.CopyModel('static_synapse', 'input_exc_slow', \
                 #{'weight': self.params['w_input_exc'], 'delay': 0.1, 'receptor_type': self.params['syn_ports']['nmda']})

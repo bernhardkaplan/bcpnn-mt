@@ -23,12 +23,30 @@ def plot_spikes_colored(params):
     m.set_array(tp[:, feature_dimension])
     colorlist= m.to_rgba(tp[:, feature_dimension])
 
+    clim2 = (0., 1.)
+    norm2 = matplotlib.colors.Normalize(vmin=clim2[0], vmax=clim2[1])
+    m2 = matplotlib.cm.ScalarMappable(norm=norm2, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m2.set_array(tp[:, feature_dimension])
+    colorlist2 = m2.to_rgba(tp[:, 0])
+
+
     fig = pylab.figure()
     ax = fig.add_subplot(111)
     for gid in xrange(1, params['n_exc'] + 1):
         idx = np.where(d[:, 0] == gid)[0]
         spikes = d[idx, 1]
-        ax.scatter(spikes, gid * np.ones(spikes.size), c=m.to_rgba(tp[gid-1, feature_dimension]), linewidths=0, s=2)
+        ax.scatter(spikes, gid * np.ones(spikes.size), c=m.to_rgba(tp[gid-1, feature_dimension]), linewidths=0, s=3)
+
+
+    # plot spike count histogram
+    nspikes, bins = np.histogram(d[:, 0], bins=np.arange(1, params['n_exc'] + 2)) # + 2 because you always need 1 bin more than elements to be binned
+
+    fig = pylab.figure()
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+    ax1.scatter(tp[:, 0], nspikes, c=m.to_rgba(tp[:, 4]), linewidths=0, s=5)
+    ax2.scatter(tp[:, 4], nspikes, c=m2.to_rgba(tp[:, 0]), linewidths=0, s=5)
+
 
 
 if __name__ == '__main__':
