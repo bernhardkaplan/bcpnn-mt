@@ -27,6 +27,7 @@ class parameter_storage(object):
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
         self.params['with_orientation'] = True
+        self.params['with_stp_for_input'] = True
         self.params['symmetric_tauij'] = True
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
@@ -43,7 +44,7 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'singleOrientation_fixedRFS_'
+        self.params['sim_id'] += 'inputSTP_'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
         self.params['v_stim_training'] = 0.2 
@@ -173,7 +174,7 @@ class parameter_storage(object):
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_theta'] = 0.01 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['save_input'] = self.params['debug'] #not self.params['Cluster']
+        self.params['save_input'] = False # self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -396,15 +397,15 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
-        self.params['v_min_training'] = 1.0
+        self.params['v_min_training'] = 0.2
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
         self.params['training_stim_noise_theta'] = 0.005 * 180. # percentage of noise for each individual training speed
-        self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
+        self.params['n_training_cycles'] = 2 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 2 #* self.params['n_v']
+        self.params['n_training_v'] = 6 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
         #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
@@ -541,6 +542,9 @@ class parameter_storage(object):
         # ######
         self.params['f_max_stim'] = 300.       # [Hz]
         self.params['w_input_exc'] = self.w_input_exc
+        if self.params['with_stp_for_input']:
+            self.params['f_max_stim'] *= 2.
+            self.params['w_input_exc'] *= 2.
         #self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:
