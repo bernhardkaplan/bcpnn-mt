@@ -43,6 +43,7 @@ class Plotter(object):
                 stim_params = d[i_, :]
                 t_exit = utils.compute_stim_time(stim_params)
                 stim_duration[i_] = min(t_exit, self.params['t_training_max']) + self.params['t_stim_pause']
+
         if stim_lim == None:
             stim_lim = (0, n_stim)
 
@@ -122,8 +123,8 @@ if __name__ == '__main__':
 
     training_stim = None
     plot_process = False
-#    stim_lim = None
-    stim_lim = (0, 50)
+    stim_lim = None
+#    stim_lim = (0, 50)
     if len(sys.argv) > 1:
         try:
             params = utils.load_params(sys.argv[1])

@@ -194,6 +194,9 @@ def create_regular_training_stimuli(params, tp=None):
 def create_regular_training_stimuli_with_orientation(params, tp=None):
     x_pos = set_tuning_properties.get_xpos_regular(params) # N_HC
     theta_train = set_tuning_properties.get_orientation_tuning_regular(params) # N_MC
+    speeds_pos = np.linspace(params['v_min_training'], params['v_max_training'], params['n_training_v'] / 2, endpoint=True)
+    speeds_neg = -1. * speeds_pos
+    speeds = np.r_[speeds_pos, speeds_neg]
 
     np.random.seed(params['visual_stim_seed'])
     mp = np.zeros((params['n_stim'], 5))
@@ -203,20 +206,22 @@ def create_regular_training_stimuli_with_orientation(params, tp=None):
         tp, rfs = set_tuning_properties.set_tuning_prop_with_orientation(params)
     
     i_stim = 0 
-    for i_theta in xrange(params['n_theta_training']):
-        for i_v in xrange(params['n_training_v']):
-            v_training = (-1)**(i_v % 2) * params['v_stim_training']
-            mp[i_stim, 2] = v_training
-            theta_ = theta_train[i_theta % len(theta_train)]
-            theta_noise = np.random.uniform(-params['training_stim_noise_theta'], params['training_stim_noise_theta'])
-            if v_training > 0.:
-                x_start = params['training_stim_noise_x']
-            else:
-                x_start = 1. - params['training_stim_noise_x']
-            x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
-            mp[i_stim, 0] = x_start + x_noise
-            mp[i_stim, 4] = theta_ + theta_noise
-            i_stim += 1
+    for i_cycle in xrange(params['n_training_cycles']):
+        for i_theta in xrange(params['n_theta_training']):
+            for i_v in xrange(params['n_training_v']):
+    #            v_training = (-1)**(i_v % 2) * params['v_stim_training']
+                v_training = speeds[i_v]
+                mp[i_stim, 2] = v_training
+                theta_ = theta_train[i_theta % len(theta_train)]
+                theta_noise = np.random.uniform(-params['training_stim_noise_theta'], params['training_stim_noise_theta'])
+                if v_training > 0.:
+                    x_start = params['training_stim_noise_x']
+                else:
+                    x_start = 1. - params['training_stim_noise_x']
+                x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
+                mp[i_stim, 0] = x_start + x_noise
+                mp[i_stim, 4] = theta_ + theta_noise
+                i_stim += 1
 
     idx = range(params['n_stim'])
     if params['random_training_order']:

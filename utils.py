@@ -9,7 +9,7 @@ import copy
 import re
 import json
 import itertools
-#import matplotlib
+
 
 def print0(msg, comm):
     if comm.rank == 0:
@@ -1866,24 +1866,31 @@ def get_colorlist(n_colors=17):
     return colorlist
 
 
+def get_colorlist_sorted(mapped_axis, value_range=None):
     """
-def get_colorlist_sorted(value_range, mapped_axis):
-    value_range is a tuple representing the (min, max) value of the interval to be color-mapped
-    mapped_axis is an array which is to be mapped.
+    mapped_axis is an array which is to be mapped to colors
     returns a colorlist of the same size as mapped_axis
+    oprtional: value_range is a tuple representing the (min, max) value of the interval to be color-mapped
     Example:
-        100 cells have positions between (0, 1), but you everything below 0.2 and above 0.5 is unimportant:
+        100 cells have positions between (0, 1), but everything below 0.2 and above 0.5 is unimportant:
 
         v_range = (0.2, 0.5)
         mapped_axis = np.random.rand(100) # random positions
-        return value:
+    return value:
         colorlist[cell_idx] --> color of cell_idx in the interval v_range
-    norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
+    """
+    import matplotlib
+    if value_range == None:
+        vmin = np.min(mapped_axis)
+        vmax = np.max(mapped_axis)
+    else:
+        vmin = value_range[0]
+        vmax = value_range[1]
+    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
     m.set_array(mapped_axis)
     colorlist= m.to_rgba(mapped_axis)
     return colorlist
-    """
 
 
 def convert_to_NEST_conform_dict(json_dict):

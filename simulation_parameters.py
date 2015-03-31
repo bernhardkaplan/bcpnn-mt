@@ -21,7 +21,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run']
         self.params['weight_tracking'] = False
@@ -43,7 +43,7 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'singleOrientation_noInh_lessNoise_'
+        self.params['sim_id'] += 'singleOrientation_noInh_'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
         self.params['v_stim_training'] = 0.2 
@@ -390,19 +390,19 @@ class parameter_storage(object):
         # #####################
         # TRAINING PARAMETERS
         # #####################
-        self.params['v_max_training'] = self.params['v_max_tp']# * .9
-        self.params['v_min_training'] = self.params['v_min_tp']
+        self.params['v_max_training'] = 1.0
+        self.params['v_min_training'] = 0.8
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
         self.params['training_stim_noise_theta'] = 0.005 * 180. # percentage of noise for each individual training speed
-        self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
+        self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 50 #* self.params['n_v']
+        self.params['n_training_v'] = 2 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
-        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
+        #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
         self.params['n_theta_training'] = 1 #self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']

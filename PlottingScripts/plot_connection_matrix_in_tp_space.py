@@ -60,7 +60,7 @@ def plot_connections_incoming(params, feature_dimension=2, ax=None):
 
     if feature_dimension==4:
         v_range = (.0, 180.)
-        v_tolerance = 5.
+        v_tolerance = 10.
     else:
         v_tolerance = .1
         v_range = (-1.0, 1.)
@@ -103,12 +103,13 @@ def plot_connections_incoming(params, feature_dimension=2, ax=None):
         W_in_exc[mc_tgt, 2] = w_in[exc_idx].sum()
         W_in_sum[mc_tgt] = w_in.sum()
         valid_mc_idx = np.where(np.abs((v_src - v_tgt) / v_tgt) < v_tolerance)[0]
-#        if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
-#            ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
+        if (v_tgt > v_range[0]) and (v_tgt < v_range[1]):
+            ax.plot(x_src[valid_mc_idx] - x_tgt, w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
 
-        #ax.scatter(x_src - x_tgt, w_in, c='k', linewidths=0)
+        ax.scatter(x_src - x_tgt, w_in, c='k', linewidths=0)
 
-        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
+#        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
+
 #        ax.scatter(x_tgt - x_src, w_in, c=m.to_rgba(v_src), linewidths=0)
 #            ax.plot(x_tgt - x_src[valid_mc_idx], w_in[valid_mc_idx], '-o', ms=3, c=colorlist[mc_tgt], lw=1)#, label='$x_{tgt}=%.2f\ v_{tgt}=%.2f$' % (x_tgt, v_tgt))
 

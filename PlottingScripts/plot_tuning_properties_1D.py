@@ -194,6 +194,17 @@ class Plotter(object):
             ax.text(x_stop, mp[i_, feature_dimension] + 0.01, 'Stop %d' % i_)
 
 
+    def plot_non_spiking_cells(self, ax, feature_dimension):
+        d = np.loadtxt(params['exc_spiketimes_fn_merged'])
+        cnt, bins = np.histogram(d, bins=np.arange(1, params['n_exc'] + 1))
+        non_spiking_idx = np.where(cnt <= 1)[0]
+#        tp_nonspiking = tp[non_spiking_idx, :]
+
+        for gid in non_spiking_idx:
+            ax.plot(self.tp[gid, 0], self.tp[gid, feature_dimension], '*', c='r', ms=15)
+
+
+
 if __name__ == '__main__':
 
     if len(sys.argv) > 1:
@@ -214,6 +225,10 @@ if __name__ == '__main__':
     ax = Plotter.plot_tuning_space(feature_dimension)
     if os.path.exists(params['training_stimuli_fn']):
         Plotter.plot_stimuli(ax, feature_dimension)
+
+    if os.path.exists(params['exc_spiketimes_fn_merged']):
+        Plotter.plot_non_spiking_cells(ax, feature_dimension)
+
 #    Plotter.plot_tuning_prop()
 #    Plotter.plot_tuning_width_distribution()
 

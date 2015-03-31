@@ -47,7 +47,7 @@ class ConnectivityPlotter(object):
                       'figure.figsize': utils.get_figsize(1000, portrait=False)}
         pylab.rcParams.update(plot_params)
 
-    def plot_incoming_connections_exc(self, tp_params=None, clim=None, feature_dimension=2):
+    def plot_incoming_connections_exc(self, tp_params=None, clim=None):
         """
         tp_params -- select cells near these parameters in the tuning property space
         """
@@ -67,9 +67,9 @@ class ConnectivityPlotter(object):
         print 'debug', src_with_weights
         source_gids = np.array(src_with_weights[:, 0], dtype=int) - 1
         x_srcs = tp[source_gids, 0]
-        vx_srcs = tp[source_gids, feature_dimension]
+        theta_srcs = tp[source_gids, 4]
         print 'Target cell %d (- 1) receives input from:' % (tgt_gid), source_gids 
-        weights = src_with_weights[:, feature_dimension]
+        weights = src_with_weights[:, 2]
 
         fig = pylab.figure()
         ax = fig.add_subplot(111)
@@ -87,9 +87,9 @@ class ConnectivityPlotter(object):
         m.set_array(weights)
         rgba_colors = m.to_rgba(weights)
 
-        ax.plot(tp[:, 0], tp[:, feature_dimension], 'o', markeredgewidth=0, c='k', markersize=1, ls='')
+        ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=0, c='k', markersize=1, ls='')
         for i_, tgt in enumerate(source_gids):
-            ax.plot(x_srcs[i_], vx_srcs[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
+            ax.plot(x_srcs[i_], theta_srcs[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
 
         ax.set_xlabel('Position')
         ax.set_ylabel('Preferred speed')
@@ -104,7 +104,7 @@ class ConnectivityPlotter(object):
             idx = np.array(np.round(np.linspace(0, weights.size, n_, endpoint=False)), dtype=int)
             for i_ in xrange(n_):
                 gid_ = sort_idx[idx[i_]]
-                x_, y_ = tp[gid_, 0], tp[gid_, feature_dimension]
+                x_, y_ = tp[gid_, 0], tp[gid_, 2]
                 ax.text(x_, y_, '%d, w=%.2f' % (gid_, weights[idx[i_]]))
                 print 'weight:', weights[idx[i_]]
            
@@ -116,13 +116,13 @@ class ConnectivityPlotter(object):
         for i_ in xrange(5):
             print '%d\t%.2f' % (source_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
-        ax.plot(tp[tgt_gid-1, 0], tp[tgt_gid-1, feature_dimension], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
+        ax.plot(tp[tgt_gid-1, 0], tp[tgt_gid-1, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
         output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], tgt_gid)
         print 'Saving fig to:', output_fn
         pylab.savefig(output_fn, dpi=200)
 
 
-    def plot_outgoing_connections_exc(self, tp_params, clim=None, feature_dimension=2):
+    def plot_outgoing_connections_exc(self, tp_params, clim=None):
         """
         tp_params -- select cells near these parameters in the tuning property space
         """
@@ -135,6 +135,7 @@ class ConnectivityPlotter(object):
         d = self.conn_lists[conn_type]
 #        print 'd:', d
         tp = np.loadtxt(self.params['tuning_prop_exc_fn'])
+        print 'debug', tp_params, '\nhello\n', tp
         gids, dist = utils.get_gids_near_stim_nest(tp_params, tp, n=1)
         src_gid = gids[0]
         
@@ -145,13 +146,13 @@ class ConnectivityPlotter(object):
         tgts_with_weights = utils.get_targets(d, src_gid)
         target_gids = np.array(tgts_with_weights[:, 1], dtype=int) - 1
 #        print 'Source cell %d (+ 1) projects to:' % (src_gid), target_gids 
-        weights = tgts_with_weights[:, feature_dimension]
+        weights = tgts_with_weights[:, 2]
 
         fig = pylab.figure()
         ax = fig.add_subplot(111)
 
         x_tgts = tp[target_gids, 0]
-        vx_tgts = tp[target_gids, feature_dimension]
+        theta_tgts = tp[target_gids, 4]
         abs_max = max(abs(weights.min()), weights.max())
 #        markersizes = utils.transform_linear(weights, (0., abs_max))
 #        print 'weights:', weights, abs(weights), np.min(weights), np.max(weights), weights.size
@@ -169,11 +170,11 @@ class ConnectivityPlotter(object):
         m.set_array(weights)
         rgba_colors = m.to_rgba(weights)
 
-#        ax.plot(tp[:, 0], tp[:, feature_dimension], 'o', c='k', markersize='1', ls='')
-        ax.plot(tp[:, 0], tp[:, feature_dimension], 'o', markeredgewidth=0, c='k', markersize=1, ls='')
+#        ax.plot(tp[:, 0], tp[:, 2], 'o', c='k', markersize='1', ls='')
+        ax.plot(tp[:, 0], tp[:, 2], 'o', markeredgewidth=0, c='k', markersize=1, ls='')
 
         for i_, tgt in enumerate(target_gids):
-            ax.plot(x_tgts[i_], vx_tgts[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
+            ax.plot(x_tgts[i_], theta_tgts[i_], 'o', markeredgewidth=0, c=rgba_colors[i_], markersize=markersizes[i_])
 #            print 'debug i_ %d tgt_gid %d weight %.2f ms %.1f color' % (i_, tgt, weights[i_], markersizes[i_]), rgba_colors[i_]
 
         ax.set_xlabel('Position')
@@ -189,14 +190,14 @@ class ConnectivityPlotter(object):
             idx = np.array(np.round(np.linspace(0, weights.size, n_, endpoint=False)), dtype=int)
             for i_ in xrange(n_):
                 gid_ = sort_idx[idx[i_]]
-                x_, y_ = tp[gid_, 0], tp[gid_, feature_dimension]
+                x_, y_ = tp[gid_, 0], tp[gid_, 2]
                 ax.text(x_, y_, '%d, w=%.2f' % (gid_, weights[idx[i_]]))
                 print 'weight:', weights[idx[i_]]
 
 #            pos_idx = np.nonzero(weights > 0)[0] 
 #            for i_ in xrange(n_):
 #                gid_ = sort_idx[pos_idx[i_]]
-#                x_, y_ = tp[gid_, 0], tp[gid_, feature_dimension]
+#                x_, y_ = tp[gid_, 0], tp[gid_, 2]
 #                ax.text(x_, y_, '%d, w=%.2f' % (gid_, weights[pos_idx[i_]]))
 #                print 'weight:', weights[pos_idx[i_]]
            
@@ -209,7 +210,7 @@ class ConnectivityPlotter(object):
             print '%d\t%.2f' % (target_gids[sort_idx[i_]], weights[sort_idx[i_]])
 
 
-        ax.plot(tp[src_gid-1, 0], tp[src_gid-1, feature_dimension], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
+        ax.plot(tp[src_gid-1, 0], tp[src_gid-1, 2], '*', markersize=markersize_cell, c='y', markeredgewidth=1, label='source')#, zorder=source_gids.size + 10)
         output_fn = self.params['figures_folder'] + 'contour_taui%d_src%d.png' % (self.params['taui_bcpnn'], src_gid)
         print 'Saving fig to:', output_fn
         pylab.savefig(output_fn, dpi=200)
@@ -237,16 +238,10 @@ if __name__ == '__main__':
 
 #    tp_params = (0.5, 0.5, 1.0, 0.)
 
-    tp_params_fast = (0.5, 0.5, 0.0, 0., 120.)
-    tp_params_slow = (0.5, 0.5, 0.0, 0., 120.)
+    tp_params = [[0.5, 0.5, 0.0, 0., .0]]
 #    tp_params = (0.5, 0.5, 1.0, 0.)
-#    tp_params = (0.5, 0.5, 1.0, 0.)
-    
-    tp_params = np.array([tp_params_fast, tp_params_slow])
-
 #    in_out = 'incoming'
     in_out = 'outgoing'
-    feature_dimension = 4
 
 #    clim = [-5., 5.]
     clim = None 
@@ -258,9 +253,9 @@ if __name__ == '__main__':
         P = ConnectivityPlotter(params)
         for tp_params_ in tp_params:
             if in_out == 'incoming':
-                P.plot_incoming_connections_exc(tp_params_, clim=clim, feature_dimension=feature_dimension)
+                P.plot_incoming_connections_exc(tp_params_, clim=clim)
             else:
-                P.plot_outgoing_connections_exc(tp_params_, clim=clim, feature_dimension=feature_dimension)
+                P.plot_outgoing_connections_exc(tp_params_, clim=clim)
     elif len(sys.argv) == 2:
         print 'Case 2'
         if sys.argv[1].endswith('.json') or os.path.isdir(sys.argv[1]):
@@ -268,9 +263,9 @@ if __name__ == '__main__':
             P = ConnectivityPlotter(params)
             for tp_params_ in tp_params:
                 if in_out == 'incoming':
-                    P.plot_incoming_connections_exc(tp_params_, clim=clim, feature_dimension=feature_dimension)
+                    P.plot_incoming_connections_exc(tp_params_, clim=clim)
                 else:
-                    P.plot_outgoing_connections_exc(tp_params_, clim=clim, feature_dimension=feature_dimension)
+                    P.plot_outgoing_connections_exc(tp_params_, clim=clim)
         else:          
             print 'Please provide the folder / simulation_parameters.json file and not the conn_list.dat file!'
             exit(1)
@@ -281,9 +276,9 @@ if __name__ == '__main__':
             P = ConnectivityPlotter(params)
             for tp_params_ in tp_params:
                 if in_out == 'incoming':
-                    P.plot_incoming_connections_exc(tp_params_, clim=clim, feature_dimension=feature_dimension)
+                    P.plot_incoming_connections_exc(tp_params_, clim=clim)
                 else:
-                    P.plot_outgoing_connections_exc(tp_params_, clim=clim, feature_dimension=feature_dimension)
+                    P.plot_outgoing_connections_exc(tp_params_, clim=clim)
             del P 
     pylab.show()
 
