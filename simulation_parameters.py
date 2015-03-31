@@ -23,7 +23,7 @@ class parameter_storage(object):
         self.params['training_run'] = True
         self.params['Cluster'] = False
         self.params['debug'] = False
-        self.params['with_inhibitory_neurons'] = True
+        self.params['with_inhibitory_neurons'] = not self.params['training_run']
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
         self.params['with_orientation'] = True
@@ -34,7 +34,7 @@ class parameter_storage(object):
         elif self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG_'
         elif not self.params['debug'] and self.params['Cluster']:
-            self.params['sim_id'] = 'Cluster'
+            self.params['sim_id'] = 'Cluster_'
         elif not self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = ''
 
@@ -43,11 +43,10 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'withOrientation'
+        self.params['sim_id'] += 'singleOrientation_noInh_'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
-        self.params['v_stim_training'] = 0.8
-
+        self.params['v_stim_training'] = 0.2 
         # ###################
         # HEXGRID PARAMETERS
         # ###################
@@ -62,7 +61,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             if self.params['with_orientation']:
-                self.params['n_theta'] = 8 # == N_MC_PER_HC
+                self.params['n_theta'] = 2 # == N_MC_PER_HC
             else:
                 self.params['n_theta'] = 1 # == N_MC_PER_HC
 
@@ -90,12 +89,12 @@ class parameter_storage(object):
         else:
             self.params['n_mc_per_hc'] = self.params['n_v'] 
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['record_tuning_prop_v'] = [.8, .4]
-        self.params['n_recorder_neurons_per_speed'] = 10 
-        self.params['n_recorder_neurons'] = len(self.params['record_tuning_prop_v']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
+        self.params['recorder_tuning_prop'] = [0., 45., 90., 135.]
+        self.params['n_recorder_neurons_per_speed'] = 10  # per feature
+        self.params['n_recorder_neurons'] = len(self.params['recorder_tuning_prop']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
 
@@ -126,7 +125,7 @@ class parameter_storage(object):
             self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .01 * 180 # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .005 * 180 # some variability in the direction of RFs
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
@@ -168,7 +167,7 @@ class parameter_storage(object):
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['target_overlap_theta'] = 0.4 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
+        self.params['target_overlap_theta'] = 0.01 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['save_input'] = self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
@@ -391,22 +390,21 @@ class parameter_storage(object):
         # #####################
         # TRAINING PARAMETERS
         # #####################
-        self.params['v_max_training'] = 0.8
-        self.params['v_min_training'] = 0.1
+        self.params['v_max_training'] = 1.0
+        self.params['v_min_training'] = 0.8
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_x'] = 0.02 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_theta'] = 0.01 * 180. # percentage of noise for each individual training speed
-        self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
+        self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
+        self.params['training_stim_noise_theta'] = 0.005 * 180. # percentage of noise for each individual training speed
+        self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 6 # including positive and negative speeds
-#        assert (self.params['n_training_v'])
+        self.params['n_training_v'] = 2 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
-        assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
+        #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
-        self.params['n_theta_training'] = self.params['n_theta']
+        self.params['n_theta_training'] = 1 #self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 
         # if one speed is trained, it is presented starting from this number on different locations
@@ -415,7 +413,7 @@ class parameter_storage(object):
 #        self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction']
         self.params['n_stim_training'] = self.params['n_theta_training'] * self.params['n_training_cycles'] * self.params['n_training_v'] * self.params['n_stim_per_direction'] * self.params['n_training_x']
         self.params['random_training_order'] = True # if true, stimuli within a cycle get shuffled
-        self.params['sigma_theta_training'] = .05 # how much each stimulus belonging to one training direction is randomly rotated
+        self.params['sigma_theta_training'] = .01 # how much each stimulus belonging to one training direction is randomly rotated
 
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
