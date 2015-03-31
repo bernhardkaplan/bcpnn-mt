@@ -400,7 +400,7 @@ class parameter_storage(object):
         self.params['training_stim_noise_theta'] = 0.01 * 180. # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 1 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = # including positive and negative speeds
+        self.params['n_training_v'] = 6 # including positive and negative speeds
 #        assert (self.params['n_training_v'])
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
