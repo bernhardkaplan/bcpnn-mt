@@ -121,7 +121,7 @@ if __name__ == '__main__':
     NM.run_sim()
     if comm != None:
         comm.Barrier()
-    NM.trigger_spikes()
+    #NM.trigger_spikes()
     NM.collect_spikes()
     if not params['debug']:
         t_start_get_weights = time.time()

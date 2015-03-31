@@ -43,7 +43,7 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'singleOrientation_noInh_'
+        self.params['sim_id'] += 'singleOrientation_fixedRFS_'
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
         self.params['v_stim_training'] = 0.2 
@@ -122,10 +122,10 @@ class parameter_storage(object):
 
         self.params['rf_x_distribution_steepness'] = 0.4 # 'free' parameter determining the steep-ness of the exponential distribution for x-pos
         if self.params['regular_tuning_prop']:
-            self.params['sigma_rf_pos'] = .01 # some variability in the position of RFs
+            self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .005 * 180 # some variability in the direction of RFs
+            self.params['sigma_rf_orientation'] = .01 * 180 # some variability in the preferred orientation
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
@@ -165,6 +165,11 @@ class parameter_storage(object):
         self.params['rf_x_increase_max'] = 1.
         self.params['rf_size_x_multiplicator'] = 1.00
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
+        self.params['fixed_rfs'] = True # if True: target_overlap_* has no effect (at least for with_orientation)
+        if self.params['fixed_rfs']:
+            self.params['rfs_theta_fixed'] = 30.
+            self.params['rfs_x_fixed'] = 0.03
+            self.params['rfs_v_fixed'] = 0.05
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_theta'] = 0.01 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
@@ -391,7 +396,7 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
-        self.params['v_min_training'] = 0.8
+        self.params['v_min_training'] = 1.0
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
@@ -534,7 +539,7 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 250.       # [Hz]
+        self.params['f_max_stim'] = 300.       # [Hz]
         self.params['w_input_exc'] = self.w_input_exc
         #self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
