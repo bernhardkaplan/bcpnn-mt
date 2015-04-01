@@ -126,7 +126,7 @@ class parameter_storage(object):
             self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .01 * 180 # some variability in the preferred orientation
+            self.params['sigma_rf_orientation'] = .005 * 180 # some variability in the preferred orientation
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
