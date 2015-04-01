@@ -2,7 +2,7 @@
 # The -l above is required to get the full environment with modules
 
 # The name of the script is myjob
-#SBATCH -J o_v0.8
+#SBATCH -J o_v0.5
 
 # Only 1 hour wall-clock time will be given to this job
 #SBATCH -t 01:59:00

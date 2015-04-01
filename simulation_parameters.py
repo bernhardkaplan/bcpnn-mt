@@ -21,13 +21,13 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = False
-        self.params['debug'] = True
+        self.params['Cluster'] = True
+        self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run']
         self.params['weight_tracking'] = False
         self.params['with_stp'] = False
         self.params['with_orientation'] = True
-        self.params['with_stp_for_input'] = True
+        self.params['with_stp_for_input'] = False
         self.params['symmetric_tauij'] = True
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
@@ -44,7 +44,13 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
-        self.params['sim_id'] += 'inputSTP_'
+        self.fmax = 250.
+        self.fmax_factor = 1.0
+        self.w_input_exc_factor = 6.
+        if self.params['with_stp_for_input']:
+            self.params['sim_id'] += '_inputSTP_%.1f_%1.f' % (self.fmax_factor, self.w_input_exc_factor)
+        else:
+            self.params['sim_id'] += ''
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
         self.params['v_stim_training'] = 0.2 
@@ -126,7 +132,7 @@ class parameter_storage(object):
             self.params['sigma_rf_pos'] = .02 # some variability in the position of RFs
             self.params['sigma_rf_speed'] = .02 # some variability in the speed of RFs
             self.params['sigma_rf_direction'] = .25 * 2 * np.pi # some variability in the direction of RFs
-            self.params['sigma_rf_orientation'] = .01 * 180 # some variability in the preferred orientation
+            self.params['sigma_rf_orientation'] = .005 * 180 # some variability in the preferred orientation
             # regular tuning prop
             self.params['rf_size_x_gradient'] = .0  # receptive field size for x-pos increases with distance to .5
             self.params['rf_size_y_gradient'] = .0  # receptive field size for y-pos increases with distance to .5
@@ -402,10 +408,10 @@ class parameter_storage(object):
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_theta'] = 0.005 * 180. # percentage of noise for each individual training speed
-        self.params['n_training_cycles'] = 2 # one cycle comprises training of all n_training_v
+        self.params['training_stim_noise_theta'] = 0.01 * 180. # percentage of noise for each individual training speed
+        self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
 
-        self.params['n_training_v'] = 6 #* self.params['n_v']
+        self.params['n_training_v'] = 2 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
         #self.params['n_training_v'] = 2
         #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
@@ -540,11 +546,11 @@ class parameter_storage(object):
         # ######
         # INPUT
         # ######
-        self.params['f_max_stim'] = 300.       # [Hz]
+        self.params['f_max_stim'] = 500.       # [Hz]
         self.params['w_input_exc'] = self.w_input_exc
         if self.params['with_stp_for_input']:
-            self.params['f_max_stim'] *= 2.
-            self.params['w_input_exc'] *= 2.
+            self.params['f_max_stim'] *= self.fmax_factor
+            self.params['w_input_exc'] *= self.w_input_exc_factor
         #self.params['w_input_exc'] = 1. # [nS] mean value for input stimulus ---< exc_units (columns
         # needs to be changed if PyNN is used
         if not self.params['use_pynest']:

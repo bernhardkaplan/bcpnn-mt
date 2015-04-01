@@ -215,11 +215,11 @@ def create_regular_training_stimuli_with_orientation(params, tp=None):
                 theta_ = theta_train[i_theta % len(theta_train)]
                 theta_noise = np.random.uniform(-params['training_stim_noise_theta'], params['training_stim_noise_theta'])
                 if v_training > 0.:
-                    x_start = params['training_stim_noise_x']
+                    x_start = -0.05
                 else:
-                    x_start = 1. - params['training_stim_noise_x']
-                x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
-                mp[i_stim, 0] = x_start + x_noise
+                    x_start = 1. + 0.05
+                #x_noise = 2 * params['training_stim_noise_x'] * np.random.random_sample() - params['training_stim_noise_x']
+                mp[i_stim, 0] = x_start #+ x_noise
                 mp[i_stim, 4] = theta_ + theta_noise
                 i_stim += 1
 
