@@ -48,13 +48,21 @@ if __name__ == '__main__':
     assert (params['training_run'] == False), 'Wrong flag in simulation parameters. Set training_run = False.'
     # if training_run is set, you might end up with other wrong parameters (e.g. n_stim)
 
-    conn_fn_ampa = sys.argv[1]
-    conn_fn_nmda = sys.argv[2]
-    bcpnn_gain = float(sys.argv[3])
-    w_ie = float(sys.argv[4])
-    w_ei = float(sys.argv[5])
-    ampa_nmda_ratio = float(sys.argv[6])
-    w_ii = float(sys.argv[7])
+#    conn_fn_ampa = sys.argv[1]
+#    conn_fn_nmda = sys.argv[2]
+#    bcpnn_gain = float(sys.argv[3])
+#    w_ie = float(sys.argv[4])
+#    w_ei = float(sys.argv[5])
+#    ampa_nmda_ratio = float(sys.argv[6])
+#    w_ii = float(sys.argv[7])
+
+    conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-100_taui100_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat'
+    conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-100_taui100_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat'
+    bcpnn_gain = params['bcpnn_gain']
+    w_ie = params['w_ie_unspec']
+    w_ei = params['w_ei_unspec']
+    ampa_nmda_ratio = params['ampa_nmda_ratio']
+    w_ii = params['w_ii_unspec']
 
     if not params['debug']:
 #        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
@@ -137,10 +145,10 @@ if __name__ == '__main__':
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
     #if pc_id == 0 and not params['Cluster']:
-    if pc_id == 0:
-        plot_prediction(params=NM.params, stim_range=params['stim_range'])
-        run_plot_currents(NM.params)
-        plot_incoming_currents(NM.params)
+#    if pc_id == 0:
+#        plot_prediction(params=NM.params, stim_range=params['stim_range'])
+#        run_plot_currents(NM.params)
+#        plot_incoming_currents(NM.params)
 #        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
 #        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']
 #        os.system(display_cmd)
