@@ -120,7 +120,8 @@ if __name__ == '__main__':
         NM.record_v_exc()
 #        NM.record_v_inh_unspec()
 
-    NM.run_sim()
+    # run_sim
+    NM.run_test_approaching_stim()
 
     if pc_id == 0:
         ps.write_parameters_to_file(params['params_fn_json'], NM.params) # write_parameters_to_file MUST be called after the simulation, as t_sim is computed and updated

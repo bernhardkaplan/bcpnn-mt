@@ -11,6 +11,17 @@ from PlottingScripts.plot_training_samples import Plotter
 import random
 import set_tuning_properties
 
+def create_test_protocols_Guo(params):
+    """
+    Return the 5-dimensional motion parameters as np.array (5 columns, n_stim rows)
+    """
+    mp = np.zeros((params['n_stim'], 5))
+#    mp[:, 4] = params['test_stim_orientation']
+
+    x_start = params['target_crf_pos'] - params['n_test_steps'] * params['test_step_size']
+    for i_ in xrange(params['n_stim']):
+        params['test_step_duration'] = 200. # [ms]
+        params['test_stim_orientation'] = 0.  # orientation of the approaching stimulus (if protocol != random)
 
 def create_training_stim_in_tp_space():
     print 'Using standard params'

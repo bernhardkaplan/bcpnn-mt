@@ -8,9 +8,9 @@ import utils
 import nest
 from CreateInput import CreateInput
 import json
-from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity, set_tuning_prop_with_orientation
+from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity, set_tuning_prop_with_orientation, get_orientation_tuning_regular
 from copy import deepcopy
-from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_regular_training_stimuli_with_orientation
+from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_regular_training_stimuli_with_orientation, create_test_protocols
 
 class NetworkModel(object):
 
@@ -47,7 +47,15 @@ class NetworkModel(object):
 
         if self.comm != None:
             self.comm.Barrier()
-#        exit(1)
+
+        # # # # # # # # # # # # # # # # # # # # # # # # #
+        #     R A N D O M    D I S T R I B U T I O N S  #
+        # # # # # # # # # # # # # # # # # # # # # # # # #
+        self.RNG = np.random.RandomState(self.params['visual_stim_seed'] + self.pc_id)
+        nprnd.seed(self.params['input_spikes_seed'] + self.pc_id)
+        nest.SetKernelStatus({'grng_seed' : self.params['seed'] + self.n_proc})
+        nest.SetKernelStatus({'rng_seeds' : range(self.params['seed'] + self.n_proc + 1, \
+                self.params['seed'] + 2 * self.n_proc + 1)})
             
         if self.params['training_run']:
             if training_stimuli == None:
@@ -61,22 +69,23 @@ class NetworkModel(object):
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
-            self.CI = CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
-#            self.motion_params = self.CI.create_test_stim_1D_from_training_stim(self.params, self.training_params)
-            self.motion_params = self.CI.create_test_stim_grid(self.params)
-            np.savetxt(self.params['test_sequence_fn'], self.motion_params)
+#            self.CI = CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
+#            if self.params['Guo_protocol']:
+#                self.motion_params = create_test_protocols_Guo(self.params)
+#            else:
+            if not self.params['Guo_protocol']:
+                # TODO: different test stim
+                self.motion_params = np.zeros((self.params['n_stim'], 5]))
+                self.motion_params[:, 0] = self.RNG.rand(self.params['n_stim'])
+                self.motion_params[:, 1] = .5
+                self.motion_params[:, 2] = self.RNG.rand(self.params['n_stim'])
+                self.motion_params[:, 5] = self.RNG.rand(self.params['n_stim'])
+                np.savetxt(self.params['test_sequence_fn'], self.motion_params)
 
         if self.comm != None:
             self.comm.Barrier()
 
-        self.stim_durations = np.zeros(self.params['n_stim'])
-        print 'DEBUG stim_durations:'
-        for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
-            stim_params = self.motion_params[i_, :]
-            t_exit = utils.compute_stim_time(stim_params) + self.params['t_stim_pause']
-            self.stim_durations[i_] = t_exit
-            print 'stim_idx %d (%d) t_exit: %d stim_duration: %d' % (i_, stim_idx, t_exit, self.stim_durations[i_])
-
+        self.set_stim_durations()
         t_sim = self.stim_durations.sum()
         self.params['t_sim'] = t_sim
         self.update_bcpnn_params()
@@ -99,18 +108,26 @@ class NetworkModel(object):
         (delay_min, delay_max) = self.params['delay_range']
 #        nest.SetKernelStatus({'tics_per_ms':self.params['dt_sim'], 'min_delay':delay_min, 'max_delay':delay_max})
 
-        # # # # # # # # # # # # # # # # # # # # # # # # #
-        #     R A N D O M    D I S T R I B U T I O N S  #
-        # # # # # # # # # # # # # # # # # # # # # # # # #
-        self.RNG = np.random.RandomState(self.params['visual_stim_seed'] + self.pc_id)
-        nprnd.seed(self.params['input_spikes_seed'] + self.pc_id)
-#        self.RNGs = [np.random.RandomState(s) for s in range(self.params['visual_stim_seed'], self.params['visual_stim_seed'] + self.n_proc)]
-        nest.SetKernelStatus({'grng_seed' : self.params['seed'] + self.n_proc})
-        nest.SetKernelStatus({'rng_seeds' : range(self.params['seed'] + self.n_proc + 1, \
-                self.params['seed'] + 2 * self.n_proc + 1)})
-
         self.setup_synapse_types()
 
+
+    def set_stim_durations(self):
+        self.stim_durations = np.zeros(self.params['n_stim'])
+        if self.params['training_run']:
+            print 'DEBUG stim_durations:'
+            for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
+                stim_params = self.motion_params[i_, :]
+                t_exit = utils.compute_stim_time(stim_params) + self.params['t_stim_pause']
+                self.stim_durations[i_] = t_exit
+        else:
+            if self.params['Guo_protocol']:
+                self.stim_durations[:] = len(self.params['test_protocols']) * self.params['n_test_steps'] * self.params['test_step_duration'] + self.param['t_stim_pause'] 
+            else:
+                # TODO: other test setup (normal stimuli)
+                for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
+                    stim_params = self.motion_params[i_, :]
+                    t_exit = utils.compute_stim_time(stim_params) + self.params['t_stim_pause']
+                    self.stim_durations[i_] = t_exit
 
 
     def setup_synapse_types(self):
@@ -422,7 +439,7 @@ class NetworkModel(object):
             blank_idx = np.concatenate((before_stim_idx, blank_idx))
             # blanking
             for i_time in blank_idx:
-                L_input[:, i_time] = np.random.permutation(L_input[:, i_time])
+                L_input[:, i_time] = self.RNG.permutation(L_input[:, i_time])
 
         L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
         print 'Proc %d creates input for stim %d' % (self.pc_id, stim_idx)
@@ -587,7 +604,7 @@ class NetworkModel(object):
             gid_min += self.params['inh_spec_offset']
             gid_max += self.params['inh_spec_offset']
             n_src = int(round(self.params['n_inh_per_mc'] * self.params['p_ie_spec']))
-            source_gids = np.random.randint(gid_min, gid_max, n_src)
+            source_gids = self.RNG.randint(gid_min, gid_max, n_src)
             source_gids = np.unique(source_gids)
             nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='inh_exc_specific_fast')
 
@@ -681,7 +698,7 @@ class NetworkModel(object):
 #        for tgt_gid in self.local_idx_exc:
 #            hc_idx, mc_idx, gid_min, gid_max = self.get_gids_to_mc(tgt_gid)
 #            n_src = int(round(self.params['n_exc_per_mc'] * self.params['p_ee_local']))
-#            source_gids = np.random.randint(gid_min, gid_max, n_src)
+#            source_gids = self.RNG.randint(gid_min, gid_max, n_src)
 #            source_gids = np.unique(source_gids)
 #            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_fast')
 #            nest.ConvergentConnect(source_gids.tolist(), [tgt_gid], model='exc_exc_local_slow')
@@ -1264,7 +1281,6 @@ class NetworkModel(object):
 
         n_stim_total = self.params['n_stim']
         print 'Run sim for %d stim' % (n_stim_total)
-        mp = []
         for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
             if self.pc_id == 0:
                 print 'Calculating input signal for %d cells in training stim %d / %d (%.1f percent) mp:' % (len(self.local_idx_exc), i_stim, n_stim_total, float(i_stim) / n_stim_total * 100.), self.motion_params[stim_idx, :]
@@ -1280,17 +1296,135 @@ class NetworkModel(object):
             nest.Simulate(sim_time)
             if self.comm != None:
                 self.comm.Barrier()
-            mp.append(self.motion_params[stim_idx, :])
 
             if self.params['training_run'] and self.params['weight_tracking']:
                 self.get_weights_after_learning_cycle(iteration=stim_idx)
 
         if not self.params['training_run']:
-#            np.savetxt(self.params['test_sequence_fn'], np.array(mp))
             np.savetxt(self.params['test_sequence_fn'], self.motion_params)
         t_stop = time.time()
         t_diff = t_stop - t_start
         print "Simulation finished on proc %d after: %d [sec]" % (self.pc_id, t_diff)
+
+
+    def run_test_approaching_stim(self):
+        """
+        Approaching stimuli according to Guo protocol
+        """
+        t_start = time.time()
+        n_stim_total = self.params['n_stim']
+        print 'Run sim for %d stim' % (n_stim_total)
+
+
+        for i_stim, protocol in enumerate(self.params['test_protocols']):
+            if self.pc_id == 0:
+                print 'Calculating input signal for %d cells using protocol stim %s %d / %d (%.1f percent)' % (len(self.local_idx_exc), protocol, i_stim+1, n_stim_total, float(i_stim) / n_stim_total * 100.))
+            self.create_input_for_protocol(i_stim, self.params['test_protocol'], save_output=self.params['save_input'])
+#            self.create_input_for_recorder_neurons_protocol(i_stim, stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+            sim_time = self.stim_durations[i_stim]
+            if self.comm != None:
+                self.comm.Barrier()
+            nest.Simulate(sim_time)
+            if self.comm != None:
+                self.comm.Barrier()
+
+            if self.params['training_run'] and self.params['weight_tracking']:
+                self.get_weights_after_learning_cycle(iteration=stim_idx)
+
+        if not self.params['training_run']:
+            np.savetxt(self.params['test_sequence_fn'], self.motion_params)
+        t_stop = time.time()
+        t_diff = t_stop - t_start
+        print "Simulation finished on proc %d after: %d [sec]" % (self.pc_id, t_diff)
+
+
+    def create_input_for_protocol(self, i_stim, test_protocol, save_output=self.params['save_input']):
+        t_offset = self.params['protocol_duration'] * i_stim
+        my_units = np.array(self.local_idx_exc) - 1
+        dt = self.params['dt_rate'] # [ms] time step for the non-homogenous Poisson process
+        idx_t_stop = np.int(self.params['n_test_steps'] * self.params['test_step_duration'] / dt)
+        L_input = np.zeros((len(self.local_idx_exc), idx_t_stop))
+        v_stim = 0.
+        motion_type = 'bar'
+        if test_protocol == 'congruent':
+            x_start = params['target_crf_pos'] - params['n_test_steps'] * params['test_step_size']
+            orientations = np.ones(self.params['n_test_steps']) * self.params['test_stim_orientation']
+            for i_step in xrange(params['n_steps']):
+                x_stim = x_start + i_step * self.params['test_step_size']
+                n_timesteps = np.int(self.params['test_step_duration'] / dt)
+                for i_time in xrange(n_timesteps):
+                    L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
+                            self.rf_sizes[my_units, :], self.params, (x_stim, 0, v_stim, 0, orientations[i_step]), motion=motion_type)
+
+        elif test_protocol == 'incongruent':
+            x_start = params['target_crf_pos'] - params['n_test_steps'] * params['test_step_size']
+            orientations = np.ones(self.params['n_test_steps']) * self.params['test_stim_orientation']
+            all_orientations = get_orientation_tuning_regular(params)
+            other_orientations = list(all_orientations)
+            other_orientations.remove(self.params['test_stim_orientation'])
+            orientations[-1] = other_orientations[i_stim % len(other_orientations)]
+            for i_step in xrange(params['n_steps']):
+                x_stim = x_start + i_step * self.params['test_step_size']
+                n_timesteps = np.int(self.params['test_step_duration'] / dt)
+                for i_time in xrange(n_timesteps):
+                    L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
+                            self.rf_sizes[my_units, :], self.params, (x_stim, 0, v_stim, 0, orientations[i_step]), motion=motion_type)
+
+
+        elif test_protocol == 'missing_crf':
+            x_start = params['target_crf_pos'] - params['n_test_steps'] * params['test_step_size']
+            orientations = np.ones(self.params['n_test_steps']) * self.params['test_stim_orientation']
+            for i_step in xrange(params['n_steps'] - 1):
+                x_stim = x_start + i_step * self.params['test_step_size']
+                n_timesteps = np.int(self.params['test_step_duration'] / dt)
+                for i_time in xrange(n_timesteps):
+                    L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
+                            self.rf_sizes[my_units, :], self.params, (x_stim, 0, v_stim, 0, orientations[i_step]), motion=motion_type)
+
+        elif test_protocol == 'crf_only':
+            x_start = params['target_crf_pos'] - params['n_test_steps'] * params['test_step_size']
+            orientations = np.ones(self.params['n_test_steps']) * self.params['test_stim_orientation']
+            for i_step in [params['n_steps'] - 1]:
+                x_stim = x_start + i_step * self.params['test_step_size']
+                n_timesteps = np.int(self.params['test_step_duration'] / dt)
+                for i_time in xrange(n_timesteps):
+                    L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
+                            self.rf_sizes[my_units, :], self.params, (x_stim, 0, v_stim, 0, orientations[i_step]), motion=motion_type)
+
+        elif test_protocol == 'random':
+            x_start = params['target_crf_pos'] - params['n_test_steps'] * params['test_step_size']
+            orientations = np.ones(self.params['n_test_steps']) * self.params['test_stim_orientation']
+            random_steps = range(params['n_steps'))
+            self.RNG.shuffle(random_steps)
+
+            for i_step in xrange(params['n_steps']):
+                x_stim = x_start + random_steps[i_step] * self.params['test_step_size']
+                n_timesteps = np.int(self.params['test_step_duration'] / dt)
+                for i_time in xrange(n_timesteps):
+                    L_input[:, i_time] = self.params['f_max_stim'] * utils.get_input(self.tuning_prop_exc[my_units, :], \
+                            self.rf_sizes[my_units, :], self.params, (x_stim, 0, v_stim, 0, orientations[i_step]), motion=motion_type)
+
+        L_input[:, -np.int(self.params['t_stim_pause'] / dt):] = 0
+
+        for i_, tgt_gid_nest in enumerate(self.local_idx_exc):
+            rate_of_t = np.array(L_input[i_, :])
+            # each cell will get its own spike train stored in the following file + cell gid
+            n_steps = rate_of_t.size - int(self.params['t_stim_pause'] / dt)
+            spike_times = []
+            for i in xrange(n_steps):
+                r = nprnd.rand()
+                if (r <= ((rate_of_t[i]/1000.) * dt)): # rate is given in Hz -> 1/1000.
+                    spike_times.append(i * dt + t_offset)
+
+            self.spike_times_container[i_] = np.array(spike_times)
+            if len(spike_times) > 0:
+                nest.SetStatus([self.stimulus[i_]], {'spike_times' : np.around(spike_times, decimals=1)})
+                if save_output:
+                    output_fn = self.params['input_rate_fn_base'] + '%d_%d.dat' % (tgt_gid_nest, stim_idx)
+                    np.savetxt(output_fn, rate_of_t)
+                    output_fn = self.params['input_st_fn_base'] + '%d_%d.dat' % (tgt_gid_nest, stim_idx)
+                    print 'Saving output to:', output_fn
+                    np.savetxt(output_fn, np.array(spike_times))
 
 
     def record_v_exc(self):

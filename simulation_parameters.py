@@ -21,14 +21,21 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = True
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['debug'] = False
-        self.params['with_inhibitory_neurons'] = not self.params['training_run']
-        self.params['weight_tracking'] = False
-        self.params['with_stp'] = False
-        self.params['with_orientation'] = True
-        self.params['with_stp_for_input'] = False
-        self.params['symmetric_tauij'] = True
+        self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
+        self.params['weight_tracking'] = False      # during training, increases simulation length a lot
+        self.params['with_stp'] = False             # for recurrent E-E connections
+        self.params['with_orientation'] = True      # redundant? 
+        self.params['with_stp_for_input'] = False   # not tuned well
+        self.params['symmetric_tauij'] = True       # relevant for training only
+        self.params['Guo_protocol'] = True
+        self.params['test_protocols'] = ['congruent']
+#        self.params['test_protocols'] = 'incongruent'
+#        self.params['test_protocols'] = 'random'
+#        self.params['test_protocols'] = 'crf_only'
+#        self.params['test_protocols'] = 'missing_crf'
+
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -432,7 +439,11 @@ class parameter_storage(object):
         #   TODO: fix create_test_stim_grid for (1, 2)
         self.params['test_stim_range'] = (0, 1)
         #self.params['test_stim_range'] = (0, 1)
-        self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
+        if self.params['Guo_protocol']:
+            self.params['n_test_stim'] = len(self.params['test_protocols'])
+        else:
+            self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
+
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
         else:
@@ -470,7 +481,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_stim_pause'] = 1000.
         else:
-            self.params['t_stim_pause'] = 500.
+            self.params['t_stim_pause'] = 1000.# Guo protocol: 500 ms before, 500 ms after stimulation
         # a test stim is presented for t_test_stim - t_stim_pause
 
         # [ms] total simulation time -- will be overwritten depending on how long a stimulus will be presented 
@@ -498,6 +509,17 @@ class parameter_storage(object):
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
+
+        # ########################
+        # TEST PROTOCOL , test_protocol parameters ###
+        # ########################
+        self.params['target_crf_pos'] = 0.5 # according to Guo: should be between 0.25, 0.75
+        self.params['n_test_steps'] = 5     # total number of stimulus presentations while approaching the target site
+        self.params['test_step_duration'] = 200. # [ms]
+        self.params['test_step_size'] = 0.02 # according to Guo paper, the stepsize should be 0.0075 (=0.3 degree / 40. degree)
+        self.params['test_stim_orientation'] = 0.  # orientation of the approaching stimulus (if protocol != random)
+        self.params['protocol_duration'] = self.params['n_test_steps'] * self.params['test_step_duration'] + self.params['t_stim_pause']
+
         # ########################
         # BCPNN SYNAPSE PARAMETERS
         # ########################
