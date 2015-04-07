@@ -53,7 +53,7 @@ def get_averages(params, trace_data):
     return (sum_before_blank, avg_before_blank, std_before_blank, sum_during_blank, avg_during_blank, std_during_blank)
 
 
-def run_plot_currents(params):
+def run_plot_currents(params, cell_type='exc'):
 
     pylab.rcParams.update(plot_params)
     # LOAD MEASURABLES
@@ -63,10 +63,10 @@ def run_plot_currents(params):
     measurables = ['AMPA', 'NMDA']
     tau_syn = [params['tau_syn']['ampa'], params['tau_syn']['nmda'], params['tau_syn']['gaba'], params['tau_syn']['ampa'], params['tau_syn']['nmda']]
     for m in measurables:
-        fn = params['volt_folder'] + 'exc_I_%s.dat' % m
+        fn = params['volt_folder'] + '%s_I_%s.dat' % (cell_type, m)
         print 'Loading fn:', fn
         d[m] = np.loadtxt(fn)
-    d['V_m'] = np.loadtxt(params['volt_folder'] + 'exc_V_m.dat')
+    d['V_m'] = np.loadtxt(params['volt_folder'] + '%s_V_m.dat' % cell_type)
     gids = np.array(np.unique(d['V_m'][:, 0]), dtype=int)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
 
@@ -154,7 +154,7 @@ def run_plot_currents(params):
         ylabel = '%s\n$\\tau_{%s}=%d$' % (measurable, measurable, tau_syn[i_plot])
         ax.set_ylabel(ylabel)
         ax.set_xlim((t_axis[0], t_axis[-1]))
-        utils.plot_blank(params, ax)
+#        utils.plot_blank(params, ax)
 #        pylab.legend()
 
 
@@ -182,7 +182,7 @@ def run_plot_currents(params):
     json.dump(output_data, f, indent=2)
 
     ax2.set_xlim((t_axis[0], t_axis[-1]))
-    utils.plot_blank(params, ax2)
+#    utils.plot_blank(params, ax2)
     ax2.set_xlabel('Time [ms]')
     ax2.set_ylabel('Net current')
 
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
-        show = False
+        show = True
         run_plot_currents(params)
     else:
         for folder_name in sys.argv[1:]:

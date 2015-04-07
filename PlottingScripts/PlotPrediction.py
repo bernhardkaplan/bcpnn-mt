@@ -549,7 +549,7 @@ class PlotPrediction(object):
             ax.set_xlim(0, self.params['t_sim'])
 
 
-    def plot_raster_sorted(self, stim_range=None, fig_cnt=1, title='', cell_type='exc', sort_idx=0):
+    def plot_raster_sorted(self, stim_range=None, fig_cnt=1, title='', cell_type='exc', sort_idx=0, plot_blank=True):
         """
         sort_idx : the index in tuning properties after which the cell gids are to be sorted for  the rasterplot
         """
@@ -585,11 +585,12 @@ class PlotPrediction(object):
                     t0 = 0 
                     t1 = self.stim_duration
                 time_range = (t0, t1)
-            self.plot_blank(ax, time_range)
+            if plot_blank:
+                self.plot_blank(ax, time_range)
             ax.set_xlim((t0, t1))
 
 
-    def plot_input_spikes_sorted(self, time_range=None, fig_cnt=1, title='', sort_idx=0):
+    def plot_input_spikes_sorted(self, time_range=None, fig_cnt=1, title='', sort_idx=0, plot_blank=True):
         """
         Input spikes are stored in seperate files for each cell.
         --> filenames are Folder/InputSpikes/stim_spike_train_[GID].dat GID = cell gid
@@ -597,8 +598,6 @@ class PlotPrediction(object):
         print 'Plotting input spikes ...'
         ax = self.fig.add_subplot(self.n_fig_y, self.n_fig_x, fig_cnt)
         tp = self.tuning_prop
-        tp_idx_sorted = tp[:, sort_idx].argsort() # + 1 because nest indexing
-
         cnt_file = 0
         for fn in os.listdir(self.params['input_folder']):
             m = re.match('stim_spike_train_(\d+)_(\d+).dat', fn)
@@ -614,7 +613,7 @@ class PlotPrediction(object):
         print 'Found %d input files' % (cnt_file)
         if time_range == None:
             time_range = (0, self.params['t_sim'])
-        if not self.params['training_run']:
+        if not self.params['training_run'] and plot_blank:
             self.plot_blank(ax, time_range)
         ax.set_xlim((time_range[0], time_range[1]))
 

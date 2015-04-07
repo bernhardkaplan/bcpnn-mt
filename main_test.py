@@ -109,7 +109,6 @@ if __name__ == '__main__':
     if comm != None:
         comm.barrier()
     load_files = False
-    record = True
     save_input_files = True #not load_files
     NM = NetworkModel(params, iteration=0, comm=comm)
     if not params['debug']:
@@ -124,8 +123,7 @@ if __name__ == '__main__':
     if comm != None:
         comm.barrier()
     NM.connect()
-    if record:
-        NM.record_v_exc()
+
 #        NM.record_v_inh_unspec()
 
     # run_sim
@@ -137,8 +135,7 @@ if __name__ == '__main__':
         comm.barrier()
 
     NM.collect_spikes()
-    if record:
-        NM.collect_vmem_data()
+    NM.collect_vmem_data()
 #    NM.get_weights_static()
 
     t_end = time.time()

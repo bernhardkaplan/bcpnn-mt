@@ -30,13 +30,13 @@ class parameter_storage(object):
         self.params['with_stp_for_input'] = False   # not tuned well
         self.params['symmetric_tauij'] = True       # relevant for training only
         self.params['Guo_protocol'] = True
-        self.params['test_protocols'] = ['incongruent']
-#        self.params['test_protocols'] = 'incongruent'
-#        self.params['test_protocols'] = 'random'
-#        self.params['test_protocols'] = 'crf_only'
-#        self.params['test_protocols'] = 'missing_crf'
+        self.params['test_protocols'] = ['random']
+#        self.params['test_protocols'] = ['congruent']
+#        self.params['test_protocols'] = ['incongruent']
+#        self.params['test_protocols'] = ['crf_only']
+#        self.params['test_protocols'] = ['missing_crf']
 
-        self.w_input_exc = 12.0
+        self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -106,12 +106,12 @@ class parameter_storage(object):
         self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['recorder_tuning_prop'] = [0., 45., 90., 135.]
-        self.params['n_recorder_neurons_per_speed'] = 10  # per feature
-        self.params['n_recorder_neurons'] = len(self.params['recorder_tuning_prop']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
+
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
 
+        self.params['x_min_recorder_neurons'] = 0.4
+        self.params['x_max_recorder_neurons'] = 0.6
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['y_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
@@ -121,6 +121,9 @@ class parameter_storage(object):
         self.params['theta_max_tp'] = 180.0  # [degree]
         self.params['theta_min_tp'] = 0. # [degree]
         #[rad] --> angle_in_degree = angle_in_radians * 180 / pi
+        self.params['recorder_tuning_prop'] = np.linspace(self.params['theta_min_tp'], self.params['theta_max_tp'], self.params['n_mc_per_hc'], endpoint=False).tolist()
+        self.params['n_recorder_neurons_per_speed'] = 10  # per feature
+        self.params['n_recorder_neurons'] = len(self.params['recorder_tuning_prop']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
@@ -181,7 +184,7 @@ class parameter_storage(object):
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
         self.params['fixed_rfs'] = True # if True: target_overlap_* has no effect (at least for with_orientation)
         if self.params['fixed_rfs']:
-            self.params['rfs_theta_fixed'] = 30.
+            self.params['rfs_theta_fixed'] = 20.
             self.params['rfs_x_fixed'] = 0.03
             self.params['rfs_v_fixed'] = 0.05
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
@@ -492,7 +495,7 @@ class parameter_storage(object):
         self.params['seed'] = 12345 # the master seed
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
-        self.params['visual_stim_seed'] = 0
+        self.params['visual_stim_seed'] = 1
         self.params['np_random_seed'] = 0
         self.params['tp_seed'] = 666
         self.params['t_training_max'] = 50000. # [ms]
@@ -518,7 +521,7 @@ class parameter_storage(object):
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
-        self.params['record_v'] = False
+        self.params['record_v'] = True
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
@@ -711,6 +714,7 @@ class parameter_storage(object):
 
         # tuning properties and other cell parameter files
         self.params['tuning_prop_exc_fn'] = '%stuning_prop_exc.prm' % (self.params['parameters_folder']) # for excitatory cells
+        self.params['tuning_prop_recorder_neurons_fn'] = '%stuning_prop_recorder_neurons.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_inh_fn'] = '%stuning_prop_inh.prm' % (self.params['parameters_folder']) # for inhibitory cells
         self.params['receptive_fields_exc_fn'] = self.params['parameters_folder'] + 'receptive_field_sizes_exc.txt'
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])
