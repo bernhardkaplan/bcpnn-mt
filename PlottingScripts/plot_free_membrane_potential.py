@@ -175,14 +175,14 @@ if __name__ == '__main__':
         param_fn = sys.argv[1]
         params = utils.load_params(param_fn)
 
-    fns = utils.find_files(params['spiketimes_folder'], params['free_vmem_fn_base'])
+    fns = utils.find_files(params['volt_folder'], params['free_vmem_fn_base'])
     print 'fns', fns
 
     fig = pylab.figure(figsize=FC.get_fig_size(1200))
     
     P = Plotter(params)
     for fn in fns:
-        path = params['spiketimes_folder'] + fn
+        path = params['volt_folder'] + fn
 
         P.collect_data(path)
 

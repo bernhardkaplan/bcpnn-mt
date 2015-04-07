@@ -568,6 +568,7 @@ def distribute_n(n, n_proc, pid):
 def gauss(x, mu, sigma):
     return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
 
+
 def get_time_of_max_stim(tuning_prop, motion_params):
     """
     This function assumes motion with constant velocity, starting at x0 y0.

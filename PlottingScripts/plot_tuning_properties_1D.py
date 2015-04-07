@@ -231,7 +231,7 @@ if __name__ == '__main__':
     if os.path.exists(params['training_stimuli_fn']):
         Plotter.plot_stimuli(ax, feature_dimension)
 
-    if os.path.exists(params['exc_spiketimes_fn_merged']):
+    if params['training_run'] and os.path.exists(params['exc_spiketimes_fn_merged']):
         Plotter.plot_non_spiking_cells(ax, feature_dimension)
 
 #    Plotter.plot_tuning_prop()

@@ -20,15 +20,22 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
-        self.params['Cluster'] = True
+        self.params['training_run'] = False
+        self.params['Cluster'] = False
         self.params['debug'] = False
-        self.params['with_inhibitory_neurons'] = not self.params['training_run']
-        self.params['weight_tracking'] = False
-        self.params['with_stp'] = False
-        self.params['with_orientation'] = True
-        self.params['with_stp_for_input'] = False
-        self.params['symmetric_tauij'] = True
+        self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
+        self.params['weight_tracking'] = False      # during training, increases simulation length a lot
+        self.params['with_stp'] = False             # for recurrent E-E connections
+        self.params['with_orientation'] = True      # redundant? 
+        self.params['with_stp_for_input'] = False   # not tuned well
+        self.params['symmetric_tauij'] = True       # relevant for training only
+        self.params['Guo_protocol'] = True
+        self.params['test_protocols'] = ['random']
+#        self.params['test_protocols'] = ['congruent']
+#        self.params['test_protocols'] = ['incongruent']
+#        self.params['test_protocols'] = ['crf_only']
+#        self.params['test_protocols'] = ['missing_crf']
+
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -99,12 +106,12 @@ class parameter_storage(object):
         self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
-        self.params['recorder_tuning_prop'] = [0., 45., 90., 135.]
-        self.params['n_recorder_neurons_per_speed'] = 10  # per feature
-        self.params['n_recorder_neurons'] = len(self.params['recorder_tuning_prop']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
+
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
 
+        self.params['x_min_recorder_neurons'] = 0.4
+        self.params['x_max_recorder_neurons'] = 0.6
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['y_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
@@ -114,6 +121,9 @@ class parameter_storage(object):
         self.params['theta_max_tp'] = 180.0  # [degree]
         self.params['theta_min_tp'] = 0. # [degree]
         #[rad] --> angle_in_degree = angle_in_radians * 180 / pi
+        self.params['recorder_tuning_prop'] = np.linspace(self.params['theta_min_tp'], self.params['theta_max_tp'], self.params['n_mc_per_hc'], endpoint=False).tolist()
+        self.params['n_recorder_neurons_per_speed'] = 10  # per feature
+        self.params['n_recorder_neurons'] = len(self.params['recorder_tuning_prop']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
 
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
@@ -174,13 +184,13 @@ class parameter_storage(object):
         self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
         self.params['fixed_rfs'] = True # if True: target_overlap_* has no effect (at least for with_orientation)
         if self.params['fixed_rfs']:
-            self.params['rfs_theta_fixed'] = 30.
+            self.params['rfs_theta_fixed'] = 20.
             self.params['rfs_x_fixed'] = 0.03
             self.params['rfs_v_fixed'] = 0.05
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_theta'] = 0.01 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['save_input'] = False # self.params['debug'] #not self.params['Cluster']
+        self.params['save_input'] = True # self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -221,7 +231,7 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 3.
+            self.params['ampa_nmda_ratio'] = 5.
             self.params['target_ratio_ampa_nmda'] = 5.   # seen in experiments Watt "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses" 2000 Neuron
             # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
             # the total currents only depend on bcpnn gain
@@ -319,7 +329,7 @@ class parameter_storage(object):
         # #######################
 
         # only used during testing:
-        self.params['bcpnn_gain'] = 1.
+        self.params['bcpnn_gain'] = .0
 
         # exc - exc: local
         self.params['p_ee_local'] = .75
@@ -340,13 +350,13 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 20.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 1.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
 
         # inh - exc: unspecific inhibitory feedback within one hypercolumn
-        self.params['w_ie_unspec'] = -40. * self.params['w_ei_unspec']  # untrained, unspecific Basket -> PYR connections
+        self.params['w_ie_unspec'] = -5. * self.params['w_ei_unspec']  # untrained, unspecific Basket -> PYR connections
         self.params['p_ie_unspec'] = .70     # probability for Basket -> PYR Basket connections
         self.params['delay_ie_unspec'] = 1.
         self.params['n_conn_ie_unspec_per_mc'] = np.int(np.round(self.params['p_ie_unspec'] * self.params['n_inh_unspec_per_hc'])) # RandomConvergentConnect
@@ -427,16 +437,38 @@ class parameter_storage(object):
         self.params['random_training_order'] = True # if true, stimuli within a cycle get shuffled
         self.params['sigma_theta_training'] = .01 # how much each stimulus belonging to one training direction is randomly rotated
 
+        if self.params['training_run']:
+            self.params['t_stim_pause'] = 1000.
+        else:
+            self.params['t_stim_pause'] = 1000.# Guo protocol: 500 ms before, 500 ms after stimulation
+
+        # a test stim is presented for t_test_stim - t_stim_pause
+        # ########################
+        # TEST PROTOCOL , test_protocol parameters ###
+        # ########################
+        self.params['target_crf_pos'] = 0.5 # according to Guo: should be between 0.25, 0.75
+        self.params['n_test_steps'] = 5     # total number of stimulus presentations while approaching the target site
+        self.params['test_step_duration'] = 200. # [ms]
+        self.params['test_step_size'] = 0.02 # according to Guo paper, the stepsize should be 0.0075 (=0.3 degree / 40. degree)
+        self.params['test_stim_orientation'] = 0.  # orientation of the approaching stimulus (if protocol != random)
+        self.params['protocol_duration'] = self.params['n_test_steps'] * self.params['test_step_duration'] + self.params['t_stim_pause']
+
 #        self.params['test_stim_range'] = (0, self.params['n_stim_training'])
 #        self.params['test_stim_range'] = (0, self.params['n_training_v'])
         #   TODO: fix create_test_stim_grid for (1, 2)
         self.params['test_stim_range'] = (0, 1)
         #self.params['test_stim_range'] = (0, 1)
-        self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
+        if self.params['Guo_protocol']:
+            self.params['n_test_stim'] = len(self.params['test_protocols'])
+            self.params['test_stim_range'] = (0, len(self.params['test_protocols']))
+        else:
+            self.params['n_test_stim'] = self.params['test_stim_range'][1] - self.params['test_stim_range'][0]
+
         if self.params['training_run']:
             self.params['n_stim'] = self.params['n_stim_training']
         else:
-            self.params['n_stim'] = self.params['n_test_stim']
+#            self.params['n_stim'] = self.params['n_test_stim']
+            self.params['n_stim'] = self.params['n_test_stim'] * self.params['n_test_steps']
 #        self.params['frac_training_slow_speeds'] = int(self.params['frac_rf_v_fovea'] * self.params['n_stim'])
 
         training_stim_offset = 0
@@ -463,15 +495,10 @@ class parameter_storage(object):
         self.params['seed'] = 12345 # the master seed
         # Master seeds for for independent experiments must differ by at least 2Nvp + 1. 
         # Otherwise, the same sequence(s) would enter in several experiments.
-        self.params['visual_stim_seed'] = 0
+        self.params['visual_stim_seed'] = 1
         self.params['np_random_seed'] = 0
         self.params['tp_seed'] = 666
         self.params['t_training_max'] = 50000. # [ms]
-        if self.params['training_run']:
-            self.params['t_stim_pause'] = 1000.
-        else:
-            self.params['t_stim_pause'] = 500.
-        # a test stim is presented for t_test_stim - t_stim_pause
 
         # [ms] total simulation time -- will be overwritten depending on how long a stimulus will be presented 
         # if a stimulus leaves the visual field, the simulation is ended earlier for this stimulus, and takes maximally t_training_max per stimulus
@@ -494,10 +521,11 @@ class parameter_storage(object):
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
-        self.params['record_v'] = False
+        self.params['record_v'] = True
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
+
         # ########################
         # BCPNN SYNAPSE PARAMETERS
         # ########################
@@ -686,6 +714,7 @@ class parameter_storage(object):
 
         # tuning properties and other cell parameter files
         self.params['tuning_prop_exc_fn'] = '%stuning_prop_exc.prm' % (self.params['parameters_folder']) # for excitatory cells
+        self.params['tuning_prop_recorder_neurons_fn'] = '%stuning_prop_recorder_neurons.prm' % (self.params['parameters_folder'])
         self.params['tuning_prop_inh_fn'] = '%stuning_prop_inh.prm' % (self.params['parameters_folder']) # for inhibitory cells
         self.params['receptive_fields_exc_fn'] = self.params['parameters_folder'] + 'receptive_field_sizes_exc.txt'
         self.params['tuning_prop_fig_exc_fn'] = '%stuning_properties_exc.png' % (self.params['figures_folder'])

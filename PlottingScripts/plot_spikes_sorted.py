@@ -22,8 +22,12 @@ def plot_spikes_sorted(params):
     stim_range = params['stim_range']
     plotter.load_motion_params()
     stim_duration = np.loadtxt(params['stim_durations_fn'])
-    mp = np.loadtxt(params['training_stimuli_fn'])
+    if params['training_run']:
+        mp = np.loadtxt(params['training_stimuli_fn'])
+    else:
+        mp = np.loadtxt(params['test_sequence_fn'])
     input_folder_exists = os.path.exists(params['input_folder'])
+
     for i_stim, stim in enumerate(range(stim_range[0], stim_range[1])):
         plotter.compute_pos_and_v_estimates(stim)
         print 'Stim:', stim
@@ -41,9 +45,13 @@ def plot_spikes_sorted(params):
         plotter.create_fig()  # create an empty figure
         title = 'Exc cells sorted by x-position, Stim %d $x_{stim}=%.2f\ v_{stim}=%.2f$' % (stim, mp[stim, 0], mp[stim, 2])
         if input_folder_exists:
-            plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0)
-        plotter.plot_raster_sorted(stim_range, fig_cnt=1, title=title, sort_idx=0)
+            plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=0, plot_blank=False)
+        plotter.plot_raster_sorted(stim_range, fig_cnt=1, title=title, sort_idx=0, plot_blank=False)
 
+        plotter.create_fig()  # create an empty figure
+        if input_folder_exists:
+            plotter.plot_input_spikes_sorted(time_range, fig_cnt=1, sort_idx=4, plot_blank=False)
+        plotter.plot_raster_sorted(stim_range, fig_cnt=1, title=title, sort_idx=4, plot_blank=False)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
