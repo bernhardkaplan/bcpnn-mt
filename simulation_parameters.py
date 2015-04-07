@@ -403,12 +403,12 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
-        self.params['v_min_training'] = 0.2
+        self.params['v_min_training'] = 0.5
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_theta'] = 0.01 * 180. # percentage of noise for each individual training speed
+        self.params['training_stim_noise_theta'] = 0.005 * 180. # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v'] = 2 #* self.params['n_v']
