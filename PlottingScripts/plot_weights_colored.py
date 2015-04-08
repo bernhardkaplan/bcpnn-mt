@@ -25,15 +25,15 @@ def plot_weights_colored(params):
     # target perspective
 #    conn_idx = 1
 
-    limit_tp = False
-    v_tolerance = 10
-    v_target = 10
+    limit_tp = True
+    v_tolerance = 5
+    v_target = 0
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     feature_dimension = 4
     clim = (0., 180.)
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.hsv) 
     m.set_array(tp[:, feature_dimension])
     colorlist= m.to_rgba(tp[:, feature_dimension])
 
@@ -41,7 +41,7 @@ def plot_weights_colored(params):
     ax = fig.add_subplot(111)
     for gid in xrange(1, params['n_exc'] + 1):
 
-        if limit_tp and np.abs(tp[gid-1, feature_dimension] - v_target) < v_tolerance:
+        if limit_tp and (np.abs(tp[gid-1, feature_dimension] - v_target) < v_tolerance):
 
             # get the indices in the conn list of the current src/tgt cell
             idx_0 = np.where(d[:, conn_idx] == gid)[0]
