@@ -247,6 +247,7 @@ class parameter_storage(object):
                     #'Delta_T': 2., \
                     #'a': 0., 'b': 0.0, \
                     #'Delta_T': 1e-4, \
+                    'gain': 0., \
                     'g_L': self.params['g_leak'], \
                     'gsl_error_tol': 1e-10,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}

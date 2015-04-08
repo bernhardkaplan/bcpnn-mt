@@ -496,7 +496,8 @@ def get_input(tuning_prop, rfs, params, predictor_params, motion='dot'):
     elif motion == 'bar':
         # speed selectivity is ignored
         L = np.exp(- 1. / 2. * \
-                ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_X**2) + ((orientation - tuning_prop[:, 4]) % 180.)**2 / (rfs_theta**2 + blur_theta**2) ))
+                ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_X**2) + (torus_distance_array(orientation, tuning_prop[:, 4], w=180.))**2 / (rfs_theta**2 + blur_theta**2) ))
+#                ( (x_stim - tuning_prop[:, 0])**2 / (rfs_x**2 + blur_X**2) + ((np.abs(orientation - tuning_prop[:, 4])) % 180.)**2 / (rfs_theta**2 + blur_theta**2) ))
     return L
 
 
@@ -1312,11 +1313,11 @@ def torus(x, w=1.):
     """
     return np.mod(x + w/2., w) - w/2.
 
-def torus_distance_array(x0, x1):
+def torus_distance_array(x0, x1, w=1.):
     """
     Compute the 1-D distance on a torus for arrays
     """
-    return np.minimum(np.abs(x0 - x1), 1. - np.abs(x0 - x1))
+    return np.minimum(np.abs(x0 - x1), w - np.abs(x0 - x1))
 
 def torus_distance(x0, x1):
     """
