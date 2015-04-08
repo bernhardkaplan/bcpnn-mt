@@ -26,8 +26,12 @@ def plot_weights_colored(params):
 #    conn_idx = 1
 
     limit_tp = True
-    v_tolerance = 5
+    v_tolerance = 10
     v_target = 0
+    if limit_tp:
+        output_fn = params['data_folder'] + 'w_vs_dist_filtered_%.1f_%d.dat' % (v_target, v_tolerance)
+    else:
+        output_fn = params['data_folder'] + 'w_vs_dist.dat'
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     feature_dimension = 4
@@ -54,7 +58,8 @@ def plot_weights_colored(params):
 #            print 'debug', tp[gid -1, feature_dimension], np.max(np.abs(tp[other_gids[idx_1] - 1, feature_dimension]))
             
             weights = d[idx_0[idx_1], 2]
-            ax.scatter(distances, weights, c=m.to_rgba(tp[gid-1, feature_dimension]), linewidths=0, s=2)
+#            ax.scatter(distances, weights, c=m.to_rgba(tp[gid-1, feature_dimension]), linewidths=0, s=2)
+            ax.scatter(distances, weights, c=m.to_rgba(tp[other_gids[idx_1]-1, feature_dimension]), linewidths=0, s=2)
             if np.where(np.abs(weights) < 0.05)[0].size != 0:
                 print 'gids with zero weights:', gid, d[idx_0[idx_1][np.where(np.abs(weights) < 0.05)[0]], (conn_idx + 1) % 2]
 
