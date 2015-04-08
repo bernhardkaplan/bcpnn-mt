@@ -30,11 +30,11 @@ class parameter_storage(object):
         self.params['with_stp_for_input'] = False   # not tuned well
         self.params['symmetric_tauij'] = True       # relevant for training only
         self.params['Guo_protocol'] = True
-        self.params['test_protocols'] = ['random']
+#        self.params['test_protocols'] = ['random']
 #        self.params['test_protocols'] = ['congruent']
 #        self.params['test_protocols'] = ['incongruent']
 #        self.params['test_protocols'] = ['crf_only']
-#        self.params['test_protocols'] = ['missing_crf']
+        self.params['test_protocols'] = ['missing_crf', 'random']
 
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:

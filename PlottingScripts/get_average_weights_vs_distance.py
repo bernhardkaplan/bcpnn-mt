@@ -5,8 +5,9 @@ if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 import numpy as np
 import utils
-import pylab
 import matplotlib
+#matplotlib.use('Agg')
+import pylab
 from PlottingScripts.plot_spikes_sorted import plot_spikes_sorted
 import json
 
@@ -20,7 +21,7 @@ plot_params = {'backend': 'png',
               'legend.fontsize': 10,
                'lines.markersize': 1,
                'lines.markeredgewidth': 0.,
-               'lines.linewidth': 1,
+               'lines.linewidth': 3,
               'font.size': 12,
               'path.simplify': False,
               'figure.subplot.left':.15,
@@ -31,7 +32,7 @@ plot_params = {'backend': 'png',
               'figure.subplot.wspace':.30}
 
 
-def plot_average_weights(params, conn_idx=0):
+def get_average_weights(params, conn_idx=0):
 
     pylab.rcParams.update(plot_params)
     conn_list_fn = params['merged_conn_list_ee']
@@ -46,9 +47,9 @@ def plot_average_weights(params, conn_idx=0):
     for v_tgt in feature_tgt:
         gids = np.where(utils.torus_distance_array(tp[:, 4], v_tgt, w=180) < feature_radius)[0] + 1 # nest gids expected later --> + 1
         filtered_gids = np.r_[gids]
-        print 'gids size', gids.size
+#        print 'gids size', gids.size
     filtered_gids = np.unique(filtered_gids)    
-    print 'filtered_gids:', filtered_gids.size, params['n_exc']
+#    print 'filtered_gids:', filtered_gids.size, params['n_exc']
 
     all_distances = np.array([])
     all_weights = np.array([])
@@ -66,7 +67,7 @@ def plot_average_weights(params, conn_idx=0):
             all_distances = np.r_[all_distances, tp[gid-1, 0] - tp[ogid-1,0]]
             all_weights = np.r_[all_weights, d_[idx, 2]]
 
-    xbins = np.linspace(-1., 1., 41, endpoint=True)
+    xbins = np.linspace(-1., 1., 81, endpoint=True)
     binwidth = 0.05
     avg_weight = np.zeros((xbins.size, 2))
     for i_, xbin in enumerate(xbins):
@@ -74,7 +75,7 @@ def plot_average_weights(params, conn_idx=0):
         if idx.size > 0:
             avg_weight[i_, 0] = all_weights[idx].mean()
             avg_weight[i_, 1] = all_weights[idx].std()
-            avg_weight[i_, 1] /= np.sqrt(idx.size)
+#            avg_weight[i_, 1] /= np.sqrt(idx.size)
         else:
             print xbin, 'none found'
                 
@@ -108,7 +109,7 @@ if __name__ == '__main__':
         conn_idx = 0
     else:
         conn_idx = 1
-    plot_average_weights(params, conn_idx)
+    get_average_weights(params, conn_idx)
 
     pylab.show()
 
