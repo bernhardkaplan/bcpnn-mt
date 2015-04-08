@@ -154,7 +154,7 @@ class NetworkModel(object):
 
         i_rec_nrn = 0
         # find local gids near local_list_of_tp which are to be 'copied'
-        n_search_for_local_gids_near_tp = self.n_proc * 4
+        n_search_for_local_gids_near_tp = self.n_proc * 10
         for i_tp in xrange(len(local_list_of_tp)):
             gids = utils.get_gids_near_stim_nest(local_list_of_tp[i_tp], self.tuning_prop_exc, n=n_search_for_local_gids_near_tp)[0]
             for gid_ in gids:
@@ -431,11 +431,13 @@ class NetworkModel(object):
         if self.comm != None:
             self.comm.Barrier()
 
-
-
-
         ##### RECORDER NEURONS
-        self.setup_recorder_neurons()
+        if self.params['with_recorder_neurons']:
+            self.setup_recorder_neurons()
+            self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': self.record_from, 'interval': self.params['dt_volt']})
+            #self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m', 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA'], 'interval': self.params['dt_volt']})
+            nest.SetStatus(self.recorder_free_vmem, [{"to_file": False, "withtime": True}])
+            nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
         # set the cell parameters
         self.spike_times_container = [ np.array([]) for i in xrange(len(self.local_idx_exc))]
@@ -474,10 +476,6 @@ class NetworkModel(object):
 #        self.record_from = ['V_m', 'g_AMPA', 'g_NMDA', 'g_NMDA_NEG', 'g_AMPA_NEG', 'g_GABA']
 #        self.record_from = ['V_m']#, 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA']
         self.voltmeter_exc = nest.Create('multimeter', params={'record_from': self.record_from, 'interval':  self.params['dt_volt']}) # will only be connected if record_v == True
-        self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': self.record_from, 'interval': self.params['dt_volt']})
-        #self.recorder_free_vmem = nest.Create('multimeter', params={'record_from': ['V_m', 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA'], 'interval': self.params['dt_volt']})
-        nest.SetStatus(self.recorder_free_vmem, [{"to_file": False, "withtime": True}])
-        nest.DivergentConnect(self.recorder_free_vmem, self.recorder_neurons)
 
         if self.params['record_v']:
             self.record_v_exc()
@@ -667,7 +665,6 @@ class NetworkModel(object):
         if self.params['training_run'] and not self.params['debug']:
             print 'Connecting exc - exc'
             self.connect_ee_sparse() # within MCs and bcpnn-all-to-all connections
-            self.setup_recorder_neurons() # DOES NOT WORK
             if self.params['with_inhibitory_neurons']:
                 print 'Connecting exc - inh unspecific'
                 self.connect_ei_unspecific()
@@ -1337,7 +1334,8 @@ class NetworkModel(object):
             #self.create_input_for_stim(i_stim, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
             self.create_input_for_stim(i_stim, stim_idx, save_output=self.params['save_input'], with_blank=not self.params['training_run'])
             #self.create_input_for_recorder_neurons(i_stim, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
-            self.create_input_for_recorder_neurons(i_stim, stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+            if self.params['with_recorder_neurons']:
+                self.create_input_for_recorder_neurons(i_stim, stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
             sim_time = self.stim_durations[i_stim]
             if self.pc_id == 0:
                 print "Running stimulus %d with tau_i=%d for %d milliseconds, t_sim_total = %d, mp:" % (i_stim, self.params['taui_bcpnn'], sim_time, self.params['t_sim']), self.motion_params[stim_idx, :]

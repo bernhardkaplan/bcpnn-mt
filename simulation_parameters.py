@@ -20,14 +20,15 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = False
-        self.params['Cluster'] = False
+        self.params['training_run'] = True
+        self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
         self.params['weight_tracking'] = False      # during training, increases simulation length a lot
         self.params['with_stp'] = False             # for recurrent E-E connections
         self.params['with_orientation'] = True      # redundant? 
         self.params['with_stp_for_input'] = False   # not tuned well
+        self.params['with_recorder_neurons'] = False
         self.params['symmetric_tauij'] = True       # relevant for training only
         self.params['Guo_protocol'] = True
         self.params['test_protocols'] = ['random']
@@ -75,7 +76,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             if self.params['with_orientation']:
-                self.params['n_theta'] = 2 # == N_MC_PER_HC
+                self.params['n_theta'] = 4 # == N_MC_PER_HC
             else:
                 self.params['n_theta'] = 1 # == N_MC_PER_HC
 
@@ -124,6 +125,7 @@ class parameter_storage(object):
         self.params['recorder_tuning_prop'] = np.linspace(self.params['theta_min_tp'], self.params['theta_max_tp'], self.params['n_mc_per_hc'], endpoint=False).tolist()
         self.params['n_recorder_neurons_per_speed'] = 10  # per feature
         self.params['n_recorder_neurons'] = len(self.params['recorder_tuning_prop']) * self.params['n_recorder_neurons_per_speed'] # total number of neurons with v_thresh == 0 that act as 'electrodes'
+
 
 #        self.params['v_max_tp'] = 1.0   # [Hz] maximal velocity in visual space for tuning proprties (for each component), 1. means the whole visual field is traversed within 1 second
 #        self.params['v_min_tp'] = 0.05  # [a.u.] minimal velocity in visual space for tuning property distribution
@@ -190,7 +192,7 @@ class parameter_storage(object):
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_theta'] = 0.01 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['save_input'] = True # self.params['debug'] #not self.params['Cluster']
+        self.params['save_input'] = False # self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -247,6 +249,7 @@ class parameter_storage(object):
                     #'Delta_T': 2., \
                     #'a': 0., 'b': 0.0, \
                     #'Delta_T': 1e-4, \
+                    'gain': 0.0, \
                     'g_L': self.params['g_leak'], \
                     'gsl_error_tol': 1e-10,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
@@ -521,7 +524,7 @@ class parameter_storage(object):
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
-        self.params['record_v'] = True
+        self.params['record_v'] = False
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
