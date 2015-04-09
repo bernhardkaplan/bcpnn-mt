@@ -201,6 +201,26 @@ def create_regular_training_stimuli(params, tp=None):
     np.savetxt(params['stim_durations_fn'], training_stim_duration)
     return mp
 
+def create_approaching_test_stimuli(params, order='linear', RNG=None):
+    """
+    Approach the target_crf_pos with speeds within v_min_test, v_max_test
+    with constant orientation (test_stim_orientation)
+    """
+    if RNG == None:
+        RNG = np.random.RandomState(params['visual_stim_seed'])
+    mp = np.zeros((params['n_stim'], 5))
+    if order == 'linear':
+        speeds = np.linspace(params['v_min_test'], params['v_max_test'], params['n_stim'])
+    else:
+        speeds = RNG.uniform(params['v_min_test'], params['v_max_test'], params['n_stim'])
+    for i_ in xrange(params['n_stim']):
+        if speeds[i_] < 0:
+            x_start = 1.05
+        else:
+            x_start = -0.05
+        mp[i_, :] = (x_start, .5, speeds[i_], .0, params['test_stim_orientation'])
+    return mp
+
 
 def create_regular_training_stimuli_with_orientation(params, tp=None):
     x_pos = set_tuning_properties.get_xpos_regular(params) # N_HC
@@ -220,7 +240,6 @@ def create_regular_training_stimuli_with_orientation(params, tp=None):
     for i_cycle in xrange(params['n_training_cycles']):
         for i_theta in xrange(params['n_theta_training']):
             for i_v in xrange(params['n_training_v']):
-    #            v_training = (-1)**(i_v % 2) * params['v_stim_training']
                 v_training = speeds[i_v]
                 mp[i_stim, 2] = v_training
                 theta_ = theta_train[i_theta % len(theta_train)]

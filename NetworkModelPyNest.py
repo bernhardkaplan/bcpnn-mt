@@ -9,7 +9,7 @@ from CreateInput import CreateInput
 import json
 from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity, set_tuning_prop_with_orientation, get_orientation_tuning_regular
 from copy import deepcopy
-from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_regular_training_stimuli_with_orientation
+from create_training_stimuli import create_regular_training_stimuli, create_training_stimuli_based_on_tuning_prop, create_regular_training_stimuli_with_orientation, create_approaching_test_stimuli
 
 class NetworkModel(object):
 
@@ -69,17 +69,8 @@ class NetworkModel(object):
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:
-#            self.CI = CreateInput(self.params, self.tuning_prop_exc, self.rf_sizes)
-#            if self.params['Guo_protocol']:
-#                self.motion_params = create_test_protocols_Guo(self.params)
-#            else:
             if not self.params['Guo_protocol']:
-                # TODO: different test stim
-                self.motion_params = np.zeros((self.params['n_stim'], 5))
-                self.motion_params[:, 0] = self.RNG_global.rand(self.params['n_stim'])
-                self.motion_params[:, 1] = .5
-                self.motion_params[:, 2] = self.RNG_global.rand(self.params['n_stim'])
-                self.motion_params[:, 5] = self.RNG_global.rand(self.params['n_stim'])
+                self.motion_params = create_approaching_test_stimuli(self.params, RNG=self.RNG_global)
                 np.savetxt(self.params['test_sequence_fn'], self.motion_params)
 
         if self.comm != None:
@@ -201,7 +192,8 @@ class NetworkModel(object):
                 self.stim_durations[i_] = t_exit
         else:
             if self.params['Guo_protocol']:
-                self.stim_durations[:] = len(self.params['test_protocols']) * self.params['n_test_steps'] * self.params['test_step_duration'] + self.params['t_stim_pause'] 
+                self.stim_durations = np.zeros(len(self.params['test_protocols']))
+                self.stim_durations[:] = self.params['n_test_steps'] * self.params['test_step_duration'] + self.params['t_stim_pause'] 
             else:
                 # TODO: other test setup (normal stimuli)
                 for i_, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
@@ -1367,23 +1359,32 @@ class NetworkModel(object):
         n_stim_total = self.params['n_stim']
         print 'Run sim for %d stim' % (n_stim_total)
 
-#        self.motion_params = np.zeros((n_stim_total * self.params['n_test_steps'], 5))
-        self.motion_params = np.zeros((n_stim_total, 5))
-        for i_stim, protocol in enumerate(self.params['test_protocols']):
-            if self.pc_id == 0:
-                print 'Calculating input signal for %d cells using protocol stim %s %d / %d (%.1f percent)' % (len(self.local_idx_exc), protocol, i_stim+1, n_stim_total, float(i_stim) / n_stim_total * 100.)
-            self.create_input_for_protocol(i_stim, protocol, save_output=self.params['save_input'])
-            self.copy_input_for_recorder_neurons()
-#            self.create_input_for_recorder_neurons_protocol(i_stim, stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
-            sim_time = self.stim_durations[i_stim]
-            if self.comm != None:
-                self.comm.Barrier()
-            nest.Simulate(sim_time)
-            if self.comm != None:
-                self.comm.Barrier()
-
-            if self.params['training_run'] and self.params['weight_tracking']:
-                self.get_weights_after_learning_cycle(iteration=stim_idx)
+        if self.params['Guo_protocol']:
+            self.motion_params = np.zeros((n_stim_total, 5))
+            for i_stim, protocol in enumerate(self.params['test_protocols']):
+                if self.pc_id == 0:
+                    print 'Calculating input signal for %d cells using protocol stim %s %d / %d (%.1f percent)' % (len(self.local_idx_exc), protocol, i_stim+1, n_stim_total, float(i_stim) / n_stim_total * 100.)
+                self.create_input_for_protocol(i_stim, protocol, save_output=self.params['save_input'])
+                self.copy_input_for_recorder_neurons()
+    #            self.create_input_for_recorder_neurons_protocol(i_stim, stim_idx, with_blank=not self.params['training_run'], save_output=self.params['save_input'])
+                sim_time = self.stim_durations[i_stim]
+                if self.comm != None:
+                    self.comm.Barrier()
+                nest.Simulate(sim_time)
+                if self.comm != None:
+                    self.comm.Barrier()
+        else:
+            for i_stim, stim_idx in enumerate(range(self.params['stim_range'][0], self.params['stim_range'][1])):
+                if self.pc_id == 0:
+                    print 'Calculating input signal for %d cells using protocol stim %d / %d (%.1f percent)' % (len(self.local_idx_exc), i_stim+1, n_stim_total, float(i_stim) / n_stim_total * 100.)
+                self.create_input_for_stim(i_stim, stim_idx, save_output=self.params['save_input'], with_blank=True)
+                self.copy_input_for_recorder_neurons()
+                sim_time = self.stim_durations[i_stim]
+                if self.comm != None:
+                    self.comm.Barrier()
+                nest.Simulate(sim_time)
+                if self.comm != None:
+                    self.comm.Barrier()
 
         if not self.params['training_run']:
             np.savetxt(self.params['test_sequence_fn'], self.motion_params)

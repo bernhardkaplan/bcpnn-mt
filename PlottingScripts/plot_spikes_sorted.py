@@ -13,6 +13,55 @@ import utils
 import PlottingScripts.PlotPrediction as PP
 
 
+
+
+def plot_spikes_sorted_simple(params, sort_idx=0, color_idx=None, ax=None):
+    data_fn = params['exc_spiketimes_fn_merged']
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
+    if ax == None:
+        fig = pylab.figure()
+        ax = fig.add_subplot(111)
+    tp_idx_sorted = tp[:, sort_idx].argsort()
+
+    nspikes, spiketrains = utils.get_nspikes(data_fn, n_cells=params['n_exc'], cell_offset=0, get_spiketrains=True, pynest=True)
+
+    if color_idx == 4:
+        clim = (0., 180.)
+        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+        m.set_array(tp[:, color_idx])
+        colorlist= m.to_rgba(tp[:, color_idx])
+        cbar_label = 'Orientation'
+
+    elif color_idx == 0:
+        clim = (0., 1.)
+        norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
+        m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+        m.set_array(tp[:, color_idx])
+        colorlist = m.to_rgba(tp[:, 0])
+        cbar_label = 'Position'
+
+    for i_, gid in enumerate(tp_idx_sorted):
+        spikes = spiketrains[gid]
+        nspikes = len(spikes)
+        y_ = np.ones(nspikes) * tp[gid, sort_idx]
+        if color_idx != None:
+            ax.scatter(spikes, y_, c=m.to_rgba(tp[gid-1, color_idx]), linewidths=0, s=3)
+        else:
+            ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
+
+    ax.set_xlabel('Time [ms]')
+    if sort_idx == 0:
+        ax.set_ylabel('RF-position')
+    elif sort_idx == 2 or sort_idx == 3:
+        ax.set_ylabel('Preferred speed')
+    elif sort_idx == 4:
+        ax.set_ylabel('Preferred orientation')
+
+    if color_idx != None:
+        cbar = pylab.colorbar(m,ax=ax)
+        cbar.set_label(cbar_label)
+
 def plot_spikes_sorted(params):
     data_fn = params['exc_spiketimes_fn_merged']
     plotter = PP.PlotPrediction(params, data_fn)

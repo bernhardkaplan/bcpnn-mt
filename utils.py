@@ -11,10 +11,25 @@ import json
 import itertools
 
 
+
 def print0(msg, comm):
     if comm.rank == 0:
         print msg
 
+def filter_spike_train(spikes, dt=1., tau=30., t_max=None):
+    """
+    spikes: list or array of spikes
+    """
+    if t_max == None:
+        t_max = spikes[-1] + tau
+    t_vec = np.arange(0, t_max, dt)
+    y = np.zeros(t_vec.size)
+    spike_idx = []
+    for spike in spikes:
+        spike_idx.append((t_vec < spike).nonzero()[0][-1])
+    for i_, spike in enumerate(spikes):
+        y[spike_idx[i_]:] += np.exp(-(t_vec[spike_idx[i_]:] - spike) / tau)
+    return t_vec, y
 
 def compute_stim_time(stim_params):
     """
@@ -83,7 +98,8 @@ def get_gids_near_stim_nest(mp, tp_cells, n=1, ndim=1):
     if ndim == 1:
         dx = np.abs(tp_cells[:, 0] - mp[0])
         velocity_dist = np.abs(tp_cells[:, 2] - mp[2])
-        orientation_dist = np.abs(tp_cells[:, 4] - mp[4]) / 180.  # normalize distance in tp space, otherwise orientation difference overweighs the other feature distances
+#        orientation_dist = np.abs(tp_cells[:, 4] - mp[4]) / 180.  # normalize distance in tp space, otherwise orientation difference overweighs the other feature distances
+        orientation_dist = torus_distance_array(tp_cells[:, 4], mp[4], w=180.) / 180.  # normalize distance in tp space, otherwise orientation difference overweighs the other feature distances
         summed_dist = dx + orientation_dist + velocity_dist
 #        summed_dist = dx + velocity_dist
     elif ndim == 2:
@@ -345,8 +361,9 @@ def extract_trace(d, gid):
     d : voltage trace from a saved with compatible_output=False
     gid : cell_gid
     """
-    mask = gid * np.ones(d[:, 0].size)
-    indices = mask == d[:, 0]
+#    mask = gid * np.ones(d[:, 0].size)
+#    indices = mask == d[:, 0]
+    indices = np.where(d[:, 0] == gid)[0]
     time_axis, volt = d[indices, 1], d[indices, 2]
     return time_axis, volt
 
@@ -915,7 +932,10 @@ def get_nspikes(spiketimes_fn_or_array, n_cells=0, cell_offset=0, get_spiketrain
     """
     Returns an array with the number of spikes fired by each cell.
     nspikes[gid]
+    n_cells -- (int) should be the total number of cells in the recorded population
     if n_cells is not given, the length of the array will be the highest gid (not advised!)
+    cell_offset should be != 0 if the cell gids do not start with 0 (or 1 if pynest == True)
+    cell_offset is automatically set to 1 if pynest == True
     """
     if pynest == True:
         gid_axis = 0
@@ -927,7 +947,6 @@ def get_nspikes(spiketimes_fn_or_array, n_cells=0, cell_offset=0, get_spiketrain
         gid_offset = cell_offset
 
     if (type(spiketimes_fn_or_array) == type ('')) or (type(spiketimes_fn_or_array) == type(unicode('a'))):
-        print 'debug utils.get_nspikes loads:', spiketimes_fn_or_array
         d = np.loadtxt(spiketimes_fn_or_array)
     else:
         d = spiketimes_fn_or_array

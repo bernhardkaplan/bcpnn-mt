@@ -22,6 +22,7 @@ from NetworkModelPyNest import NetworkModel
 from PlottingScripts.PlotPrediction import plot_prediction
 from PlottingScripts.PlotCurrents import run_plot_currents
 from PlottingScripts.plot_incoming_currents import plot_incoming_currents
+from PlottingScripts.PlotAnticipation import plot_anticipation
 
 try: 
     from mpi4py import MPI
@@ -56,8 +57,9 @@ if __name__ == '__main__':
 #    ampa_nmda_ratio = float(sys.argv[6])
 #    w_ii = float(sys.argv[7])
 
-    conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-100_taui100_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat'
-    conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-100_taui100_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat'
+    tau_i = 200
+    conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-100_taui%d_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat' % (tau_i)
+    conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-100_taui%d_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat' % (tau_i)
     bcpnn_gain = params['bcpnn_gain']
     w_ie = params['w_ie_unspec']
     w_ei = params['w_ei_unspec']
@@ -84,12 +86,14 @@ if __name__ == '__main__':
         #assert (w_ii < 0), 'Inhibitory weights need to be negative!'
         params['ampa_nmda_ratio'] = ampa_nmda_ratio
         params['bcpnn_gain'] = bcpnn_gain
+        params['bcpnn_params']['tau_i'] = tau_i
+        params['taui_bcpnn'] = tau_i
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.2f_pee%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
-                params['sim_id'], params['stim_range'][0], params['stim_range'][1], params['v_min_tp'], \
-                params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['p_ee_global'], \
+        folder_name = 'TestSim_%s_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.2f_taui%d_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
+                params['test_protocols'][0], params['sim_id'], params['stim_range'][0], params['stim_range'][1], params['v_min_test'], \
+                params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['bcpnn_params']['tau_i'], \
                 params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
@@ -142,7 +146,12 @@ if __name__ == '__main__':
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
     #if pc_id == 0 and not params['Cluster']:
-#    if pc_id == 0:
+    if pc_id == 0:
+        if params['Cluster']:
+            show = False
+        else:
+            show = True
+        plot_anticipation(params, show) 
 #        plot_prediction(params=NM.params, stim_range=params['stim_range'])
 #        run_plot_currents(NM.params)
 #        plot_incoming_currents(NM.params)
