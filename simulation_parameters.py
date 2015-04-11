@@ -3,6 +3,7 @@ import numpy as np
 import numpy.random as rnd
 import os
 import utils
+import copy
 
 class parameter_storage(object):
     """
@@ -30,8 +31,10 @@ class parameter_storage(object):
         self.params['with_stp_for_input'] = False   # not tuned well
         self.params['with_recorder_neurons'] = False
         self.params['symmetric_tauij'] = True       # relevant for training only
-        self.params['Guo_protocol'] = True
-        self.params['test_protocols'] = ['random']
+        self.params['with_bias'] = True
+        self.params['Guo_protocol'] = False
+        self.params['test_protocols'] = ['continuous']
+#        self.params['test_protocols'] = ['random']
 #        self.params['test_protocols'] = ['congruent']
 #        self.params['test_protocols'] = ['incongruent']
 #        self.params['test_protocols'] = ['crf_only']
@@ -52,6 +55,13 @@ class parameter_storage(object):
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
+        if self.params['with_bias']:
+            self.params['sim_id'] += 'withBlank_withBias'
+            self.params['bias_gain'] = 100.
+        else:
+            self.params['sim_id'] += 'withBlank_noBias'
+            self.params['bias_gain'] = 0.
+
         self.fmax = 250.
         self.fmax_factor = 1.0
         self.w_input_exc_factor = 6.
@@ -61,7 +71,7 @@ class parameter_storage(object):
             self.params['sim_id'] += ''
 
         self.params['with_rsnp_cells'] = False # True is not yet implemented
-        self.params['v_stim_training'] = 0.2 
+
         # ###################
         # HEXGRID PARAMETERS
         # ###################
@@ -104,15 +114,15 @@ class parameter_storage(object):
         else:
             self.params['n_mc_per_hc'] = self.params['n_v'] 
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
 
         self.params['log_scale'] = 2.0 # base of the logarithmic tiling of particle_grid; linear if equal to one
 
-        self.params['x_min_recorder_neurons'] = 0.4
-        self.params['x_max_recorder_neurons'] = 0.6
+        self.params['x_min_recorder_neurons'] = 0.0
+        self.params['x_max_recorder_neurons'] = 1.0
         self.params['x_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
         self.params['x_min_tp'] = 0.025  # [a.u.] all cells with abs(rf_x - .5) < x_min_tp are considered to be in the center and will have constant, minimum RF size (--> see n_rf_x_fovea)
         self.params['y_max_tp'] = 0.45 # [a.u.] minimal distance to the center  
@@ -245,15 +255,16 @@ class parameter_storage(object):
                     #'Delta_T': 2., \
                     #'a': 0., 'b': 0.0, \
                     #'Delta_T': 1e-4, \
-                    'gain': 0.0, \
+                    'gain': self.params['bias_gain'], \
                     'g_L': self.params['g_leak'], \
                     'gsl_error_tol': 1e-10,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
                     # default was gsl_error_tol is 1e-6
 
-            self.params['cell_params_inh'] = self.params['cell_params_exc']
+            self.params['cell_params_inh'] = copy.deepcopy(self.params['cell_params_exc'])
             self.params['cell_params_inh']['a'] = 0.
             self.params['cell_params_inh']['b'] = 0.
+            self.params['cell_params_inh']['gain'] = 0.
 
 #                    'n_synapses': 3, 'tau_syn': [3., 100., 15.], 'receptor_types': [0, 1, 2]}
 #            self.params['cell_params_inh'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
@@ -328,7 +339,7 @@ class parameter_storage(object):
         # #######################
 
         # only used during testing:
-        self.params['bcpnn_gain'] = .0
+        self.params['bcpnn_gain'] = 2.5
 
         # exc - exc: local
         self.params['p_ee_local'] = .75
@@ -409,6 +420,12 @@ class parameter_storage(object):
         # the maximum number of spikes as response to the input alone is not much affected by the blur parameter
 
         # #####################
+        # TESTING PARAMETERS
+        # #####################
+        self.params['v_max_test'] = 1.0
+        self.params['v_min_test'] = 1.0
+
+        # #####################
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
@@ -468,7 +485,10 @@ class parameter_storage(object):
             self.params['n_stim'] = self.params['n_stim_training']
         else:
 #            self.params['n_stim'] = self.params['n_test_stim']
-            self.params['n_stim'] = self.params['n_test_stim'] * self.params['n_test_steps']
+            if self.params['Guo_protocol']:
+                self.params['n_stim'] = self.params['n_test_stim'] * self.params['n_test_steps']
+            else:
+                self.params['n_stim'] = self.params['n_test_stim']
 #        self.params['frac_training_slow_speeds'] = int(self.params['frac_rf_v_fovea'] * self.params['n_stim'])
 
         training_stim_offset = 0
@@ -507,7 +527,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 400.
+            self.params['t_blank'] = 500.
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:
