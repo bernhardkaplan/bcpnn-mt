@@ -15,7 +15,7 @@ import PlottingScripts.PlotPrediction as PP
 
 
 
-def plot_spikes_sorted_simple(params, sort_idx=0, color_idx=None, ax=None):
+def plot_spikes_sorted_simple(params, sort_idx=0, color_idx=None, ax=None, set_xlabel=True):
     data_fn = params['exc_spiketimes_fn_merged']
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     if ax == None:
@@ -50,7 +50,8 @@ def plot_spikes_sorted_simple(params, sort_idx=0, color_idx=None, ax=None):
         else:
             ax.plot(spikes, y_, 'o', markersize=3, markeredgewidth=0., color='k')
 
-    ax.set_xlabel('Time [ms]')
+    if set_xlabel:
+        ax.set_xlabel('Time [ms]')
     if sort_idx == 0:
         ax.set_ylabel('RF-position')
     elif sort_idx == 2 or sort_idx == 3:

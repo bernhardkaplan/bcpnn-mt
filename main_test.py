@@ -22,7 +22,7 @@ from NetworkModelPyNest import NetworkModel
 from PlottingScripts.PlotPrediction import plot_prediction
 from PlottingScripts.PlotCurrents import run_plot_currents
 from PlottingScripts.plot_incoming_currents import plot_incoming_currents
-from PlottingScripts.PlotAnticipation import plot_anticipation
+from PlottingScripts.PlotAnticipation import plot_anticipation, plot_anticipation_cmap
 
 try: 
     from mpi4py import MPI
@@ -151,6 +151,7 @@ if __name__ == '__main__':
             show = False
         else:
             show = True
+        plot_anticipation_cmap(params)
         plot_anticipation(params, show) 
 #        plot_prediction(params=NM.params, stim_range=params['stim_range'])
 #        run_plot_currents(NM.params)

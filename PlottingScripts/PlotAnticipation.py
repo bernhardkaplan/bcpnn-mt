@@ -95,14 +95,13 @@ def plot_voltages_near_mp(params, mp, n_cells=1, ax=None):
     ax.set_ylabel('Volt [mV]')
     cbar = pylab.colorbar(m,ax=ax)
     cbar.set_label(cbar_label)
-
+    return gids_near_mp
 
 def plot_free_vmem(params, ax=None):
     if ax == None:
         fig = pylab.figure()
         ax = fig.add_subplot(111)
     fn = params['volt_folder'] + params['free_vmem_fn_base'] + '_V_m.dat'
-    print 'Debug loading volt data from:', fn
     volt_data = np.loadtxt(fn)
     tp = np.loadtxt(params['tuning_prop_recorder_neurons_fn'])
     recorder_gids = np.unique(volt_data[:, 0])
@@ -133,32 +132,75 @@ def plot_free_vmem(params, ax=None):
     cbar.set_label(cbar_label)
 
  
+def shift_trace_to_stimulus_arrival(params, trace, tp_cell, mp, n, dt=1.):
+    """
+    Align the trace so that the stimulus arrival is in the middle of the trace
+    and fill the trace with 0s accordingly (before and/or after)
+    trace -- original (unaligned) trace
+    n -- target size of the trace to be returned
+    tp_cell -- tuning properties of the cell corresponding to the trace as 5-dim tuple 
+    mp -- motion params (5-dim tuple)
+    """
+    x_cells = tp_cell[0]
+    stim_arrival_time = (tp_cell[0] - mp[0]) / params['v_min_test'] * 1000.
+    idx_max = int(stim_arrival_time / dt) # expected maximum response
+    # cut the original trace, compute border indices in original trace
+    idx0 = max(0, idx_max - n / 2)
+    idx1 = min(n, idx_max + n / 2)
+    # Now, align the time axis for each cell according to stim_arrival_time
+    # indices of the cut-out trace in the new shifted trace
+    idx_start = n - idx1
+    idx_stop = n - idx0 
+#    debug_info = 'debug x=%.2f t_arrival=%.1f\t idx_max %d \t idx0 %d idx_max-n/2 %d\tidx1 %d idx_max+n/2 %d\tidx_start %d\tidx_stop %d' % (tp_cell[0], stim_arrival_time, idx_max, idx0, idx_max - n/2, idx1, idx_max + n/2, idx_start, idx_stop)
+#    print debug_info
+    shifted_trace = np.zeros(n)
+    shifted_trace[idx_start:idx_stop] = trace[idx0:idx1]
+    return shifted_trace
 
-def plot_anticipation(params, show=False):
+
+def select_cells_for_filtering(tp, mp, n_cells):
+    x_start = 0.3
+    x_stop = 0.7
+    pos = np.linspace(x_start, x_stop, n_cells)
+    cell_gids = []
+    for i_ in xrange(n_cells):
+        mp = [pos[i_], mp[1], mp[2], mp[3], mp[4]]
+        cell_gids.append(utils.get_gids_near_stim_nest(mp, tp, n=1)[0][0])
+    return cell_gids
+
+
+
+def plot_anticipation(params, show=False, n_cell=5):
+    stim_idx = 0
     orientation = 0.
-    n_cells = 5  # number of cells to be analyzed
+#    n_cells = params['n_mc']  # number of cells to be analyzed
+    n_cells = 10  # number of cells to be analyzed with spiketrain filtering
 
     pylab.rcParams.update(plot_params)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     all_spikes = np.loadtxt(params['exc_spiketimes_fn_merged'])
+    motion_params_test = np.loadtxt(params['test_sequence_fn'])
+    if motion_params_test.size == 5:
+        motion_params_test = motion_params_test.reshape((1, 5))
     nspikes, spiketrains = utils.get_nspikes(all_spikes, n_cells=params['n_exc'], cell_offset=0, get_spiketrains=True, pynest=True)
 
-    x_electrode = params['v_min_test'] * params['t_start_blank'] / 1000.
+    # select cells based on tuning properties for spike train filtering
+    x_electrode = params['v_min_test'] * params['t_start_blank'] / 1000. #+ 0.05
 #    mp = [params['target_crf_pos'], .55, .0, .0, orientation]
     mp = [x_electrode, .50, .0, .0, orientation]
 
     normal_gids_nest = utils.get_gids_near_stim_nest(mp, tp, n=n_cells)[0]
-#    print 'normal_gids_nest ', normal_gids_nest 
-#    print 'tp (normal_gids_nest)', tp[normal_gids_nest-1, :]
-    # select spike trains for the selected gids
+    print 'normal_gids_nest ', normal_gids_nest 
+    print 'tp (normal_gids_nest): \n', tp[normal_gids_nest-1, :]
 
     figsize = utils.get_figsize(1200, portrait=True)
     fig = pylab.figure(figsize=figsize)
-    ax1 = fig.add_subplot(411)
-    ax2 = fig.add_subplot(412)
-    ax3 = fig.add_subplot(413)
-    ax4 = fig.add_subplot(414)
-    plot_spikes_sorted_simple(params, sort_idx=0, ax=ax1, color_idx=4)
+    ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312)
+    ax3 = fig.add_subplot(313)
+    plot_spikes_sorted_simple(params, sort_idx=0, ax=ax1, color_idx=4, set_xlabel=False)
+    gids_rec_v = plot_voltages_near_mp(params, mp, n_cells=n_cells, ax=ax2)
+    plot_free_vmem(params, ax=ax3)
 
     coloraxis = 0
     if coloraxis == 0:
@@ -172,47 +214,119 @@ def plot_anticipation(params, show=False):
     m.set_array(tp[:, coloraxis])
     colorlist = m.to_rgba(tp[:, coloraxis])
 
-    # filter spike trains
-    filtered_spiketrains = [None for i_ in xrange(n_cells)]
-    for i_, gid in enumerate(normal_gids_nest):
-        t_vec, y = utils.filter_spike_train(spiketrains[gid-1], dt=1., tau=30., t_max=params['t_sim'])
-        filtered_spiketrains[i_] = y
-        ax2.plot(t_vec, y, c=colorlist[gid-1])
-
-    plot_free_vmem(params, ax=ax4)
-    plot_voltages_near_mp(params, mp, n_cells=n_cells, ax=ax3)
-
     title1 = 'Protocol:%s $\\tau_i=%d$\nSpike activity' % (params['test_protocols'][0], params['bcpnn_params']['tau_i'])
-    title2 = 'Filtered spike trains of selected cells $x=%.2f$ $\\theta=%.1f$' % (mp[0], mp[4])
     ax1.set_title(title1)
-    ax2.set_title(title2)
-#    ax2.set_xlabel('Time [ms]')
 
-#    xlim = (0., params['t_sim'])
+    # set xlim
     xlim = (params['t_start'], params['t_sim'] - params['t_stim_pause'])
     ax1.set_xlim(xlim)
     ax2.set_xlim(xlim)
     ax3.set_xlim(xlim)
-    ax4.set_xlim(xlim)
 
+    # set ylim
+    ax2.set_ylim((-65., -45.))
 #    ylim = ax1.get_ylim()
 #    ylim = (ylim[0], mp[0] + .1)
 #    ax1.set_ylim(ylim)
 
-#    fig.subplots_adjust(right=0.75)
-    cbar_ax = fig.get_axes()[1]
-    cbar = pylab.colorbar(m,ax=ax2)
-    cbar.set_label(cbar_label)
-
-    output_fig = params['figures_folder'] + 'filter_spiketrains.png'
+    output_fig = params['figures_folder'] + 'spikes_and_voltages.png'
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
     if show:
         pylab.show()
+
     return output_fig
 
 
+def plot_anticipation_cmap(params):
+
+    stim_idx = 0 
+    pylab.rcParams.update(plot_params)
+    tp = np.loadtxt(params['tuning_prop_exc_fn'])
+    all_spikes = np.loadtxt(params['exc_spiketimes_fn_merged'])
+    motion_params_test = np.loadtxt(params['test_sequence_fn'])
+    if motion_params_test.size == 5:
+        motion_params_test = motion_params_test.reshape((1, 5))
+    nspikes, spiketrains = utils.get_nspikes(all_spikes, n_cells=params['n_exc'], cell_offset=0, get_spiketrains=True, pynest=True)
     
+    figsize = utils.get_figsize(1200, portrait=False)
+    fig = pylab.figure(figsize=figsize)
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+
+    # colors for x-y traces
+    coloraxis = 0
+    if coloraxis == 0:
+        value_range = (0, 1.)
+        cbar_label = 'Position'
+    elif coloraxis == 4:
+        value_range = (0, 180.)
+        cbar_label = 'Orientation'
+
+    norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m.set_array(tp[:, coloraxis])
+    colorlist = m.to_rgba(tp[:, coloraxis])
+    # select spike trains for the selected gids
+    # filter spike trains
+    dt = 2. # time resolution for filtered spike trains
+    n_trace_data = int(params['t_sim'] * .6 / dt)
+    print 'n_trace_data:', n_trace_data
+    t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
+
+    normalized_traces = np.zeros((params['n_exc'], int(params['t_sim'] / dt)))
+    filtered_aligned_spiketrains = np.zeros((params['n_exc'], n_trace_data))
+    mean_trace = np.zeros((n_trace_data, 2))
+
+    print 'Normalizing spike trains ...'
+    # 1) get the filtered traces
+    for i_ in xrange(params['n_exc']):
+        t_vec, y = utils.filter_spike_train(spiketrains[i_], dt=dt, tau=30., t_max=params['t_sim'])
+        normalized_traces[i_, :] = y
+
+    # 2) normalize the traces
+#    for t_ in xrange(n_trace_data):
+#    for t_ in xrange(int(params['t_sim'] / dt)):
+#        summed_filtered_activity = normalized_traces[:, t_].sum()
+#        print 'debug t_ summed_filtered_activity:', t_, summed_filtered_activity
+#        if summed_filtered_activity > 0:
+#            normalized_traces[:, t_] /= summed_filtered_activity
+
+    # 3) align the filtered and normalized responses
+    for i_ in xrange(params['n_exc']):
+        shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[i_, :], tp[i_, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
+        filtered_aligned_spiketrains[i_, :] = shifted_trace
+        ax1.plot(t_vec_trace, shifted_trace, c=colorlist[i_], lw=1)
+
+    for t_ in xrange(n_trace_data):
+        mean_trace[t_, 0] = filtered_aligned_spiketrains[:, t_].mean()
+        mean_trace[t_, 1] = filtered_aligned_spiketrains[:, t_].std()
+        mean_trace[t_, 1] /= np.sqrt(params['n_exc'])
+
+    ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', lw=3)
+
+    ylim = ax1.get_ylim()
+    ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim[0], ylim[1]), '--', c='k', lw=3)
+    ax1.text(t_vec_trace[n_trace_data/2], ylim[0] + 0.8 * (ylim[1]-ylim[0]), 'Stimulus arrival')
+    ax1.set_xlabel('Time [ms]')
+    title_cmap = 'Filtered spike trains'
+    ax1.set_title(title_cmap)
+    cbar1 = pylab.colorbar(m, ax=ax1)
+    cbar1.set_label(cbar_label)
+
+    order_of_gids = np.argsort(tp[:, 0])
+    cax = ax2.pcolormesh(filtered_aligned_spiketrains[order_of_gids, :])
+    ax2.set_xlim((0, n_trace_data))
+    ax2.set_ylim((0, params['n_exc']))
+    ylim2 = ax2.get_ylim()
+    ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='w', ls='--', lw=3)
+    cbar = pylab.colorbar(cax)
+    cbar.set_label('Normalized filtered\nactivity')
+    output_fig = params['figures_folder'] + 'anticipation_cmap.png'
+    print 'Saving figure to:', output_fig
+    fig.savefig(output_fig, dpi=200)
+    return output_fig
+
 
 if __name__ == '__main__':
 
@@ -221,17 +335,20 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()
         params = ps.params
         show = True
+        plot_anticipation_cmap(params)
         plot_anticipation(params)
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
         show = True
+        plot_anticipation_cmap(params)
         plot_anticipation(params)
     else:
         fig_fns = []
         for folder_name in sys.argv[1:]:
             params = utils.load_params(folder_name)
             show = False
+            fig_fn = plot_anticipation_cmap(params)
             fig_fn = plot_anticipation(params)
             fig_fns.append(fig_fn)
         print 'Figures:\n'

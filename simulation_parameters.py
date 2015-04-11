@@ -3,6 +3,7 @@ import numpy as np
 import numpy.random as rnd
 import os
 import utils
+import copy
 
 class parameter_storage(object):
     """
@@ -29,6 +30,7 @@ class parameter_storage(object):
         self.params['with_orientation'] = True      # redundant? 
         self.params['with_stp_for_input'] = False   # not tuned well
         self.params['symmetric_tauij'] = True       # relevant for training only
+        self.params['with_bias'] = True
         self.params['Guo_protocol'] = False
         self.params['test_protocols'] = ['continuous']
 #        self.params['test_protocols'] = ['random']
@@ -51,6 +53,13 @@ class parameter_storage(object):
             #self.params['sim_id'] += 'withSTP_'
         #else:
             #self.params['sim_id'] += 'noSTP_'
+
+        if self.params['with_bias']:
+            self.params['sim_id'] += 'withBlank_withBias'
+            self.params['bias_gain'] = 100.
+        else:
+            self.params['sim_id'] += 'withBlank_noBias'
+            self.params['bias_gain'] = 0.
 
         self.fmax = 250.
         self.fmax_factor = 1.0
@@ -191,7 +200,7 @@ class parameter_storage(object):
         self.params['target_overlap_x'] = 0.4 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_v'] = 0.05 # where two RF gauss curves cross, depends also on the density and decides the rf_size_x_multiplicator
         self.params['target_overlap_theta'] = 0.01 # where two RF gauss curves (1.0-0.) cross, depends also on the density and decides the rf_size_x_multiplicator
-        self.params['save_input'] = True # self.params['debug'] #not self.params['Cluster']
+        self.params['save_input'] = False # self.params['debug'] #not self.params['Cluster']
         self.params['load_input'] = False # not self.params['save_input']
 
 
@@ -248,15 +257,16 @@ class parameter_storage(object):
                     #'Delta_T': 2., \
                     #'a': 0., 'b': 0.0, \
                     #'Delta_T': 1e-4, \
-                    'gain': 0., \
+                    'gain': self.params['bias_gain'], \
                     'g_L': self.params['g_leak'], \
                     'gsl_error_tol': 1e-10,  
                     'AMPA_Tau_decay': self.params['tau_syn']['ampa'], 'NMDA_Tau_decay': self.params['tau_syn']['nmda'], 'GABA_Tau_decay': self.params['tau_syn']['gaba']}
                     # default was gsl_error_tol is 1e-6
 
-            self.params['cell_params_inh'] = self.params['cell_params_exc']
+            self.params['cell_params_inh'] = copy.deepcopy(self.params['cell_params_exc'])
             self.params['cell_params_inh']['a'] = 0.
             self.params['cell_params_inh']['b'] = 0.
+            self.params['cell_params_inh']['gain'] = 0.
 
 #                    'n_synapses': 3, 'tau_syn': [3., 100., 15.], 'receptor_types': [0, 1, 2]}
 #            self.params['cell_params_inh'] = {'C_m': 250.0, 'E_L': -70.0, 'I_e': 0.0, 'V_m': -70.0, \
@@ -518,7 +528,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 400.
+            self.params['t_blank'] = 500.
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:

@@ -57,22 +57,7 @@ class NetworkModel(object):
         nest.SetKernelStatus({'rng_seeds' : range(self.params['seed'] + self.n_proc + 1, \
                 self.params['seed'] + 2 * self.n_proc + 1)})
             
-        if self.params['training_run']:
-            if training_stimuli == None:
-                if self.params['with_orientation']:
-                    training_stimuli = create_regular_training_stimuli_with_orientation(self.params, self.tuning_prop_exc)
-                else:
-                    if self.params['regular_tuning_prop']:
-                        training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
-                    else:
-                        training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
-            self.motion_params = training_stimuli
-            np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
-        else:
-            if not self.params['Guo_protocol']:
-                self.motion_params = create_approaching_test_stimuli(self.params, RNG=self.RNG_global)
-                np.savetxt(self.params['test_sequence_fn'], self.motion_params)
-
+        self.set_motion_params()
         if self.comm != None:
             self.comm.Barrier()
 
@@ -100,6 +85,23 @@ class NetworkModel(object):
 #        nest.SetKernelStatus({'tics_per_ms':self.params['dt_sim'], 'min_delay':delay_min, 'max_delay':delay_max})
 
         self.setup_synapse_types()
+
+    def set_motion_params(self):
+        if self.params['training_run']:
+            if training_stimuli == None:
+                if self.params['with_orientation']:
+                    training_stimuli = create_regular_training_stimuli_with_orientation(self.params, self.tuning_prop_exc)
+                else:
+                    if self.params['regular_tuning_prop']:
+                        training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
+                    else:
+                        training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
+            self.motion_params = training_stimuli
+            np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
+        else:
+            if not self.params['Guo_protocol']:
+                self.motion_params = create_approaching_test_stimuli(self.params, RNG=self.RNG_global)
+                np.savetxt(self.params['test_sequence_fn'], self.motion_params)
 
 
     def setup_recorder_neurons(self):
