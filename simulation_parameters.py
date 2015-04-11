@@ -180,11 +180,7 @@ class parameter_storage(object):
     #        self.params['rf_size_vx_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
     #        self.params['rf_size_vy_min'] = 2 * self.params['v_max_tp'] / self.params['n_v']
 
-        self.params['increase_rf_size_with_speed'] = True
-        self.params['rf_x_increase_max'] = 1.
-        self.params['rf_size_x_multiplicator'] = 1.00
-        self.params['rf_size_v_multiplicator'] = 1.00  # means basically no effective overlap
-        self.params['fixed_rfs'] = True # if True: target_overlap_* has no effect (at least for with_orientation)
+        self.params['fixed_rfs'] = False # if True: target_overlap_* has no effect (at least for with_orientation)
         if self.params['fixed_rfs']:
             self.params['rfs_theta_fixed'] = 20.
             self.params['rfs_x_fixed'] = 0.03
@@ -416,12 +412,12 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
-        self.params['v_min_training'] = 0.5
+        self.params['v_min_training'] = 1.0
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
-        self.params['training_stim_noise_theta'] = 0.005 * 180. # percentage of noise for each individual training speed
+        self.params['training_stim_noise_theta'] = 0.02 * 180. # percentage of noise for each individual training speed
         self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v'] = 2 #* self.params['n_v']
@@ -429,7 +425,8 @@ class parameter_storage(object):
         #self.params['n_training_v'] = 2
         #assert (self.params['n_training_v'] % 2 == 0), 'n_training_v should be an even number (for equal number of negative and positive speeds)'
         self.params['n_training_x'] = 1 # number of different starting positions per trained  speed
-        self.params['n_theta_training'] = 1 #self.params['n_theta']
+        #self.params['n_theta_training'] = 1 
+        self.params['n_theta_training'] = self.params['n_theta']
         self.params['n_training_stim_per_cycle'] = self.params['n_training_v'] * self.params['n_theta_training'] * self.params['n_training_x']
 
         # if one speed is trained, it is presented starting from this number on different locations

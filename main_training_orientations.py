@@ -46,7 +46,7 @@ if __name__ == '__main__':
         if params['symmetric_tauij']:
             params['tauj_bcpnn'] = params['taui_bcpnn']
             params['bcpnn_params']['tau_j'] = params['tauj_bcpnn']
-        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_vtrain%.1f-%.1f/' % ( \
+        folder_name = 'TrainingSim_%s_%dx%dx%d_%d-%d_taui%d_nHC%d_nMC%d_vtrain%.2f-%.1f/' % ( \
                 params['sim_id'], params['n_training_cycles'], params['n_training_v'], params['n_training_x'], \
                 params['stim_range'][0], params['stim_range'][1], \
                 params['bcpnn_params']['tau_i'], \

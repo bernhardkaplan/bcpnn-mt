@@ -2,10 +2,10 @@
 # The -l above is required to get the full environment with modules
 
 # The name of the script is myjob
-#SBATCH -J o_v0.5
+#SBATCH -J multi_orientation
 
 # Only 1 hour wall-clock time will be given to this job
-#SBATCH -t 01:59:00
+#SBATCH -t 03:59:00
 
 # Number of cores per node to be allocated
 #SBATCH -N 5
