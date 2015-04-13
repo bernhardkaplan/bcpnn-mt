@@ -18,7 +18,7 @@ plot_params = {'backend': 'png',
               'xtick.labelsize': 20,
               'ytick.labelsize': 20,
               'legend.pad': 0.2,     # empty space around the legend box
-              'legend.fontsize': 10,
+              'legend.fontsize': 12,
                'lines.markersize': 1,
                'lines.markeredgewidth': 0.,
                'lines.linewidth': 2,
@@ -229,7 +229,7 @@ def plot_anticipation(params, show=False, n_cell=5):
 #    ylim = (ylim[0], mp[0] + .1)
 #    ax1.set_ylim(ylim)
 
-    output_fig = params['figures_folder'] + 'spikes_and_voltages.png'
+    output_fig = params['figures_folder'] + 'spikes_and_voltages_taui%d.png' % (params['bcpnn_params']['tau_i'])
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
     if show:
@@ -240,6 +240,8 @@ def plot_anticipation(params, show=False, n_cell=5):
 
 def plot_anticipation_cmap(params):
 
+    tau_filter = 20. # for filtering spike trains
+    threshold = 0.1  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
     pylab.rcParams.update(plot_params)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
@@ -281,7 +283,7 @@ def plot_anticipation_cmap(params):
     print 'Normalizing spike trains ...'
     # 1) get the filtered traces
     for i_ in xrange(params['n_exc']):
-        t_vec, y = utils.filter_spike_train(spiketrains[i_], dt=dt, tau=30., t_max=params['t_sim'])
+        t_vec, y = utils.filter_spike_train(spiketrains[i_], dt=dt, tau=tau_filter, t_max=params['t_sim'])
         normalized_traces[i_, :] = y
 
     # 2) normalize the traces
@@ -303,13 +305,31 @@ def plot_anticipation_cmap(params):
         mean_trace[t_, 1] = filtered_aligned_spiketrains[:, t_].std()
         mean_trace[t_, 1] /= np.sqrt(params['n_exc'])
 
+
+    prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
+    idx_above_thresh = np.where(mean_trace[:, 0] > prediction_threshold)[0]
+    t_prediction = idx_above_thresh[0] * dt - n_trace_data / 2 * dt 
+    print 'idx_above thresh:', idx_above_thresh
+    print 't_prediction', t_prediction
+
     ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', lw=3)
 
     ylim = ax1.get_ylim()
-    ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim[0], ylim[1]), '--', c='k', lw=3)
-    ax1.text(t_vec_trace[n_trace_data/2], ylim[0] + 0.8 * (ylim[1]-ylim[0]), 'Stimulus arrival')
+    plots = []
+    label1 = 'Stimulus arrival'
+    p1, = ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim[0], ylim[1]), '--', c='k', lw=3, label=label1)
+    ax1.text(t_vec_trace[n_trace_data/2] + 5, ylim[0] + 0.8 * (ylim[1]-ylim[0]), 'Stimulus arrival')
+
+    # plot t_prediction
+    label2 = 'Mean anticipation signal'
+    p2, = ax1.plot((t_prediction, t_prediction), (ylim[0], ylim[1]), ':', c='k', lw=3, label=label2)
+    plots = [p1, p2]
+    labels = [label1, label2]
+    ax1.text(t_prediction + 5, ylim[0] + 0.9 * (ylim[1]-ylim[0]), 't_anticipation = %.1f ms' % t_prediction)
+    ax1.legend(plots, labels, loc='upper right')
+
     ax1.set_xlabel('Time [ms]')
-    title_cmap = 'Filtered spike trains'
+    title_cmap = 'Filtered spike trains $\\tau_i=%d $ ms' % (params['bcpnn_params']['tau_i'])
     ax1.set_title(title_cmap)
     cbar1 = pylab.colorbar(m, ax=ax1)
     cbar1.set_label(cbar_label)
@@ -322,7 +342,7 @@ def plot_anticipation_cmap(params):
     ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='w', ls='--', lw=3)
     cbar = pylab.colorbar(cax)
     cbar.set_label('Normalized filtered\nactivity')
-    output_fig = params['figures_folder'] + 'anticipation_cmap.png'
+    output_fig = params['figures_folder'] + 'anticipation_cmap_taui%d.png' % (params['bcpnn_params']['tau_i'])
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
     return output_fig

@@ -52,12 +52,18 @@ def plot_average_weights(params, fig=None, force_rerun=False):
     data_fn = params['data_folder'] + 'average_weights_vs_distance.dat'
 #    if os.path.exists(data_fn) or force_rerun:
     if not os.path.exists(data_fn) or force_rerun:
+        print 'Running get_average_weights...'
         get_average_weights(params)
 
     d = np.loadtxt(data_fn)
     xbins = d[:, 0]
     avg_weight = d[:, 1:]
     ax.plot(xbins, avg_weight[:, 0], c=m.to_rgba(params['bcpnn_params']['tau_i']))
+
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    ax.plot((xlim[0], xlim[1]), (0, 0), ls='--', lw=1, c='k')
+    ax.plot((0, 0), (ylim[0], ylim[1]), ls='--', lw=1, c='k')
 #    ax.errorbar(xbins, avg_weight[:, 0], yerr=avg_weight[:, 1])
 
     xlabel = 'Distance between source and target cell'
@@ -78,7 +84,7 @@ if __name__ == '__main__':
         params = utils.load_params(folder_name)
         fig, m = plot_average_weights(params, fig, force_rerun)
     cb = pylab.colorbar(m)
-    cb.set_label('$\\tau_i$')
+    cb.set_label('Window of correlation $\\tau_i$')
 
     output_fig = 'average_weight_vs_distance.png'
     print 'Saving figure to:', output_fig

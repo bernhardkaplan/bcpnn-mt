@@ -57,9 +57,10 @@ if __name__ == '__main__':
 #    ampa_nmda_ratio = float(sys.argv[6])
 #    w_ii = float(sys.argv[7])
 
-    tau_i = 200
-    conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-100_taui%d_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat' % (tau_i)
-    conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-100_taui%d_nHC20_nMC2_vtrain0.5-1.0/Connections/conn_matrix_mc.dat' % (tau_i)
+    taui_ampa = params['taui_ampa']
+    taui_nmda = params['taui_nmda']
+    conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
+    conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     bcpnn_gain = params['bcpnn_gain']
     w_ie = params['w_ie_unspec']
     w_ei = params['w_ei_unspec']
@@ -86,14 +87,13 @@ if __name__ == '__main__':
         #assert (w_ii < 0), 'Inhibitory weights need to be negative!'
         params['ampa_nmda_ratio'] = ampa_nmda_ratio
         params['bcpnn_gain'] = bcpnn_gain
-        params['bcpnn_params']['tau_i'] = tau_i
-        params['taui_bcpnn'] = tau_i
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%s_%d-%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.2f_taui%d_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
-                params['test_protocols'][0], params['sim_id'], params['stim_range'][0], params['stim_range'][1], params['v_min_test'], \
-                params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], params['bcpnn_params']['tau_i'], \
+        folder_name = 'TestSim_%s_%s_%d-%d_tauiAMPA_%d_NMDA_%d_v%.1f_nExcPerMc%d_gain%.2f_ratio%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
+                params['test_protocols'][0], params['sim_id'], params['stim_range'][0], params['stim_range'][1], \
+                params['taui_ampa'], params['taui_nmda'], params['v_min_test'], \
+                params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], \
                 params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
