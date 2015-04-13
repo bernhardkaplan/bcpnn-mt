@@ -27,7 +27,7 @@ class NetworkModel(object):
             self.comm.Barrier()
 
 
-    def setup(self, training_stimuli=None):
+    def setup(self):
 #        if training_params != None:
 #            self.training_params = training_params
 
@@ -88,14 +88,13 @@ class NetworkModel(object):
 
     def set_motion_params(self):
         if self.params['training_run']:
-            if training_stimuli == None:
-                if self.params['with_orientation']:
-                    training_stimuli = create_regular_training_stimuli_with_orientation(self.params, self.tuning_prop_exc)
+            if self.params['with_orientation']:
+                training_stimuli = create_regular_training_stimuli_with_orientation(self.params, self.tuning_prop_exc)
+            else:
+                if self.params['regular_tuning_prop']:
+                    training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
                 else:
-                    if self.params['regular_tuning_prop']:
-                        training_stimuli = create_regular_training_stimuli(self.params, self.tuning_prop_exc)
-                    else:
-                        training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
+                    training_stimuli = create_training_stimuli_based_on_tuning_prop(self.params)
             self.motion_params = training_stimuli
             np.savetxt(self.params['training_stimuli_fn'], self.motion_params)
         else:

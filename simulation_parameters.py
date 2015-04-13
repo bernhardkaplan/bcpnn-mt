@@ -30,8 +30,8 @@ class parameter_storage(object):
         self.params['with_orientation'] = True      # redundant? 
         self.params['with_stp_for_input'] = False   # not tuned well
         self.params['with_recorder_neurons'] = False
-        self.params['symmetric_tauij'] = True       # relevant for training only
-        self.params['with_bias'] = True
+        self.params['symmetric_tauij'] = True # relevant for training only
+        self.params['with_bias'] = False
         self.params['Guo_protocol'] = False
         self.params['test_protocols'] = ['continuous']
 #        self.params['test_protocols'] = ['random']
@@ -50,16 +50,18 @@ class parameter_storage(object):
         elif not self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = ''
 
+        if not self.params['symmetric_tauij']:
+            self.params['sim_id'] += 'asymmetricTauij_'
         #if self.params['with_stp']:
             #self.params['sim_id'] += 'withSTP_'
         #else:
             #self.params['sim_id'] += 'noSTP_'
 
         if self.params['with_bias']:
-            self.params['sim_id'] += 'withBlank_withBias'
-            self.params['bias_gain'] = 100.
+            self.params['sim_id'] += 'withBias'
+            self.params['bias_gain'] = 10.
         else:
-            self.params['sim_id'] += 'withBlank_noBias'
+            self.params['sim_id'] += ''
             self.params['bias_gain'] = 0.
 
         self.fmax = 250.
@@ -114,7 +116,7 @@ class parameter_storage(object):
         else:
             self.params['n_mc_per_hc'] = self.params['n_v'] 
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
+        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -429,7 +431,7 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
-        self.params['v_min_training'] = 1.0
+        self.params['v_min_training'] = 0.7
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
