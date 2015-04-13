@@ -29,4 +29,13 @@ module add nest/2.2.2
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cfs/milner/scratch/b/bkaplan/BCPNN-Module/build-module-100725
 export PYTHONPATH=/pdc/vol/nest/2.2.2/lib/python2.7/site-packages:/pdc/vol/python/2.7.6-gnu/lib/python2.7/site-packages
 
-aprun -n 1 -N 1 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/PlottingScripts/PlotPrediction.py $1 > delme_plotting 2>&1
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui5_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui10_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui20_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui50_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui100_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui150_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+aprun -n 1 -N 1 python WeightAnalyser.py TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui200_nHC20_nMC4_vtrain1.00-1.0 > delme_plotting 2>&1 
+
+
+#aprun -n 1 -N 1 python /cfs/milner/scratch/b/bkaplan/bcpnn-mt/PlottingScripts/PlotPrediction.py $1 > delme_plotting 2>&1

@@ -19,9 +19,9 @@ import json
 import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
-from PlottingScripts.PlotPrediction import plot_prediction
-from PlottingScripts.PlotCurrents import run_plot_currents
-from PlottingScripts.plot_incoming_currents import plot_incoming_currents
+#from PlottingScripts.PlotPrediction import plot_prediction
+#from PlottingScripts.PlotCurrents import run_plot_currents
+#from PlottingScripts.plot_incoming_currents import plot_incoming_currents
 from PlottingScripts.PlotAnticipation import plot_anticipation, plot_anticipation_cmap
 
 try: 
@@ -57,8 +57,15 @@ if __name__ == '__main__':
 #    ampa_nmda_ratio = float(sys.argv[6])
 #    w_ii = float(sys.argv[7])
 
-    taui_ampa = params['taui_ampa']
-    taui_nmda = params['taui_nmda']
+
+    if params['Cluster']:
+        taui_ampa = float(sys.argv[1])
+        taui_nmda = float(sys.argv[2])
+        params['taui_ampa'] = taui_ampa
+        params['taui_nmda'] = taui_nmda
+    else:
+        taui_ampa = params['taui_ampa']
+        taui_nmda = params['taui_nmda']
     conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
     conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     bcpnn_gain = params['bcpnn_gain']

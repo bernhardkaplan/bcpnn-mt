@@ -4,6 +4,8 @@ import numpy as np
 import re
 import json
 import utils
+import matplotlib
+matplotlib.use('Agg')
 from PlottingScripts import plot_conn_list_as_colormap
 import pylab
 

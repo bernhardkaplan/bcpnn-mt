@@ -21,7 +21,7 @@ class parameter_storage(object):
 
 
     def set_default_params(self):
-        self.params['training_run'] = True
+        self.params['training_run'] = False
         self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
@@ -121,7 +121,10 @@ class parameter_storage(object):
         else:
             self.params['n_mc_per_hc'] = self.params['n_v'] 
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
-        self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
+        if self.params['training_run']:
+            self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
+        else:
+            self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -346,7 +349,7 @@ class parameter_storage(object):
         # #######################
 
         # only used during testing:
-        self.params['bcpnn_gain'] = 2.5
+        self.params['bcpnn_gain'] = 1.0
 
         # exc - exc: local
         self.params['p_ee_local'] = .75
@@ -534,7 +537,8 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 500.
+            self.params['t_blank'] = 0.
+            #self.params['t_blank'] = 500.
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:
