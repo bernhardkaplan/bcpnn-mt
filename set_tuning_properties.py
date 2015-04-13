@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import pylab
 import matplotlib.patches as mpatches
 from matplotlib.collections import PatchCollection

@@ -5,8 +5,9 @@ if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 import numpy as np
 import utils
-import pylab
 import matplotlib
+matplotlib.use('Agg')
+import pylab
 import json
 from PlottingScripts.plot_spikes_sorted import plot_spikes_sorted_simple
 
