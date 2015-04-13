@@ -20,7 +20,7 @@ import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
 #from PlottingScripts.PlotPrediction import plot_prediction
-#from PlottingScripts.PlotCurrents import run_plot_currents
+from PlottingScripts.PlotCurrents import run_plot_currents
 #from PlottingScripts.plot_incoming_currents import plot_incoming_currents
 from PlottingScripts.PlotAnticipation import plot_anticipation, plot_anticipation_cmap
 
@@ -58,14 +58,14 @@ if __name__ == '__main__':
 #    w_ii = float(sys.argv[7])
 
 
-    if params['Cluster']:
-        taui_ampa = float(sys.argv[1])
-        taui_nmda = float(sys.argv[2])
-        params['taui_ampa'] = taui_ampa
-        params['taui_nmda'] = taui_nmda
-    else:
-        taui_ampa = params['taui_ampa']
-        taui_nmda = params['taui_nmda']
+    #if params['Cluster']:
+    taui_ampa = float(sys.argv[1])
+    taui_nmda = float(sys.argv[2])
+    params['taui_ampa'] = taui_ampa
+    params['taui_nmda'] = taui_nmda
+    #else:
+        #taui_ampa = params['taui_ampa']
+        #taui_nmda = params['taui_nmda']
     conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
     conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     bcpnn_gain = params['bcpnn_gain']
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         #w_ie = -5. * w_ei
         #w_ii = -1.
         #ampa_nmda_ratio = .1
-        #w_input_exc = 10.
+#        params['w_input_exc'] = 10.
           
 #        w_input_exc = float(sys.argv[7])#15.
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
@@ -161,7 +161,7 @@ if __name__ == '__main__':
         plot_anticipation_cmap(params)
         plot_anticipation(params, show) 
 #        plot_prediction(params=NM.params, stim_range=params['stim_range'])
-#        run_plot_currents(NM.params)
+        run_plot_currents(NM.params)
 #        plot_incoming_currents(NM.params)
 #        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
 #        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']

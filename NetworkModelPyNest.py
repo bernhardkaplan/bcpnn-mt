@@ -424,6 +424,7 @@ class NetworkModel(object):
         if self.comm != None:
             self.comm.Barrier()
 
+        self.record_from = ['V_m', 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA']
         ##### RECORDER NEURONS
         if self.params['with_recorder_neurons']:
             self.setup_recorder_neurons()
@@ -465,7 +466,6 @@ class NetworkModel(object):
         self.initialize_vmem(self.local_idx_inh_spec)
         self.initialize_vmem(self.local_idx_inh_unspec)
 
-        self.record_from = ['V_m', 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA']
 #        self.record_from = ['V_m', 'g_AMPA', 'g_NMDA', 'g_NMDA_NEG', 'g_AMPA_NEG', 'g_GABA']
 #        self.record_from = ['V_m']#, 'I_AMPA', 'I_NMDA', 'I_NMDA_NEG', 'I_AMPA_NEG', 'I_GABA']
         self.voltmeter_exc = nest.Create('multimeter', params={'record_from': self.record_from, 'interval':  self.params['dt_volt']}) # will only be connected if record_v == True
@@ -678,7 +678,8 @@ class NetworkModel(object):
 
             # setup long-range connectivity based on trained connection matrix
             print 'Connecting recorder neurons'
-            self.connect_recorder_neurons()
+            if self.params['with_recorder_neurons']:
+                self.connect_recorder_neurons()
             print 'Connecting exc - exc '
             self.connect_ee_testing()
 

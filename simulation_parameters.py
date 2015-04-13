@@ -22,14 +22,14 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = False
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
         self.params['weight_tracking'] = False      # during training, increases simulation length a lot
         self.params['with_stp'] = False             # for recurrent E-E connections
         self.params['with_orientation'] = True      # redundant? 
         self.params['with_stp_for_input'] = False   # not tuned well
-        self.params['with_recorder_neurons'] = False
+        self.params['with_recorder_neurons'] = True
         self.params['symmetric_tauij'] = True # relevant for training only
         self.params['with_bias'] = False
         self.params['Guo_protocol'] = False
@@ -44,7 +44,7 @@ class parameter_storage(object):
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
 
-        self.w_input_exc = 10.0
+        self.w_input_exc = 4.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -249,7 +249,7 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 5.
+            self.params['ampa_nmda_ratio'] = 1.
             self.params['target_ratio_ampa_nmda'] = 5.   # seen in experiments Watt "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses" 2000 Neuron
             # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
             # the total currents only depend on bcpnn gain
@@ -349,7 +349,7 @@ class parameter_storage(object):
         # #######################
 
         # only used during testing:
-        self.params['bcpnn_gain'] = 1.0
+        self.params['bcpnn_gain'] = 2.0
 
         # exc - exc: local
         self.params['p_ee_local'] = .75
@@ -552,7 +552,7 @@ class parameter_storage(object):
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
-        self.params['record_v'] = False
+        self.params['record_v'] = True
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         
