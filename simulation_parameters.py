@@ -40,6 +40,10 @@ class parameter_storage(object):
 #        self.params['test_protocols'] = ['crf_only']
 #        self.params['test_protocols'] = ['missing_crf']
 
+        # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
+        self.params['taui_ampa'] = 200
+        self.params['taui_nmda'] = 200
+
         self.w_input_exc = 10.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -59,6 +63,7 @@ class parameter_storage(object):
 
         if self.params['with_bias']:
             self.params['sim_id'] += 'withBias'
+            #self.params['sim_id'] += 'withBlank_withBias'
             self.params['bias_gain'] = 10.
         else:
             self.params['sim_id'] += ''
