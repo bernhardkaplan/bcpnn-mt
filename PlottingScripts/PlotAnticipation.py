@@ -29,7 +29,7 @@ plot_params = {'backend': 'png',
               'figure.subplot.bottom':.10,
               'figure.subplot.right':.92,
               'figure.subplot.top':.95,
-              'figure.subplot.hspace':.50,
+              'figure.subplot.hspace':.30,
               'figure.subplot.wspace':.30}
 
 #def filter_tuning_prop(tp, v_range, axis=0):
@@ -264,10 +264,10 @@ def plot_anticipation_cmap(params):
 
     tau_filter = 25. # for filtering spike trains
 #    tau_filter = params['bcpnn_params']['tau_p']
-    threshold = 0.1  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
+    threshold = 0.25  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
-    n_cells = 100
+    n_cells = 500
     dt = 1.                 # time resolution for filtered spike trains
     n_trace_data = int(params['t_sim'] * .6 / dt)
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
@@ -289,9 +289,10 @@ def plot_anticipation_cmap(params):
     ax0.set_title('Aligned response of %d cells along stimulus trajectory' % n_cells)
     ax0.set_ylabel('Filtered spiketrains')
     ax1.set_ylabel('Normalized and filtered\nspike activity')
-    ax0.set_xlabel('Time to stimulus arrival [ms]')
-    ax1.set_xlabel('Time to stimulus arrival [ms]')
-    ax2.set_xlabel('Time [ms]')
+#    ax0.set_xlabel('Time to stimulus arrival [ms]')
+#    ax1.set_xlabel('Time to stimulus arrival [ms]')
+    ax2.set_xlabel('Time to stimulus arrival [ms]')
+#    ax2.set_xlabel('Time [ms]')
 
     # colors for x-y traces
     coloraxis = 0
@@ -347,15 +348,17 @@ def plot_anticipation_cmap(params):
 #    ax1.text(t_vec_trace[n_trace_data/2] + 5, ylim1[0] + 0.75 * (ylim1[1]-ylim1[0]), 'Stimulus arrival', fontsize=18)
 
     # plot t_anticipation
-    label2 = 'Mean anticipation signal'
+    label2 = 'Mean signal > %d %%' % (threshold * 100)
     p2, = ax1.plot((t_anticipation, t_anticipation), (ylim1[0], ylim1[1]), ':', c='k', lw=3, label=label2)
     plots = [p0, p1, p2]
     labels = [label0, label1, label2]
     ax1.text(t_anticipation - 50, ylim1[0] + 0.8 * (ylim1[1]-ylim1[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
     ax1.legend(plots, labels, loc='upper right')
 
-    title_cmap = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
-    ax1.set_title(title_cmap)
+    title2 = 'gain = %.1f $w^{input}_{exc}=%.1f\  R(AMPA/NMDA) = %.2f$' % (params['bcpnn_gain'], params['w_input_exc'], params['ampa_nmda_ratio'])
+    title1 = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
+    ax1.set_title(title1)
+    ax2.set_title(title2)
     cbar1 = pylab.colorbar(m, ax=ax1)
     cbar1.set_label(cbar_label)
     view_range = (-100, 150)
@@ -393,6 +396,7 @@ def plot_anticipation_cmap(params):
     d['t_anticipation'] = t_anticipation
     d['n_cells'] = n_cells
     d['dt'] = dt
+    d['threshold'] = threshold
     print 'Saving data to:', params['data_folder'] + 'anticipation_data.json'
     output_file = file(params['data_folder'] + 'anticipation_data.json', 'w')
     json.dump(d, output_file, indent=2)
