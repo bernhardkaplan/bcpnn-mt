@@ -15,7 +15,7 @@ from PlottingScripts.plot_spikes_sorted import plot_spikes_sorted_simple
 plot_params = {'backend': 'png',
               'axes.labelsize': 20,
               'axes.titlesize': 20,
-              'text.fontsize': 12,
+              'text.fontsize': 18,
               'xtick.labelsize': 20,
               'ytick.labelsize': 20,
               'legend.pad': 0.2,     # empty space around the legend box
@@ -25,10 +25,10 @@ plot_params = {'backend': 'png',
                'lines.linewidth': 2,
               'font.size': 12,
               'path.simplify': False,
-              'figure.subplot.left':.15,
-              'figure.subplot.bottom':.15,
-              'figure.subplot.right':.90,
-              'figure.subplot.top':.85,
+              'figure.subplot.left':.12,
+              'figure.subplot.bottom':.10,
+              'figure.subplot.right':.92,
+              'figure.subplot.top':.95,
               'figure.subplot.hspace':.50,
               'figure.subplot.wspace':.30}
 
@@ -238,12 +238,40 @@ def plot_anticipation(params, show=False, n_cell=5):
 
     return output_fig
 
+def filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt):
+    normalized_traces = np.zeros((params['n_exc'], int(params['t_sim'] / dt)))
+    filtered_traces = np.zeros((params['n_exc'], int(params['t_sim'] / dt)))
+    # 1) get the filtered traces
+    for i_ in xrange(params['n_exc']):
+        t_vec, y = utils.filter_spike_train(spiketrains[i_], dt=dt, tau=tau_filter, t_max=params['t_sim'])
+        normalized_traces[i_, :] = y
+        filtered_traces[i_, :] = y
+
+    # 2) normalize the traces
+    for t_ in xrange(int(params['t_sim'] / dt)):
+        summed_filtered_activity = normalized_traces[:, t_].sum()
+        if summed_filtered_activity > 0:
+            normalized_traces[:, t_] /= summed_filtered_activity
+
+    return filtered_traces, normalized_traces
+
 
 def plot_anticipation_cmap(params):
+    """
+    Analyse the (filtered) spike response and export an estimate of the 
+    anticipatory response to file
+    """
 
-    tau_filter = 20. # for filtering spike trains
+    tau_filter = 25. # for filtering spike trains
+#    tau_filter = params['bcpnn_params']['tau_p']
     threshold = 0.1  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
+    mp = [.0, .5, .0, .0, params['test_stim_orientation']]
+    n_cells = 100
+    dt = 1.                 # time resolution for filtered spike trains
+    n_trace_data = int(params['t_sim'] * .6 / dt)
+    t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
+
     pylab.rcParams.update(plot_params)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     all_spikes = np.loadtxt(params['exc_spiketimes_fn_merged'])
@@ -258,6 +286,13 @@ def plot_anticipation_cmap(params):
     ax1 = fig.add_subplot(312)
     ax2 = fig.add_subplot(313)
 
+    ax0.set_title('Aligned response of %d cells along stimulus trajectory' % n_cells)
+    ax0.set_ylabel('Filtered spiketrains')
+    ax1.set_ylabel('Normalized and filtered\nspike activity')
+    ax0.set_xlabel('Time to stimulus arrival [ms]')
+    ax1.set_xlabel('Time to stimulus arrival [ms]')
+    ax2.set_xlabel('Time [ms]')
+
     # colors for x-y traces
     coloraxis = 0
     if coloraxis == 0:
@@ -270,105 +305,98 @@ def plot_anticipation_cmap(params):
     norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
     m.set_array(tp[:, coloraxis])
-#    colorlist = m.to_rgba(tp[:, coloraxis])
 
-    # select spike trains for the selected gids
-    # filter spike trains
-    dt = 2. # time resolution for filtered spike trains
-    n_trace_data = int(params['t_sim'] * .6 / dt)
-    print 'n_trace_data:', n_trace_data
-    t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
-
-    # filter cells along a trajectory (start, stop defined in select_cells_for_filtering)
-    mp = [.0, .5, .0, .0, params['test_stim_orientation']]
-    n_cells = 50
+    # select and filter spike trains for the selected gids
+    # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
     filter_cells = select_cells_for_filtering(tp, mp, n_cells)
     print 'filter_cells:', filter_cells
-
-    normalized_traces = np.zeros((n_cells, int(params['t_sim'] / dt)))
-    filtered_traces = np.zeros((n_cells, int(params['t_sim'] / dt)))
     filtered_aligned_spiketrains = np.zeros((n_cells, n_trace_data))
-    mean_trace = np.zeros((n_trace_data, 2))
-
-    # 1) get the filtered traces
-#    for i_ in xrange(filter_cells): #params['n_exc']):
-    for i_, gid in enumerate(filter_cells): #params['n_exc']):
-        t_vec, y = utils.filter_spike_train(spiketrains[gid-1], dt=dt, tau=tau_filter, t_max=params['t_sim'])
-        normalized_traces[i_, :] = y
-        filtered_traces[i_, :] = y
-
-#    print 'Normalizing spike trains ...'
-    # 2) normalize the traces
-#    for t_ in xrange(n_trace_data):
-    for t_ in xrange(int(params['t_sim'] / dt)):
-        summed_filtered_activity = normalized_traces[:, t_].sum()
-#        print 'debug t_ summed_filtered_activity:', t_, summed_filtered_activity
-        if summed_filtered_activity > 0:
-            normalized_traces[:, t_] /= summed_filtered_activity
+    mean_trace = np.zeros((n_trace_data, 2)) 
+    filtered_traces, normalized_traces = filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt)
 
     # 3) align the filtered and normalized responses
-#    for i_ in xrange(params['n_exc']):
-    for i_, gid in enumerate(filter_cells): #params['n_exc']):
-        shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[i_, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
+    for i_, gid in enumerate(filter_cells): 
+        shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[gid-1, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
         filtered_aligned_spiketrains[i_, :] = shifted_trace
         ax1.plot(t_vec_trace, shifted_trace, c=m.to_rgba(tp[gid-1, 0]), lw=1)
-        shifted_trace_not_normalized = shift_trace_to_stimulus_arrival(params, filtered_traces[i_, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
+        shifted_trace_not_normalized = shift_trace_to_stimulus_arrival(params, filtered_traces[gid-1, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
         ax0.plot(t_vec_trace, shifted_trace_not_normalized, c=m.to_rgba(tp[gid-1, 0]), lw=1)
 
     for t_ in xrange(n_trace_data):
         mean_trace[t_, 0] = filtered_aligned_spiketrains[:, t_].mean()
         mean_trace[t_, 1] = filtered_aligned_spiketrains[:, t_].std()
-        mean_trace[t_, 1] /= np.sqrt(params['n_exc'])
+        mean_trace[t_, 1] /= np.sqrt(n_cells) #params['n_exc'])
 
+#        mean_trace[t_, 0] = filtered_aligned_spiketrains[:, t_].mean()
+#        mean_trace[t_, 1] = filtered_aligned_spiketrains[:, t_].std()
+#        mean_trace[t_, 1] /= np.sqrt(params['n_exc'])
 
     prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
     idx_above_thresh = np.where(mean_trace[:, 0] > prediction_threshold)[0]
-    t_prediction = idx_above_thresh[0] * dt - n_trace_data / 2 * dt 
+    t_anticipation = idx_above_thresh[0] * dt - n_trace_data / 2 * dt 
 #    print 'idx_above thresh:', idx_above_thresh
-    print 't_prediction', t_prediction
+    print 't_anticipation', t_anticipation
 
-    ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', lw=3)
+    p0 = ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', ls='-', lw=3)[0]
+    label0 ='Mean normalized trace'
 
-    ylim = ax1.get_ylim()
+    ylim1 = ax1.get_ylim()
     plots = []
     label1 = 'Stimulus arrival'
-    p1, = ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim[0], ylim[1]), '--', c='k', lw=3, label=label1)
-    ax1.text(t_vec_trace[n_trace_data/2] + 5, ylim[0] + 0.8 * (ylim[1]-ylim[0]), 'Stimulus arrival')
+    p1, = ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim1[0], ylim1[1]), '--', c='k', lw=3, label=label1)
+#    ax1.text(t_vec_trace[n_trace_data/2] + 5, ylim1[0] + 0.75 * (ylim1[1]-ylim1[0]), 'Stimulus arrival', fontsize=18)
 
-    # plot t_prediction
+    # plot t_anticipation
     label2 = 'Mean anticipation signal'
-    p2, = ax1.plot((t_prediction, t_prediction), (ylim[0], ylim[1]), ':', c='k', lw=3, label=label2)
-    plots = [p1, p2]
-    labels = [label1, label2]
-    ax1.text(t_prediction + 5, ylim[0] + 0.9 * (ylim[1]-ylim[0]), 't_anticipation = %.1f ms' % t_prediction)
+    p2, = ax1.plot((t_anticipation, t_anticipation), (ylim1[0], ylim1[1]), ':', c='k', lw=3, label=label2)
+    plots = [p0, p1, p2]
+    labels = [label0, label1, label2]
+    ax1.text(t_anticipation - 50, ylim1[0] + 0.8 * (ylim1[1]-ylim1[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
     ax1.legend(plots, labels, loc='upper right')
 
-    ax1.set_xlabel('Time [ms]')
     title_cmap = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
     ax1.set_title(title_cmap)
     cbar1 = pylab.colorbar(m, ax=ax1)
     cbar1.set_label(cbar_label)
-    ax1.set_xlim((-250, 250))
-    ax1.set_ylim((0., 1.))
-    ax0.set_xlim((-250, 250))
+    view_range = (-100, 150)
+    ax1.set_xlim(view_range)
+    ax1.set_ylim((0., ylim1[1]))
+    ax0.set_xlim(view_range)
 
     cbar0 = pylab.colorbar(m, ax=ax0)
     cbar0.set_label(cbar_label)
-    ax0.set_title('Aligned response of %d cells\nalong stimulus trajectory' % n_cells)
-    ax0.set_ylabel('Filtered spike activity')
-    ax1.set_ylabel('Normalized filtered spike activity')
 
     order_of_gids = np.argsort(tp[filter_cells-1, 0])
     cax = ax2.pcolormesh(filtered_aligned_spiketrains[order_of_gids, :])
-    ax2.set_xlim((0, n_trace_data))
+    ax2.set_xlim((n_trace_data / 2 + view_range[0] * dt, n_trace_data / 2 + view_range[1] * dt))
     ax2.set_ylim((0, n_cells))
+    xticks2 = [n_trace_data / 2 + view_range[0] + i_ * 50 for i_ in xrange(6)]
+    ax2.set_xticks(xticks2)
+    xticks_cmap = ['%d' % (int(v) - n_trace_data/2) for v in ax2.get_xticks()]
+    ax2.set_xticklabels(xticks_cmap)
     ylim2 = ax2.get_ylim()
-    ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='w', ls='--', lw=3)
+    ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='k', ls='-', lw=3)
     cbar = pylab.colorbar(cax)
     cbar.set_label('Normalized filtered\nactivity')
     output_fig = params['figures_folder'] + 'anticipation_cmap_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
+    
+    # output data
+    d = {}
+    d['folder_name'] = params['folder_name']
+    d['taui_ampa'] = params['taui_ampa']
+    d['taui_nmda'] = params['taui_nmda']
+    d['bcpnn_gain'] = params['bcpnn_gain']
+    d['tau_filter'] = tau_filter
+    d['ampa_nmda_ratio'] = params['ampa_nmda_ratio']
+    d['t_anticipation'] = t_anticipation
+    d['n_cells'] = n_cells
+    d['dt'] = dt
+    print 'Saving data to:', params['data_folder'] + 'anticipation_data.json'
+    output_file = file(params['data_folder'] + 'anticipation_data.json', 'w')
+    json.dump(d, output_file, indent=2)
+
     return output_fig
 
 
