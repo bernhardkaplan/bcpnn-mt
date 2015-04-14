@@ -43,8 +43,7 @@ class parameter_storage(object):
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
-
-        self.w_input_exc = 3.0
+        self.w_input_exc = 4.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -249,7 +248,7 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 5.
+            self.params['ampa_nmda_ratio'] = 1.
             self.params['target_ratio_ampa_nmda'] = 5.   # seen in experiments Watt "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses" 2000 Neuron
             # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
             # the total currents only depend on bcpnn gain
@@ -349,7 +348,7 @@ class parameter_storage(object):
         # #######################
 
         # only used during testing:
-        self.params['bcpnn_gain'] = 1.0
+        self.params['bcpnn_gain'] = 2.0
 
         # exc - exc: local
         self.params['p_ee_local'] = .75

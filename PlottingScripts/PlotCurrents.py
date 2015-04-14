@@ -76,7 +76,7 @@ def run_plot_currents(params, cell_type='exc'):
     if params['n_stim'] == 1 and params['stim_range'][0] != 0:
         mp = mp[params['stim_range'][0]:params['stim_range'][1], :]
     elif params['n_stim'] == 1 and params['stim_range'][0] == 0:
-        mp = mp.reshape((1, 4))
+        mp = mp.reshape((1, 5))
 #        mp = mp[0, :]
 
 #    mp = mp[params['stim_range'][0]:params['stim_range'][1], :]
@@ -94,6 +94,7 @@ def run_plot_currents(params, cell_type='exc'):
     print 'gids_in_range:', gids_in_range
     print 'tp:', tp[gids_in_range, 0]
 
+    measurables.append('V_m')
     n_plots = len(measurables)
     fig2 = pylab.figure(figsize=utils.get_figsize_A4(portrait=False))
     ax2 = fig2.add_subplot(211)
@@ -112,7 +113,8 @@ def run_plot_currents(params, cell_type='exc'):
 
     # get the typical trace length of one example cell
     idx = np.where(d[measurables[0]][:, 0] == gids_in_range_nest[0])[0]
-    trace_example = d[measurables[0]][idx, 1]
+    data_column_idx = 2
+    trace_example = d[measurables[0]][idx, data_column_idx]
     n_steps = trace_example.size
     net_currents = np.zeros((n_steps, len(gids_in_range_nest)))
     ratio_nmda_ampa_currents = np.zeros((n_steps, len(gids_in_range_nest)))
@@ -132,19 +134,22 @@ def run_plot_currents(params, cell_type='exc'):
         for i_, gid in enumerate(gids_in_range_nest):
             idx = np.where(d[measurable][:, 0] == gid)[0]
             t_axis = np.arange(idx.size) * params['dt_volt']
-            trace_data = d[measurable][idx, 1]
-            (sum_before_blank, avg_before_blank, std_before_blank, sum_during_blank, avg_during_blank, std_during_blank) = get_averages(params, trace_data)
-            output_data[measurable]['sum_during_blank'][gid] = sum_during_blank
-            output_data[measurable]['avg_during_blank'][gid] = avg_during_blank
-            output_data[measurable]['std_during_blank'][gid] = std_during_blank
-            output_data[measurable]['sum_before_blank'][gid] = sum_before_blank
-            output_data[measurable]['avg_before_blank'][gid] = avg_before_blank
-            output_data[measurable]['std_before_blank'][gid] = std_before_blank
-            output_data[measurable]['full_integral'][gid] = trace_data.sum()
-            label = '$\\overline{I}_{stim}=%.1e \ \\overline{I}_{blank}=%.1e$' % (avg_before_blank, avg_during_blank)
-            x_pos_cell = tp[gid - 1, 0]
+            trace_data = d[measurable][idx, data_column_idx]
+            if params['t_blank'] > 0:
+                (sum_before_blank, avg_before_blank, std_before_blank, sum_during_blank, avg_during_blank, std_during_blank) = get_averages(params, trace_data)
+                output_data[measurable]['sum_during_blank'][gid] = sum_during_blank
+                output_data[measurable]['avg_during_blank'][gid] = avg_during_blank
+                output_data[measurable]['std_during_blank'][gid] = std_during_blank
+                output_data[measurable]['sum_before_blank'][gid] = sum_before_blank
+                output_data[measurable]['avg_before_blank'][gid] = avg_before_blank
+                output_data[measurable]['std_before_blank'][gid] = std_before_blank
+                output_data[measurable]['full_integral'][gid] = trace_data.sum()
+                label = '$\\overline{I}_{stim}=%.1e \ \\overline{I}_{blank}=%.1e$' % (avg_before_blank, avg_during_blank)
+                ax.plot(t_axis, d[measurable][idx, data_column_idx], c=colorlist[i_], label=label)
+            else:
+                ax.plot(t_axis, d[measurable][idx, data_column_idx], c=colorlist[i_])
+#            x_pos_cell = tp[gid - 1, 0]
 #            print 'gid: %d x_pos: %.2f  avg(%s) before blank = %.2e  during blank = %.2e' % (gid, x_pos_cell, measurable, avg_before_blank, avg_during_blank)
-            ax.plot(t_axis, d[measurable][idx, 1], c=colorlist[i_], label=label)
             ylim = ax.get_ylim()
             net_currents[:, i_] += trace_data
 #            ax.text(params['t_start_blank'], ylim[0] + (ylim[1] - ylim[0]) * .8, '$\\overline{%s}=%.1e$' % (measurable, avg_before_blank))
@@ -160,19 +165,55 @@ def run_plot_currents(params, cell_type='exc'):
 
     n_stop_plot = int(0.7 * n_steps)
     average_ratios = np.zeros((len(gids_in_range_nest), 2))
+    sum_ampa = np.zeros(len(gids_in_range_nest))
+    sum_nmda = np.zeros(len(gids_in_range_nest))
+    mean_volt = np.zeros(len(gids_in_range_nest))
+    I_noise =  np.zeros(len(gids_in_range_nest))
+    AMPA_E_rev = 0. # since not defined otherwise in simulation_parameters it's the default of 0 mV
+    # expected AMPA input from noise is calculated from V_m and g_noise (per time step)
+    g_noise = params['f_noise_exc'] * params['tau_syn']['ampa'] * params['w_noise_exc'] / 1000. # / 1000. because tau_syn is in ms
     for i_, gid in enumerate(gids_in_range_nest):
         ax2.plot(net_currents[:, i_], c=colorlist[i_])
         idx = np.where(d['AMPA'][:, 0] == gid)[0]
-        ampa_trace = d['AMPA'][idx, 1]
-        nmda_trace = d['NMDA'][idx, 1]
+        ampa_trace = d['AMPA'][idx, data_column_idx]
+        nmda_trace = d['NMDA'][idx, data_column_idx]
         nonzero_idx = np.nonzero(ampa_trace)[0]
         ratio_nmda_ampa_currents[nonzero_idx, i_] = nmda_trace[nonzero_idx] / ampa_trace[nonzero_idx]
         average_ratios[i_, 0] = ratio_nmda_ampa_currents[:n_stop_plot].mean()
         average_ratios[i_, 1] = ratio_nmda_ampa_currents[:n_stop_plot].std()
+        mean_volt[i_] = d['V_m'][idx, data_column_idx].mean()
+        I_noise[i_] = g_noise * (AMPA_E_rev - mean_volt[i_])
+#        I_noise[i_] = g_noise * (AMPA_E_rev - mean_volt[i_])
+        sum_ampa[i_] = (ampa_trace - I_noise[i_]).sum()
+        sum_nmda[i_] = nmda_trace.sum()
 #        print 'Average ratio %d: ' % gid, average_ratios[i_, 0], '+-', average_ratios[i_, 1]
         ax3.plot(t_axis[:n_stop_plot], ratio_nmda_ampa_currents[:n_stop_plot, i_], c=colorlist[i_])
-
         ax3.plot((t_axis[0], t_axis[n_stop_plot]), (average_ratios[i_, 0], average_ratios[i_, 0]), '-', lw=3, c=colorlist[i_])
+
+    sum_ampa /= sum_ampa.size
+    sum_nmda /= sum_nmda.size
+    for i_, gid in enumerate(gids_in_range_nest):
+        print 'gid %d\tAMPA in sum: %.3e\tNMDA %.3e\tI_noise=%.3e\tV_mean=%.1f' % (gid, sum_ampa[i_].sum(), sum_nmda[i_].sum(), I_noise[i_], mean_volt[i_])
+
+    I_noise_mean = I_noise.mean()
+    print 'Average I_noise: %.1f pA' % I_noise_mean
+    fig_bar_sum = pylab.figure()
+    ax_ampa_bar = fig_bar_sum.add_subplot(311)
+    ax_nmda_bar = fig_bar_sum.add_subplot(312)
+    ax_ratio_nmda_ampa = fig_bar_sum.add_subplot(313)
+    ax_ampa_bar.bar(range(len(gids_in_range_nest)), sum_ampa, width=1)
+    ax_nmda_bar.bar(range(len(gids_in_range_nest)), sum_nmda, width=1)
+    ax_ampa_bar.set_ylabel('Incoming AMPA currents')
+    ax_nmda_bar.set_ylabel('Incoming NMDA currents')
+#    ax_ampa_bar.set_xlabel('Cells')
+    ax_ampa_bar.plot((0, len(gids_in_range_nest)), (sum_ampa.mean(), sum_ampa.mean()), lw=2, ls='--', c='k', label='Average sum of incoming AMPA without noise')
+    ax_nmda_bar.plot((0, len(gids_in_range_nest)), (sum_nmda.mean(), sum_nmda.mean()), lw=2, ls='--', c='k', label='Average sum of incoming NMDA')
+
+    non_zero_idx = np.nonzero(sum_ampa)[0]
+    ax_ratio_nmda_ampa.bar(range(len(gids_in_range_nest)), sum_nmda[non_zero_idx] / sum_ampa[non_zero_idx], width=1)
+    ax_ratio_nmda_ampa.set_title('Ratio $\\frac{I_{network}^{NMDA}}{I^{AMPA}_{input} + I_{network}^{AMPA}}$')
+    ax_ratio_nmda_ampa.set_xlabel('Cells')
+    fig_bar_sum.subplots_adjust(left=0.20, hspace=0.6, bottom=0.15)
 
 #    ax3.set_ylim((0, 10))
     # output data

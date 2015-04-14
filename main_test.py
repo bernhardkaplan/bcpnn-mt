@@ -20,7 +20,7 @@ import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
 #from PlottingScripts.PlotPrediction import plot_prediction
-#from PlottingScripts.PlotCurrents import run_plot_currents
+from PlottingScripts.PlotCurrents import run_plot_currents
 #from PlottingScripts.plot_incoming_currents import plot_incoming_currents
 import matplotlib
 matplotlib.use('Agg')
@@ -50,48 +50,23 @@ if __name__ == '__main__':
     assert (params['training_run'] == False), 'Wrong flag in simulation parameters. Set training_run = False.'
     # if training_run is set, you might end up with other wrong parameters (e.g. n_stim)
 
-#    conn_fn_ampa = sys.argv[1]
-#    conn_fn_nmda = sys.argv[2]
-#    bcpnn_gain = float(sys.argv[3])
-#    w_ie = float(sys.argv[4])
-#    w_ei = float(sys.argv[5])
-#    ampa_nmda_ratio = float(sys.argv[6])
-#    w_ii = float(sys.argv[7])
-
-
-    if params['Cluster']:
-        taui_ampa = float(sys.argv[1])
-        taui_nmda = float(sys.argv[2])
-        bcpnn_gain = float(sys.argv[3])
-        params['bcpnn_gain'] = bcpnn_gain
-        w_input_exc = float(sys.argv[4])
-        params['w_input_exc'] = w_input_exc
-        params['taui_ampa'] = taui_ampa
-        params['taui_nmda'] = taui_nmda
-    else:
-        taui_ampa = params['taui_ampa']
-        taui_nmda = params['taui_nmda']
+    taui_ampa = float(sys.argv[1])
+    taui_nmda = float(sys.argv[2])
+    bcpnn_gain = float(sys.argv[3])
+    params['bcpnn_gain'] = bcpnn_gain
+    w_input_exc = float(sys.argv[4])
+    ampa_nmda_ratio = float(sys.argv[5])
+    params['w_input_exc'] = w_input_exc
+    params['taui_ampa'] = taui_ampa
+    params['taui_nmda'] = taui_nmda
     conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
     conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     w_ie = params['w_ie_unspec']
     w_ei = params['w_ei_unspec']
-    ampa_nmda_ratio = params['ampa_nmda_ratio']
+    params['ampa_nmda_ratio']
     w_ii = params['w_ii_unspec']
 
     if not params['debug']:
-#        conn_fn_ampa = 'connection_matrix_20x16_taui5_trained_with_AMPA_input_only.dat'
-#        conn_fn_nmda = 'connection_matrix_20x16_taui150_trained_with_AMPA_input_only.dat'
-
-        #conn_fn_ampa = 'connection_matrix_20x4_taui5_v0.4_0.8.dat'
-        #conn_fn_nmda = 'connection_matrix_20x4_taui200_v0.4_0.8.dat'
-        #bcpnn_gain = 1.0
-        #w_ei = 2.
-        #w_ie = -5. * w_ei
-        #w_ii = -1.
-        #ampa_nmda_ratio = .1
-        #w_input_exc = 10.
-          
-        #w_input_exc = float(sys.argv[7])#15.
 #        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
         assert (w_ie < 0), 'Inhibitory weights need to be negative!'
@@ -164,7 +139,7 @@ if __name__ == '__main__':
         plot_anticipation_cmap(params)
         plot_anticipation(params, show) 
 #        plot_prediction(params=NM.params, stim_range=params['stim_range'])
-#        run_plot_currents(NM.params)
+        run_plot_currents(NM.params)
 #        plot_incoming_currents(NM.params)
 #        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
 #        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']

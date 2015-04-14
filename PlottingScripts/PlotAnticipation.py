@@ -160,14 +160,14 @@ def shift_trace_to_stimulus_arrival(params, trace, tp_cell, mp, n, dt=1.):
 
 
 def select_cells_for_filtering(tp, mp, n_cells):
-    x_start = 0.3
-    x_stop = 0.7
+    x_start = 0.2
+    x_stop = 0.8
     pos = np.linspace(x_start, x_stop, n_cells)
     cell_gids = []
     for i_ in xrange(n_cells):
         mp = [pos[i_], mp[1], mp[2], mp[3], mp[4]]
         cell_gids.append(utils.get_gids_near_stim_nest(mp, tp, n=1)[0][0])
-    return cell_gids
+    return np.array(cell_gids)
 
 
 
@@ -215,7 +215,7 @@ def plot_anticipation(params, show=False, n_cell=5):
     m.set_array(tp[:, coloraxis])
     colorlist = m.to_rgba(tp[:, coloraxis])
 
-    title1 = 'Protocol:%s $\\tau_i=%d$\nSpike activity' % (params['test_protocols'][0], params['bcpnn_params']['tau_i'])
+    title1 = 'Protocol:%s $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$\nSpike activity' % (params['test_protocols'][0], params['taui_ampa'], params['taui_nmda'])
     ax1.set_title(title1)
 
     # set xlim
@@ -230,7 +230,7 @@ def plot_anticipation(params, show=False, n_cell=5):
 #    ylim = (ylim[0], mp[0] + .1)
 #    ax1.set_ylim(ylim)
 
-    output_fig = params['figures_folder'] + 'spikes_and_voltages_taui%d.png' % (params['bcpnn_params']['tau_i'])
+    output_fig = params['figures_folder'] + 'spikes_and_voltages_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
     if show:
@@ -254,8 +254,9 @@ def plot_anticipation_cmap(params):
     
     figsize = utils.get_figsize(1200, portrait=False)
     fig = pylab.figure(figsize=figsize)
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
+    ax0 = fig.add_subplot(311)
+    ax1 = fig.add_subplot(312)
+    ax2 = fig.add_subplot(313)
 
     # colors for x-y traces
     coloraxis = 0
@@ -269,7 +270,8 @@ def plot_anticipation_cmap(params):
     norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
     m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
     m.set_array(tp[:, coloraxis])
-    colorlist = m.to_rgba(tp[:, coloraxis])
+#    colorlist = m.to_rgba(tp[:, coloraxis])
+
     # select spike trains for the selected gids
     # filter spike trains
     dt = 2. # time resolution for filtered spike trains
@@ -277,29 +279,41 @@ def plot_anticipation_cmap(params):
     print 'n_trace_data:', n_trace_data
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
 
-    normalized_traces = np.zeros((params['n_exc'], int(params['t_sim'] / dt)))
-    filtered_aligned_spiketrains = np.zeros((params['n_exc'], n_trace_data))
+    # filter cells along a trajectory (start, stop defined in select_cells_for_filtering)
+    mp = [.0, .5, .0, .0, params['test_stim_orientation']]
+    n_cells = 50
+    filter_cells = select_cells_for_filtering(tp, mp, n_cells)
+    print 'filter_cells:', filter_cells
+
+    normalized_traces = np.zeros((n_cells, int(params['t_sim'] / dt)))
+    filtered_traces = np.zeros((n_cells, int(params['t_sim'] / dt)))
+    filtered_aligned_spiketrains = np.zeros((n_cells, n_trace_data))
     mean_trace = np.zeros((n_trace_data, 2))
 
-    print 'Normalizing spike trains ...'
     # 1) get the filtered traces
-    for i_ in xrange(params['n_exc']):
-        t_vec, y = utils.filter_spike_train(spiketrains[i_], dt=dt, tau=tau_filter, t_max=params['t_sim'])
+#    for i_ in xrange(filter_cells): #params['n_exc']):
+    for i_, gid in enumerate(filter_cells): #params['n_exc']):
+        t_vec, y = utils.filter_spike_train(spiketrains[gid-1], dt=dt, tau=tau_filter, t_max=params['t_sim'])
         normalized_traces[i_, :] = y
+        filtered_traces[i_, :] = y
 
+#    print 'Normalizing spike trains ...'
     # 2) normalize the traces
 #    for t_ in xrange(n_trace_data):
-#    for t_ in xrange(int(params['t_sim'] / dt)):
-#        summed_filtered_activity = normalized_traces[:, t_].sum()
+    for t_ in xrange(int(params['t_sim'] / dt)):
+        summed_filtered_activity = normalized_traces[:, t_].sum()
 #        print 'debug t_ summed_filtered_activity:', t_, summed_filtered_activity
-#        if summed_filtered_activity > 0:
-#            normalized_traces[:, t_] /= summed_filtered_activity
+        if summed_filtered_activity > 0:
+            normalized_traces[:, t_] /= summed_filtered_activity
 
     # 3) align the filtered and normalized responses
-    for i_ in xrange(params['n_exc']):
-        shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[i_, :], tp[i_, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
+#    for i_ in xrange(params['n_exc']):
+    for i_, gid in enumerate(filter_cells): #params['n_exc']):
+        shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[i_, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
         filtered_aligned_spiketrains[i_, :] = shifted_trace
-        ax1.plot(t_vec_trace, shifted_trace, c=colorlist[i_], lw=1)
+        ax1.plot(t_vec_trace, shifted_trace, c=m.to_rgba(tp[gid-1, 0]), lw=1)
+        shifted_trace_not_normalized = shift_trace_to_stimulus_arrival(params, filtered_traces[i_, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
+        ax0.plot(t_vec_trace, shifted_trace_not_normalized, c=m.to_rgba(tp[gid-1, 0]), lw=1)
 
     for t_ in xrange(n_trace_data):
         mean_trace[t_, 0] = filtered_aligned_spiketrains[:, t_].mean()
@@ -310,7 +324,7 @@ def plot_anticipation_cmap(params):
     prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
     idx_above_thresh = np.where(mean_trace[:, 0] > prediction_threshold)[0]
     t_prediction = idx_above_thresh[0] * dt - n_trace_data / 2 * dt 
-    print 'idx_above thresh:', idx_above_thresh
+#    print 'idx_above thresh:', idx_above_thresh
     print 't_prediction', t_prediction
 
     ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', lw=3)
@@ -330,20 +344,29 @@ def plot_anticipation_cmap(params):
     ax1.legend(plots, labels, loc='upper right')
 
     ax1.set_xlabel('Time [ms]')
-    title_cmap = 'Filtered spike trains $\\tau_i=%d $ ms' % (params['bcpnn_params']['tau_i'])
+    title_cmap = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
     ax1.set_title(title_cmap)
     cbar1 = pylab.colorbar(m, ax=ax1)
     cbar1.set_label(cbar_label)
+    ax1.set_xlim((-250, 250))
+    ax1.set_ylim((0., 1.))
+    ax0.set_xlim((-250, 250))
 
-    order_of_gids = np.argsort(tp[:, 0])
+    cbar0 = pylab.colorbar(m, ax=ax0)
+    cbar0.set_label(cbar_label)
+    ax0.set_title('Aligned response of %d cells\nalong stimulus trajectory' % n_cells)
+    ax0.set_ylabel('Filtered spike activity')
+    ax1.set_ylabel('Normalized filtered spike activity')
+
+    order_of_gids = np.argsort(tp[filter_cells-1, 0])
     cax = ax2.pcolormesh(filtered_aligned_spiketrains[order_of_gids, :])
     ax2.set_xlim((0, n_trace_data))
-    ax2.set_ylim((0, params['n_exc']))
+    ax2.set_ylim((0, n_cells))
     ylim2 = ax2.get_ylim()
     ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='w', ls='--', lw=3)
     cbar = pylab.colorbar(cax)
     cbar.set_label('Normalized filtered\nactivity')
-    output_fig = params['figures_folder'] + 'anticipation_cmap_taui%d.png' % (params['bcpnn_params']['tau_i'])
+    output_fig = params['figures_folder'] + 'anticipation_cmap_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
     return output_fig
@@ -357,20 +380,20 @@ if __name__ == '__main__':
         params = ps.params
         show = True
         plot_anticipation_cmap(params)
-        plot_anticipation(params)
+#        plot_anticipation(params)
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
         show = True
         plot_anticipation_cmap(params)
-        plot_anticipation(params)
+#        plot_anticipation(params)
     else:
         fig_fns = []
         for folder_name in sys.argv[1:]:
             params = utils.load_params(folder_name)
             show = False
             fig_fn = plot_anticipation_cmap(params)
-            fig_fn = plot_anticipation(params)
+#            fig_fn = plot_anticipation(params)
             fig_fns.append(fig_fn)
         print 'Figures:\n'
         for fn in fig_fns:
