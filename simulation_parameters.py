@@ -1,4 +1,4 @@
-import json
+import json 
 import numpy as np
 import numpy.random as rnd
 import os
@@ -43,7 +43,7 @@ class parameter_storage(object):
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
-        self.w_input_exc = 4.0
+        self.w_input_exc = 5.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -65,7 +65,7 @@ class parameter_storage(object):
             #self.params['sim_id'] += 'withBlank_withBias'
             self.params['bias_gain'] = 10.
         else:
-            self.params['sim_id'] += ''
+            self.params['sim_id'] += 'withBlank'
             self.params['bias_gain'] = 0.
 
         self.fmax = 250.
@@ -369,7 +369,7 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 1.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 0.5    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
@@ -536,8 +536,8 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            self.params['t_blank'] = 0.
-            #self.params['t_blank'] = 500.
+            #self.params['t_blank'] = 0.
+            self.params['t_blank'] = 500.
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:

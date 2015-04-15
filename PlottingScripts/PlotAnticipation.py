@@ -361,7 +361,7 @@ def plot_anticipation_cmap(params):
     ax2.set_title(title2)
     cbar1 = pylab.colorbar(m, ax=ax1)
     cbar1.set_label(cbar_label)
-    view_range = (-100, 150)
+    view_range = (-200, 200)
     ax1.set_xlim(view_range)
     ax1.set_ylim((0., ylim1[1]))
     ax0.set_xlim(view_range)
