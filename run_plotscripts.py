@@ -16,11 +16,11 @@ except:
     print "MPI not used"
 
 
-curr = sys.argv[1]
-if curr == 'current' or curr == 'currents':
+script = sys.argv[1]
+if script == 'current' or script == 'currents':
     script_name = 'PlottingScripts/PlotCurrents.py'
     folders = sys.argv[2:]
-else:
+elif script == 'prediction':
     script_name = 'PlottingScripts/PlotPrediction.py'
     folders = sys.argv[1:]
 list_of_jobs = []
@@ -58,7 +58,7 @@ if USE_MPI:
     comm.barrier()
 
 if pc_id == 0:
-    if curr == 'currents' or curr == 'current':
+    if script == 'currents' or script == 'current':
         display_cmd = 'ristretto $(find %s -name prediction_stim*.png)' % pure_names
     display_cmd = 'ristretto $(find %s -name prediction_stim*.png)' % pure_names
     print 'display_cmd:', display_cmd

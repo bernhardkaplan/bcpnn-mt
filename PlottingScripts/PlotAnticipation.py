@@ -309,7 +309,7 @@ def plot_anticipation_cmap(params):
     # select and filter spike trains for the selected gids
     # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
     filter_cells = select_cells_for_filtering(tp, mp, n_cells)
-    print 'filter_cells:', filter_cells
+#    print 'filter_cells:', filter_cells
     filtered_aligned_spiketrains = np.zeros((n_cells, n_trace_data))
     mean_trace = np.zeros((n_trace_data, 2)) 
     filtered_traces, normalized_traces = filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt)
@@ -386,6 +386,7 @@ def plot_anticipation_cmap(params):
     
     # output data
     d = {}
+    d['w_input_exc'] = params['w_input_exc']
     d['folder_name'] = params['folder_name']
     d['taui_ampa'] = params['taui_ampa']
     d['taui_nmda'] = params['taui_nmda']
@@ -415,7 +416,7 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
-        show = True
+        show = False
         plot_anticipation_cmap(params)
 #        plot_anticipation(params)
     else:
