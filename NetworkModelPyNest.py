@@ -1265,7 +1265,14 @@ class NetworkModel(object):
                     nest.RandomConvergentConnect(src_pop, [rec_gid], n=self.params['n_conn_ee_global_out_per_pyr'],\
                             weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                             model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
-
+                    
+            #TODO: implement the unspecific inhibitory feedback for recorder neurons
+            for i_hc in xrange(self.params['n_hc']):
+                for i_mc in xrange(self.params['n_mc_per_hc']):
+                    nest.RandomConvergentConnect(self.list_of_unspecific_inh_pop[i_hc], [rec_gid], \
+                            self.params['n_conn_ie_unspec_per_mc'], \
+                            options={'allow_autapses': False, 'allow_multapses': False}, \
+                            model='inh_exc_unspec')
 
         if self.pc_id == 0:
             f = file(self.params['recorder_neurons_gid_mapping'], 'w')
