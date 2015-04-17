@@ -1,32 +1,55 @@
 
 
-
-#sbatch jobfile_testing_milner_with_params.sh  5 200 1. 6
-#sleep 0.2
-#sbatch jobfile_testing_milner_with_params.sh  5 5 1. 6
-#sleep 0.2
-
-#taui_ampa = float(sys.argv[1])
-#taui_nmda = float(sys.argv[2])
-#bcpnn_gain = float(sys.argv[3])
-#w_input_exc = float(sys.argv[4])
-#ampa_nmda_ratio = float(sys.argv[5])
-
 ratio=5.
-w_input_exc=5.
 n=1
-for taui_ampa in 5 10 20 50 100 150 200
+for w_ie in -5 
 do
-    taui_nmda=$taui_ampa
-    for gain in 0.5 1.0 1.5 2.0 2.5 3.0
+    taui_ampa=5
+    taui_nmda=5
+    for gain in 0.06 0.08 0.1
     do
-        sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $w_input_exc $ratio 
-        echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $w_input_exc $ratio 
+        sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
+        echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
+        echo $n
+        sleep 0.2
+        n=$(expr $n + 1)
+    done
+
+    taui_ampa=5
+    taui_nmda=150
+    for gain in 0.06 0.08 0.1
+    do
+        sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
+        echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
+        echo $n
+        sleep 0.2
+        n=$(expr $n + 1)
+    done
+
+    taui_ampa=150
+    taui_nmda=150
+    for gain in 0.06 0.08 0.1
+    do
+        sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
+        echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
         echo $n
         sleep 0.2
         n=$(expr $n + 1)
     done
 done
+
+#for taui_ampa in 5 150 200
+#do
+    #taui_nmda=$taui_ampa
+    #for gain in 0.1 0.3 0.5 0.7 1.0 1.5 2.0
+    #do
+        #sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio 
+        #echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio 
+        #echo $n
+        #sleep 0.2
+        #n=$(expr $n + 1)
+    #done
+#done
 
 #for taui_ampa in 
 #do

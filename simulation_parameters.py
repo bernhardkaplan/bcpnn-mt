@@ -65,7 +65,7 @@ class parameter_storage(object):
             #self.params['sim_id'] += 'withBlank_withBias'
             self.params['bias_gain'] = 10.
         else:
-            self.params['sim_id'] += 'withBlank'
+            self.params['sim_id'] += ''
             self.params['bias_gain'] = 0.
 
         self.fmax = 250.
@@ -248,11 +248,10 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 1.
-            self.params['target_ratio_ampa_nmda'] = 5.   # seen in experiments Watt "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses" 2000 Neuron
+            self.params['ampa_nmda_ratio'] = 5.
             # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
             # the total currents only depend on bcpnn gain
-            self.params['tau_syn'] = {'ampa': 5., 'nmda': 200., 'gaba': 5.}
+            self.params['tau_syn'] = {'ampa': 5., 'nmda': 150., 'gaba': 5.}
             self.params['syn_ports'] = {'ampa':1, 'nmda':2, 'gaba': 3}
             self.params['neuron_model'] = 'aeif_cond_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_exp_multisynapse'
@@ -369,7 +368,7 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 0.5    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 1.0    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
@@ -536,8 +535,8 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_blank'] = 0.           # [ms] time for 'blanked' input
         else:
-            #self.params['t_blank'] = 0.
-            self.params['t_blank'] = 500.
+            self.params['t_blank'] = 0.
+            #self.params['t_blank'] = 500.
         self.params['t_start_blank'] = self.params['t_start'] + 500.               # [ms] time when stimulus reappears, i.e. t_reappear = start + t_blank
         self.params['t_test_stim'] = self.params['t_start_blank'] + self.params['t_blank'] + 500.
         if self.params['training_run']:

@@ -879,7 +879,6 @@ class NetworkModel(object):
 
         # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
         # the total currents only depend on bcpnn gain
-        c = self.params['ampa_nmda_ratio'] / self.params['target_ratio_ampa_nmda']
         print 'Connecting E-E for testing ...'
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -893,18 +892,18 @@ class NetworkModel(object):
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
 
-                        if w_ampa < 0:
-                            w_gaba_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['gaba']
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
-                                    model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
-                        else:
-                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / U_ampa
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                        #if w_ampa < 0:
+                            #w_gaba_ = w_ampa * self.params['bcpnn_gain']
+                            #nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    #weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
+                                    #model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                        #else:
+                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / U_ampa
+                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
+                                model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
-                        w_nmda_ = c * w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * self.params['tau_syn']['nmda'] * U_nmda)
+                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * U_nmda)
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})

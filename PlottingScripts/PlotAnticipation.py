@@ -355,7 +355,7 @@ def plot_anticipation_cmap(params):
     ax1.text(t_anticipation - 50, ylim1[0] + 0.8 * (ylim1[1]-ylim1[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
     ax1.legend(plots, labels, loc='upper right')
 
-    title2 = 'gain = %.1f $w^{input}_{exc}=%.1f\  R(AMPA/NMDA) = %.2f$' % (params['bcpnn_gain'], params['w_input_exc'], params['ampa_nmda_ratio'])
+    title2 = 'gain = %.1e $w^{input}_{exc}=%.1f\  R(AMPA/NMDA) = %.2f$' % (params['bcpnn_gain'], params['w_input_exc'], params['ampa_nmda_ratio'])
     title1 = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
     ax1.set_title(title1)
     ax2.set_title(title2)
