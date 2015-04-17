@@ -47,6 +47,7 @@ if __name__ == '__main__':
     # filter the data
     taui_nmda = 200
 
+    #   0                   1           2       3       4                   5
     # t_anticipation    taui_ampa   taui_nmda   gain    w_input_exc     ampa_nmda_ratio
     for i_, folder_name in enumerate(sys.argv[1:]):
         params = utils.load_params(folder_name)
