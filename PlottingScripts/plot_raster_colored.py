@@ -38,7 +38,7 @@ def plot_spikes_colored(params, xlim=None):
     feature_dimension = 4
     clim = (0., 180.)
     norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.hsv) # large weights -- black, small weights -- white
     m.set_array(tp[:, feature_dimension])
     colorlist= m.to_rgba(tp[:, feature_dimension])
 
