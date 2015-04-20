@@ -58,9 +58,9 @@ def run_plot_currents(params, cell_type='exc'):
     pylab.rcParams.update(plot_params)
     # LOAD MEASURABLES
     d = {}
-#    measurables = ['AMPA', 'NMDA', 'GABA', 'AMPA_NEG', 'NMDA_NEG']
-#    measurables = ['AMPA', 'NMDA', 'GABA', 'NMDA_NEG']
-    measurables = ['AMPA', 'NMDA']
+    measurables = ['AMPA', 'NMDA', 'GABA', 'AMPA_NEG', 'NMDA_NEG']
+    #measurables = ['AMPA', 'NMDA', 'GABA', 'NMDA_NEG']
+    #measurables = ['AMPA', 'NMDA']
     tau_syn = [params['tau_syn']['ampa'], params['tau_syn']['nmda'], params['tau_syn']['gaba'], params['tau_syn']['ampa'], params['tau_syn']['nmda']]
     for m in measurables:
         fn = params['volt_folder'] + '%s_I_%s.dat' % (cell_type, m)

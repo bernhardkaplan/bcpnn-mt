@@ -1,4 +1,4 @@
-import json
+import json 
 import numpy as np
 import numpy.random as rnd
 import os
@@ -22,7 +22,7 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = False
-        self.params['Cluster'] = False
+        self.params['Cluster'] = True
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
         self.params['weight_tracking'] = False      # during training, increases simulation length a lot
@@ -43,8 +43,7 @@ class parameter_storage(object):
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
-
-        self.w_input_exc = 4.0
+        self.w_input_exc = 5.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -124,7 +123,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         else:
-            self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
+            self.params['n_exc_per_mc'] = 64 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -249,11 +248,10 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 1.
-            self.params['target_ratio_ampa_nmda'] = 5.   # seen in experiments Watt "Activity coregulates quantal AMPA and NMDA currents at neocortical synapses" 2000 Neuron
+            self.params['ampa_nmda_ratio'] = 5.
             # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
             # the total currents only depend on bcpnn gain
-            self.params['tau_syn'] = {'ampa': 5., 'nmda': 200., 'gaba': 5.}
+            self.params['tau_syn'] = {'ampa': 5., 'nmda': 150., 'gaba': 5.}
             self.params['syn_ports'] = {'ampa':1, 'nmda':2, 'gaba': 3}
             self.params['neuron_model'] = 'aeif_cond_exp_multisynapse'
 #            self.params['neuron_model'] = 'iaf_psc_exp_multisynapse'
@@ -370,7 +368,7 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 1.    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 1.0    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect

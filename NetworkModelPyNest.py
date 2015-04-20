@@ -80,6 +80,8 @@ class NetworkModel(object):
         # # # # # # # # # # # #
         #     S E T U P       #
         # # # # # # # # # # # #
+        #     S E T U P       #
+        # # # # # # # # # # # #
         nest.SetKernelStatus({'data_path':self.params['spiketimes_folder'], 'resolution': self.params['dt_sim'], 'overwrite_files' : True})
         (delay_min, delay_max) = self.params['delay_range']
 #        nest.SetKernelStatus({'tics_per_ms':self.params['dt_sim'], 'min_delay':delay_min, 'max_delay':delay_max})
@@ -889,17 +891,16 @@ class NetworkModel(object):
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
-
-                        if w_ampa < 0:
-                            w_gaba_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['gaba']
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
-                                    model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
-                        else:
-                            w_ampa_ = w_ampa * self.params['bcpnn_gain'] / self.params['tau_syn']['ampa'] / U_ampa
-                            nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
-                                    weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
-                                    model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                        #if w_ampa < 0:
+                            #w_gaba_ = w_ampa * self.params['bcpnn_gain']
+                            #nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                    #weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
+                                    #model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
+                        #else:
+                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / U_ampa
+                        nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
+                                weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
+                                model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
 
                         w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * U_nmda)
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
@@ -1615,21 +1616,6 @@ class NetworkModel(object):
                     output_vec = nest.GetStatus(recorder)[0]['events'][observable]
                     time_vec = nest.GetStatus(recorder)[0]['events']['times']
                     for i_proc in xrange(1, self.n_proc):
-                        output_vec = np.r_[output_vec, self.comm.recv(source=i_proc, tag=0)]
-                        time_vec = np.r_[time_vec, self.comm.recv(source=i_proc, tag=1)]
-                else:
-                    self.comm.send(nest.GetStatus(recorder)[0]['events'][observable],dest=0, tag=0)
-                    self.comm.send(nest.GetStatus(recorder)[0]['events']['times'],dest=0, tag=1)
-                if self.comm != None:
-                    self.comm.barrier()
-
-                if self.pc_id == 0:
-                    gids = nest.GetStatus(recorder)[0]['events']['senders']
-                    for i_proc in xrange(1, self.n_proc):
-                        gids = np.r_[gids, self.comm.recv(source=i_proc)]
-                    fn = self.params['volt_folder'] + output_fn_base[i_] + '_%s.dat' % (observable)
-                    output = np.array((gids, time_vec, output_vec))
-                    print 'Saving vmem data to:', fn,
                     np.savetxt(fn, output.transpose())
 #                    print 'debug output_vec', output_vec
 #                    print 'debug get status:', nest.GetStatus(recorder)

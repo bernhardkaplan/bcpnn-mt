@@ -6,8 +6,9 @@ if cmd_subfolder not in sys.path:
     sys.path.insert(0, cmd_subfolder)
 
 import numpy as np
-import pylab
 import matplotlib
+matplotlib.use('Agg')
+import pylab
 from matplotlib import mlab, cm
 import utils
 import matplotlib.patches as mpatches
