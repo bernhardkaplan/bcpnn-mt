@@ -6,7 +6,7 @@ if cmd_subfolder not in sys.path:
 import numpy as np
 import utils
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import pylab
 import json
 from PlottingScripts.plot_spikes_sorted import plot_spikes_sorted_simple
@@ -148,13 +148,21 @@ def shift_trace_to_stimulus_arrival(params, trace, tp_cell, mp, n, dt=1., defaul
     # cut the original trace, compute border indices in original trace
 #    idx0 = min(n, max(0, idx_max - n / 2))
     idx0 = max(0, idx_max - n / 2)
-    idx1 = min(n, idx_max + n / 2)
+    idx1 = idx_max + n / 2
+#    idx1 = min(n, idx_max + n / 2)
+
     # Now, align the time axis for each cell according to stim_arrival_time
     # indices of the cut-out trace in the new shifted trace
 
     #new
-    idx_start = min(n, max(0, n - idx1))
-    idx_stop = max(0, min(n, n - idx0))
+#    idx_start = min(n, max(0, n - idx1))
+#    idx_stop = max(0, min(n, n - idx0))
+#    idx_start =  n - idx1
+#    idx_stop = n - idx0
+    idx_start =  n / 2 - (idx_max - idx0)
+    idx_stop = n / 2 + (idx1 - idx_max)
+
+
 #    debug_info = 'debug x=%.2f t_arrival=%.1f\t idx_max %d \t idx0 %d\tidx_max-n/2 %d\tidx1 %d\tidx_max+n/2 %d\tidx_start %d\tidx_stop %d' % (tp_cell[0], stim_arrival_time, idx_max, idx0, idx_max - n/2, idx1, idx_max + n/2, idx_start, idx_stop)
 #    print debug_info
     shifted_trace = default_value * np.ones(n)
@@ -162,14 +170,71 @@ def shift_trace_to_stimulus_arrival(params, trace, tp_cell, mp, n, dt=1., defaul
     return shifted_trace
 
 
+#def select_cells_for_filtering_new(tp, mp, n_cells):
+#    """
+#    Return gids of n_cells within x_start and x_stop near mp.
+#    """
+#    return utils.get_gids_near_stim_nest(mp, tp, n=n_cells, ndim=1)[0]
+
+#    v_tolerance = 30
+#    x_width = 0.4
+
+#    gids_1 = np.where(np.abs(tp[:, 0] - 0.5) < x_width)[0]
+#    gids_2 = np.where(utils.torus_distance_array(tp[:, 4], mp[4], w=180.) < v_tolerance)[0]
+#    gids = np.unique(np.r_[gids_1, gids_2])
+#    idx = np.argsort(tp[gids, 4] - mp[4])[:n_cells]
+#    return gids[idx] + 1
+
+#    assert gids.size == n_cells
+
+#    idx_sorted, distances = utils.sort_gids_by_distance_to_stimulus(tp, mp, params) # cells in indices should have the highest response to the stimulus
+#    idx_sorted = np.argsort(tp[:, 4] - mp[4])[:n_cells]
+#    print 'debug tp[idx_sorted, :]', tp[idx_sorted, :]
+#    return idx_sorted[:n_cells]
+
+
 def select_cells_for_filtering(tp, mp, n_cells):
-    x_start = 0.2
-    x_stop = 0.8
-    pos = np.linspace(x_start, x_stop, n_cells)
+    x_start = 0.1
+    x_stop = 0.9
+#    pos = np.linspace(x_start, x_stop, n_cells)
+    pos = np.linspace(x_start, x_stop, 10000)
     cell_gids = []
+    f = 0.1
+    rnd_rotation = np.random.uniform(-10, 10, n_cells)
     for i_ in xrange(n_cells):
-        mp = [pos[i_], mp[1], mp[2], mp[3], mp[4]]
+#        mp = [pos[i_], mp[1], mp[2], mp[3], mp[4]]
+        mp = [pos[np.random.randint(0, 10000)], mp[1], mp[2], mp[3], mp[4] + rnd_rotation[i_]]
         cell_gids.append(utils.get_gids_near_stim_nest(mp, tp, n=1)[0][0])
+    return np.array(cell_gids)
+
+
+def select_cells_for_filtering_new(tp, mp, n_cells):
+    f = 0.
+    dx = 0.3
+    x_start = 0.5 - dx
+    x_stop = 0.5 + dx
+    cell_gids = []
+    cnt = 0
+    n_ = 0
+#    rnd_rotation = np.random.uniform(-10, 10, n_cells)
+    np.random.seed(0)
+    while cnt != n_cells:
+#        mp = [np.random.uniform(.5 - dx, .5 + dx), mp[1], mp[2], mp[3], mp[4] + np.random.uniform(-10, 10)]
+        mp = [np.random.uniform(x_start, x_stop), mp[1], mp[2], mp[3], mp[4] + np.random.uniform(-5, 5)]
+        gid = utils.get_gids_near_stim_nest(mp, tp, n=1)[0][0]
+        if gid not in cell_gids:
+            cell_gids.append(gid)
+            cnt += 1
+        else:
+            f += 0.001
+#            dx += 0.001
+        n_ += 1
+        if (n_ > 10 * n_cells): #or (f > 0.3):
+            cell_gids = utils.get_gids_near_stim_nest(mp, tp, n=n_cells)[0]
+            print 'Not enough unique cells found, decrease n_cells or change dx!'
+            break
+#        print 'DEBUG f:', f, 'n:', n_
+    print 'DEBUG f:', f, 'n:', n_, 'dx', dx, 'cnt', cnt
     return np.array(cell_gids)
 
 
@@ -436,7 +501,6 @@ def plot_anticipation_cmap(params):
     threshold = 0.25  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
-    n_cells = 1000
     dt = 1.                 # time resolution for filtered spike trains
     view_range = (-200, 200)
     min_avg_window = .1 * (view_range[1] - view_range[0])
@@ -444,15 +508,23 @@ def plot_anticipation_cmap(params):
 #    n_trace_data = int(params['t_sim'] * .6 / dt)
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
 
-    pylab.rcParams.update(plot_params)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
+    # select and filter spike trains for the selected gids
+    # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
+    n_cells = 200
+    filter_cells = np.unique(select_cells_for_filtering_new(tp, mp, n_cells))
+    n_cells = filter_cells.size
+#    filter_cells = select_cells_for_filtering(tp, mp, n_cells)
+#    assert len(np.unique(filter_cells)) == n_cells, 'n unique filter_cells found: %d' % (len(np.unique(filter_cells)))
+
+    pylab.rcParams.update(plot_params)
     all_spikes = np.loadtxt(params['exc_spiketimes_fn_merged'])
     motion_params_test = np.loadtxt(params['test_sequence_fn'])
     if motion_params_test.size == 5:
         motion_params_test = motion_params_test.reshape((1, 5))
     nspikes, spiketrains = utils.get_nspikes(all_spikes, n_cells=params['n_exc'], cell_offset=0, get_spiketrains=True, pynest=True)
     
-    figsize = utils.get_figsize(1200, portrait=False)
+    figsize = utils.get_figsize(1000, portrait=False)
     fig = pylab.figure(figsize=figsize)
     ax0 = fig.add_subplot(311)
     ax1 = fig.add_subplot(312)
@@ -468,34 +540,39 @@ def plot_anticipation_cmap(params):
     if coloraxis == 0:
         value_range = (0, 1.)
         cbar_label = 'Position'
+        cmap = matplotlib.cm.jet
     elif coloraxis == 4:
         value_range = (0, 180.)
         cbar_label = 'Orientation'
+        cmap = matplotlib.cm.hsv
 
     norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
-    m.set_array(tp[:, coloraxis])
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap) # large weights -- black, small weights -- white
+    m.set_array(np.linspace(np.min(tp[:, coloraxis]), np.max(tp[:, coloraxis]), 0.01))
+#    m.set_array(tp[:, coloraxis])
 
-    # select and filter spike trains for the selected gids
-    # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
-    filter_cells = select_cells_for_filtering(tp, mp, n_cells)
-#    print 'filter_cells:', filter_cells
     filtered_aligned_spiketrains = np.zeros((n_cells, n_trace_data))
     mean_trace = np.zeros((n_trace_data, 2)) 
     filtered_traces, normalized_traces = filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt)
 
     # 3) align the filtered and normalized responses
+#    fig_dbg = pylab.figure()
+#    ax_dbg = fig_dbg.add_subplot(111)
     for i_, gid in enumerate(filter_cells): 
+#        print 'debug spiketrains[gid].size', gid, len(spiketrains[gid]), 'tp:', tp[gid-1, :]
         shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[gid-1, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
         filtered_aligned_spiketrains[i_, :] = shifted_trace
-        ax1.plot(t_vec_trace, shifted_trace, c=m.to_rgba(tp[gid-1, 0]), lw=1)
+#        ax_dbg.plot(tp[gid-1, 0], len(spiketrains[gid]), 'o', c=m.to_rgba(tp[gid-1, 0]), ms=5)
+        ax1.plot(t_vec_trace, shifted_trace, c=m.to_rgba(tp[gid-1, 0]), lw=1, alpha=0.8)
         shifted_trace_not_normalized = shift_trace_to_stimulus_arrival(params, filtered_traces[gid-1, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
-        ax0.plot(t_vec_trace, shifted_trace_not_normalized, c=m.to_rgba(tp[gid-1, 0]), lw=1)
+        ax0.plot(t_vec_trace, shifted_trace_not_normalized, c=m.to_rgba(tp[gid-1, 0]), lw=1, alpha=0.8)
 
     for t_ in xrange(n_trace_data):
         mean_trace[t_, 0] = filtered_aligned_spiketrains[:, t_].mean()
         mean_trace[t_, 1] = filtered_aligned_spiketrains[:, t_].std()
         mean_trace[t_, 1] /= np.sqrt(n_cells) #params['n_exc'])
+
+#    cbar_dbg = pylab.colorbar(m, ax=ax_dbg)
 
     prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
     idx_above_thresh = np.where(mean_trace[:, 0] > prediction_threshold)[0]
@@ -544,7 +621,7 @@ def plot_anticipation_cmap(params):
     ax2.set_xticklabels(xticks_cmap)
     ylim2 = ax2.get_ylim()
     ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='k', ls='-', lw=3)
-    cbar = pylab.colorbar(cax)
+    cbar = pylab.colorbar(cax)#ax=ax2)
     cbar.set_label('Normalized filtered\nactivity')
     output_fig = params['figures_folder'] + 'anticipation_cmap_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
     print 'Saving figure to:', output_fig
@@ -578,27 +655,29 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()
         params = ps.params
         show = True
-        plot_vmem_aligned(params)
         plot_anticipation_cmap(params)
-        plot_anticipation(params)
+#        plot_vmem_aligned(params)
+#        plot_anticipation(params)
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
-        show = False
-        plot_vmem_aligned(params)
+        show = True
         plot_anticipation_cmap(params)
-        plot_anticipation(params)
+#        plot_vmem_aligned(params)
+#        plot_anticipation(params)
     else:
         fig_fns = []
         for folder_name in sys.argv[1:]:
             params = utils.load_params(folder_name)
             show = False
-            plot_vmem_aligned(params)
             fig_fn = plot_anticipation_cmap(params)
-            fig_fn = plot_anticipation(params)
+            fig_fns.append(fig_fn)
+#            plot_vmem_aligned(params)
+#            fig_fn = plot_anticipation(params)
             fig_fns.append(fig_fn)
         print 'Figures:\n'
         for fn in fig_fns:
             print fn
+    print 'Show:', show
     if show:
         pylab.show()
