@@ -52,23 +52,29 @@ if __name__ == '__main__':
 
     taui_ampa = float(sys.argv[1])
     taui_nmda = float(sys.argv[2])
-    bcpnn_gain = float(sys.argv[3])
-    params['bcpnn_gain'] = bcpnn_gain
+    w_in_nmda_pos_target = float(sys.argv[3])
+    params['w_in_nmda_pos_target'] = w_in_nmda_pos_target
+    params['w_in_nmda_neg_target'] = -1 * params['w_in_nmda_pos_target']
+
+    #bcpnn_gain = float(sys.argv[3])
+    #params['bcpnn_gain'] = bcpnn_gain
 #    bcpnn_gain = float(sys.argv[3])
 #    params['bcpnn_gain'] = bcpnn_gain
     ampa_nmda_ratio = float(sys.argv[4])
+    params['ampa_nmda_ratio'] = ampa_nmda_ratio
+    params['w_in_ampa_pos_target'] = params['w_in_nmda_pos_target'] * params['ampa_nmda_ratio']
+    params['w_in_ampa_neg_target'] = -1. * params['w_in_ampa_pos_target']
     #w_input_exc = float(sys.argv[4])
     #params['w_input_exc'] = w_input_exc
     params['taui_ampa'] = taui_ampa
     params['taui_nmda'] = taui_nmda
-    conn_fn_ampa = 'TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
-    conn_fn_nmda = 'TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
+    conn_fn_ampa = 'TrainingSim_Cluster_symmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
+    conn_fn_nmda = 'TrainingSim_Cluster_symmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     #conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
     #conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     w_ei = params['w_ei_unspec']
     w_ie = float(sys.argv[5]) * w_ei
     #w_ie = params['w_ie_unspec']
-    params['ampa_nmda_ratio']
     w_ii = params['w_ii_unspec']
 
     if not params['debug']:
@@ -80,10 +86,10 @@ if __name__ == '__main__':
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%d-%d_tauiAMPA_%d_NMDA_%d_v%.1f_nExcPerMc%d_gain%.3f_ratio%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
+        folder_name = 'TestSim_%s_%d-%d_tauiAMPA_%d_NMDA_%d_v%.1f_nExcPerMc%d_Etgt%.2f_ratio%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
                 params['sim_id'], params['stim_range'][0], params['stim_range'][1], \
                 params['taui_ampa'], params['taui_nmda'], params['v_min_test'], \
-                params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], \
+                params['n_exc_per_mc'], params['w_in_nmda_pos_target'], params['ampa_nmda_ratio'], \
                 params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
         folder_name += '/'
         ps.set_filenames(folder_name) 
@@ -136,16 +142,29 @@ if __name__ == '__main__':
     t_diff = t_end - t_0
     print "Simulating %d cells for %d ms took %.3f seconds or %.2f minutes on proc %d (%d)" % (params['n_cells'], params["t_sim"], t_diff, t_diff / 60., NM.pc_id, NM.n_proc)
     #if pc_id == 0 and not params['Cluster']:
-    if pc_id == 0:
-        if params['Cluster']:
-            show = False
-        else:
-            show = True
-        plot_anticipation_cmap(params)
-        plot_anticipation(params, show) 
-        plot_vmem_aligned(params)
-        run_plot_currents(NM.params)
-        plot_prediction(params=NM.params, stim_range=params['stim_range'])
+    if params['Cluster']:
+        show = False
+    else:
+        show = True
+    
+    if params['Cluster']:
+        if pc_id == 0:
+            plot_anticipation_cmap(params)
+        elif pc_id == 1:
+            plot_anticipation(params, show) 
+        elif pc_id == 2:
+            plot_vmem_aligned(params)
+        elif pc_id == 3:
+            run_plot_currents(NM.params)
+        elif pc_id == 4:
+            plot_prediction(params=NM.params, stim_range=params['stim_range'])
+    else:
+        if pc_id == 0:
+            plot_anticipation_cmap(params)
+            plot_anticipation(params, show) 
+            plot_vmem_aligned(params)
+            run_plot_currents(NM.params)
+            plot_prediction(params=NM.params, stim_range=params['stim_range'])
 #        plot_incoming_currents(NM.params)
 #        os.system('python PlottingScripts/PlotCurrents.py %s' % (params['folder_name']))
 #        display_cmd = 'ristretto $(find %s -name prediction_stim0.png)' % params['folder_name']

@@ -892,19 +892,19 @@ class NetworkModel(object):
         for tgt_hc in xrange(self.params['n_hc']):
             for tgt_mc in xrange(self.params['n_mc_per_hc']):
                 tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
-                pos_idx_ampa = np.where(W_ampa[:, tgt_pop_idx] > 0)[0]
-                neg_idx_ampa = np.where(W_ampa[:, tgt_pop_idx] < 0)[0]
-                g_in_ampa_pos = W_ampa[pos_idx_ampa, tgt_pop_idx].sum()
-                g_in_ampa_neg = W_ampa[neg_idx_ampa, tgt_pop_idx].sum()
-                pos_idx_nmda = np.where(W_nmda[:, tgt_pop_idx] > 0)[0]
-                neg_idx_nmda = np.where(W_nmda[:, tgt_pop_idx] < 0)[0]
-                g_in_nmda_pos = W_nmda[pos_idx_nmda, tgt_pop_idx].sum()
-                g_in_nmda_neg = W_nmda[neg_idx_nmda, tgt_pop_idx].sum()
+                pos_idx_ampa = np.where(self.W_ampa[:, tgt_pop_idx] > 0)[0]
+                neg_idx_ampa = np.where(self.W_ampa[:, tgt_pop_idx] < 0)[0]
+                g_in_ampa_pos = self.W_ampa[pos_idx_ampa, tgt_pop_idx].sum()
+                g_in_ampa_neg = self.W_ampa[neg_idx_ampa, tgt_pop_idx].sum()
+                pos_idx_nmda = np.where(self.W_nmda[:, tgt_pop_idx] > 0)[0]
+                neg_idx_nmda = np.where(self.W_nmda[:, tgt_pop_idx] < 0)[0]
+                g_in_nmda_pos = self.W_nmda[pos_idx_nmda, tgt_pop_idx].sum()
+                g_in_nmda_neg = self.W_nmda[neg_idx_nmda, tgt_pop_idx].sum()
 
-                gain_ampa_pos[tgt_pop_idx] = g_in_ampa_pos_target / g_in_ampa_pos 
-                gain_ampa_neg[tgt_pop_idx] = g_in_ampa_neg_target / g_in_ampa_neg 
-                gain_nmda_pos[tgt_pop_idx] = g_in_nmda_pos_target / g_in_nmda_pos 
-                gain_nmda_neg[tgt_pop_idx] = g_in_nmda_neg_target / g_in_nmda_neg 
+                gain_ampa_pos[tgt_pop_idx] = self.params['w_in_ampa_pos_target'] / g_in_ampa_pos 
+                gain_ampa_neg[tgt_pop_idx] = self.params['w_in_ampa_neg_target'] / g_in_ampa_neg 
+                gain_nmda_pos[tgt_pop_idx] = self.params['w_in_nmda_pos_target'] / g_in_nmda_pos 
+                gain_nmda_neg[tgt_pop_idx] = self.params['w_in_nmda_neg_target'] / g_in_nmda_neg 
 
 
 
