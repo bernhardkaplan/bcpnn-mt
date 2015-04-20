@@ -40,9 +40,15 @@ class parameter_storage(object):
 #        self.params['test_protocols'] = ['crf_only']
 #        self.params['test_protocols'] = ['missing_crf']
 
+        self.params['w_in_ampa_pos_target'] = .5
+        self.params['w_in_ampa_neg_target'] = -.5
+        self.params['w_in_nmda_pos_target'] = .5
+        self.params['w_in_nmda_neg_target'] = -.5
+
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
+
         self.w_input_exc = 8.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
@@ -349,7 +355,7 @@ class parameter_storage(object):
         # #######################
 
         # only used during testing:
-        self.params['bcpnn_gain'] = 2.0
+        self.params['bcpnn_gain'] = 1.0
 
         # exc - exc: local
         self.params['p_ee_local'] = .75

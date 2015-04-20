@@ -877,8 +877,37 @@ class NetworkModel(object):
             U_ampa = 1.
             U_nmda = 1.
 
+        gain_ampa_pos = np.zeros(self.params['n_mc'])
+        gain_ampa_neg = np.zeros(self.params['n_mc'])
+        gain_nmda_pos = np.zeros(self.params['n_mc'])
+        gain_nmda_neg = np.zeros(self.params['n_mc'])
+
         # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
         # the total currents only depend on bcpnn gain
+        print 'Normalizing connectivity'
+        W_ampa_pos = np.zeros(self.W_ampa.shape)
+        W_ampa_neg = np.zeros(self.W_ampa.shape)
+        W_nmda_pos = np.zeros(self.W_nmda.shape)
+        W_nmda_neg = np.zeros(self.W_nmda.shape)
+        for tgt_hc in xrange(self.params['n_hc']):
+            for tgt_mc in xrange(self.params['n_mc_per_hc']):
+                tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
+                pos_idx_ampa = np.where(W_ampa[:, tgt_pop_idx] > 0)[0]
+                neg_idx_ampa = np.where(W_ampa[:, tgt_pop_idx] < 0)[0]
+                g_in_ampa_pos = W_ampa[pos_idx_ampa, tgt_pop_idx].sum()
+                g_in_ampa_neg = W_ampa[neg_idx_ampa, tgt_pop_idx].sum()
+                pos_idx_nmda = np.where(W_nmda[:, tgt_pop_idx] > 0)[0]
+                neg_idx_nmda = np.where(W_nmda[:, tgt_pop_idx] < 0)[0]
+                g_in_nmda_pos = W_nmda[pos_idx_nmda, tgt_pop_idx].sum()
+                g_in_nmda_neg = W_nmda[neg_idx_nmda, tgt_pop_idx].sum()
+
+                gain_ampa_pos[tgt_pop_idx] = g_in_ampa_pos_target / g_in_ampa_pos 
+                gain_ampa_neg[tgt_pop_idx] = g_in_ampa_neg_target / g_in_ampa_neg 
+                gain_nmda_pos[tgt_pop_idx] = g_in_nmda_pos_target / g_in_nmda_pos 
+                gain_nmda_neg[tgt_pop_idx] = g_in_nmda_neg_target / g_in_nmda_neg 
+
+
+
         print 'Connecting E-E for testing ...'
         for src_hc in xrange(self.params['n_hc']):
             for src_mc in xrange(self.params['n_mc_per_hc']):
@@ -891,22 +920,54 @@ class NetworkModel(object):
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
+
+                        if w_ampa > 0:
+                            w_ampa_pos = w_ampa * gain_ampa_pos[tgt_pop_idx]
+                            W_ampa_pos[src_pop_idx, tgt_pop_idx] = w_ampa_pos
+                            w_ampa_ = w_ampa_pos
+                        else:
+                            w_ampa_neg = w_ampa * gain_ampa_neg[tgt_pop_idx]
+                            W_ampa_neg[src_pop_idx, tgt_pop_idx] = w_ampa_neg
+                            w_ampa_ = w_ampa_neg
+                        if w_nmda > 0:
+                            w_nmda_pos = w_nmda * gain_nmda_pos[tgt_pop_idx]
+                            W_nmda_pos[src_pop_idx, tgt_pop_idx] = w_nmda_pos
+                            w_nmda_ = w_nmda_pos
+                        else:
+                            w_nmda_neg = w_nmda * gain_nmda_neg[tgt_pop_idx]
+                            W_nmda_neg[src_pop_idx, tgt_pop_idx] = w_nmda_neg
+                            w_nmda_ = w_nmda_neg
+
                         #if w_ampa < 0:
                             #w_gaba_ = w_ampa * self.params['bcpnn_gain']
                             #nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                     #weight=[w_gaba_], delay=[self.params['delay_ee_global']], \
                                     #model='inh_exc_specific_fast', options={'allow_autapses': False, 'allow_multapses': False})
                         #else:
-                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / U_ampa
+#                        w_ampa_ = w_ampa * self.params['bcpnn_gain'] / U_ampa
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_ampa_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_fast', options={'allow_autapses': False, 'allow_multapses': False})
-
-                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * U_nmda)
+#                        w_nmda_ = w_nmda * self.params['bcpnn_gain'] / (self.params['ampa_nmda_ratio'] * U_nmda)
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
-    print ' done'
+        print ' done'
+        if self.pc_id == 0:
+            fn_out_ampa_pos = self.params['connections_folder'] + 'w_ampa_pos_normalized.dat'
+            np.savetxt(fn_out_ampa_pos, W_ampa_pos)
+            fn_out_ampa_neg = self.params['connections_folder'] + 'w_ampa_neg_normalized.dat'
+            np.savetxt(fn_out_ampa_neg, W_ampa_neg)
+
+            fn_out_nmda_pos = self.params['connections_folder'] + 'w_nmda_pos_normalized.dat'
+            np.savetxt(fn_out_nmda_pos, W_nmda_pos)
+            fn_out_nmda_neg = self.params['connections_folder'] + 'w_nmda_neg_normalized.dat'
+            np.savetxt(fn_out_nmda_neg, W_nmda_neg)
+
+        if self.comm != None:
+            self.comm.Barrier()
+
+
 
     
     def load_training_weights(self):
