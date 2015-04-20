@@ -1607,7 +1607,6 @@ class NetworkModel(object):
                 self.comm.send(nest.GetStatus(spike_recorder)[0]['events']['senders'],dest=0, tag=1)
             self.comm.barrier()
             
-
     def collect_vmem_data(self):
         print 'collect_vmem_data...'
         output_fn_base = [self.params['free_vmem_fn_base'], 'exc']
@@ -1617,6 +1616,21 @@ class NetworkModel(object):
                     output_vec = nest.GetStatus(recorder)[0]['events'][observable]
                     time_vec = nest.GetStatus(recorder)[0]['events']['times']
                     for i_proc in xrange(1, self.n_proc):
+                        output_vec = np.r_[output_vec, self.comm.recv(source=i_proc, tag=0)]
+                        time_vec = np.r_[time_vec, self.comm.recv(source=i_proc, tag=1)]
+                else:
+                    self.comm.send(nest.GetStatus(recorder)[0]['events'][observable],dest=0, tag=0)
+                    self.comm.send(nest.GetStatus(recorder)[0]['events']['times'],dest=0, tag=1)
+                if self.comm != None:
+                    self.comm.barrier()
+
+                if self.pc_id == 0:
+                    gids = nest.GetStatus(recorder)[0]['events']['senders']
+                    for i_proc in xrange(1, self.n_proc):
+                        gids = np.r_[gids, self.comm.recv(source=i_proc)]
+                    fn = self.params['volt_folder'] + output_fn_base[i_] + '_%s.dat' % (observable)
+                    output = np.array((gids, time_vec, output_vec))
+                    print 'Saving vmem data to:', fn,
                     np.savetxt(fn, output.transpose())
 #                    print 'debug output_vec', output_vec
 #                    print 'debug get status:', nest.GetStatus(recorder)

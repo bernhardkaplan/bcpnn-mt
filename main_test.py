@@ -24,7 +24,7 @@ from PlottingScripts.PlotCurrents import run_plot_currents
 #from PlottingScripts.plot_incoming_currents import plot_incoming_currents
 import matplotlib
 matplotlib.use('Agg')
-from PlottingScripts.PlotAnticipation import plot_anticipation, plot_anticipation_cmap
+from PlottingScripts.PlotAnticipation import plot_anticipation, plot_anticipation_cmap, plot_vmem_aligned
 
 try: 
     from mpi4py import MPI
@@ -78,8 +78,8 @@ if __name__ == '__main__':
         params['w_ie_unspec'] = w_ie
         params['w_ei_unspec'] = w_ei
         params['w_ii_unspec'] = w_ii
-        folder_name = 'TestSim_%s_%s_%d-%d_tauiAMPA_%d_NMDA_%d_v%.1f_nExcPerMc%d_gain%.3f_ratio%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
-                params['test_protocols'][0], params['sim_id'], params['stim_range'][0], params['stim_range'][1], \
+        folder_name = 'TestSim_%s_%d-%d_tauiAMPA_%d_NMDA_%d_v%.1f_nExcPerMc%d_gain%.3f_ratio%.2f_wei%.1f_wie%.1f_wii%.2f_winput%.1f' % ( \
+                params['sim_id'], params['stim_range'][0], params['stim_range'][1], \
                 params['taui_ampa'], params['taui_nmda'], params['v_min_test'], \
                 params['n_exc_per_mc'], params['bcpnn_gain'], params['ampa_nmda_ratio'], \
                 params['w_ei_unspec'], params['w_ie_unspec'], params['w_ii_unspec'], params['w_input_exc'])
@@ -141,6 +141,7 @@ if __name__ == '__main__':
             show = True
         plot_anticipation_cmap(params)
         plot_anticipation(params, show) 
+        plot_vmem_aligned(params)
         run_plot_currents(NM.params)
         plot_prediction(params=NM.params, stim_range=params['stim_range'])
 #        plot_incoming_currents(NM.params)
