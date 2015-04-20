@@ -10,8 +10,28 @@ import numpy as np
 import utils 
 
 
+plot_params = {'backend': 'png',
+              'axes.labelsize': 20,
+              'axes.titlesize': 20,
+              'text.fontsize': 18,
+              'xtick.labelsize': 20,
+              'ytick.labelsize': 20,
+              'legend.pad': 0.2,     # empty space around the legend box
+              'legend.fontsize': 12,
+               'lines.markersize': 1,
+               'lines.markeredgewidth': 0.,
+               'lines.linewidth': 2,
+              'font.size': 12,
+              'path.simplify': False,
+              'figure.subplot.left':.14,
+              'figure.subplot.bottom':.13,
+              'figure.subplot.right':.92,
+              'figure.subplot.top':.95,
+              'figure.subplot.hspace':.30,
+              'figure.subplot.wspace':.30}
 
-def plot_spikes_colored(params):
+
+def plot_spikes_colored(params, xlim=None):
     fn = params['exc_spiketimes_fn_merged']
     d = np.loadtxt(fn)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
@@ -37,11 +57,23 @@ def plot_spikes_colored(params):
 
 #     plot spike count histogram
     nspikes, bins = np.histogram(d[:, 0], bins=np.arange(1, params['n_exc'] + 2)) # + 2 because you always need 1 bin more than elements to be binned
-    fig = pylab.figure()
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
+    fig2 = pylab.figure()
+    ax1 = fig2.add_subplot(211)
+    ax2 = fig2.add_subplot(212)
     ax1.scatter(tp[:, 0], nspikes, c=m.to_rgba(tp[:, 4]), linewidths=0, s=5)
     ax2.scatter(tp[:, 4], nspikes, c=m2.to_rgba(tp[:, 0]), linewidths=0, s=5)
+
+    ax.set_xlabel('Time [ms]')
+    ax.set_ylabel('Cell GID')
+    if xlim != None:
+        ax.set_xlim(xlim)
+    ax.set_ylim((0, params['n_exc']))
+    cbar = pylab.colorbar(m, ax=ax)
+    cbar_label = 'Preferred orientation $\\theta$'
+    cbar.set_label(cbar_label)
+    output_fn = params['figures_folder'] + 'rasterplot_training.png'
+    print 'Saving figure to:', output_fn
+    fig.savefig(output_fn, dpi=200)
 
 
 def plot_nspikes_versus_stim_speed(params):
@@ -80,7 +112,9 @@ def plot_nspikes_versus_stim_speed(params):
 
 if __name__ == '__main__':
 
+    pylab.rcParams.update(plot_params)
     params = utils.load_params(sys.argv[1])
-    plot_spikes_colored(params)
+    xlim = (0, 20000)
+    plot_spikes_colored(params, xlim=xlim)
 #    plot_nspikes_versus_stim_speed(params)
     pylab.show()

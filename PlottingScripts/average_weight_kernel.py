@@ -84,7 +84,7 @@ if __name__ == '__main__':
         params = utils.load_params(folder_name)
         fig, m = plot_average_weights(params, fig, force_rerun)
     cb = pylab.colorbar(m)
-    cb.set_label('Window of correlation $\\tau_i$')
+    cb.set_label('Primary trace time constant $\\tau_i$')
 
     output_fig = 'average_weight_vs_distance.png'
     print 'Saving figure to:', output_fig

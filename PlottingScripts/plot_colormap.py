@@ -170,5 +170,5 @@ if __name__ == '__main__':
     except:
         title = fn.rsplit('/')[-1]
 
-    ax.set_title(title)
+    #ax.set_title(title)
     pylab.show()

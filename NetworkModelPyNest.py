@@ -1,8 +1,6 @@
 import time
 import numpy as np
 import sys
-import matplotlib
-matplotlib.use('Agg')
 #import NeuroTools.parameters as ntp
 import os
 import utils
@@ -79,6 +77,8 @@ class NetworkModel(object):
 #        utils.set_vx_tau_transformation_params(self.params, self.tuning_prop_exc[:, 2].min(), self.tuning_prop_exc[:, 2].max())
 
 #        exit(1)
+        # # # # # # # # # # # #
+        #     S E T U P       #
         # # # # # # # # # # # #
         #     S E T U P       #
         # # # # # # # # # # # #
@@ -891,7 +891,6 @@ class NetworkModel(object):
                         tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
                         w_ampa = self.W_ampa[src_pop_idx, tgt_pop_idx]
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
-
                         #if w_ampa < 0:
                             #w_gaba_ = w_ampa * self.params['bcpnn_gain']
                             #nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
@@ -1618,21 +1617,6 @@ class NetworkModel(object):
                     output_vec = nest.GetStatus(recorder)[0]['events'][observable]
                     time_vec = nest.GetStatus(recorder)[0]['events']['times']
                     for i_proc in xrange(1, self.n_proc):
-                        output_vec = np.r_[output_vec, self.comm.recv(source=i_proc, tag=0)]
-                        time_vec = np.r_[time_vec, self.comm.recv(source=i_proc, tag=1)]
-                else:
-                    self.comm.send(nest.GetStatus(recorder)[0]['events'][observable],dest=0, tag=0)
-                    self.comm.send(nest.GetStatus(recorder)[0]['events']['times'],dest=0, tag=1)
-                if self.comm != None:
-                    self.comm.barrier()
-
-                if self.pc_id == 0:
-                    gids = nest.GetStatus(recorder)[0]['events']['senders']
-                    for i_proc in xrange(1, self.n_proc):
-                        gids = np.r_[gids, self.comm.recv(source=i_proc)]
-                    fn = self.params['volt_folder'] + output_fn_base[i_] + '_%s.dat' % (observable)
-                    output = np.array((gids, time_vec, output_vec))
-                    print 'Saving vmem data to:', fn,
                     np.savetxt(fn, output.transpose())
 #                    print 'debug output_vec', output_vec
 #                    print 'debug get status:', nest.GetStatus(recorder)
