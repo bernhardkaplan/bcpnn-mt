@@ -54,6 +54,8 @@ if __name__ == '__main__':
     taui_nmda = float(sys.argv[2])
     bcpnn_gain = float(sys.argv[3])
     params['bcpnn_gain'] = bcpnn_gain
+#    bcpnn_gain = float(sys.argv[3])
+#    params['bcpnn_gain'] = bcpnn_gain
     ampa_nmda_ratio = float(sys.argv[4])
     #w_input_exc = float(sys.argv[4])
     #params['w_input_exc'] = w_input_exc

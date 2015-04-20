@@ -40,8 +40,9 @@ class parameter_storage(object):
 #        self.params['test_protocols'] = ['crf_only']
 #        self.params['test_protocols'] = ['missing_crf']
 
-        self.params['w_in_ampa_pos_target'] = .5
-        self.params['w_in_ampa_neg_target'] = -.5
+        self.params['ampa_nmda_ratio'] = 5.
+        self.params['w_in_ampa_pos_target'] = .5 * self.params['ampa_nmda_ratio']
+        self.params['w_in_ampa_neg_target'] = -.5 
         self.params['w_in_nmda_pos_target'] = .5
         self.params['w_in_nmda_neg_target'] = -.5
 
@@ -256,7 +257,6 @@ class parameter_storage(object):
         self.params['use_pynest'] = True
         # receptor types: 0 -- AMPA (3 ms), 1 -- NMDA (100 ms), 2 -- GABA_A (5 ms), 3 -- GABA_B (50 ms)
         if self.params['use_pynest']:
-            self.params['ampa_nmda_ratio'] = 5.
             # the ampa_nmda_ratio / target_ratio_ampa_nmda determines a correction factor for the nmda weights in order to make 
             # the total currents only depend on bcpnn gain
             self.params['tau_syn'] = {'ampa': 5., 'nmda': 150., 'gaba': 5.}
