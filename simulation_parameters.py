@@ -553,6 +553,7 @@ class parameter_storage(object):
         self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
         self.params['record_v'] = not self.params['training_run'] #True
+        self.params['n_neurons_to_record_v_per_mc'] = 2
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         

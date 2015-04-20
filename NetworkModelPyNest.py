@@ -1517,7 +1517,8 @@ class NetworkModel(object):
 
         for i_hc in xrange(self.params['n_hc']):
             for i_mc in xrange(self.params['n_mc_per_hc']):
-                nest.ConvergentConnect(self.voltmeter_exc, [self.list_of_exc_pop[i_hc][i_mc][0]])
+                for i_ in xrange(self.params['n_neurons_to_record_v_per_mc']):
+                    nest.ConvergentConnect(self.voltmeter_exc, [self.list_of_exc_pop[i_hc][i_mc][i_]])
 
 
     def record_v_inh_unspec(self):
