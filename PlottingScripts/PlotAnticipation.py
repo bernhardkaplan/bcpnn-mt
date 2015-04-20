@@ -260,6 +260,27 @@ def filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt):
 
 def plot_vmem_aligned(params):
 
+    plot_params = {'backend': 'png',
+                  'axes.labelsize': 20,
+                  'axes.titlesize': 20,
+                  'text.fontsize': 18,
+                  'xtick.labelsize': 20,
+                  'ytick.labelsize': 20,
+                  'legend.pad': 0.2,     # empty space around the legend box
+                  'legend.fontsize': 14,
+                   'lines.markersize': 1,
+                   'lines.markeredgewidth': 0.,
+                   'lines.linewidth': 2,
+                  'font.size': 12,
+                  'path.simplify': False,
+                  'figure.figsize': utils.get_figsize(800, portrait=False), 
+                  'figure.subplot.left':.12,
+                  'figure.subplot.bottom':.10,
+                  'figure.subplot.right':.92,
+                  'figure.subplot.top':.95,
+                  'figure.subplot.hspace':.30,
+                  'figure.subplot.wspace':.30}
+
     pylab.rcParams.update(plot_params)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
@@ -268,10 +289,12 @@ def plot_vmem_aligned(params):
     v_tolerance = 10.
     coloraxis = 4
     view_range = (-300, 300)
-    n_trace_data = int(params['t_sim'] * .5 / dt)
-    print 'n_trace_data', n_trace_data
-#    n_trace_data = int((view_range[1] - view_range[0]) / dt)
+    print 'debug view_range', view_range
+    min_avg_window = .1 * (view_range[1] - view_range[0])
+#    n_trace_data = int(params['t_sim'] * .8 / dt)
 #    print 'n_trace_data', n_trace_data
+    n_trace_data = int((view_range[1] - view_range[0]) / dt)
+    print 'n_trace_data', n_trace_data
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
     motion_params_test = np.loadtxt(params['test_sequence_fn'])
     if motion_params_test.size == 5:
@@ -291,8 +314,8 @@ def plot_vmem_aligned(params):
     responding_idx = np.where(np.abs(tp_cells[:, 4] - mp[4]) < v_tolerance)[0] # should respond the stimulus
     n_responding_cells = responding_idx.size
     aligned_vmem_orientation_filtered = np.zeros((responding_idx.size, n_trace_data))
-    print 'responding_idx:', responding_idx
-    print 'tp_cells[responding_idx, :]', tp_cells[responding_idx, :]
+    print 'Averaging over %d responding cells' % (n_responding_cells)
+    print 'with tp_cells[responding_idx, :]', tp_cells[responding_idx, :]
     responding_idx = list(responding_idx) # cast to list to remove elements
 
     # color the voltage traces according to their preferred orientation
@@ -307,8 +330,7 @@ def plot_vmem_aligned(params):
     m.set_array(tp[:, coloraxis])
     colorlist = m.to_rgba(tp[:, coloraxis])
 
-    figsize = utils.get_figsize(1000, portrait=False)
-    fig = pylab.figure(figsize=figsize)
+    fig = pylab.figure()
     ax0 = fig.add_subplot(111)
 #    ax1 = fig.add_subplot(312)
     cnt = 0
@@ -335,19 +357,25 @@ def plot_vmem_aligned(params):
         mean_vmem_response[t_, 1] /= np.sqrt(n_responding_cells)
 
     p0 = ax0.errorbar(t_vec_trace, mean_vmem_response[:, 0], yerr=mean_vmem_response[:, 1], lw=2, c='k')
-    label0 = '$\overline{V(t)}$ aligned'
+    label0 = '$\overline{V}(t)$ aligned'
 
-    t_anticipation = get_t_anticipation(mean_vmem_response, threshold, dt)
+    print 'debug min_avg_window:', min_avg_window
+    t_anticipation, v_min, v_max = get_t_anticipation(mean_vmem_response, threshold, dt, min_avg_window)
     print 't_anticipation in vmem', t_anticipation
     label1 = 'Mean signal > %d %%' % (threshold * 100)
     ylim0 = ax0.get_ylim()
     p1, = ax0.plot((t_anticipation, t_anticipation), (ylim0[0], ylim0[1]), ':', c='k', lw=3, label=label1)
     ax0.text(t_anticipation - 100, ylim0[0] + 0.8 * (ylim0[1]-ylim0[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
+    xlim = ax0.get_xlim()
+    ax0.plot((xlim[0], xlim[1]), (v_min, v_min), '-', c='k', lw=1)
+    ax0.plot((xlim[0], xlim[1]), (v_max, v_max), '-', c='k', lw=1)
 
-    plots = [p0, p1]
-    labels = [label0, label1]
+    label2 = 'Stimulus arrival'
+    p2, = ax0.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim0[0], ylim0[1]), '--', c='k', lw=3, label=label2)
+
+    plots = [p0, p1, p2]
+    labels = [label0, label1, label2]
     ax0.legend(plots, labels, loc='upper right')
-
 
     ax0.set_xlabel('Time [ms]')
     ax0.set_ylabel('Volt [mV]')
@@ -358,14 +386,40 @@ def plot_vmem_aligned(params):
     print 'Output fig:', output_fn
     fig.savefig(output_fn, dpi=200)
 
+    # output data
+    d = {}
+    d['w_input_exc'] = params['w_input_exc']
+    d['folder_name'] = params['folder_name']
+    d['taui_ampa'] = params['taui_ampa']
+    d['taui_nmda'] = params['taui_nmda']
+    d['bcpnn_gain'] = params['bcpnn_gain']
+    d['ampa_nmda_ratio'] = params['ampa_nmda_ratio']
+    d['t_anticipation_vmem'] = t_anticipation
+    d['n_cells'] = n_cells
+    d['dt'] = dt
+    d['threshold'] = threshold
+    output_fn = params['data_folder'] + 'anticipation_volt_data.json'
+    print 'Saving data to:', output_fn
+    output_file = file(output_fn, 'w')
+    json.dump(d, output_file, indent=2)
 
-def get_t_anticipation(mean_trace, threshold, dt):
-    # determine t_anticipation in mean_vmem_response
+
+def get_t_anticipation(mean_trace, threshold, dt, min_avg_window=100):
+    """
+    determines t_anticipation in mean_trace
+    t_anticipation is the point in time when mean_trace crosses threshold
+    as measured between a minimum value (v_min) and the max within mean_trace
+    v_min is determined by the average of the first min_avg_window steps
+    """
     n_ = mean_trace[:, 0].size
-    prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
+    v_min = mean_trace[:min_avg_window, 0].mean()
+    print 'debug mean_trace min:', mean_trace[:, 0].min(), 'min calculate:', v_min
+    prediction_threshold = v_min + (mean_trace[:, 0].max() - v_min) * threshold
+    assert (prediction_threshold > v_min), 'Can not determine a t_anticipation, because data has no maximum in the given range. Check the traces or modify min_avg_window!'
+#    prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
     idx_above_thresh = np.where(mean_trace[:, 0] > prediction_threshold)[0]
     t_anticipation = idx_above_thresh[0] * dt - n_/ 2 * dt 
-    return t_anticipation
+    return t_anticipation, v_min, mean_trace[:, 0].max()
 #    print 'idx_above thresh:', idx_above_thresh
 
 
@@ -383,7 +437,10 @@ def plot_anticipation_cmap(params):
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
     n_cells = 1000
     dt = 1.                 # time resolution for filtered spike trains
-    n_trace_data = int(params['t_sim'] * .6 / dt)
+    view_range = (-200, 200)
+    min_avg_window = .1 * (view_range[1] - view_range[0])
+    n_trace_data = int((view_range[1] - view_range[0]) / dt)
+#    n_trace_data = int(params['t_sim'] * .6 / dt)
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
 
     pylab.rcParams.update(plot_params)
@@ -442,6 +499,7 @@ def plot_anticipation_cmap(params):
     prediction_threshold = mean_trace[:, 0].min() + (mean_trace[:, 0].max() - mean_trace[:, 0].min()) * threshold
     idx_above_thresh = np.where(mean_trace[:, 0] > prediction_threshold)[0]
     t_anticipation = idx_above_thresh[0] * dt - n_trace_data / 2 * dt 
+    t_anticipation, v_min, v_max = get_t_anticipation(mean_trace, threshold, dt, min_avg_window)
 #    print 'idx_above thresh:', idx_above_thresh
     print 't_anticipation', t_anticipation
 
@@ -462,13 +520,12 @@ def plot_anticipation_cmap(params):
     ax1.text(t_anticipation - 50, ylim1[0] + 0.8 * (ylim1[1]-ylim1[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
     ax1.legend(plots, labels, loc='upper right')
 
-    title2 = 'gain = %.1f $w^{input}_{exc}=%.1f\  R(AMPA/NMDA) = %.2f$' % (params['bcpnn_gain'], params['w_input_exc'], params['ampa_nmda_ratio'])
+    title2 = 'gain = %.2f $w^{input}_{exc}=%.1f\  R(AMPA/NMDA) = %.2f$' % (params['bcpnn_gain'], params['w_input_exc'], params['ampa_nmda_ratio'])
     title1 = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
     ax1.set_title(title1)
     ax2.set_title(title2)
     cbar1 = pylab.colorbar(m, ax=ax1)
     cbar1.set_label(cbar_label)
-    view_range = (-200, 200)
     ax1.set_xlim(view_range)
     ax1.set_ylim((0., ylim1[1]))
     ax0.set_xlim(view_range)
@@ -501,12 +558,13 @@ def plot_anticipation_cmap(params):
     d['bcpnn_gain'] = params['bcpnn_gain']
     d['tau_filter'] = tau_filter
     d['ampa_nmda_ratio'] = params['ampa_nmda_ratio']
-    d['t_anticipation'] = t_anticipation
+    d['t_anticipation_spikes_filtered'] = t_anticipation
     d['n_cells'] = n_cells
     d['dt'] = dt
     d['threshold'] = threshold
-    print 'Saving data to:', params['data_folder'] + 'anticipation_data.json'
-    output_file = file(params['data_folder'] + 'anticipation_data.json', 'w')
+    output_fn = params['data_folder'] + 'anticipation_spike_data.json'
+    print 'Saving data to:', output_fn
+    output_file = file(output_fn, 'w')
     json.dump(d, output_file, indent=2)
 
     return output_fig
@@ -521,22 +579,22 @@ if __name__ == '__main__':
         show = True
         plot_vmem_aligned(params)
         plot_anticipation_cmap(params)
-#        plot_anticipation(params)
+        plot_anticipation(params)
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
-        show = True
+        show = False
         plot_vmem_aligned(params)
-#        plot_anticipation_cmap(params)
-#        plot_anticipation(params)
+        plot_anticipation_cmap(params)
+        plot_anticipation(params)
     else:
         fig_fns = []
         for folder_name in sys.argv[1:]:
             params = utils.load_params(folder_name)
             show = False
             plot_vmem_aligned(params)
-#            fig_fn = plot_anticipation_cmap(params)
-#            fig_fn = plot_anticipation(params)
+            fig_fn = plot_anticipation_cmap(params)
+            fig_fn = plot_anticipation(params)
             fig_fns.append(fig_fn)
         print 'Figures:\n'
         for fn in fig_fns:

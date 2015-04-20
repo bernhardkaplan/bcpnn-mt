@@ -43,6 +43,7 @@ def get_average_weights(params, conn_idx=0):
     # deteremine which gids to use as source (target)
     feature_radius = 20.
     feature_tgt = [0.] # could be all values here --> no filtering
+#    feature_tgt = np.linspace(0., 180, params['n_theta'], endpoint=False) # could be all values here --> no filtering
     filtered_gids = np.array([])
     for v_tgt in feature_tgt:
         gids = np.where(utils.torus_distance_array(tp[:, 4], v_tgt, w=180) < feature_radius)[0] + 1 # nest gids expected later --> + 1

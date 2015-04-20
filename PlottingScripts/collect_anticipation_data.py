@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # t_anticipation    taui_ampa   taui_nmda   gain    w_input_exc     ampa_nmda_ratio
     for i_, folder_name in enumerate(sys.argv[1:]):
         params = utils.load_params(folder_name)
-        fn = params['data_folder'] + 'anticipation_data.json'
+        fn = params['data_folder'] + 'anticipation_spike_data.json'
         f = file(fn, 'r')
         da = json.load(f)
         all_data.append(da)

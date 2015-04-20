@@ -180,14 +180,16 @@ class Plotter(object):
         ax2.set_title('Preferred speeds')
 
 
-    def plot_stimuli(self, ax, feature_dimension=2):
+    def plot_stimuli(self, ax, feature_dimension=2, n_max=None):
         mp = np.loadtxt(self.params['training_stimuli_fn'])
 
         stim_duration = np.loadtxt(self.params['stim_durations_fn']) 
         if self.params['n_stim'] == 1:
             stim_duration = np.array([stim_duration])
 
-        for i_ in xrange(self.params['n_stim']):
+        if n_max == None:
+            n_max = self.params['n_stim']
+        for i_ in xrange(n_max):
             x_start = mp[i_, 0]
             x_stop = mp[i_, 0] + mp[i_, 2] * (stim_duration[i_] - self.params['t_stim_pause']) / self.params['t_stimulus']
             ax.plot((x_start, x_stop), (mp[i_, feature_dimension], mp[i_, feature_dimension]), '--', c='k', lw=1)
@@ -225,11 +227,12 @@ if __name__ == '__main__':
         param_tool = simulation_parameters.parameter_storage()
         params = param_tool.params
 
+    n_max = 6
     Plotter = Plotter(params)#, it_max=1)
     feature_dimension = 4
     ax = Plotter.plot_tuning_space(feature_dimension)
     if os.path.exists(params['training_stimuli_fn']):
-        Plotter.plot_stimuli(ax, feature_dimension)
+        Plotter.plot_stimuli(ax, feature_dimension, n_max)
 
     if params['training_run'] and os.path.exists(params['exc_spiketimes_fn_merged']):
         Plotter.plot_non_spiking_cells(ax, feature_dimension)
@@ -238,3 +241,4 @@ if __name__ == '__main__':
 #    Plotter.plot_tuning_width_distribution()
 
     pylab.show()
+
