@@ -1318,6 +1318,7 @@ def get_min_distance_to_stim(mp, tp_cell, params):
     if params['motion_type'] == 'bar':
         orientation_dist = np.sqrt((tp_cell[4] - mp[4])**2)
         dist =  min_spatial_dist + (velocity_dist + orientation_dist) * .1
+#        dist =  min_spatial_dist + (velocity_dist + orientation_dist) * .1
     else:
         dist =  min_spatial_dist + velocity_dist
     return dist, min_spatial_dist

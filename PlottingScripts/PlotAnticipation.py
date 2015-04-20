@@ -162,14 +162,60 @@ def shift_trace_to_stimulus_arrival(params, trace, tp_cell, mp, n, dt=1., defaul
     return shifted_trace
 
 
+#def select_cells_for_filtering_new(tp, mp, n_cells):
+#    """
+#    Return gids of n_cells within x_start and x_stop near mp.
+#    """
+#    return utils.get_gids_near_stim_nest(mp, tp, n=n_cells, ndim=1)[0]
+
+#    v_tolerance = 30
+#    x_width = 0.4
+
+#    gids_1 = np.where(np.abs(tp[:, 0] - 0.5) < x_width)[0]
+#    gids_2 = np.where(utils.torus_distance_array(tp[:, 4], mp[4], w=180.) < v_tolerance)[0]
+#    gids = np.unique(np.r_[gids_1, gids_2])
+#    idx = np.argsort(tp[gids, 4] - mp[4])[:n_cells]
+#    return gids[idx] + 1
+
+#    assert gids.size == n_cells
+
+#    idx_sorted, distances = utils.sort_gids_by_distance_to_stimulus(tp, mp, params) # cells in indices should have the highest response to the stimulus
+#    idx_sorted = np.argsort(tp[:, 4] - mp[4])[:n_cells]
+#    print 'debug tp[idx_sorted, :]', tp[idx_sorted, :]
+#    return idx_sorted[:n_cells]
+
 def select_cells_for_filtering(tp, mp, n_cells):
-    x_start = 0.2
-    x_stop = 0.8
+    x_start = 0.1
+    x_stop = 0.9
     pos = np.linspace(x_start, x_stop, n_cells)
     cell_gids = []
     for i_ in xrange(n_cells):
         mp = [pos[i_], mp[1], mp[2], mp[3], mp[4]]
         cell_gids.append(utils.get_gids_near_stim_nest(mp, tp, n=1)[0][0])
+    return np.array(cell_gids)
+
+def select_cells_for_filtering_new(tp, mp, n_cells):
+#    x_start = 0.1
+#    x_stop = 0.9
+    f = 0.
+    dx = 0.
+    cell_gids = []
+    cnt = 0
+    n_ = 0
+    while cnt != n_cells:
+        mp = [np.random.uniform(.5 - dx, .5 + dx), mp[1], mp[2], mp[3], mp[4] * np.random.uniform(1. - f, 1. + f)]
+        gid = utils.get_gids_near_stim_nest(mp, tp, n=1)[0][0]
+        if gid not in cell_gids:
+            cell_gids.append(gid)
+            cnt += 1
+        else:
+            f += 0.001
+            dx += 0.01
+        n_ += 1
+        if n_ > 10**7:
+            print 'Not enough unique cells found, decrease n_cells!'
+            break
+    print 'DEBUG f:', f, 'n:', n_
     return np.array(cell_gids)
 
 
@@ -436,7 +482,7 @@ def plot_anticipation_cmap(params):
     threshold = 0.25  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
-    n_cells = 1000
+    n_cells = 200
     dt = 1.                 # time resolution for filtered spike trains
     view_range = (-200, 200)
     min_avg_window = .1 * (view_range[1] - view_range[0])
@@ -452,7 +498,7 @@ def plot_anticipation_cmap(params):
         motion_params_test = motion_params_test.reshape((1, 5))
     nspikes, spiketrains = utils.get_nspikes(all_spikes, n_cells=params['n_exc'], cell_offset=0, get_spiketrains=True, pynest=True)
     
-    figsize = utils.get_figsize(1200, portrait=False)
+    figsize = utils.get_figsize(1000, portrait=False)
     fig = pylab.figure(figsize=figsize)
     ax0 = fig.add_subplot(311)
     ax1 = fig.add_subplot(312)
@@ -478,8 +524,9 @@ def plot_anticipation_cmap(params):
 
     # select and filter spike trains for the selected gids
     # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
-    filter_cells = select_cells_for_filtering(tp, mp, n_cells)
-#    print 'filter_cells:', filter_cells
+    filter_cells = select_cells_for_filtering_new(tp, mp, n_cells)
+#    filter_cells = 1 + np.where(np.abs(tp[:, 4] - params['test_stim_orientation']) < v_tolerance)[0]
+    assert len(np.unique(filter_cells)) == n_cells, 'n unique filter_cells found: %d' % (len(np.unique(filter_cells)))
     filtered_aligned_spiketrains = np.zeros((n_cells, n_trace_data))
     mean_trace = np.zeros((n_trace_data, 2)) 
     filtered_traces, normalized_traces = filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt)
@@ -488,6 +535,7 @@ def plot_anticipation_cmap(params):
     for i_, gid in enumerate(filter_cells): 
         shifted_trace = shift_trace_to_stimulus_arrival(params, normalized_traces[gid-1, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
         filtered_aligned_spiketrains[i_, :] = shifted_trace
+        print 'debug spiketrains[gid].size', len(spiketrains[gid]), 'tp:', tp[gid-1, :]
         ax1.plot(t_vec_trace, shifted_trace, c=m.to_rgba(tp[gid-1, 0]), lw=1)
         shifted_trace_not_normalized = shift_trace_to_stimulus_arrival(params, filtered_traces[gid-1, :], tp[gid-1, :], motion_params_test[stim_idx, :], n_trace_data, dt=dt)
         ax0.plot(t_vec_trace, shifted_trace_not_normalized, c=m.to_rgba(tp[gid-1, 0]), lw=1)
@@ -578,24 +626,25 @@ if __name__ == '__main__':
         ps = simulation_parameters.parameter_storage()
         params = ps.params
         show = True
-        plot_vmem_aligned(params)
         plot_anticipation_cmap(params)
-        plot_anticipation(params)
+#        plot_vmem_aligned(params)
+#        plot_anticipation(params)
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
         show = False
-        plot_vmem_aligned(params)
         plot_anticipation_cmap(params)
-        plot_anticipation(params)
+#        plot_vmem_aligned(params)
+#        plot_anticipation(params)
     else:
         fig_fns = []
         for folder_name in sys.argv[1:]:
             params = utils.load_params(folder_name)
             show = False
-            plot_vmem_aligned(params)
             fig_fn = plot_anticipation_cmap(params)
-            fig_fn = plot_anticipation(params)
+            fig_fns.append(fig_fn)
+#            plot_vmem_aligned(params)
+#            fig_fn = plot_anticipation(params)
             fig_fns.append(fig_fn)
         print 'Figures:\n'
         for fn in fig_fns:
