@@ -29,8 +29,8 @@ class parameter_storage(object):
         self.params['with_stp'] = False             # for recurrent E-E connections
         self.params['with_orientation'] = True      # redundant? 
         self.params['with_stp_for_input'] = False   # not tuned well
-        self.params['with_recorder_neurons'] = True
-        self.params['symmetric_tauij'] = True # relevant for training only
+        self.params['with_recorder_neurons'] = not self.params['training_run']
+        self.params['symmetric_tauij'] = False # relevant for training only
         self.params['with_bias'] = False
         self.params['Guo_protocol'] = False
         self.params['test_protocols'] = ['continuous']
@@ -43,7 +43,7 @@ class parameter_storage(object):
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
-        self.w_input_exc = 5.0
+        self.w_input_exc = 8.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -53,7 +53,9 @@ class parameter_storage(object):
         elif not self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = ''
 
-        if not self.params['symmetric_tauij']:
+        if self.params['symmetric_tauij']:
+            self.params['sim_id'] += 'symmetricTauij_'
+        else:
             self.params['sim_id'] += 'asymmetricTauij_'
         #if self.params['with_stp']:
             #self.params['sim_id'] += 'withSTP_'
@@ -99,7 +101,7 @@ class parameter_storage(object):
         if self.params['with_orientation']:
             self.params['n_v'] = 1 # self.params['n_theta'] # == N_MC_PER_HC
         else:
-            self.params['n_v'] = 4 # self.params['n_theta'] # == N_MC_PER_HC
+            self.params['n_v'] = 2 # self.params['n_theta'] # == N_MC_PER_HC
 
         self.params['frac_rf_x_fovea'] = 0.4 # this fraction of all n_rf_x cells will have constant (minimum) RF size
         self.params['n_rf_x_fovea'] = np.int(np.round(self.params['frac_rf_x_fovea'] * self.params['n_rf_x']))
@@ -437,7 +439,7 @@ class parameter_storage(object):
         # TRAINING PARAMETERS
         # #####################
         self.params['v_max_training'] = 1.0
-        self.params['v_min_training'] = 0.7
+        self.params['v_min_training'] = 1.0
         self.params['x_max_training'] = 0.98
         self.params['x_min_training'] = 0.02
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
@@ -550,7 +552,7 @@ class parameter_storage(object):
         self.params['dt_rate'] = .1             # [ms] time step for the non-homogenous Poisson process
         self.params['dt_volt'] = .5
         self.params['n_gids_to_record'] = 0    # number to be sampled across some trajectory
-        self.params['record_v'] = True
+        self.params['record_v'] = not self.params['training_run'] #True
         self.params['gids_to_record'] = []#181, 185]  # additional gids to be recorded 
         
         

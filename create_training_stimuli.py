@@ -225,10 +225,12 @@ def create_approaching_test_stimuli(params, order='linear', RNG=None):
 def create_regular_training_stimuli_with_orientation(params, tp=None):
     x_pos = set_tuning_properties.get_xpos_regular(params) # N_HC
     theta_train = set_tuning_properties.get_orientation_tuning_regular(params) # N_MC
-    speeds_pos = np.linspace(params['v_min_training'], params['v_max_training'], params['n_training_v'] / 2, endpoint=True)
-    speeds_neg = -1. * speeds_pos
-    speeds = np.r_[speeds_pos, speeds_neg]
-
+    if params['n_training_v'] > 1:
+        speeds_pos = np.linspace(params['v_min_training'], params['v_max_training'], params['n_training_v'] / 2, endpoint=True)
+        speeds_neg = -1. * speeds_pos
+        speeds = np.r_[speeds_pos, speeds_neg]
+    else:
+        speeds = np.array([params['v_min_training']])
     np.random.seed(params['visual_stim_seed'])
     mp = np.zeros((params['n_stim'], 5))
     if tp == None:

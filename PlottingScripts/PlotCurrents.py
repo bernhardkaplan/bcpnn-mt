@@ -61,7 +61,8 @@ def run_plot_currents(params, cell_type='exc'):
     measurables = ['AMPA', 'NMDA', 'GABA', 'AMPA_NEG', 'NMDA_NEG']
     #measurables = ['AMPA', 'NMDA', 'GABA', 'NMDA_NEG']
     #measurables = ['AMPA', 'NMDA']
-    tau_syn = [params['tau_syn']['ampa'], params['tau_syn']['nmda'], params['tau_syn']['gaba'], params['tau_syn']['ampa'], params['tau_syn']['nmda']]
+    tau_mem = params['cell_params_exc']['C_m'] / params['cell_params_exc']['g_L']
+    tau_syn = [params['tau_syn']['ampa'], params['tau_syn']['nmda'], params['tau_syn']['gaba'], params['tau_syn']['ampa'], params['tau_syn']['nmda'], tau_mem]
     for m in measurables:
         fn = params['volt_folder'] + '%s_I_%s.dat' % (cell_type, m)
         print 'Loading fn:', fn

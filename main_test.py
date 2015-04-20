@@ -19,7 +19,7 @@ import json
 import simulation_parameters
 from NetworkModelPyNest import NetworkModel
 
-#from PlottingScripts.PlotPrediction import plot_prediction
+from PlottingScripts.PlotPrediction import plot_prediction
 from PlottingScripts.PlotCurrents import run_plot_currents
 #from PlottingScripts.plot_incoming_currents import plot_incoming_currents
 import matplotlib
@@ -59,8 +59,10 @@ if __name__ == '__main__':
     #params['w_input_exc'] = w_input_exc
     params['taui_ampa'] = taui_ampa
     params['taui_nmda'] = taui_nmda
-    conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
-    conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
+    conn_fn_ampa = 'TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
+    conn_fn_nmda = 'TrainingSim_Cluster_asymmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
+    #conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
+    #conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
     w_ei = params['w_ei_unspec']
     w_ie = float(sys.argv[5]) * w_ei
     #w_ie = params['w_ie_unspec']

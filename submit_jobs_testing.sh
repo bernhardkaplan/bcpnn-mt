@@ -6,7 +6,7 @@ for w_ie in -5
 do
     taui_ampa=5
     taui_nmda=5
-    for gain in 0.06 0.08 0.1
+    for gain in 0.05 0.1 
     do
         sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
         echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
@@ -17,7 +17,7 @@ do
 
     taui_ampa=5
     taui_nmda=150
-    for gain in 0.06 0.08 0.1
+    for gain in 0.05 0.1 
     do
         sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
         echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
@@ -28,7 +28,7 @@ do
 
     taui_ampa=150
     taui_nmda=150
-    for gain in 0.06 0.08 0.1
+    for gain in 0.03 0.04 0.06
     do
         sbatch jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
         echo jobfile_testing_milner_with_params.sh $taui_ampa $taui_nmda $gain $ratio $w_ie
