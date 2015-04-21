@@ -146,26 +146,27 @@ def shift_trace_to_stimulus_arrival(params, trace, tp_cell, mp, n, dt=1., defaul
     stim_arrival_time = (tp_cell[0] - mp[0]) / params['v_min_test'] * 1000.
     idx_max = int(stim_arrival_time / dt) # expected maximum response
     # cut the original trace, compute border indices in original trace
-#    idx0 = min(n, max(0, idx_max - n / 2))
+    # works for vmem
+    #idx0 = min(n, max(0, idx_max - n / 2))
+    #idx1 = max(0, min(n, idx_max + n / 2))
+
+    n_trace = trace.size
     idx0 = max(0, idx_max - n / 2)
-    idx1 = idx_max + n / 2
-#    idx1 = min(n, idx_max + n / 2)
+    idx1 = min(n_trace, idx_max + n / 2)
 
     # Now, align the time axis for each cell according to stim_arrival_time
     # indices of the cut-out trace in the new shifted trace
-
-    #new
-#    idx_start = min(n, max(0, n - idx1))
-#    idx_stop = max(0, min(n, n - idx0))
-#    idx_start =  n - idx1
-#    idx_stop = n - idx0
+    # works for vmem
     idx_start =  n / 2 - (idx_max - idx0)
     idx_stop = n / 2 + (idx1 - idx_max)
 
+    idx_start = max(0, n / 2 - (idx_max - idx0))
+    idx_stop = min(n / 2 + (idx1 - idx_max), n)
 
-#    debug_info = 'debug x=%.2f t_arrival=%.1f\t idx_max %d \t idx0 %d\tidx_max-n/2 %d\tidx1 %d\tidx_max+n/2 %d\tidx_start %d\tidx_stop %d' % (tp_cell[0], stim_arrival_time, idx_max, idx0, idx_max - n/2, idx1, idx_max + n/2, idx_start, idx_stop)
-#    print debug_info
     shifted_trace = default_value * np.ones(n)
+    debug_info = 'debug x=%.2f t_arrival=%.1f\t idx_max %d \t idx0 %d\tidx_max-n/2 %d\tidx1 %d\tidx_max+n/2 %d\tidx_start %d\tidx_stop %d' % (tp_cell[0], stim_arrival_time, idx_max, idx0, idx_max - n/2, idx1, idx_max + n/2, idx_start, idx_stop)
+    #print debug_info
+    #print shifted_trace[idx_start:idx_stop].size, shifted_trace.size, trace[idx0:idx1].size, trace.size, idx0, idx1, idx1-idx0
     shifted_trace[idx_start:idx_stop] = trace[idx0:idx1]
     return shifted_trace
 
@@ -327,25 +328,25 @@ def filter_and_normalize_all_spiketrains(params, spiketrains, tau_filter, dt):
 def plot_vmem_aligned(params):
 
     plot_params = {'backend': 'png',
-                  'axes.labelsize': 20,
-                  'axes.titlesize': 20,
+                  'axes.labelsize': 28,
+                  'axes.titlesize': 28,
                   'text.fontsize': 18,
-                  'xtick.labelsize': 20,
-                  'ytick.labelsize': 20,
+                  'xtick.labelsize': 22,
+                  'ytick.labelsize': 22,
                   'legend.pad': 0.2,     # empty space around the legend box
-                  'legend.fontsize': 14,
+                  'legend.fontsize': 20,
                    'lines.markersize': 1,
                    'lines.markeredgewidth': 0.,
                    'lines.linewidth': 2,
                   'font.size': 12,
                   'path.simplify': False,
-                  'figure.figsize': utils.get_figsize(800, portrait=False), 
-                  'figure.subplot.left':.12,
-                  'figure.subplot.bottom':.10,
-                  'figure.subplot.right':.92,
-                  'figure.subplot.top':.95,
+                  'figure.subplot.left':.11,
+                  'figure.subplot.bottom':.13,
+                  'figure.subplot.right':.99,
+                  'figure.subplot.top':.87,
                   'figure.subplot.hspace':.30,
                   'figure.subplot.wspace':.30}
+
 
     pylab.rcParams.update(plot_params)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
@@ -354,11 +355,9 @@ def plot_vmem_aligned(params):
     threshold = 0.25
     v_tolerance = 10.
     coloraxis = 4
-    view_range = (-300, 300)
+    view_range = (-600, 600)
     print 'debug view_range', view_range
     min_avg_window = .1 * (view_range[1] - view_range[0])
-#    n_trace_data = int(params['t_sim'] * .8 / dt)
-#    print 'n_trace_data', n_trace_data
     n_trace_data = int((view_range[1] - view_range[0]) / dt)
     print 'n_trace_data', n_trace_data
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
@@ -388,16 +387,19 @@ def plot_vmem_aligned(params):
     if coloraxis == 0:
         value_range = (0, 1.)
         cbar_label = 'Position'
+        cmap = matplotlib.cm.jet
     elif coloraxis == 4:
         value_range = (0, 180.)
         cbar_label = 'Orientation'
+        cmap = matplotlib.cm.hsv
     norm = matplotlib.colors.Normalize(vmin=value_range[0], vmax=value_range[1])
-    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=matplotlib.cm.jet) # large weights -- black, small weights -- white
+    m = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
     m.set_array(tp[:, coloraxis])
-    colorlist = m.to_rgba(tp[:, coloraxis])
 
-    fig = pylab.figure()
+    figsize = utils.get_figsize(800, portrait=False)
+    fig = pylab.figure(figsize=figsize)
     ax0 = fig.add_subplot(111)
+    ax0.set_title('Anticipatory signal in\naligned membrane potentials')
 #    ax1 = fig.add_subplot(312)
     cnt = 0
     cnt_n = 0
@@ -422,22 +424,24 @@ def plot_vmem_aligned(params):
         mean_vmem_response[t_, 1] = aligned_vmem_orientation_filtered[:, t_].std()
         mean_vmem_response[t_, 1] /= np.sqrt(n_responding_cells)
 
-    p0 = ax0.errorbar(t_vec_trace, mean_vmem_response[:, 0], yerr=mean_vmem_response[:, 1], lw=3, c='k')
+    p0 = ax0.errorbar(t_vec_trace, mean_vmem_response[:, 0], yerr=mean_vmem_response[:, 1], lw=4, c='k')
     label0 = '$\overline{V}(t)$ aligned'
 
     print 'debug min_avg_window:', min_avg_window
     t_anticipation, v_min, v_max = get_t_anticipation(mean_vmem_response, threshold, dt, min_avg_window)
     print 't_anticipation in vmem', t_anticipation
     label1 = 'Mean signal > %d %%' % (threshold * 100)
+    ax0.set_ylim((-80., -20.))
     ylim0 = ax0.get_ylim()
-    p1, = ax0.plot((t_anticipation, t_anticipation), (ylim0[0], ylim0[1]), ':', c='k', lw=3, label=label1)
-    ax0.text(t_anticipation - 100, ylim0[0] + 0.8 * (ylim0[1]-ylim0[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
+    p1, = ax0.plot((t_anticipation, t_anticipation), (ylim0[0], ylim0[1]), ':', c='k', lw=4, label=label1)
+#    ax0.text(t_anticipation - view_range[1]/2, ylim0[0] + 0.05 * (ylim0[1]-ylim0[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=36)
+    ax0.text(t_anticipation - view_range[1] / 2., ylim0[0] + 0.05 * (ylim0[1]-ylim0[0]), '$t_{anticipation}^{volt} = %.1f$ ms' % t_anticipation, fontsize=36)
     xlim = ax0.get_xlim()
-    ax0.plot((xlim[0], xlim[1]), (v_min, v_min), '-', c='k', lw=1)
-    ax0.plot((xlim[0], xlim[1]), (v_max, v_max), '-', c='k', lw=1)
+    ax0.plot((xlim[0], xlim[1]), (v_min, v_min), '-', c='k', lw=2)
+    ax0.plot((xlim[0], xlim[1]), (v_max, v_max), '-', c='k', lw=2)
 
     label2 = 'Stimulus arrival'
-    p2, = ax0.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim0[0], ylim0[1]), '--', c='k', lw=3, label=label2)
+    p2, = ax0.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim0[0], ylim0[1]), '--', c='k', lw=4, label=label2)
 
     plots = [p0, p1, p2]
     labels = [label0, label1, label2]
@@ -468,7 +472,7 @@ def plot_vmem_aligned(params):
     print 'Saving data to:', output_fn
     output_file = file(output_fn, 'w')
     json.dump(d, output_file, indent=2)
-
+    return output_fn
 
 def get_t_anticipation(mean_trace, threshold, dt, min_avg_window=100):
     """
@@ -501,39 +505,77 @@ def plot_anticipation_cmap(params):
     threshold = 0.25  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
-    dt = 1.                 # time resolution for filtered spike trains
-    view_range = (-200, 200)
+    dt = .5                 # time resolution for filtered spike trains
+    view_range = (-150, 150)
     min_avg_window = .1 * (view_range[1] - view_range[0])
     n_trace_data = int((view_range[1] - view_range[0]) / dt)
 #    n_trace_data = int(params['t_sim'] * .6 / dt)
     t_vec_trace = dt * np.arange(0, n_trace_data) - n_trace_data / 2 * dt 
 
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
-    # select and filter spike trains for the selected gids
-    # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
-    n_cells = 200
-    filter_cells = np.unique(select_cells_for_filtering_new(tp, mp, n_cells))
-    n_cells = filter_cells.size
-#    filter_cells = select_cells_for_filtering(tp, mp, n_cells)
-#    assert len(np.unique(filter_cells)) == n_cells, 'n unique filter_cells found: %d' % (len(np.unique(filter_cells)))
-
-    pylab.rcParams.update(plot_params)
     all_spikes = np.loadtxt(params['exc_spiketimes_fn_merged'])
+    cells_that_spiked = np.array(np.unique(all_spikes[:, 0]), dtype=np.int)
+    valid_idx = np.where(np.abs(tp[cells_that_spiked, 0] - 0.5) < 0.4)[0]
+    n_cells = min(200, valid_idx.size)
+    filter_cells = np.array(np.random.choice(cells_that_spiked[valid_idx], n_cells), dtype=np.int)
+
+
     motion_params_test = np.loadtxt(params['test_sequence_fn'])
     if motion_params_test.size == 5:
         motion_params_test = motion_params_test.reshape((1, 5))
     nspikes, spiketrains = utils.get_nspikes(all_spikes, n_cells=params['n_exc'], cell_offset=0, get_spiketrains=True, pynest=True)
+
+    # select and filter spike trains for the selected gids
+    # filter cells along a trajectory (start, stop defined in the function select_cells_for_filtering)
+#    filter_cells = np.unique(select_cells_for_filtering_new(tp, mp, n_cells))
+#    n_cells = filter_cells.size
+#    filter_cells = select_cells_for_filtering(tp, mp, n_cells)
+#    assert len(np.unique(filter_cells)) == n_cells, 'n unique filter_cells found: %d' % (len(np.unique(filter_cells)))
+
     
-    figsize = utils.get_figsize(1000, portrait=False)
-    fig = pylab.figure(figsize=figsize)
-    ax0 = fig.add_subplot(311)
-    ax1 = fig.add_subplot(312)
-    ax2 = fig.add_subplot(313)
+    figsize = utils.get_figsize(800, portrait=False)
+    if separate_fig:
+        plot_params = {'backend': 'png',
+                      'axes.labelsize': 28,
+                      'axes.titlesize': 28,
+                      'text.fontsize': 18,
+                      'xtick.labelsize': 22,
+                      'ytick.labelsize': 22,
+                      'legend.pad': 0.2,     # empty space around the legend box
+                      'legend.fontsize': 20,
+                       'lines.markersize': 1,
+                       'lines.markeredgewidth': 0.,
+                       'lines.linewidth': 2,
+                      'font.size': 12,
+                      'path.simplify': False,
+                      'figure.subplot.left':.16,
+                      'figure.subplot.bottom':.13,
+                      'figure.subplot.right':.99,
+                      'figure.subplot.top':.84,
+                      'figure.subplot.hspace':.30,
+                      'figure.subplot.wspace':.30}
+
+        pylab.rcParams.update(plot_params)
+        fig0 = pylab.figure(figsize=figsize)
+        fig1 = pylab.figure(figsize=figsize)
+        fig2 = pylab.figure(figsize=figsize)
+        ax0 = fig0.add_subplot(111)
+        ax1 = fig1.add_subplot(111)
+        ax2 = fig2.add_subplot(111)
+        ax0.set_xlabel('Time to stimulus arrival [ms]')
+        ax1.set_xlabel('Time to stimulus arrival [ms]')
+        ax2.set_xlabel('Time to stimulus arrival [ms]')
+    else:
+        pylab.rcParams.update(plot_params)
+        fig = pylab.figure(figsize=figsize)
+        ax0 = fig.add_subplot(311)
+        ax1 = fig.add_subplot(312)
+        ax2 = fig.add_subplot(313)
+        ax2.set_xlabel('Time to stimulus arrival [ms]')
 
     ax0.set_title('Aligned response of %d cells along stimulus trajectory' % n_cells)
     ax0.set_ylabel('Filtered spiketrains')
     ax1.set_ylabel('Normalized and filtered\nspike activity')
-    ax2.set_xlabel('Time to stimulus arrival [ms]')
 
     # colors for x-y traces
     coloraxis = 0
@@ -581,25 +623,25 @@ def plot_anticipation_cmap(params):
 #    print 'idx_above thresh:', idx_above_thresh
     print 't_anticipation', t_anticipation
 
-    p0 = ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', ls='-', lw=3)[0]
+    p0 = ax1.errorbar(t_vec_trace, mean_trace[:, 0], yerr=mean_trace[:, 1], c='k', ls='-', lw=5)[0]
     label0 ='Mean normalized trace'
 
     ylim1 = ax1.get_ylim()
     plots = []
     label1 = 'Stimulus arrival'
-    p1, = ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim1[0], ylim1[1]), '--', c='k', lw=3, label=label1)
+    p1, = ax1.plot((t_vec_trace[n_trace_data/2], t_vec_trace[n_trace_data/2]), (ylim1[0], ylim1[1]), '--', c='k', lw=5, label=label1)
 #    ax1.text(t_vec_trace[n_trace_data/2] + 5, ylim1[0] + 0.75 * (ylim1[1]-ylim1[0]), 'Stimulus arrival', fontsize=18)
 
     # plot t_anticipation
     label2 = 'Mean signal > %d %%' % (threshold * 100)
-    p2, = ax1.plot((t_anticipation, t_anticipation), (ylim1[0], ylim1[1]), ':', c='k', lw=3, label=label2)
+    p2, = ax1.plot((t_anticipation, t_anticipation), (ylim1[0], ylim1[1]), ':', c='k', lw=5, label=label2)
     plots = [p0, p1, p2]
     labels = [label0, label1, label2]
-    ax1.text(t_anticipation - 50, ylim1[0] + 0.8 * (ylim1[1]-ylim1[0]), 't_anticipation = %.1f ms' % t_anticipation, fontsize=18)
+    ax1.text( .75 * view_range[0], ylim1[0] + 0.6 * (ylim1[1]-ylim1[0]), '$t_{anticipation}^{spikes} = %.1f$ ms' % t_anticipation, fontsize=36)
     ax1.legend(plots, labels, loc='upper right')
 
     title2 = 'gain = %.2f $w^{input}_{exc}=%.1f\  R(AMPA/NMDA) = %.2f$' % (params['bcpnn_gain'], params['w_input_exc'], params['ampa_nmda_ratio'])
-    title1 = 'Filtered spike trains $\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (params['taui_ampa'], params['taui_nmda'])
+    title1 = 'Anticipation signal from %d spike trains\n$\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$ [ms]' % (n_cells, params['taui_ampa'], params['taui_nmda'])
     ax1.set_title(title1)
     ax2.set_title(title2)
     cbar1 = pylab.colorbar(m, ax=ax1)
@@ -623,9 +665,20 @@ def plot_anticipation_cmap(params):
     ax2.plot((n_trace_data / 2, n_trace_data / 2), (ylim2[0], ylim2[1]), c='k', ls='-', lw=3)
     cbar = pylab.colorbar(cax)#ax=ax2)
     cbar.set_label('Normalized filtered\nactivity')
-    output_fig = params['figures_folder'] + 'anticipation_cmap_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
+
+#    output_fig = params['figures_folder'] + 'anticipation_cmap_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
+#    print 'Saving figure to:', output_fig
+#    fig.savefig(output_fig, dpi=200)
+
+    output_fig = params['figures_folder'] + 'anticipation_filtered_normalize_aligned_tauiAMPA_%d_tauiNMDA_%d.png' % (params['taui_ampa'], params['taui_nmda'])
     print 'Saving figure to:', output_fig
-    fig.savefig(output_fig, dpi=200)
+#    ax0.set_title('Aligned response of %d cells along stimulus trajectory' % n_cells)
+#    ax0.set_ylabel('Filtered spiketrains')
+#    ax1.set_ylabel('Normalized and filtered\nspike activity')
+#    ax2.set_xlabel('Time to stimulus arrival [ms]')
+    fig1.savefig(output_fig, dpi=200)
+#    fig.savefig(output_fig, dpi=200)
+#    fig.savefig(output_fig, dpi=200)
     
     # output data
     d = {}
@@ -650,6 +703,7 @@ def plot_anticipation_cmap(params):
 
 if __name__ == '__main__':
 
+    separate_fig = True 
     if len(sys.argv) == 1:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
@@ -663,7 +717,7 @@ if __name__ == '__main__':
         params = utils.load_params(folder_name)
         show = True
         plot_anticipation_cmap(params)
-#        plot_vmem_aligned(params)
+        plot_vmem_aligned(params)
 #        plot_anticipation(params)
     else:
         fig_fns = []
@@ -671,8 +725,8 @@ if __name__ == '__main__':
             params = utils.load_params(folder_name)
             show = False
             fig_fn = plot_anticipation_cmap(params)
-            fig_fns.append(fig_fn)
-#            plot_vmem_aligned(params)
+            #fig_fns.append(fig_fn)
+            fig_fn = plot_vmem_aligned(params)
 #            fig_fn = plot_anticipation(params)
             fig_fns.append(fig_fn)
         print 'Figures:\n'
