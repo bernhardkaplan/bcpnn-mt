@@ -15,6 +15,7 @@ except:
     pc_id, n_proc, comm = 0, 1, None
     print "MPI not used"
 
+show = False
 
 script = sys.argv[1]
 if script == 'current' or script == 'currents':
@@ -22,7 +23,12 @@ if script == 'current' or script == 'currents':
     folders = sys.argv[2:]
 elif script == 'prediction':
     script_name = 'PlottingScripts/PlotPrediction.py'
-    folders = sys.argv[1:]
+    folders = sys.argv[2:]
+elif script == 'anticipation':
+    script_name = 'PlottingScripts/PlotAnticipation.py'
+    folders = sys.argv[2:]
+else:
+    folders = sys.argv[2:]
 list_of_jobs = []
 
 pure_names = ''
@@ -31,7 +37,10 @@ for f in folders:
     n_stim = params['n_stim']
     stim_range = params['stim_range']
     for i_ in xrange(stim_range[0], stim_range[1]):
-        cmd = 'python %s %s %d %d' % (script_name, f, i_, i_+1)
+        if script == 'anticipation':
+            cmd = 'python %s %s' % (script_name, f)
+        else:
+            cmd = 'python %s %s %d %d' % (script_name, f, i_, i_+1)
         print 'cmd:', cmd
         if USE_MPI:
             list_of_jobs.append(cmd)
@@ -57,7 +66,7 @@ else:
 if USE_MPI:
     comm.barrier()
 
-if pc_id == 0:
+if pc_id == 0 and show:
     if script == 'currents' or script == 'current':
         display_cmd = 'ristretto $(find %s -name prediction_stim*.png)' % pure_names
     display_cmd = 'ristretto $(find %s -name prediction_stim*.png)' % pure_names
