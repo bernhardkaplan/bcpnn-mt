@@ -40,17 +40,19 @@ class parameter_storage(object):
 #        self.params['test_protocols'] = ['crf_only']
 #        self.params['test_protocols'] = ['missing_crf']
 
-        self.params['ampa_nmda_ratio'] = 5.
-        self.params['w_in_ampa_pos_target'] = .5 * self.params['ampa_nmda_ratio']
-        self.params['w_in_ampa_neg_target'] = -.5 
+        self.params['g_exc_total_in'] = .5
+        self.params['g_inh_total_in'] = .5
         self.params['w_in_nmda_pos_target'] = .5
         self.params['w_in_nmda_neg_target'] = -.5
+        self.params['ampa_nmda_ratio'] = 5.
+        self.params['w_in_ampa_pos_target'] = self.params['w_in_nmda_pos_target'] * self.params['ampa_nmda_ratio']
+        self.params['w_in_ampa_neg_target'] = -.5 
 
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
         self.params['taui_nmda'] = 200
 
-        self.w_input_exc = 8.0
+        self.w_input_exc = 5.0
         if self.params['debug'] and self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG-Cluster_winput%.2f' % self.w_input_exc
         elif self.params['debug'] and not self.params['Cluster']:
@@ -60,10 +62,11 @@ class parameter_storage(object):
         elif not self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = ''
 
-        if self.params['symmetric_tauij']:
-            self.params['sim_id'] += 'symmetricTauij_'
-        else:
-            self.params['sim_id'] += 'asymmetricTauij_'
+        if self.params['training_run']:
+            if self.params['symmetric_tauij']:
+                self.params['sim_id'] += 'symmetricTauij_'
+            else:
+                self.params['sim_id'] += 'asymmetricTauij_'
         #if self.params['with_stp']:
             #self.params['sim_id'] += 'withSTP_'
         #else:
@@ -132,7 +135,7 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
         else:
-            self.params['n_exc_per_mc'] = 64 # must be an integer multiple of 4
+            self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
         self.params['n_exc'] = self.params['n_mc'] * self.params['n_exc_per_mc']
 
@@ -376,7 +379,7 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 1.0    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 2.0    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
@@ -473,7 +476,10 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_stim_pause'] = 1000.
         else:
-            self.params['t_stim_pause'] = 1000.# Guo protocol: 500 ms before, 500 ms after stimulation
+            if self.params['Guo_protocol']:
+                self.params['t_stim_pause'] = 1000.# Guo protocol: 500 ms before, 500 ms after stimulation
+            else:
+                self.params['t_stim_pause'] = 300.# Guo protocol: 500 ms before, 500 ms after stimulation
 
         # a test stim is presented for t_test_stim - t_stim_pause
         # ########################
