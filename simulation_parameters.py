@@ -377,7 +377,7 @@ class parameter_storage(object):
         self.params['w_ei_spec'] = 2.    # trained, specific PYR -> PYR (or later maybe RSNP) connections
 
         # exc - inh: unspecific (targeting the basket cells within one hypercolumn)
-        self.params['w_ei_unspec'] = 1.0    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
+        self.params['w_ei_unspec'] = 2.0    # untrained, unspecific PYR -> Basket connections # 20. works well for n_exc_per_mc==4
         self.params['p_ei_unspec'] = 0.70     # probability for PYR -> Basket connections
         self.params['delay_ei_unspec'] = 1.
         self.params['n_conn_ei_unspec_per_mc'] = np.int(np.round(self.params['n_inh_unspec_per_hc'] * self.params['p_ei_unspec'])) # RandomDivergentConnect
@@ -474,7 +474,10 @@ class parameter_storage(object):
         if self.params['training_run']:
             self.params['t_stim_pause'] = 1000.
         else:
-            self.params['t_stim_pause'] = 1000.# Guo protocol: 500 ms before, 500 ms after stimulation
+            if self.params['Guo_protocol']:
+                self.params['t_stim_pause'] = 1000.# Guo protocol: 500 ms before, 500 ms after stimulation
+            else:
+                self.params['t_stim_pause'] = 300.# Guo protocol: 500 ms before, 500 ms after stimulation
 
         # a test stim is presented for t_test_stim - t_stim_pause
         # ########################
