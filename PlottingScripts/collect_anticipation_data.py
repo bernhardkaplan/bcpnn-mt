@@ -38,14 +38,22 @@ plot_params = {'backend': 'png',
               'figure.subplot.wspace':.30}
 
 
+def filter_folder_names(list_of_fns, taui_ampa, taui_nmda, ratio_ampa_nmda, w_tgt, w_ei):
+
+
+
 if __name__ == '__main__':
 
+
+    folder_names = sys.argv[1:]
+    # filter the data
+    taui_nmda = 150
+    taui_ampa = 5
+    for w_tgt in [0.1, 0.2, 0.3, 0.4, 0.5]:
 
     all_data = []
     d = np.zeros((len(sys.argv[1:]), 6)) 
 
-    # filter the data
-    taui_nmda = 200
 
     #   0                   1           2       3       4                   5
     # t_anticipation    taui_ampa   taui_nmda   gain    w_input_exc     ampa_nmda_ratio

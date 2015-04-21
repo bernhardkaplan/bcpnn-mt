@@ -422,7 +422,7 @@ def plot_vmem_aligned(params):
         mean_vmem_response[t_, 1] = aligned_vmem_orientation_filtered[:, t_].std()
         mean_vmem_response[t_, 1] /= np.sqrt(n_responding_cells)
 
-    p0 = ax0.errorbar(t_vec_trace, mean_vmem_response[:, 0], yerr=mean_vmem_response[:, 1], lw=2, c='k')
+    p0 = ax0.errorbar(t_vec_trace, mean_vmem_response[:, 0], yerr=mean_vmem_response[:, 1], lw=3, c='k')
     label0 = '$\overline{V}(t)$ aligned'
 
     print 'debug min_avg_window:', min_avg_window
