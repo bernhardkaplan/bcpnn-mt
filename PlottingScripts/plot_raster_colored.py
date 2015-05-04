@@ -114,8 +114,8 @@ if __name__ == '__main__':
 
     pylab.rcParams.update(plot_params)
     params = utils.load_params(sys.argv[1])
-#    xlim = (0, 20000)
-    xlim = None
+    xlim = (0, 10000)
+#    xlim = None
     plot_spikes_colored(params, xlim=xlim)
 #    plot_nspikes_versus_stim_speed(params)
     pylab.show()
