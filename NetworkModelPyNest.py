@@ -888,11 +888,8 @@ class NetworkModel(object):
         # 2) total normalization for the total incoming excitation
         g_exc_total_target = self.params['g_exc_total_in']
         g_inh_total_target = self.params['g_inh_total_in']
-        gamma_pos = np.zeros(params['n_mc'])
-        gamma_neg = np.zeros(params['n_mc'])
-        w_in_exc_total = np.zeros(params['n_mc'])
-        w_in_neg_total = np.zeros(params['n_mc'])
-
+        gamma_pos = np.zeros(self.params['n_mc'])
+        gamma_neg = np.zeros(self.params['n_mc'])
 
         print 'Normalizing connectivity'
         W_ampa_pos = np.zeros(self.W_ampa.shape)
@@ -902,6 +899,7 @@ class NetworkModel(object):
         for tgt_hc in xrange(self.params['n_hc']):
             for tgt_mc in xrange(self.params['n_mc_per_hc']):
                 tgt_pop_idx = tgt_hc * self.params['n_mc_per_hc'] + tgt_mc
+                # extract the positive and negative components from the respective weight matrices
                 pos_idx_ampa = np.where(self.W_ampa[:, tgt_pop_idx] > 0)[0]
                 neg_idx_ampa = np.where(self.W_ampa[:, tgt_pop_idx] < 0)[0]
                 g_in_ampa_pos = self.W_ampa[pos_idx_ampa, tgt_pop_idx].sum()
@@ -912,14 +910,22 @@ class NetworkModel(object):
                 g_in_nmda_neg = self.W_nmda[neg_idx_nmda, tgt_pop_idx].sum()
 
                 # normalize the relative components of AMPA / NMDA to meet ampa_nmda_ratio
-                gain_ampa_pos[tgt_pop_idx] = self.params['w_in_ampa_pos_target'] / g_in_ampa_pos 
-                gain_ampa_neg[tgt_pop_idx] = self.params['w_in_ampa_neg_target'] / g_in_ampa_neg 
-                gain_nmda_pos[tgt_pop_idx] = self.params['w_in_nmda_pos_target'] / g_in_nmda_pos 
-                gain_nmda_neg[tgt_pop_idx] = self.params['w_in_nmda_neg_target'] / g_in_nmda_neg 
+                #gain_ampa_pos[tgt_pop_idx] = self.params['w_in_ampa_pos_target'] / g_in_ampa_pos 
+                #gain_ampa_neg[tgt_pop_idx] = self.params['w_in_ampa_neg_target'] / g_in_ampa_neg 
+                #gain_nmda_pos[tgt_pop_idx] = self.params['w_in_nmda_pos_target'] / g_in_nmda_pos 
+                #gain_nmda_neg[tgt_pop_idx] = self.params['w_in_nmda_neg_target'] / g_in_nmda_neg 
+                # normalize the total incoming components to meet g_{exc, inh}_total_target
+                #gamma_pos[tgt_pop_idx] = g_exc_total_target / (g_in_nmda_pos * gain_nmda_pos[tgt_pop_idx] + g_in_ampa_pos * gain_ampa_pos[tgt_pop_idx])
+                #gamma_neg[tgt_pop_idx] = g_inh_total_target / (g_in_nmda_neg * gain_nmda_neg[tgt_pop_idx] + g_in_ampa_neg * gain_ampa_neg[tgt_pop_idx])
+
+                #gain_ampa_pos[tgt_pop_idx] = 1.
+                #gain_ampa_neg[tgt_pop_idx] = 1.
+                #gain_nmda_pos[tgt_pop_idx] = 1.
+                #gain_nmda_neg[tgt_pop_idx] = 1.
 
                 # normalize the total incoming components to meet g_{exc, inh}_total_target
-                gamma_pos[tgt_pop_idx] = g_exc_total_target / (g_in_nmda_pos * gain_nmda_pos[tgt_pop_idx] + g_in_ampa_pos * gain_ampa_pos[tgt_pop_idx])
-                gamma_neg[tgt_pop_idx] = g_inh_total_target / (g_in_nmda_neg * gain_nmda_neg[tgt_pop_idx] + g_in_ampa_neg * gain_ampa_neg[tgt_pop_idx])
+                gamma_pos[tgt_pop_idx] = g_exc_total_target / (g_in_nmda_pos + g_in_ampa_pos)
+                gamma_neg[tgt_pop_idx] = g_inh_total_target / (g_in_nmda_neg + g_in_ampa_neg)
 
 
         print 'Connecting E-E for testing ...'
@@ -936,19 +942,23 @@ class NetworkModel(object):
                         w_nmda = self.W_nmda[src_pop_idx, tgt_pop_idx]
 
                         if w_ampa > 0:
-                            w_ampa_pos = w_ampa * gain_ampa_pos[tgt_pop_idx] * gamma_pos[tgt_pop_idx]
+                            #w_ampa_pos = w_ampa * gain_ampa_pos[tgt_pop_idx] * gamma_pos[tgt_pop_idx]
+                            w_ampa_pos = w_ampa * gamma_pos[tgt_pop_idx]
                             W_ampa_pos[src_pop_idx, tgt_pop_idx] = w_ampa_pos
                             w_ampa_ = w_ampa_pos
                         else:
-                            w_ampa_neg = w_ampa * gain_ampa_neg[tgt_pop_idx] * gamma_neg[tgt_pop_idx]
+                            #w_ampa_neg = w_ampa * gain_ampa_neg[tgt_pop_idx] * gamma_neg[tgt_pop_idx]
+                            w_ampa_neg = w_ampa * gamma_neg[tgt_pop_idx]
                             W_ampa_neg[src_pop_idx, tgt_pop_idx] = w_ampa_neg
                             w_ampa_ = w_ampa_neg
                         if w_nmda > 0:
-                            w_nmda_pos = w_nmda * gain_nmda_pos[tgt_pop_idx] * gamma_pos[tgt_pop_idx]
+                            #w_nmda_pos = w_nmda * gain_nmda_pos[tgt_pop_idx] * gamma_pos[tgt_pop_idx]
+                            w_nmda_pos = w_nmda * gamma_pos[tgt_pop_idx]
                             W_nmda_pos[src_pop_idx, tgt_pop_idx] = w_nmda_pos
                             w_nmda_ = w_nmda_pos
                         else:
-                            w_nmda_neg = w_nmda * gain_nmda_neg[tgt_pop_idx] * gamma_neg[tgt_pop_idx]
+                            #w_nmda_neg = w_nmda * gain_nmda_neg[tgt_pop_idx] * gamma_neg[tgt_pop_idx]
+                            w_nmda_neg = w_nmda * gamma_neg[tgt_pop_idx]
                             W_nmda_neg[src_pop_idx, tgt_pop_idx] = w_nmda_neg
                             w_nmda_ = w_nmda_neg
 
@@ -966,6 +976,7 @@ class NetworkModel(object):
                         nest.RandomConvergentConnect(src_pop, tgt_pop, n=self.params['n_conn_ee_global_out_per_pyr'],\
                                 weight=[w_nmda_], delay=[self.params['delay_ee_global']], \
                                 model='exc_exc_global_slow', options={'allow_autapses': False, 'allow_multapses': False})
+
         print ' done'
         if self.pc_id == 0:
             fn_out_ampa_pos = self.params['connections_folder'] + 'w_ampa_pos_normalized.dat'

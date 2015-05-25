@@ -42,11 +42,11 @@ class parameter_storage(object):
 
         self.params['g_exc_total_in'] = .5
         self.params['g_inh_total_in'] = .5
-        self.params['w_in_nmda_pos_target'] = .5
-        self.params['w_in_nmda_neg_target'] = -.5
+        self.params['w_in_nmda_pos_target'] = 1.
+        self.params['w_in_nmda_neg_target'] = -1.
         self.params['ampa_nmda_ratio'] = 5.
         self.params['w_in_ampa_pos_target'] = self.params['w_in_nmda_pos_target'] * self.params['ampa_nmda_ratio']
-        self.params['w_in_ampa_neg_target'] = -.5 
+        self.params['w_in_ampa_neg_target'] = -1.
 
         # for testing, choose which connection matrix (kernel) to use for AMPA/NDMA weights
         self.params['taui_ampa'] = 200
@@ -58,7 +58,7 @@ class parameter_storage(object):
         elif self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG_'
         elif not self.params['debug'] and self.params['Cluster']:
-            self.params['sim_id'] = 'Cluster_'
+            self.params['sim_id'] = 'AsymmConnR'
         elif not self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = ''
 
