@@ -58,7 +58,7 @@ class parameter_storage(object):
         elif self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = 'DEBUG_'
         elif not self.params['debug'] and self.params['Cluster']:
-            self.params['sim_id'] = 'OneNorm_connSweepHighInh_'
+            self.params['sim_id'] = 'AsymmConnR'
         elif not self.params['debug'] and not self.params['Cluster']:
             self.params['sim_id'] = ''
 

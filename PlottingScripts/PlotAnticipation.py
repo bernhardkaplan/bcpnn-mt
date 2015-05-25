@@ -534,6 +534,7 @@ def plot_anticipation_cmap(params):
 
     
     figsize = utils.get_figsize(800, portrait=False)
+    separate_fig = True 
     if separate_fig:
         plot_params = {'backend': 'png',
                       'axes.labelsize': 28,
@@ -548,7 +549,7 @@ def plot_anticipation_cmap(params):
                        'lines.linewidth': 2,
                       'font.size': 12,
                       'path.simplify': False,
-                      'figure.subplot.left':.16,
+                      'figure.subplot.left':.17,
                       'figure.subplot.bottom':.13,
                       'figure.subplot.right':.99,
                       'figure.subplot.top':.84,
