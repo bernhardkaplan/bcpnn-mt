@@ -505,7 +505,7 @@ def plot_anticipation_cmap(params):
     threshold = 0.25  # determines t_anticipation when the average filtered spike trains cross this value (min + thresh * (max-min)) --> t_anticipation
     stim_idx = 0 
     mp = [.0, .5, .0, .0, params['test_stim_orientation']]
-    dt = .5                 # time resolution for filtered spike trains
+    dt = .2                 # time resolution for filtered spike trains
     view_range = (-150, 150)
     min_avg_window = .1 * (view_range[1] - view_range[0])
     n_trace_data = int((view_range[1] - view_range[0]) / dt)
@@ -704,7 +704,6 @@ def plot_anticipation_cmap(params):
 
 if __name__ == '__main__':
 
-    separate_fig = True 
     if len(sys.argv) == 1:
         import simulation_parameters
         ps = simulation_parameters.parameter_storage()
@@ -716,7 +715,7 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2: 
         folder_name = sys.argv[1]
         params = utils.load_params(folder_name)
-        show = True
+        show = False
         plot_anticipation_cmap(params)
         plot_vmem_aligned(params)
 #        plot_anticipation(params)

@@ -37,6 +37,7 @@ def get_average_weights(params, conn_idx=0):
     pylab.rcParams.update(plot_params)
     conn_list_fn = params['merged_conn_list_ee']
     utils.merge_connection_files(params, 'ee')
+    print 'Loading:', conn_list_fn
     d = np.loadtxt(conn_list_fn)
     tp = np.loadtxt(params['tuning_prop_exc_fn'])
 
@@ -65,7 +66,7 @@ def get_average_weights(params, conn_idx=0):
         d_ = utils.get_targets(d, gid)
         for i_, ogid in enumerate(filtered_other_gids):
             idx = np.where(d_[:, (conn_idx+1)%2] == ogid)[0]
-            all_distances = np.r_[all_distances, tp[gid-1, 0] - tp[ogid-1,0]]
+            all_distances = np.r_[all_distances, tp[ogid-1, 0] - tp[gid-1,0]]
             all_weights = np.r_[all_weights, d_[idx, 2]]
 
     xbins = np.linspace(-1., 1., 81, endpoint=True)
@@ -84,7 +85,7 @@ def get_average_weights(params, conn_idx=0):
     ax = fig.add_subplot(111)
     ax.errorbar(xbins, avg_weight[:, 0], yerr=avg_weight[:, 1])
 
-    xlabel = 'Distance between source and target cell'
+    xlabel = '$\Delta x$ between source and target cell'
     ylabel = 'Weight'
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -105,7 +106,7 @@ if __name__ == '__main__':
 #    folder_name = 'TrainingSim_Cluster__50x2x1_0-100_taui50_nHC20_nMC2_vtrain1.00-1.0'
     folder_name = sys.argv[1]
     params = utils.load_params(folder_name)
-    source_perspective = True
+    source_perspective = False
     if source_perspective:
         conn_idx = 0
     else:

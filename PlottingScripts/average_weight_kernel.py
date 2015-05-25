@@ -12,11 +12,11 @@ import json
 from PlottingScripts.get_average_weights_vs_distance import get_average_weights
 
 plot_params = {'backend': 'png',
-              'axes.labelsize': 20,
-              'axes.titlesize': 20,
+              'axes.labelsize': 24,
+              'axes.titlesize': 24,
               'text.fontsize': 12,
-              'xtick.labelsize': 20,
-              'ytick.labelsize': 20,
+              'xtick.labelsize': 22,
+              'ytick.labelsize': 22,
               'legend.pad': 0.2,     # empty space around the legend box
               'legend.fontsize': 10,
                'lines.markersize': 1,
@@ -51,9 +51,14 @@ def plot_average_weights(params, fig=None, force_rerun=False):
 
     data_fn = params['data_folder'] + 'average_weights_vs_distance.dat'
 #    if os.path.exists(data_fn) or force_rerun:
+    source_perspective = True
+    if source_perspective:
+        conn_idx = 0
+    else:
+        conn_idx = 1
     if not os.path.exists(data_fn) or force_rerun:
         print 'Running get_average_weights...'
-        get_average_weights(params)
+        get_average_weights(params, conn_idx)
 
     d = np.loadtxt(data_fn)
     xbins = d[:, 0]
@@ -66,7 +71,7 @@ def plot_average_weights(params, fig=None, force_rerun=False):
     ax.plot((0, 0), (ylim[0], ylim[1]), ls='--', lw=1, c='k')
 #    ax.errorbar(xbins, avg_weight[:, 0], yerr=avg_weight[:, 1])
 
-    xlabel = 'Distance between source and target cell'
+    xlabel = '$\Delta x$ between source and target cell'
     ylabel = 'Weight'
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -90,5 +95,6 @@ if __name__ == '__main__':
     print 'Saving figure to:', output_fig
     fig.savefig(output_fig, dpi=200)
 
-    pylab.show()
+    if not force_rerun:
+        pylab.show()
 

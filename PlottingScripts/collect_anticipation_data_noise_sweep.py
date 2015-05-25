@@ -87,7 +87,7 @@ def get_tanticipation_value(folder_names, taui_tuple):
 
 if __name__ == '__main__':
     """
-    python PlottingScripts/collect_anticiaption_data [FOLDER_NAMES]
+    python PlottingScripts/collect_anticipation_data_noise_sweep.py TestSim_NoiseSweep_*
     """
 
     folder_names = sys.argv[1:]
@@ -126,8 +126,8 @@ if __name__ == '__main__':
                   'axes.labelsize': 28,
                   'axes.titlesize': 28,
                   'text.fontsize': 18,
-                  'xtick.labelsize': 24,
-                  'ytick.labelsize': 24,
+                  'xtick.labelsize': 28,
+                  'ytick.labelsize': 28,
                   'legend.pad': 0.2,     # empty space around the legend box
                   'legend.fontsize': 20,
                   'lines.markersize': 1,
@@ -135,11 +135,11 @@ if __name__ == '__main__':
                   'lines.linewidth': 2,
                   'font.size': 12,
                   'path.simplify': False,
-                  'figure.figsize': utils.get_figsize(1000, portrait=False),
+                  'figure.figsize': utils.get_figsize(800, portrait=False),
                   'figure.subplot.left':.11,
-                  'figure.subplot.bottom':.13,
+                  'figure.subplot.bottom':.15,
                   'figure.subplot.right':.97,
-                  'figure.subplot.top':.93,
+                  'figure.subplot.top':.95,
                   'figure.subplot.hspace':.26,
                   'figure.subplot.wspace':.30}
 
@@ -147,10 +147,11 @@ if __name__ == '__main__':
     pylab.rcParams.update(plot_params)
 
     fig = pylab.figure()
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
+    ax1 = fig.add_subplot(111)
 
-#    tauis = [(5., 5.), (5., 150.), (150., 150.)]
+#    ax1 = fig.add_subplot(211)
+#    ax2 = fig.add_subplot(212)
+
     tauis = []
     for j_, taui_value in enumerate(d['taui_ampa_nmda']): #            print 'debug', taui_pair, taui_value if taui_pair == taui_value:
         if taui_value not in tauis:
@@ -164,37 +165,39 @@ if __name__ == '__main__':
         
     for j_, taui_tuple in enumerate(tauis):  
         d = get_tanticipation_value(folder_names, taui_tuple)
-        data[j_, :, 0] = d['g_exc_total_in']
+        data[j_, :, 0] = d['w_noise_exc']
         data[j_, :, 1] = -1. * np.array(d['t_anticipation_spikes'])
         data[j_, :, 2] = -1. * np.array(d['t_anticipation_vmem'])
-    print 'data:', data
+#    print 'data:', data
     
     for j_, taui_tuple in enumerate(tauis):  
         label='$\\tau_i^{AMPA}=%d\ \\tau_i^{NMDA}=%d$' % (taui_tuple[0], taui_tuple[1])
         p1, = ax1.plot(data[j_, :, 0], data[j_, :, 1], lw=4, ls=linestyles[j_ % len(linestyles)], marker=markers[j_], ms=15, c=colors[j_])
-        p2, = ax2.plot(data[j_, :, 0], data[j_, :, 2], lw=4, ls=linestyles[j_ % len(linestyles)], marker=markers[j_], ms=15, c=colors[j_])
+#        p2, = ax2.plot(data[j_, :, 0], data[j_, :, 2], lw=4, ls=linestyles[j_ % len(linestyles)], marker=markers[j_], ms=15, c=colors[j_])
         plots1.append(p1)
-        plots2.append(p2)
+#        plots2.append(p2)
         labels1.append(label)
 
 
-    ylim1 = (-2, 36)
+    xlim1 = (0.4, 2.1)
+    ax1.set_xlim(xlim1)
+    ylim1 = (0, 45)
     ax1.set_ylim(ylim1)
-    ylim2 = (-5, 180)
-    ax2.set_ylim(ylim2)
     ax1.legend(plots1, labels1, numpoints=1, loc='upper left')
-    ax2.legend(plots2, labels1, numpoints=1, loc='upper left')
+#    ylim2 = (-25, 375)
+#    ax2.set_ylim(ylim2)
+#    ax2.legend(plots2, labels1, numpoints=1, loc='upper left')
 
 
 #    ax1.set_xlabel('w_noise_exc')
-#    pylab.legend(scatterpoints=1, ncol=1)
-    ax2.set_xlabel('$w_{exc, in}^{total}$ [nS]')
-    ax1.set_title('Anticipation measured in spike response')
-    ax2.set_title('Anticipation measured in membrane potential')
+    ax1.set_xlabel('$w_{Noise}$ [nS]')
+#    ax2.set_xlabel('$w_{Noise}$ [nS]')
+#    ax1.set_title('Noise influences anticipation\nmeasured in spike response')
+#    ax2.set_title('Anticipation measured in membrane potential')
     ax1.set_ylabel('$t_{anticipation}^{spikes}$')
-    ax2.set_ylabel('$t_{anticipation}^{vmem}$')
+#    ax2.set_ylabel('$t_{anticipation}^{vmem}$')
 
-    output_fn = 'anticiption_vs_gexc.png'
+    output_fn = 'anticiption_vs_wnoiseexc.png'
     print 'output_fn:', output_fn
     fig.savefig(output_fn, dpi=200)
 
