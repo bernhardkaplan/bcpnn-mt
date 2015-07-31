@@ -11,6 +11,9 @@ def skew_normal(x, mu, sigma, alpha):
     # alpha  = skewness parameter
     return (1. / sigma) * mlab.normpdf((x - mu)/sigma, 0., 1.) * (1. + erf(alpha * (x - mu) / (sigma * np.sqrt(2))) )
 
+def gauss(x, mu, sigma):
+    return np.exp( - (x - mu)**2 / (2 * sigma ** 2))
+
 
 if __name__ == '__main__':
 
@@ -24,12 +27,13 @@ if __name__ == '__main__':
     activity_field = np.zeros(n_x)
     activity_field_prv = np.zeros(n_x)
     sigma_conn = 0.05   # width connectivity kernel
-    alpha = 0.5
-    x0, v0 = 0.2, 1.
-    blur_x = 0.1    # stimulus width
-    tau = .3
-    w_ee_amp = 0.005
-    w_ie_amp = 0.001
+    
+    alpha = 0.5         # skewness parameter for skew normal distribution
+    x0, v0 = 0.2, 1.    # stimulus start parameters (pos, speed)
+    blur_x = 0.1        # stimulus width
+    tau = .3            # relaxation time constant of activity field
+    w_ee_amp = 0.005    # excitatory coupling
+    w_ie_amp = 0.001    # inhibitory coupling
     w_input = 0.
     t_start_blank = 0.5
     t_stop_blank = 0.8
