@@ -9,7 +9,6 @@ import os
 import utils
 from copy import deepcopy
 from NetworkModelPyNest import NetworkModel
-import CreateInput
 
 try: 
     from mpi4py import MPI
@@ -40,7 +39,7 @@ if __name__ == '__main__':
         #exit(1)
     #params['training_run'] = True
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1: # take learning parameter tau_i as command line argument
         params['taui_bcpnn'] = float(sys.argv[1])
         params['bcpnn_params']['tau_i'] = params['taui_bcpnn']
         if params['symmetric_tauij']:
@@ -133,7 +132,7 @@ if __name__ == '__main__':
         print "Getting weights took %d seconds for the bcpnn weights and %d seconds for the static on %d nodes" % (t_start_get_weights_static - t_start_get_weights, t_stop_get_weights - t_start_get_weights_static, n_proc)
     if comm != None:
         comm.Barrier()
-    NM.merge_local_gid_files()
+#    NM.merge_local_gid_files()
     t_end = time.time()
     t_diff = t_end - t_0
     if NM.pc_id == 0:

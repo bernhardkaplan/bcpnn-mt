@@ -5,7 +5,6 @@ import sys
 import os
 import utils
 import nest
-from CreateInput import CreateInput
 import json
 from set_tuning_properties import set_tuning_properties_regular, set_tuning_prop_1D_with_const_fovea_and_const_velocity, set_tuning_prop_with_orientation, get_orientation_tuning_regular
 from copy import deepcopy

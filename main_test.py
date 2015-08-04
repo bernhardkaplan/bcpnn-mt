@@ -40,60 +40,63 @@ except:
 
 if __name__ == '__main__':
 
-#    assert (len(sys.argv) > 2), 'Missing connection matrices folders as command line arguments'
-    
-    # conn_fn_ should be the filenames for the connection matrices on MC-MC basis
-    
+    use_command_line_arguments = False
+
+    # set up the parameter storage class ps
     t_0 = time.time()
     ps = simulation_parameters.parameter_storage()
     params = ps.params
+    # if training_run is set, you might end up with other wrong parameters (e.g. n_stim) --> assertion
     assert (params['training_run'] == False), 'Wrong flag in simulation parameters. Set training_run = False.'
-    # if training_run is set, you might end up with other wrong parameters (e.g. n_stim)
 
-    taui_ampa = float(sys.argv[1])
-    taui_nmda = float(sys.argv[2])
-    g_exc_total_in = float(sys.argv[3])
-    g_inh_total_in = float(sys.argv[4])
-    ampa_nmda_ratio = float(sys.argv[5])
-    w_noise_exc = float(sys.argv[6])
 
-    if g_inh_total_in > 0:
-        g_inh_total_in *= -1.
-    assert (g_inh_total_in <= 0), 'g_inh_total_in must be < 0'
-    params['g_exc_total_in'] = g_exc_total_in
-    params['g_inh_total_in'] = g_inh_total_in
-    
-    #w_in_nmda_pos_target = float(sys.argv[3])
-    #params['w_in_nmda_pos_target'] = w_in_nmda_pos_target
-    #params['w_in_nmda_neg_target'] = -1 * params['w_in_nmda_pos_target']
+    # Here, you should set the folder name that has been created during the previous training run, i.e. the folder that main_training_ has created
+    # conn_fn_ should be the filenames for the connection matrices on MC-MC basis
+    conn_fn_ampa = 'TrainingSim_asymmetricTauij__2x1_0-16_taui20_nHC20_nMC2_blurXV_0.00_0.00_pi1.0e-04_v0.40-0.8_fmax500/Connections/conn_matrix_mc.dat'
+    conn_fn_nmda = 'TrainingSim_asymmetricTauij__2x1_0-16_taui20_nHC20_nMC2_blurXV_0.00_0.00_pi1.0e-04_v0.40-0.8_fmax500/Connections/conn_matrix_mc.dat'
 
-    #bcpnn_gain = float(sys.argv[3])
-    #params['bcpnn_gain'] = bcpnn_gain
-#    bcpnn_gain = float(sys.argv[3])
-#    params['bcpnn_gain'] = bcpnn_gain
-    params['w_noise_exc'] = w_noise_exc
-    params['w_noise_inh'] = -1.* w_noise_exc
-    params['ampa_nmda_ratio'] = ampa_nmda_ratio
-    params['w_in_ampa_pos_target'] = params['w_in_nmda_pos_target'] * params['ampa_nmda_ratio']
-    params['w_in_ampa_neg_target'] = -1. * params['w_in_ampa_pos_target']
-    #w_input_exc = float(sys.argv[4])
-    #params['w_input_exc'] = w_input_exc
-    params['taui_ampa'] = taui_ampa
-    params['taui_nmda'] = taui_nmda
-    #conn_fn_ampa = 'TrainingSim_Cluster_symmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
-    #conn_fn_nmda = 'TrainingSim_Cluster_symmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
+    if use_command_line_arguments:
+        taui_ampa = float(sys.argv[1])
+        taui_nmda = float(sys.argv[2])
+        g_exc_total_in = float(sys.argv[3])
+        g_inh_total_in = float(sys.argv[4])
+        ampa_nmda_ratio = float(sys.argv[5])
+        w_noise_exc = float(sys.argv[6])
+        # The filenames where to find the trained weights can also depend on the learning parameters for taui_ampa and taui_nmda
+        # Here, you should set the folder name that has been created during the previous training run
+        #conn_fn_ampa = 'TrainingSim_Cluster_symmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
+        #conn_fn_nmda = 'TrainingSim_Cluster_symmetricTauij__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
 
-    conn_fn_ampa = 'TrainingSim_Cluster_asymmetricTauij__50x1x1_0-200_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
-    conn_fn_nmda = 'TrainingSim_Cluster_asymmetricTauij__50x1x1_0-200_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
-    #conn_fn_ampa = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_ampa'])
-    #conn_fn_nmda = 'TrainingSim_Cluster__50x2x1_0-400_taui%d_nHC20_nMC4_vtrain1.00-1.0/Connections/conn_matrix_mc.dat' % (params['taui_nmda'])
+        # depending on the type of parameter sweep that is done, use different parameters
+        # e.g.
+        #bcpnn_gain = float(sys.argv[3])
+        #params['bcpnn_gain'] = bcpnn_gain
+        #w_input_exc = float(sys.argv[4])
+        #params['w_input_exc'] = w_input_exc
+
+        # update the parameter dictionary to be passed to the NetworkModel with the given values 
+        params['taui_ampa'] = taui_ampa
+        params['taui_nmda'] = taui_nmda
+        params['w_noise_exc'] = w_noise_exc
+        params['w_noise_inh'] = -1.* w_noise_exc
+        params['ampa_nmda_ratio'] = ampa_nmda_ratio
+        params['w_in_ampa_pos_target'] = params['w_in_nmda_pos_target'] * params['ampa_nmda_ratio']
+        params['w_in_ampa_neg_target'] = -1. * params['w_in_ampa_pos_target']
+        if g_inh_total_in > 0:
+            g_inh_total_in *= -1.
+        assert (g_inh_total_in <= 0), 'g_inh_total_in must be < 0'
+        params['g_exc_total_in'] = g_exc_total_in
+        params['g_inh_total_in'] = g_inh_total_in
+    else:
+        ampa_nmda_ratio = params['ampa_nmda_ratio']
+
     w_ei = params['w_ei_unspec']
     #w_ie = float(sys.argv[5]) * w_ei
     w_ie = params['w_ie_unspec']
     w_ii = params['w_ii_unspec']
 
     if not params['debug']:
-#        assert (bcpnn_gain > 0), 'BCPNN gain need to be positive!'
+#        assert (bcpnn_gain > 0), 'BCPNN gain needs to be positive!'
         assert (w_ei > 0), 'Excitatory weights need to be positive!'
         assert (w_ie < 0), 'Inhibitory weights need to be negative!'
         #assert (w_ii < 0), 'Inhibitory weights need to be negative!'

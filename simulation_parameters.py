@@ -22,18 +22,19 @@ class parameter_storage(object):
 
     def set_default_params(self):
         self.params['training_run'] = False
-        self.params['Cluster'] = True
+        self.params['Cluster'] = False
         self.params['debug'] = False
         self.params['with_inhibitory_neurons'] = not self.params['training_run'] # should be true all the time
         self.params['weight_tracking'] = False      # during training, increases simulation length a lot
-        self.params['with_stp'] = False             # for recurrent E-E connections
+        self.params['with_stp'] = False             # for recurrent E-E connections, only used during testing to suppress an explosion of recurrent activity
         self.params['with_orientation'] = True      # redundant? 
         self.params['with_stp_for_input'] = False   # not tuned well
         self.params['with_recorder_neurons'] = not self.params['training_run']
-        self.params['symmetric_tauij'] = False # relevant for training only
+        self.params['symmetric_tauij'] = False      # relevant for training only
         self.params['with_bias'] = False
-        self.params['Guo_protocol'] = False
-        self.params['test_protocols'] = ['continuous']
+        self.params['Guo_protocol'] = False         # discrete presentation of approaching stimuli, Ref: Guo 2007 Spatio-temporal prediction and inference by V1 neurons
+        self.params['test_protocols'] = ['continuous'] 
+        # the following 5 are only relevant in the context of reproducing the experiments described in Guo2007
 #        self.params['test_protocols'] = ['random']
 #        self.params['test_protocols'] = ['congruent']
 #        self.params['test_protocols'] = ['incongruent']
@@ -104,7 +105,7 @@ class parameter_storage(object):
             self.params['n_rf_x'] = self.params['n_rf']
             self.params['n_rf_y'] = 1
             if self.params['with_orientation']:
-                self.params['n_theta'] = 4 # == N_MC_PER_HC
+                self.params['n_theta'] = 2 # == N_MC_PER_HC
             else:
                 self.params['n_theta'] = 1 # == N_MC_PER_HC
 
@@ -133,7 +134,7 @@ class parameter_storage(object):
             self.params['n_mc_per_hc'] = self.params['n_v'] 
         self.params['n_mc'] = self.params['n_hc'] * self.params['n_mc_per_hc']  # total number of minicolumns
         if self.params['training_run']:
-            self.params['n_exc_per_mc'] = 8 # must be an integer multiple of 4
+            self.params['n_exc_per_mc'] = 4 # must be an integer multiple of 4
         else:
             self.params['n_exc_per_mc'] = 32 # must be an integer multiple of 4
         self.params['n_exc_per_hc'] = self.params['n_mc_per_hc'] * self.params['n_exc_per_mc']
@@ -454,7 +455,9 @@ class parameter_storage(object):
         self.params['training_stim_noise_v'] = 0.05 # percentage of noise for each individual training speed
         self.params['training_stim_noise_x'] = 0.01 # percentage of noise for each individual training speed
         self.params['training_stim_noise_theta'] = 0.02 * 180. # percentage of noise for each individual training speed
-        self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
+        self.params['n_training_cycles'] = 4  # one cycle comprises training of all n_training_v
+        # on cluster long training:
+#        self.params['n_training_cycles'] = 50 # one cycle comprises training of all n_training_v
 
         self.params['n_training_v'] = 2 #* self.params['n_v']
         self.params['n_training_v_slow_speeds'] = 0
